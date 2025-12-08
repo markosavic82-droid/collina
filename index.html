@@ -1,0 +1,2940 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Collina Analytics Dashboard</title>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/prop-types@15.8.1/prop-types.min.js"></script>
+  <script src="https://unpkg.com/recharts@2.12.7/umd/Recharts.js"></script>
+  <style>* { margin: 0; padding: 0; box-sizing: border-box; }</style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState } = React;
+    const { BarChart, Bar, LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, ComposedChart } = Recharts;
+
+const CollinaDashboard = () => {
+  const [timeRange, setTimeRange] = useState('1D');
+  const [trendMetric, setTrendMetric] = useState('revenue');
+  const [trendDropdownOpen, setTrendDropdownOpen] = useState(false);
+
+  // Color palette from design system
+  const colors = {
+    bg: '#0D0B14',
+    card: '#1A1F2E',
+    elevated: '#252232',
+    border: 'rgba(255, 255, 255, 0.05)',
+    borderSubtle: '#2A2735',
+    purple: '#8B5CF6',
+    purpleLight: '#A78BFA',
+    success: '#22C55E',
+    error: '#EF4444',
+    warning: '#F59E0B',
+    info: '#3B82F6',
+    textPrimary: '#FFFFFF',
+    textSecondary: '#9CA3AF',
+    textMuted: '#6B7280',
+    cyan: '#06B6D4',
+  };
+
+  // Hourly data with orders, prep time, delivery time
+  const hourlyData = [
+    { hour: '10h', orders: 6, prepTime: 12, deliveryTime: 37 },
+    { hour: '11h', orders: 5, prepTime: 11, deliveryTime: 36 },
+    { hour: '12h', orders: 31, prepTime: 13, deliveryTime: 38 },
+    { hour: '13h', orders: 21, prepTime: 12, deliveryTime: 40 },
+    { hour: '14h', orders: 45, prepTime: 14, deliveryTime: 39 },
+    { hour: '15h', orders: 49, prepTime: 13, deliveryTime: 38 },
+    { hour: '16h', orders: 45, prepTime: 15, deliveryTime: 41 },
+    { hour: '17h', orders: 44, prepTime: 16, deliveryTime: 46 },
+    { hour: '18h', orders: 37, prepTime: 17, deliveryTime: 47 },
+    { hour: '19h', orders: 46, prepTime: 15, deliveryTime: 43 },
+    { hour: '20h', orders: 52, prepTime: 14, deliveryTime: 44 },
+    { hour: '21h', orders: 47, prepTime: 13, deliveryTime: 37 },
+    { hour: '22h', orders: 34, prepTime: 12, deliveryTime: 33 },
+    { hour: '23h', orders: 30, prepTime: 14, deliveryTime: 35 },
+  ];
+
+  // Prep time by hour for bar chart
+  const prepTimeByHour = [
+    { hour: '10h', time: 6, status: 'good' },
+    { hour: '12h', time: 8, status: 'good' },
+    { hour: '14h', time: 10, status: 'good' },
+    { hour: '16h', time: 12, status: 'good' },
+    { hour: '18h', time: 14, status: 'warning' },
+    { hour: '19h', time: 15, status: 'warning' },
+    { hour: '20h', time: 16, status: 'warning' },
+    { hour: '21h', time: 14, status: 'warning' },
+    { hour: '22h', time: 15, status: 'warning' },
+    { hour: '23h', time: 18, status: 'critical' },
+  ];
+
+  // Combined trend data (14 days) - Revenue, Orders, Rating
+  const trendData = [
+    { date: 'Nov 24', revenue: 635010, orders: 446, rating: 8.8 },
+    { date: 'Nov 25', revenue: 700408, orders: 473, rating: 8.6 },
+    { date: 'Nov 26', revenue: 676698, orders: 474, rating: 9.0 },
+    { date: 'Nov 27', revenue: 816311, orders: 541, rating: 8.9 },
+    { date: 'Nov 28', revenue: 820997, orders: 531, rating: 8.7 },
+    { date: 'Nov 29', revenue: 604614, orders: 408, rating: 9.2 },
+    { date: 'Nov 30', revenue: 707816, orders: 474, rating: 8.5 },
+    { date: 'Dec 01', revenue: 712973, orders: 476, rating: 8.8 },
+    { date: 'Dec 02', revenue: 637624, orders: 448, rating: 8.9 },
+    { date: 'Dec 03', revenue: 734357, orders: 499, rating: 9.0 },
+    { date: 'Dec 04', revenue: 779052, orders: 540, rating: 8.7 },
+    { date: 'Dec 05', revenue: 847112, orders: 549, rating: 8.6 },
+    { date: 'Dec 06', revenue: 711391, orders: 443, rating: 9.0 },
+    { date: 'Dec 07', revenue: 751471, orders: 509, rating: 9.1 },
+  ];
+
+  // Trend metric configurations
+  const trendConfigs = {
+    revenue: {
+      label: 'Revenue',
+      icon: '💰',
+      color: colors.purple,
+      dataKey: 'revenue',
+      format: (v) => `${(v/1000).toFixed(0)}K`,
+      unit: 'RSD',
+      stats: {
+        current: { value: '751K', subtext: 'RSD' },
+        vsYesterday: { value: '+5.6%', subtext: '711K prev', positive: true },
+        vsLastWeek: { value: '+6.2%', subtext: '708K LW', positive: true },
+        avg14Day: { value: '724K', subtext: 'average' },
+        range: { value: '605K - 847K', subtext: 'min - max' },
+      }
+    },
+    orders: {
+      label: 'Orders',
+      icon: '📦',
+      color: colors.info,
+      dataKey: 'orders',
+      format: (v) => v.toString(),
+      unit: '',
+      stats: {
+        current: { value: '509', subtext: 'orders' },
+        vsYesterday: { value: '+14.9%', subtext: '443 prev', positive: true },
+        vsLastWeek: { value: '+7.4%', subtext: '474 LW', positive: true },
+        avg14Day: { value: '486', subtext: 'average' },
+        range: { value: '408 - 549', subtext: 'min - max' },
+      }
+    },
+    rating: {
+      label: 'Avg Rating',
+      icon: '⭐',
+      color: colors.warning,
+      dataKey: 'rating',
+      format: (v) => v.toFixed(1),
+      unit: '/10',
+      stats: {
+        current: { value: '9.1', subtext: '/10' },
+        vsYesterday: { value: '+1.1%', subtext: '9.0 prev', positive: true },
+        vsLastWeek: { value: '+7.1%', subtext: '8.5 LW', positive: true },
+        avg14Day: { value: '8.8', subtext: 'average' },
+        range: { value: '8.5 - 9.2', subtext: 'min - max' },
+      }
+    },
+  };
+
+  // Revenue trend (14 days) - kept for backward compatibility
+  const revenueTrend = trendData;
+
+  // Day of week averages
+  const dayOfWeekData = [
+    { day: 'Mon', avgRevenue: 719516, avgOrders: 501 },
+    { day: 'Tue', avgRevenue: 702291, avgOrders: 482 },
+    { day: 'Wed', avgRevenue: 730307, avgOrders: 508 },
+    { day: 'Thu', avgRevenue: 784254, avgOrders: 538 },
+    { day: 'Fri', avgRevenue: 839634, avgOrders: 565 },
+    { day: 'Sat', avgRevenue: 703748, avgOrders: 468 },
+    { day: 'Sun', avgRevenue: 720671, avgOrders: 494, isToday: true },
+  ];
+
+  // Top products
+  const topProducts = [
+    { rank: 1, name: 'BIG Double Collina Smash + pomfrit + Pepsi', qty: 183, pctSales: 21.8, rating: 9.5, ratingLW: 8.9, revenue: 164151, margin: 68.7 },
+    { rank: 2, name: 'Supreme Triple Smash + Bacon & Cheddar', qty: 58, pctSales: 9.3, rating: 9.4, ratingLW: null, revenue: 69600, margin: 61.3 },
+    { rank: 3, name: '2X Collina burger + pomfrit + 2x Pepsi', qty: 39, pctSales: 7.9, rating: 8.4, ratingLW: 9.0, revenue: 59553, margin: 72.2 },
+    { rank: 4, name: 'BIG DoubleCHEESE COMBO', qty: 34, pctSales: 4.3, rating: 8.2, ratingLW: 8.8, revenue: 32538, margin: 82.7 },
+    { rank: 5, name: 'Palačinka nutela', qty: 36, pctSales: 2.4, rating: 10.0, ratingLW: 8.9, revenue: 17820, margin: 81.4 },
+    { rank: 6, name: 'Original burger XL', qty: 9, pctSales: 1.7, rating: 9.5, ratingLW: null, revenue: 12915, margin: 82.7 },
+    { rank: 7, name: 'Američka palačinka nutela', qty: 22, pctSales: 1.7, rating: 9.5, ratingLW: 9.3, revenue: 12427, margin: 77.6 },
+    { rank: 8, name: 'Collina burger L', qty: 12, pctSales: 1.4, rating: 9.0, ratingLW: 8.8, revenue: 10380, margin: 77.7 },
+  ];
+
+  // Category performance (margins calculated from CSV data)
+  const categoryData = [
+    { name: 'Burgers', revenue: 555225, mix: 73.9, margin: 71.2, trend: 2.3 },
+    { name: 'Pancakes', revenue: 99645, mix: 13.3, margin: 80.4, trend: 8.1 },
+    { name: 'Cooked Meals', revenue: 45678, mix: 6.1, margin: 82.5, trend: 1.2 },
+    { name: 'Sides', revenue: 28618, mix: 3.8, margin: 86.0, trend: 1.5 },
+    { name: 'Bakery', revenue: 11424, mix: 1.5, margin: 81.2, trend: 0.5 },
+    { name: 'Other', revenue: 10881, mix: 1.4, margin: 75.0, trend: -1.8 },
+  ];
+
+  // Kitchen performance by venue
+  const kitchenData = [
+    { venue: 'Vračar', avgPrep: 11.2, target: '<15m', orders: 279, status: 'good' },
+    { venue: 'Novi Beograd', avgPrep: 12.8, target: '<15m', orders: 99, status: 'good' },
+    { venue: 'Banovo Brdo', avgPrep: 14.6, target: '<15m', orders: 106, status: 'warning' },
+    { venue: 'Kuhinjica', avgPrep: 18.3, target: '<15m', orders: 16, status: 'critical' },
+    { venue: 'Pekarica', avgPrep: 8.4, target: '<12m', orders: 9, status: 'good' },
+  ];
+
+  // Delivery by venue
+  const deliveryByVenue = [
+    { venue: 'Vračar', time: 38.2, pctUnder35: 62 },
+    { venue: 'Novi Beograd', time: 44.1, pctUnder35: 41 },
+    { venue: 'Banovo Brdo', time: 48.7, pctUnder35: 28 },
+    { venue: 'Kuhinjica', time: 42.3, pctUnder35: 47 },
+  ];
+
+  // Critical hours
+  const criticalHours = [
+    { hour: '17:00', orders: 44, revenue: '66K', delivery: '46m', rating: 9.2 },
+    { hour: '18:00', orders: 37, revenue: '52K', delivery: '47m', rating: 8.0 },
+    { hour: '20:00', orders: 52, revenue: '79K', delivery: '44m', rating: 9.5 },
+  ];
+
+  // Customer data
+  const customerData = {
+    total: 487,
+    repeatRate: 68.4,
+    newCustomers: 154,
+    returning: 333,
+    avgBasketNew: 1620,
+    avgBasketReturning: 1410,
+  };
+
+  // Top customers
+  const topCustomers = [
+    { id: 'VIP-4821', revenue: 32000, orders: 18 },
+    { id: 'VIP-3156', revenue: 28000, orders: 15 },
+    { id: 'VIP-7293', revenue: 24000, orders: 14 },
+    { id: 'VIP-5847', revenue: 22000, orders: 12 },
+    { id: 'VIP-9124', revenue: 19000, orders: 11 },
+  ];
+
+  // Custom tooltip
+  const CustomTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+      return (
+        <div style={{
+          background: colors.card,
+          border: `1px solid ${colors.borderSubtle}`,
+          borderRadius: '12px',
+          padding: '12px 16px',
+          boxShadow: '0 10px 40px rgba(0,0,0,0.3)',
+        }}>
+          <p style={{ color: colors.textSecondary, fontSize: '12px', marginBottom: '8px' }}>{label}</p>
+          {payload.map((entry, index) => (
+            <p key={index} style={{ color: entry.color || colors.purple, fontSize: '14px', fontWeight: 600 }}>
+              {entry.name}: {typeof entry.value === 'number' && entry.value > 1000 
+                ? `${(entry.value / 1000).toFixed(0)}K` 
+                : entry.value}
+            </p>
+          ))}
+        </div>
+      );
+    }
+    return null;
+  };
+
+  // Icon box component
+  const IconBox = ({ children, color = colors.purpleLight }) => (
+    <div className="icon-box" style={{
+      width: '48px',
+      height: '48px',
+      borderRadius: '14px',
+      background: `${color}20`,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontSize: '22px',
+      flexShrink: 0,
+    }}>
+      {children}
+    </div>
+  );
+
+  // Trend indicator
+  const TrendIndicator = ({ value, suffix = 'vs LW' }) => {
+    const isPositive = value >= 0;
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <span style={{
+          width: '8px',
+          height: '8px',
+          borderRadius: '50%',
+          backgroundColor: isPositive ? colors.success : colors.error,
+        }} />
+        <span style={{ 
+          color: isPositive ? colors.success : colors.error, 
+          fontSize: '13px', 
+          fontWeight: 500,
+          fontFamily: "'Inter', sans-serif",
+        }}>
+          {isPositive ? '+' : ''}{value}%
+        </span>
+        <span style={{ color: colors.textMuted, fontSize: '12px' }}>{suffix}</span>
+      </div>
+    );
+  };
+
+  // SIM badge
+  const SimBadge = () => (
+    <span style={{
+      background: 'rgba(251, 191, 36, 0.15)',
+      color: '#FBBF24',
+      padding: '3px 8px',
+      borderRadius: '6px',
+      fontSize: '10px',
+      fontWeight: 700,
+      letterSpacing: '0.5px',
+    }}>
+      SIM
+    </span>
+  );
+
+  // Warning badge
+  const WarningBadge = () => (
+    <span style={{
+      background: 'rgba(245, 158, 11, 0.15)',
+      color: '#F59E0B',
+      padding: '4px',
+      borderRadius: '6px',
+      fontSize: '14px',
+    }}>
+      ⚠️
+    </span>
+  );
+
+  return (
+    <div style={{
+      minHeight: '100vh',
+      backgroundColor: colors.bg,
+      color: colors.textPrimary,
+      padding: 'clamp(12px, 3vw, 32px)',
+      fontFamily: "'Inter', sans-serif",
+    }}>
+      <style>
+        {`
+          @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap');
+          
+          /* Base mobile-first approach */
+          * { -webkit-tap-highlight-color: transparent; }
+          
+          /* Tablet styles */
+          @media (max-width: 1024px) {
+            .kpi-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 16px !important; }
+            .five-col-grid { grid-template-columns: repeat(3, 1fr) !important; }
+            .venue-table { font-size: 12px !important; }
+            .product-grid { grid-template-columns: 32px 1fr 70px 80px 80px 60px !important; }
+          }
+          
+          /* Mobile styles */
+          @media (max-width: 768px) {
+            .kpi-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 12px !important; }
+            .kpi-value { font-size: 26px !important; }
+            .two-col-grid { grid-template-columns: 1fr !important; }
+            .three-col-grid { grid-template-columns: 1fr !important; }
+            .four-col-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }
+            .five-col-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }
+            .six-col-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }
+            .header-flex { flex-direction: column !important; align-items: flex-start !important; gap: 12px !important; }
+            .date-range-btns { display: none !important; }
+            .section-title { font-size: 16px !important; }
+            .chart-height { height: 160px !important; }
+            .hide-mobile { display: none !important; }
+            .profit-table-grid { grid-template-columns: 24px 1fr 90px 50px !important; font-size: 12px !important; }
+            .venue-table { overflow-x: auto !important; }
+            .venue-grid { grid-template-columns: 1.5fr 0.8fr 0.6fr 0.8fr 0.6fr !important; gap: 6px !important; font-size: 11px !important; }
+            .product-grid { grid-template-columns: 28px 1fr 60px !important; }
+            .product-details { display: none !important; }
+            .location-bar { flex-direction: column !important; gap: 8px !important; }
+            .trend-stats { grid-template-columns: repeat(2, 1fr) !important; }
+            .channel-grid { grid-template-columns: 1.5fr 1fr 1fr !important; }
+            .channel-hide { display: none !important; }
+            .insight-text { font-size: 12px !important; }
+            .forecast-grid { grid-template-columns: repeat(2, 1fr) !important; }
+            .customer-grid { grid-template-columns: 1fr !important; }
+          }
+          
+          /* Small mobile styles */
+          @media (max-width: 480px) {
+            .kpi-grid { grid-template-columns: 1fr 1fr !important; gap: 8px !important; padding: 12px !important; }
+            .kpi-value { font-size: 22px !important; }
+            .kpi-label { font-size: 9px !important; }
+            .four-col-grid { grid-template-columns: 1fr 1fr !important; gap: 6px !important; }
+            .five-col-grid { grid-template-columns: 1fr 1fr !important; gap: 6px !important; }
+            .six-col-grid { grid-template-columns: 1fr 1fr !important; gap: 6px !important; }
+            .profit-table-grid { grid-template-columns: 20px 1fr 70px 40px !important; font-size: 11px !important; }
+            .section-padding { padding: 14px !important; }
+            .icon-box { width: 36px !important; height: 36px !important; font-size: 16px !important; }
+            .chart-container { height: 140px !important; }
+            .venue-grid { grid-template-columns: 1fr 1fr 1fr !important; font-size: 10px !important; }
+            .venue-name { max-width: 80px !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; }
+            .product-grid { grid-template-columns: 24px 1fr 50px !important; font-size: 11px !important; }
+            .product-name { max-width: 140px !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; }
+            .trend-stats { grid-template-columns: 1fr 1fr !important; gap: 8px !important; }
+            .trend-stat-value { font-size: 18px !important; }
+            .channel-grid { grid-template-columns: 1fr 1fr !important; font-size: 11px !important; }
+            .insight-card { padding: 10px 12px !important; }
+            .insight-icon { font-size: 14px !important; }
+            .insight-text { font-size: 11px !important; line-height: 1.4 !important; }
+            .action-badge { font-size: 9px !important; padding: 2px 6px !important; }
+            .forecast-grid { grid-template-columns: 1fr !important; }
+            .forecast-card { padding: 14px !important; }
+            .customer-stat { padding: 12px !important; }
+            .customer-value { font-size: 24px !important; }
+            .review-card { padding: 10px 12px !important; }
+            .review-time { font-size: 10px !important; }
+            .delivery-bar { flex-direction: column !important; }
+            .delivery-segment { min-width: 60px !important; }
+          }
+          
+          /* Extra small mobile */
+          @media (max-width: 360px) {
+            .kpi-value { font-size: 20px !important; }
+            .section-title { font-size: 14px !important; }
+            .product-name { max-width: 100px !important; }
+          }
+          
+          /* Touch-friendly improvements */
+          @media (hover: none) and (pointer: coarse) {
+            button { min-height: 44px; min-width: 44px; }
+            .clickable { min-height: 44px; }
+          }
+          
+          /* Smooth scrolling for mobile */
+          .scroll-container { 
+            -webkit-overflow-scrolling: touch; 
+            scroll-behavior: smooth;
+          }
+        `}
+      </style>
+      
+      <div style={{ maxWidth: '1600px', margin: '0 auto' }}>
+        
+        {/* Header */}
+        <div className="header-flex" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
+          <div>
+            <h1 style={{
+              fontFamily: "'Space Grotesk', sans-serif",
+              fontSize: 'clamp(24px, 5vw, 42px)',
+              fontWeight: 700,
+              background: 'linear-gradient(to right, #A78BFA, #818CF8, #6366F1)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              marginBottom: '4px',
+            }}>
+              Collina Analytics
+            </h1>
+            <p style={{ color: colors.textSecondary, fontSize: '14px' }}>
+              Sunday, December 7, 2025
+            </p>
+          </div>
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+            <WarningBadge />
+            <div className="date-range-btns" style={{
+              background: colors.card,
+              border: `1px solid ${colors.border}`,
+              borderRadius: '10px',
+              padding: '10px 16px',
+              display: 'flex',
+              gap: '8px',
+            }}>
+              {['1D', '7D', '30D'].map(range => (
+                <button
+                  key={range}
+                  onClick={() => setTimeRange(range)}
+                  style={{
+                    background: timeRange === range ? colors.purple : 'transparent',
+                    color: timeRange === range ? 'white' : colors.textSecondary,
+                    border: 'none',
+                    padding: '6px 12px',
+                    borderRadius: '6px',
+                    fontSize: '13px',
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                  }}
+                >
+                  {range}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Main KPIs */}
+        <div className="kpi-grid" style={{
+          background: colors.card,
+          borderRadius: '16px',
+          border: `1px solid ${colors.border}`,
+          padding: 'clamp(16px, 4vw, 32px)',
+          marginBottom: '24px',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(4, 1fr)',
+          gap: 'clamp(16px, 3vw, 32px)',
+        }}>
+          {/* Revenue */}
+          <div>
+            <p style={{ color: colors.textMuted, fontSize: '11px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>
+              REVENUE
+            </p>
+            <p className="kpi-value" style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 'clamp(28px, 5vw, 42px)', fontWeight: 700, marginBottom: '4px' }}>
+              751,471
+            </p>
+            <p style={{ color: colors.textSecondary, fontSize: '13px', marginBottom: '8px' }}>RSD</p>
+            <TrendIndicator value={6.2} suffix="vs last Sun" />
+          </div>
+
+          {/* Profit */}
+          <div>
+            <p style={{ color: colors.textMuted, fontSize: '11px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>
+              PROFIT
+            </p>
+            <p className="kpi-value" style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 'clamp(28px, 5vw, 42px)', fontWeight: 700, color: colors.success, marginBottom: '4px' }}>
+              548,573
+            </p>
+            <p style={{ color: colors.textSecondary, fontSize: '13px', marginBottom: '8px' }}>RSD (73.0%)</p>
+            <TrendIndicator value={4.7} suffix="margin" />
+          </div>
+
+          {/* Orders */}
+          <div>
+            <p style={{ color: colors.textMuted, fontSize: '11px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>
+              ORDERS
+            </p>
+            <p className="kpi-value" style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 'clamp(28px, 5vw, 42px)', fontWeight: 700, marginBottom: '4px' }}>
+              509
+            </p>
+            <p style={{ color: colors.textSecondary, fontSize: '13px', marginBottom: '8px' }}>transactions</p>
+            <TrendIndicator value={7.4} suffix="vs last Sun" />
+          </div>
+
+          {/* Rating */}
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+              <p style={{ color: colors.textMuted, fontSize: '11px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                AVG RATING
+              </p>
+            </div>
+            <p className="kpi-value" style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 'clamp(28px, 5vw, 42px)', fontWeight: 700, marginBottom: '4px' }}>
+              9.1
+            </p>
+            <p style={{ color: colors.textSecondary, fontSize: '14px', marginBottom: '8px' }}>out of 10</p>
+            <TrendIndicator value={7.1} suffix="vs last Sun" />
+          </div>
+        </div>
+
+        {/* Second row KPIs */}
+        <div className="six-col-grid" style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(6, 1fr)',
+          gap: '12px',
+          marginBottom: '24px',
+        }}>
+          {[
+            { icon: '🛒', label: 'AVG BASKET', value: '1,476', unit: 'RSD', trend: -4.3 },
+            { icon: '📦', label: 'ITEMS/ORDER', value: '1.82', trend: null },
+            { icon: '👤', label: 'NEW CUST', value: '154', subtext: '31.6%', trend: null },
+            { icon: '🔄', label: 'RETURNING', value: '333', subtext: '68.4%', trend: null },
+            { icon: '🚚', label: 'DELIVERY', value: '40.1', unit: 'min', trend: null, sim: true, warning: true },
+            { icon: '💰', label: 'MARGIN', value: '73.0%', subtext: '549K', trend: null },
+          ].map((kpi, i) => (
+            <div key={i} style={{
+              background: colors.card,
+              borderRadius: '12px',
+              border: `1px solid ${colors.border}`,
+              padding: 'clamp(12px, 2vw, 20px)',
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                <IconBox>{kpi.icon}</IconBox>
+                <div style={{ display: 'flex', gap: '4px' }}>
+                  {kpi.sim && <SimBadge />}
+                  {kpi.warning && <WarningBadge />}
+                </div>
+              </div>
+              <p style={{ color: colors.textMuted, fontSize: '9px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px' }}>
+                {kpi.label}
+              </p>
+              <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '28px', fontWeight: 700 }}>
+                {kpi.value}
+                {kpi.unit && <span style={{ fontSize: '14px', color: colors.textSecondary, marginLeft: '4px' }}>{kpi.unit}</span>}
+              </p>
+              {kpi.subtext && <p style={{ color: colors.textSecondary, fontSize: '12px' }}>{kpi.subtext}</p>}
+              {kpi.trend !== null && <TrendIndicator value={kpi.trend} />}
+            </div>
+          ))}
+        </div>
+
+        {/* Trend Overview */}
+        <div style={{
+          background: colors.card,
+          borderRadius: '16px',
+          border: `1px solid ${colors.border}`,
+          padding: 'clamp(20px, 4vw, 28px)',
+          marginBottom: '24px',
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <IconBox color="#F472B6">📈</IconBox>
+              <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '20px', fontWeight: 600 }}>
+                Trend Overview
+              </h2>
+            </div>
+            
+            {/* Dropdown Menu */}
+            <div style={{ position: 'relative' }}>
+              <button
+                onClick={() => setTrendDropdownOpen(!trendDropdownOpen)}
+                style={{
+                  background: colors.elevated,
+                  borderRadius: '8px',
+                  padding: '10px 16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  border: `1px solid ${colors.borderSubtle}`,
+                  cursor: 'pointer',
+                  minWidth: '160px',
+                  justifyContent: 'space-between',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: trendConfigs[trendMetric].color }} />
+                  <span style={{ color: colors.textSecondary, fontSize: '13px' }}>{trendConfigs[trendMetric].label}</span>
+                </div>
+                <span style={{ 
+                  color: colors.textMuted, 
+                  fontSize: '12px',
+                  transform: trendDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                  transition: 'transform 0.2s ease',
+                }}>
+                  ▼
+                </span>
+              </button>
+              
+              {/* Dropdown Options */}
+              {trendDropdownOpen && (
+                <div style={{
+                  position: 'absolute',
+                  top: '100%',
+                  right: 0,
+                  marginTop: '4px',
+                  background: colors.elevated,
+                  borderRadius: '10px',
+                  border: `1px solid ${colors.borderSubtle}`,
+                  overflow: 'hidden',
+                  zIndex: 100,
+                  minWidth: '160px',
+                  boxShadow: '0 10px 40px rgba(0,0,0,0.5)',
+                }}>
+                  {Object.entries(trendConfigs).map(([key, config]) => (
+                    <button
+                      key={key}
+                      onClick={() => {
+                        setTrendMetric(key);
+                        setTrendDropdownOpen(false);
+                      }}
+                      style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px',
+                        background: trendMetric === key ? `${config.color}20` : 'transparent',
+                        border: 'none',
+                        cursor: 'pointer',
+                        borderBottom: key !== 'rating' ? `1px solid ${colors.borderSubtle}` : 'none',
+                      }}
+                    >
+                      <span style={{ fontSize: '16px' }}>{config.icon}</span>
+                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: config.color }} />
+                      <span style={{ 
+                        color: trendMetric === key ? colors.textPrimary : colors.textSecondary, 
+                        fontSize: '13px',
+                        fontWeight: trendMetric === key ? 600 : 400,
+                      }}>
+                        {config.label}
+                      </span>
+                      {trendMetric === key && (
+                        <span style={{ marginLeft: 'auto', color: config.color, fontSize: '14px' }}>✓</span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Trend stats - Dynamic based on selected metric */}
+          <div className="trend-stats" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '16px', marginBottom: '24px' }}>
+            {[
+              { label: 'CURRENT', ...trendConfigs[trendMetric].stats.current },
+              { label: 'VS YESTERDAY', ...trendConfigs[trendMetric].stats.vsYesterday },
+              { label: 'VS LAST WEEK', ...trendConfigs[trendMetric].stats.vsLastWeek },
+              { label: '14-DAY AVG', ...trendConfigs[trendMetric].stats.avg14Day },
+              { label: 'RANGE', ...trendConfigs[trendMetric].stats.range },
+            ].map((stat, i) => (
+              <div key={i} style={{
+                background: colors.elevated,
+                borderRadius: '12px',
+                padding: '16px',
+              }}>
+                <p style={{ color: colors.textMuted, fontSize: '10px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>
+                  {stat.label}
+                </p>
+                <p style={{ 
+                  fontFamily: "'Space Grotesk', sans-serif", 
+                  fontSize: '24px', 
+                  fontWeight: 700, 
+                  color: stat.positive === true ? colors.success : stat.positive === false ? colors.error : colors.textPrimary 
+                }}>
+                  {stat.value}
+                </p>
+                <p style={{ color: colors.textMuted, fontSize: '12px' }}>{stat.subtext}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Chart - Dynamic based on selected metric */}
+          <ResponsiveContainer width="100%" height={280}>
+            <AreaChart data={trendData}>
+              <defs>
+                <linearGradient id="trendGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={trendConfigs[trendMetric].color} stopOpacity={0.3} />
+                  <stop offset="100%" stopColor={trendConfigs[trendMetric].color} stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke={colors.borderSubtle} vertical={false} />
+              <XAxis dataKey="date" tick={{ fill: colors.textMuted, fontSize: 11 }} axisLine={{ stroke: colors.borderSubtle }} tickLine={false} />
+              <YAxis 
+                tickFormatter={trendConfigs[trendMetric].format} 
+                tick={{ fill: colors.textMuted, fontSize: 11 }} 
+                axisLine={false} 
+                tickLine={false}
+                domain={trendMetric === 'rating' ? [8, 10] : ['auto', 'auto']}
+              />
+              <Tooltip content={<CustomTooltip />} />
+              <Area 
+                type="monotone" 
+                dataKey={trendConfigs[trendMetric].dataKey} 
+                stroke={trendConfigs[trendMetric].color} 
+                strokeWidth={2} 
+                fill="url(#trendGradient)" 
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+
+
+        {/* Profit Breakdown Section */}
+        <div style={{
+          background: colors.card,
+          borderRadius: '16px',
+          border: `1px solid ${colors.border}`,
+          padding: 'clamp(20px, 4vw, 28px)',
+          marginBottom: '24px',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <IconBox color="#22C55E">💰</IconBox>
+              <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '20px', fontWeight: 600 }}>
+                Profit Breakdown
+              </h2>
+            </div>
+            <span style={{ 
+              fontSize: '11px', 
+              color: colors.textMuted, 
+              background: colors.elevated, 
+              padding: '4px 10px', 
+              borderRadius: '6px' 
+            }}>
+              * Ops costs are daily estimates
+            </span>
+          </div>
+
+          {(() => {
+            // Revenue
+            const bruttoRevenue = 751471;
+            
+            // COGS (Food costs) - from margin calculation
+            const avgMargin = 71.5;
+            const cogs = bruttoRevenue * (1 - avgMargin / 100);
+            const grossProfit = bruttoRevenue * (avgMargin / 100);
+            
+            // Platform fee - 11%
+            const woltFeePercent = 11.0;
+            const woltFee = bruttoRevenue * (woltFeePercent / 100);
+            
+            // Operations costs (daily estimates)
+            const staffCost = 85000;
+            const rentCost = 25000;
+            const utilitiesCost = 12000;
+            const packagingCost = 15000;
+            const otherCost = 10000;
+            const totalOpsCost = staffCost + rentCost + utilitiesCost + packagingCost + otherCost;
+            
+            // EBITDA
+            const ebitda = grossProfit - woltFee - totalOpsCost;
+            const ebitdaMargin = (ebitda / bruttoRevenue) * 100;
+            
+            // Taxes (~15%)
+            const taxRate = 15;
+            const taxes = ebitda > 0 ? ebitda * (taxRate / 100) : 0;
+            
+            // Net profit
+            const netProfit = ebitda - taxes;
+            const netMargin = (netProfit / bruttoRevenue) * 100;
+            
+            return (
+              <div>
+                {/* Clean table layout */}
+                <div style={{ 
+                  background: colors.elevated, 
+                  borderRadius: '12px', 
+                  padding: '20px',
+                  marginBottom: '24px',
+                }}>
+                  {/* Header */}
+                  <div style={{ 
+                    display: 'grid', 
+                    gridTemplateColumns: '28px 1fr 130px 70px', 
+                    gap: '12px',
+                    paddingBottom: '12px',
+                    borderBottom: `1px solid ${colors.borderSubtle}`,
+                    marginBottom: '8px',
+                  }}>
+                    <span></span>
+                    <span style={{ color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase' }}>Item</span>
+                    <span style={{ color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase', textAlign: 'right' }}>Amount (RSD)</span>
+                    <span style={{ color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase', textAlign: 'right' }}>%</span>
+                  </div>
+                  
+                  {/* BRUTTO REVENUE */}
+                  <div style={{ 
+                    display: 'grid', 
+                    gridTemplateColumns: '28px 1fr 130px 70px', 
+                    gap: '12px',
+                    padding: '12px 0',
+                    background: `linear-gradient(90deg, ${colors.purple}20, transparent)`,
+                    margin: '0 -20px',
+                    paddingLeft: '20px',
+                    paddingRight: '20px',
+                  }}>
+                    <span style={{ fontSize: '16px' }}>💵</span>
+                    <span style={{ fontWeight: 700, fontSize: '14px' }}>BRUTTO REVENUE</span>
+                    <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '16px', textAlign: 'right', color: colors.purple }}>
+                      {bruttoRevenue.toLocaleString()}
+                    </span>
+                    <span style={{ fontWeight: 600, fontSize: '14px', textAlign: 'right' }}>100%</span>
+                  </div>
+                  
+                  {/* Food Cost */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '28px 1fr 130px 70px', gap: '12px', padding: '10px 0', borderBottom: `1px solid ${colors.borderSubtle}` }}>
+                    <span style={{ fontSize: '14px' }}>🥩</span>
+                    <span style={{ color: colors.textSecondary, fontSize: '13px' }}>Food Cost (COGS)</span>
+                    <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '14px', textAlign: 'right', color: colors.error }}>−{Math.round(cogs).toLocaleString()}</span>
+                    <span style={{ fontSize: '12px', textAlign: 'right', color: colors.textMuted }}>{(100 - avgMargin).toFixed(1)}%</span>
+                  </div>
+                  
+                  {/* GROSS PROFIT */}
+                  <div style={{ 
+                    display: 'grid', 
+                    gridTemplateColumns: '28px 1fr 130px 70px', 
+                    gap: '12px',
+                    padding: '12px 0',
+                    background: `linear-gradient(90deg, ${colors.success}15, transparent)`,
+                    margin: '0 -20px',
+                    paddingLeft: '20px',
+                    paddingRight: '20px',
+                  }}>
+                    <span style={{ fontSize: '14px' }}>📊</span>
+                    <span style={{ fontWeight: 600, fontSize: '13px', color: colors.success }}>= GROSS PROFIT</span>
+                    <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '15px', textAlign: 'right', color: colors.success }}>{Math.round(grossProfit).toLocaleString()}</span>
+                    <span style={{ fontWeight: 600, fontSize: '13px', textAlign: 'right', color: colors.success }}>{avgMargin.toFixed(1)}%</span>
+                  </div>
+                  
+                  {/* Separator */}
+                  <div style={{ height: '1px', background: colors.borderSubtle, margin: '4px 0' }} />
+                  
+                  {/* Wolt Fee */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '28px 1fr 130px 70px', gap: '12px', padding: '8px 0' }}>
+                    <span style={{ fontSize: '14px' }}>🛵</span>
+                    <span style={{ color: colors.textSecondary, fontSize: '13px' }}>Wolt Fee</span>
+                    <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '13px', textAlign: 'right', color: '#06B6D4' }}>−{Math.round(woltFee).toLocaleString()}</span>
+                    <span style={{ fontSize: '12px', textAlign: 'right', color: colors.textMuted }}>{woltFeePercent}%</span>
+                  </div>
+                  
+                  {/* Staff */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '28px 1fr 130px 70px', gap: '12px', padding: '8px 0' }}>
+                    <span style={{ fontSize: '14px' }}>👨‍🍳</span>
+                    <span style={{ color: colors.textSecondary, fontSize: '13px' }}>Staff *</span>
+                    <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '13px', textAlign: 'right', color: '#F97316' }}>−{staffCost.toLocaleString()}</span>
+                    <span style={{ fontSize: '12px', textAlign: 'right', color: colors.textMuted }}>{((staffCost / bruttoRevenue) * 100).toFixed(1)}%</span>
+                  </div>
+                  
+                  {/* Rent */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '28px 1fr 130px 70px', gap: '12px', padding: '8px 0' }}>
+                    <span style={{ fontSize: '14px' }}>🏠</span>
+                    <span style={{ color: colors.textSecondary, fontSize: '13px' }}>Rent *</span>
+                    <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '13px', textAlign: 'right', color: '#F97316' }}>−{rentCost.toLocaleString()}</span>
+                    <span style={{ fontSize: '12px', textAlign: 'right', color: colors.textMuted }}>{((rentCost / bruttoRevenue) * 100).toFixed(1)}%</span>
+                  </div>
+                  
+                  {/* Utilities */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '28px 1fr 130px 70px', gap: '12px', padding: '8px 0' }}>
+                    <span style={{ fontSize: '14px' }}>⚡</span>
+                    <span style={{ color: colors.textSecondary, fontSize: '13px' }}>Utilities *</span>
+                    <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '13px', textAlign: 'right', color: '#F97316' }}>−{utilitiesCost.toLocaleString()}</span>
+                    <span style={{ fontSize: '12px', textAlign: 'right', color: colors.textMuted }}>{((utilitiesCost / bruttoRevenue) * 100).toFixed(1)}%</span>
+                  </div>
+                  
+                  {/* Packaging */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '28px 1fr 130px 70px', gap: '12px', padding: '8px 0' }}>
+                    <span style={{ fontSize: '14px' }}>📦</span>
+                    <span style={{ color: colors.textSecondary, fontSize: '13px' }}>Packaging *</span>
+                    <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '13px', textAlign: 'right', color: '#F97316' }}>−{packagingCost.toLocaleString()}</span>
+                    <span style={{ fontSize: '12px', textAlign: 'right', color: colors.textMuted }}>{((packagingCost / bruttoRevenue) * 100).toFixed(1)}%</span>
+                  </div>
+                  
+                  {/* Other */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '28px 1fr 130px 70px', gap: '12px', padding: '8px 0', borderBottom: `1px solid ${colors.borderSubtle}` }}>
+                    <span style={{ fontSize: '14px' }}>📋</span>
+                    <span style={{ color: colors.textSecondary, fontSize: '13px' }}>Other (admin, insurance) *</span>
+                    <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '13px', textAlign: 'right', color: '#F97316' }}>−{otherCost.toLocaleString()}</span>
+                    <span style={{ fontSize: '12px', textAlign: 'right', color: colors.textMuted }}>{((otherCost / bruttoRevenue) * 100).toFixed(1)}%</span>
+                  </div>
+                  
+                  {/* EBITDA */}
+                  <div style={{ 
+                    display: 'grid', 
+                    gridTemplateColumns: '28px 1fr 130px 70px', 
+                    gap: '12px',
+                    padding: '12px 0',
+                    background: `linear-gradient(90deg, ${colors.warning}15, transparent)`,
+                    margin: '0 -20px',
+                    paddingLeft: '20px',
+                    paddingRight: '20px',
+                  }}>
+                    <span style={{ fontSize: '14px' }}>📈</span>
+                    <span style={{ fontWeight: 600, fontSize: '13px', color: colors.warning }}>= EBITDA</span>
+                    <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '15px', textAlign: 'right', color: colors.warning }}>{Math.round(ebitda).toLocaleString()}</span>
+                    <span style={{ fontWeight: 600, fontSize: '13px', textAlign: 'right', color: colors.warning }}>{ebitdaMargin.toFixed(1)}%</span>
+                  </div>
+                  
+                  {/* Taxes */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '28px 1fr 130px 70px', gap: '12px', padding: '8px 0', borderBottom: `1px solid ${colors.borderSubtle}` }}>
+                    <span style={{ fontSize: '14px' }}>🏛️</span>
+                    <span style={{ color: colors.textSecondary, fontSize: '13px' }}>Taxes (~{taxRate}%) *</span>
+                    <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '13px', textAlign: 'right', color: colors.error }}>−{Math.round(taxes).toLocaleString()}</span>
+                    <span style={{ fontSize: '12px', textAlign: 'right', color: colors.textMuted }}>{((taxes / bruttoRevenue) * 100).toFixed(1)}%</span>
+                  </div>
+                  
+                  {/* NET PROFIT */}
+                  <div style={{ 
+                    display: 'grid', 
+                    gridTemplateColumns: '28px 1fr 130px 70px', 
+                    gap: '12px',
+                    padding: '14px 0',
+                    background: `linear-gradient(90deg, ${colors.success}25, ${colors.success}05)`,
+                    margin: '8px -20px 0 -20px',
+                    paddingLeft: '20px',
+                    paddingRight: '20px',
+                    borderRadius: '0 0 8px 8px',
+                  }}>
+                    <span style={{ fontSize: '18px' }}>💰</span>
+                    <span style={{ fontWeight: 700, fontSize: '15px', color: colors.success }}>= NET PROFIT</span>
+                    <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '18px', textAlign: 'right', color: colors.success }}>{Math.round(netProfit).toLocaleString()}</span>
+                    <span style={{ fontWeight: 700, fontSize: '14px', textAlign: 'right', color: colors.success }}>{netMargin.toFixed(1)}%</span>
+                  </div>
+                </div>
+
+                {/* Summary cards */}
+                <div className="four-col-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
+                  <div style={{ background: colors.elevated, borderRadius: '12px', padding: 'clamp(12px, 2vw, 16px)', textAlign: 'center' }}>
+                    <p style={{ color: colors.textMuted, fontSize: '10px', marginBottom: '4px' }}>BRUTTO</p>
+                    <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 'clamp(16px, 3vw, 20px)', color: colors.purple }}>{(bruttoRevenue / 1000).toFixed(0)}K</p>
+                  </div>
+                  <div style={{ background: colors.elevated, borderRadius: '12px', padding: 'clamp(12px, 2vw, 16px)', textAlign: 'center' }}>
+                    <p style={{ color: colors.textMuted, fontSize: '10px', marginBottom: '4px' }}>GROSS</p>
+                    <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 'clamp(16px, 3vw, 20px)', color: colors.success }}>{(grossProfit / 1000).toFixed(0)}K</p>
+                    <p style={{ color: colors.textMuted, fontSize: '9px' }}>{avgMargin.toFixed(0)}%</p>
+                  </div>
+                  <div style={{ background: colors.elevated, borderRadius: '12px', padding: 'clamp(12px, 2vw, 16px)', textAlign: 'center' }}>
+                    <p style={{ color: colors.textMuted, fontSize: '10px', marginBottom: '4px' }}>EBITDA</p>
+                    <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 'clamp(16px, 3vw, 20px)', color: colors.warning }}>{(ebitda / 1000).toFixed(0)}K</p>
+                    <p style={{ color: colors.textMuted, fontSize: '9px' }}>{ebitdaMargin.toFixed(0)}%</p>
+                  </div>
+                  <div style={{ 
+                    background: `linear-gradient(135deg, ${colors.success}25, ${colors.success}10)`,
+                    borderRadius: '12px', 
+                    padding: 'clamp(12px, 2vw, 16px)',
+                    textAlign: 'center',
+                    border: `2px solid ${colors.success}60`,
+                  }}>
+                    <p style={{ color: colors.success, fontSize: '10px', marginBottom: '4px', fontWeight: 600 }}>NET 💰</p>
+                    <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 'clamp(18px, 3vw, 22px)', color: colors.success }}>{(netProfit / 1000).toFixed(0)}K</p>
+                    <p style={{ color: colors.success, fontSize: '10px', fontWeight: 500 }}>{netMargin.toFixed(1)}%</p>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+        </div>
+
+        {/* Channel Mix */}
+        <div style={{
+          background: colors.card,
+          borderRadius: '16px',
+          border: `1px solid ${colors.border}`,
+          padding: 'clamp(20px, 4vw, 28px)',
+          marginBottom: '24px',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+            <IconBox color="#22C55E">📊</IconBox>
+            <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '20px', fontWeight: 600 }}>
+              Channel Mix
+            </h2>
+          </div>
+
+          {/* Revenue by Channel bar */}
+          <div style={{ marginBottom: '24px' }}>
+            <p style={{ color: colors.textSecondary, fontSize: '12px', marginBottom: '12px' }}>Revenue by Channel</p>
+            <div style={{
+              height: '48px',
+              borderRadius: '12px',
+              overflow: 'hidden',
+              background: colors.elevated,
+              display: 'flex',
+            }}>
+              <div style={{
+                width: '100%',
+                background: 'linear-gradient(90deg, #06B6D4, #22D3EE)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
+                <span style={{ fontWeight: 600, fontSize: '14px', color: '#0D0B14' }}>Wolt 100%</span>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '24px', marginTop: '12px' }}>
+              {[
+                { color: '#06B6D4', label: 'Wolt', pct: '100%' },
+                { color: '#F59E0B', label: 'Collina.rs', pct: '0%' },
+                { color: '#EF4444', label: 'Food Truck', pct: '0%' },
+                { color: '#22C55E', label: 'In-Store', pct: '0%' },
+              ].map((channel, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: channel.color }} />
+                  <span style={{ color: colors.textSecondary, fontSize: '12px' }}>{channel.label} ({channel.pct})</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Channel table */}
+          <div style={{ marginBottom: '24px' }}>
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr 1fr', 
+              gap: '16px',
+              padding: '12px 0',
+              borderBottom: `1px solid ${colors.borderSubtle}`,
+            }}>
+              <span style={{ color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase' }}>CHANNEL</span>
+              <span style={{ color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase', textAlign: 'right' }}>ORDERS</span>
+              <span style={{ color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase', textAlign: 'right' }}>REVENUE</span>
+              <span style={{ color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase', textAlign: 'right' }}>AVG BASKET</span>
+              <span style={{ color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase', textAlign: 'right' }}>FEE %</span>
+              <span style={{ color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase', textAlign: 'right' }}>NET REVENUE</span>
+            </div>
+            
+            {[
+              { channel: 'Wolt', color: '#06B6D4', orders: 509, revenue: '751K', basket: '1,476 RSD', fee: '18.77%', feeColor: colors.error, netRevenue: '610K', netColor: colors.success },
+              { channel: 'Collina.rs', color: '#F59E0B', orders: '-', revenue: '-', basket: '-', fee: '3.5%', feeColor: colors.success, netRevenue: '-', netColor: colors.textMuted },
+              { channel: 'Food Truck', color: '#EF4444', orders: '-', revenue: '-', basket: '-', fee: '0%', feeColor: colors.success, netRevenue: '-', netColor: colors.textMuted },
+              { channel: 'In-Store', color: '#22C55E', orders: '-', revenue: '-', basket: '-', fee: '0%', feeColor: colors.success, netRevenue: '-', netColor: colors.textMuted },
+            ].map((row, i) => (
+              <div key={i} style={{ 
+                display: 'grid', 
+                gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr 1fr', 
+                gap: '16px',
+                padding: '16px 0',
+                borderBottom: i < 3 ? `1px solid ${colors.borderSubtle}` : 'none',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: row.color }} />
+                  <span style={{ fontSize: '14px', fontWeight: 500 }}>{row.channel}</span>
+                </div>
+                <span style={{ fontSize: '14px', textAlign: 'right', color: row.orders === '-' ? colors.textMuted : colors.textPrimary }}>
+                  {row.orders}
+                </span>
+                <span style={{ 
+                  fontFamily: "'Space Grotesk', sans-serif", 
+                  fontWeight: 600, 
+                  fontSize: '14px', 
+                  textAlign: 'right',
+                  color: row.revenue === '-' ? colors.textMuted : colors.textPrimary,
+                }}>
+                  {row.revenue}
+                </span>
+                <span style={{ fontSize: '14px', textAlign: 'right', color: row.basket === '-' ? colors.textMuted : colors.textSecondary }}>
+                  {row.basket}
+                </span>
+                <span style={{ fontSize: '14px', textAlign: 'right', fontWeight: 500, color: row.feeColor }}>
+                  {row.fee}
+                </span>
+                <span style={{ 
+                  fontFamily: "'Space Grotesk', sans-serif", 
+                  fontWeight: 600, 
+                  fontSize: '14px', 
+                  textAlign: 'right',
+                  color: row.netColor,
+                }}>
+                  {row.netRevenue}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          {/* Insight */}
+          <div style={{
+            background: 'rgba(34, 197, 94, 0.1)',
+            borderRadius: '12px',
+            padding: '16px 20px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+          }}>
+            <span style={{ fontSize: '18px' }}>💡</span>
+            <p style={{ fontSize: '13px', color: colors.textSecondary }}>
+              Moving 10% of orders from Wolt → Collina.rs saves <span style={{ color: colors.success, fontWeight: 600 }}>~130,000 RSD/month</span> in fees
+            </p>
+          </div>
+        </div>
+
+        {/* Revenue by Location */}
+        <div style={{
+          background: colors.card,
+          borderRadius: '16px',
+          border: `1px solid ${colors.border}`,
+          padding: 'clamp(20px, 4vw, 28px)',
+          marginBottom: '24px',
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <IconBox color="#34D399">📍</IconBox>
+              <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '20px', fontWeight: 600 }}>
+                Revenue & Orders by Location
+              </h2>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ width: '12px', height: '12px', borderRadius: '3px', background: colors.purple }} />
+                <span style={{ color: colors.textMuted, fontSize: '12px' }}>Today (Dec 7)</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ width: '12px', height: '12px', borderRadius: '3px', background: 'rgba(255, 255, 255, 0.25)' }} />
+                <span style={{ color: colors.textMuted, fontSize: '12px' }}>Last Sun (Nov 30)</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ width: '2px', height: '12px', background: 'rgba(255, 255, 255, 0.5)' }} />
+                <span style={{ color: colors.textMuted, fontSize: '12px' }}>LW marker</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Horizontal bar comparison */}
+          <div style={{ marginBottom: '32px' }}>
+            {[
+              { name: 'Vračar', revenue: 411703, lastWeekRev: 379346, orders: 279, lastWeekOrd: 251, color: '#8B5CF6' },
+              { name: 'Banovo Brdo', revenue: 158598, lastWeekRev: 169126, orders: 106, lastWeekOrd: 112, color: '#F59E0B' },
+              { name: 'Novi Beograd', revenue: 150129, lastWeekRev: 127775, orders: 99, lastWeekOrd: 86, color: '#22C55E' },
+              { name: 'Kuhinjica', revenue: 23090, lastWeekRev: 24610, orders: 16, lastWeekOrd: 18, color: '#818CF8' },
+              { name: 'Pekarica', revenue: 7951, lastWeekRev: 6959, orders: 9, lastWeekOrd: 7, color: '#EC4899' },
+            ].map((loc, i) => {
+              const maxRevenue = 450000;
+              const maxOrders = 300;
+              const currentRevWidth = (loc.revenue / maxRevenue) * 100;
+              const lastWeekRevWidth = (loc.lastWeekRev / maxRevenue) * 100;
+              const currentOrdWidth = (loc.orders / maxOrders) * 100;
+              const lastWeekOrdWidth = (loc.lastWeekOrd / maxOrders) * 100;
+              const revTrend = ((loc.revenue - loc.lastWeekRev) / loc.lastWeekRev * 100).toFixed(1);
+              const ordTrend = ((loc.orders - loc.lastWeekOrd) / loc.lastWeekOrd * 100).toFixed(1);
+              const isRevPositive = parseFloat(revTrend) >= 0;
+              const isOrdPositive = parseFloat(ordTrend) >= 0;
+              
+              return (
+                <div key={i} style={{ marginBottom: '24px' }}>
+                  {/* Location header row */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <span style={{ 
+                        width: '10px', 
+                        height: '10px', 
+                        borderRadius: '50%', 
+                        background: loc.color,
+                      }} />
+                      <span style={{ fontSize: '15px', fontWeight: 600, minWidth: '120px' }}>{loc.name}</span>
+                    </div>
+                  </div>
+                  
+                  {/* Revenue row */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+                    <span style={{ color: colors.textMuted, fontSize: '11px', width: '60px' }}>Revenue</span>
+                    <div style={{ flex: 1, position: 'relative', height: '28px' }}>
+                      {/* Background track */}
+                      <div style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        height: '100%',
+                        background: colors.elevated,
+                        borderRadius: '6px',
+                      }} />
+                      
+                      {/* Last week bar (gray, behind) */}
+                      <div style={{
+                        position: 'absolute',
+                        top: '4px',
+                        left: 0,
+                        width: `${lastWeekRevWidth}%`,
+                        height: '20px',
+                        background: 'rgba(255, 255, 255, 0.15)',
+                        borderRadius: '5px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'flex-end',
+                        paddingRight: '8px',
+                      }}>
+                        <span style={{ 
+                          fontSize: '10px', 
+                          color: 'rgba(255,255,255,0.6)',
+                          fontWeight: 500,
+                        }}>
+                          LW: {(loc.lastWeekRev / 1000).toFixed(0)}K
+                        </span>
+                      </div>
+                      
+                      {/* Current week bar (colored, front) */}
+                      <div style={{
+                        position: 'absolute',
+                        top: '4px',
+                        left: 0,
+                        width: `${currentRevWidth}%`,
+                        height: '20px',
+                        background: `linear-gradient(90deg, ${loc.color}, ${loc.color}CC)`,
+                        borderRadius: '5px',
+                        boxShadow: `0 0 12px ${loc.color}40`,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'flex-end',
+                        paddingRight: '8px',
+                      }}>
+                        {currentRevWidth > 12 && (
+                          <span style={{ fontSize: '11px', fontWeight: 600, color: 'white' }}>
+                            {(loc.revenue / 1000).toFixed(0)}K
+                          </span>
+                        )}
+                      </div>
+                      
+                      {/* Last week marker line */}
+                      {lastWeekRevWidth > 0 && (
+                        <div style={{
+                          position: 'absolute',
+                          top: '0px',
+                          left: `${lastWeekRevWidth}%`,
+                          width: '2px',
+                          height: '28px',
+                          background: 'rgba(255, 255, 255, 0.5)',
+                          borderRadius: '1px',
+                        }} />
+                      )}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: '140px', justifyContent: 'flex-end' }}>
+                      <span style={{ 
+                        fontFamily: "'Space Grotesk', sans-serif", 
+                        fontWeight: 700, 
+                        fontSize: '16px',
+                      }}>
+                        {(loc.revenue / 1000).toFixed(0)}K
+                      </span>
+                      <span style={{
+                        background: isRevPositive ? 'rgba(34, 197, 94, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                        color: isRevPositive ? colors.success : colors.error,
+                        padding: '3px 8px',
+                        borderRadius: '10px',
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        minWidth: '60px',
+                        textAlign: 'center',
+                      }}>
+                        {isRevPositive ? '↗' : '↘'} {Math.abs(parseFloat(revTrend))}%
+                      </span>
+                    </div>
+                  </div>
+                  
+                  {/* Orders row */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <span style={{ color: colors.textMuted, fontSize: '11px', width: '60px' }}>Orders</span>
+                    <div style={{ flex: 1, position: 'relative', height: '24px' }}>
+                      {/* Background track */}
+                      <div style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        height: '100%',
+                        background: colors.elevated,
+                        borderRadius: '5px',
+                      }} />
+                      
+                      {/* Last week bar (gray, behind) */}
+                      <div style={{
+                        position: 'absolute',
+                        top: '4px',
+                        left: 0,
+                        width: `${lastWeekOrdWidth}%`,
+                        height: '16px',
+                        background: 'rgba(255, 255, 255, 0.15)',
+                        borderRadius: '4px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'flex-end',
+                        paddingRight: '6px',
+                      }}>
+                        <span style={{ 
+                          fontSize: '9px', 
+                          color: 'rgba(255,255,255,0.6)',
+                          fontWeight: 500,
+                        }}>
+                          LW: {loc.lastWeekOrd}
+                        </span>
+                      </div>
+                      
+                      {/* Current week bar (colored, front) */}
+                      <div style={{
+                        position: 'absolute',
+                        top: '4px',
+                        left: 0,
+                        width: `${currentOrdWidth}%`,
+                        height: '16px',
+                        background: `linear-gradient(90deg, ${colors.info}, ${colors.info}CC)`,
+                        borderRadius: '4px',
+                        boxShadow: `0 0 10px ${colors.info}30`,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'flex-end',
+                        paddingRight: '6px',
+                      }}>
+                        {currentOrdWidth > 15 && (
+                          <span style={{ fontSize: '10px', fontWeight: 600, color: 'white' }}>
+                            {loc.orders}
+                          </span>
+                        )}
+                      </div>
+                      
+                      {/* Last week marker line */}
+                      {lastWeekOrdWidth > 0 && (
+                        <div style={{
+                          position: 'absolute',
+                          top: '0px',
+                          left: `${lastWeekOrdWidth}%`,
+                          width: '2px',
+                          height: '24px',
+                          background: 'rgba(255, 255, 255, 0.5)',
+                          borderRadius: '1px',
+                        }} />
+                      )}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: '140px', justifyContent: 'flex-end' }}>
+                      <span style={{ 
+                        fontFamily: "'Space Grotesk', sans-serif", 
+                        fontWeight: 600, 
+                        fontSize: '14px',
+                        color: colors.textSecondary,
+                      }}>
+                        {loc.orders} ord
+                      </span>
+                      <span style={{
+                        background: isOrdPositive ? 'rgba(34, 197, 94, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                        color: isOrdPositive ? colors.success : colors.error,
+                        padding: '3px 8px',
+                        borderRadius: '10px',
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        minWidth: '60px',
+                        textAlign: 'center',
+                      }}>
+                        {isOrdPositive ? '↗' : '↘'} {Math.abs(parseFloat(ordTrend))}%
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Summary row */}
+          <div style={{ 
+            background: colors.elevated, 
+            borderRadius: '10px', 
+            padding: '16px 20px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: '24px',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '14px', color: colors.textSecondary }}>Total vs Last Sunday:</span>
+            </div>
+            <div style={{ display: 'flex', gap: '24px' }}>
+              <div style={{ textAlign: 'right' }}>
+                <span style={{ color: colors.textMuted, fontSize: '11px', display: 'block' }}>Revenue</span>
+                <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '18px' }}>751K</span>
+                <span style={{ 
+                  marginLeft: '8px',
+                  color: colors.success,
+                  fontSize: '12px',
+                  fontWeight: 600,
+                }}>↗ +6.2%</span>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <span style={{ color: colors.textMuted, fontSize: '11px', display: 'block' }}>Orders</span>
+                <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '18px' }}>509</span>
+                <span style={{ 
+                  marginLeft: '8px',
+                  color: colors.success,
+                  fontSize: '12px',
+                  fontWeight: 600,
+                }}>↗ +7.4%</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Venue breakdown table */}
+          <div className="venue-table" style={{ background: colors.elevated, borderRadius: '12px', padding: '20px' }}>
+            <p style={{ color: colors.textSecondary, fontSize: '12px', marginBottom: '16px' }}>Venue Breakdown</p>
+            <div className="venue-grid" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr', gap: '8px', marginBottom: '8px' }}>
+              <span style={{ color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase' }}>Venue</span>
+              <span style={{ color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase', textAlign: 'right' }}>Revenue</span>
+              <span style={{ color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase', textAlign: 'right' }}>Orders</span>
+              <span style={{ color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase', textAlign: 'right' }}>Avg Basket</span>
+              <span style={{ color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase', textAlign: 'right' }}>Rating</span>
+            </div>
+            {[
+              { venue: 'Collina Burgers Vračar', revenue: 248657, orders: 158, basket: 1574, rating: 9.2, color: '#8B5CF6' },
+              { venue: 'SMASH Burgers Vračar', revenue: 126686, orders: 92, basket: 1377, rating: 9.1, color: '#A78BFA' },
+              { venue: 'Collina Burgers Banovo Brdo', revenue: 110308, orders: 69, basket: 1599, rating: 10.0, color: '#F59E0B' },
+              { venue: 'Collina Burgers Novi Beograd', revenue: 103557, orders: 64, basket: 1618, rating: 7.8, color: '#22C55E', warning: true },
+              { venue: 'SMASH Burgers Novi Beograd', revenue: 41682, orders: 30, basket: 1389, rating: 10.0, color: '#4ADE80' },
+              { venue: 'SMASH Burgers Banovo Brdo', revenue: 30455, orders: 23, basket: 1324, rating: 9.8, color: '#FBBF24' },
+              { venue: 'Pancakes Vračar', revenue: 26915, orders: 23, basket: 1170, rating: 10.0, color: '#C084FC' },
+              { venue: 'Kuhinjica Vračar', revenue: 23090, orders: 16, basket: 1443, rating: null, color: '#818CF8' },
+              { venue: 'Pancakes Banovo Brdo', revenue: 17835, orders: 14, basket: 1274, rating: null, color: '#FB923C' },
+              { venue: 'Girosito Vračar', revenue: 9445, orders: 6, basket: 1574, rating: 8.0, color: '#F472B6' },
+              { venue: 'Pekarica Collina', revenue: 7951, orders: 9, basket: 883, rating: null, color: '#EC4899' },
+              { venue: 'Pancakes Novi Beograd', revenue: 4890, orders: 5, basket: 978, rating: null, color: '#34D399' },
+            ].map((v, i) => (
+              <div key={i} className="venue-grid" style={{
+                display: 'grid',
+                gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr',
+                gap: '8px',
+                padding: '12px 0',
+                borderBottom: i < 11 ? `1px solid ${colors.borderSubtle}` : 'none',
+                background: v.warning ? 'rgba(239, 68, 68, 0.1)' : 'transparent',
+                margin: v.warning ? '0 -20px' : '0',
+                padding: v.warning ? '12px 20px' : '12px 0',
+                borderRadius: v.warning ? '8px' : '0',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: v.color, flexShrink: 0 }} />
+                  <span className="venue-name" style={{ fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{v.venue}</span>
+                </div>
+                <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '13px', textAlign: 'right' }}>
+                  {(v.revenue / 1000).toFixed(0)}K
+                </span>
+                <span style={{ color: colors.textSecondary, fontSize: '13px', textAlign: 'right' }}>{v.orders}</span>
+                <span style={{ color: colors.textSecondary, fontSize: '13px', textAlign: 'right' }}>{v.basket.toLocaleString()}</span>
+                <span style={{ 
+                  fontWeight: 600, 
+                  fontSize: '13px', 
+                  textAlign: 'right',
+                  color: v.rating === null ? colors.textMuted : v.rating >= 9.5 ? colors.success : v.rating >= 8.5 ? colors.warning : colors.error,
+                }}>
+                  {v.rating !== null ? `${v.rating}/10` : '—'}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Category Performance */}
+        <div style={{
+          background: colors.card,
+          borderRadius: '16px',
+          border: `1px solid ${colors.border}`,
+          padding: 'clamp(20px, 4vw, 28px)',
+          marginBottom: '24px',
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <IconBox color="#F59E0B">🥧</IconBox>
+              <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '20px', fontWeight: 600 }}>
+                Category Performance
+              </h2>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ width: '12px', height: '12px', borderRadius: '3px', background: colors.purple }} />
+                <span style={{ color: colors.textMuted, fontSize: '12px' }}>Revenue</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ width: '12px', height: '12px', borderRadius: '3px', background: colors.success }} />
+                <span style={{ color: colors.textMuted, fontSize: '12px' }}>Margin</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Horizontal bar comparison */}
+          <div style={{ marginBottom: '24px' }}>
+            {[
+              { name: 'Burgers', revenue: 355000, mix: 47.3, margin: 71.2, trend: 2.3, color: '#EF4444', icon: '🍔' },
+              { name: 'Pancakes', revenue: 79500, mix: 10.6, margin: 80.4, trend: 8.1, color: '#F59E0B', icon: '🥞' },
+              { name: 'Cooked Meals', revenue: 45678, mix: 6.1, margin: 82.5, trend: 1.2, color: '#22C55E', icon: '🍲' },
+              { name: 'Sides', revenue: 28618, mix: 3.8, margin: 86.0, trend: 1.5, color: '#06B6D4', icon: '🍟' },
+              { name: 'Bakery', revenue: 11424, mix: 1.5, margin: 81.2, trend: 0.5, color: '#EC4899', icon: '🥐' },
+              { name: 'Other', revenue: 10881, mix: 1.4, margin: 75.0, trend: -1.8, color: '#8B5CF6', icon: '📦' },
+            ].map((cat, i) => {
+              const maxRevenue = 400000;
+              const revenueWidth = (cat.revenue / maxRevenue) * 100;
+              const isPositive = cat.trend >= 0;
+              
+              return (
+                <div key={i} style={{ marginBottom: '20px' }}>
+                  {/* Category header row */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <span style={{ fontSize: '20px' }}>{cat.icon}</span>
+                      <span style={{ fontSize: '14px', fontWeight: 500, minWidth: '100px' }}>{cat.name}</span>
+                      <span style={{ 
+                        color: colors.textMuted, 
+                        fontSize: '12px',
+                        background: colors.elevated,
+                        padding: '4px 10px',
+                        borderRadius: '12px',
+                      }}>
+                        {cat.mix}% mix
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ color: colors.success, fontSize: '13px', fontWeight: 600 }}>
+                          {cat.margin}% margin
+                        </span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ 
+                          fontFamily: "'Space Grotesk', sans-serif", 
+                          fontWeight: 700, 
+                          fontSize: '18px',
+                          minWidth: '70px',
+                          textAlign: 'right',
+                        }}>
+                          {(cat.revenue / 1000).toFixed(0)}K
+                        </span>
+                        <span style={{
+                          background: isPositive ? 'rgba(34, 197, 94, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                          color: isPositive ? colors.success : colors.error,
+                          padding: '4px 10px',
+                          borderRadius: '12px',
+                          fontSize: '12px',
+                          fontWeight: 600,
+                          minWidth: '65px',
+                          textAlign: 'center',
+                        }}>
+                          {isPositive ? '↗' : '↘'} {Math.abs(cat.trend)}%
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Revenue bar */}
+                  <div style={{ position: 'relative', height: '32px' }}>
+                    {/* Background track */}
+                    <div style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      height: '100%',
+                      background: colors.elevated,
+                      borderRadius: '8px',
+                    }} />
+                    
+                    {/* Revenue bar */}
+                    <div style={{
+                      position: 'absolute',
+                      top: '4px',
+                      left: 0,
+                      width: `${revenueWidth}%`,
+                      height: '24px',
+                      background: `linear-gradient(90deg, ${cat.color}, ${cat.color}CC)`,
+                      borderRadius: '6px',
+                      boxShadow: `0 0 20px ${cat.color}40`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'flex-end',
+                      paddingRight: '12px',
+                      transition: 'width 0.5s ease',
+                    }}>
+                      {revenueWidth > 15 && (
+                        <span style={{ fontSize: '11px', fontWeight: 600, color: 'white' }}>
+                          {(cat.revenue / 1000).toFixed(0)}K RSD
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Trends insight */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div style={{
+              background: 'rgba(34, 197, 94, 0.1)',
+              borderRadius: '10px',
+              padding: '14px 18px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+            }}>
+              <span style={{ fontSize: '18px' }}>📈</span>
+              <span style={{ fontSize: '13px', color: colors.success }}>Rising: Pancakes +8.1%, Sides +1.5%, Burgers +2.3%</span>
+            </div>
+            <div style={{
+              background: 'rgba(239, 68, 68, 0.1)',
+              borderRadius: '10px',
+              padding: '14px 18px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+            }}>
+              <span style={{ fontSize: '18px' }}>📉</span>
+              <span style={{ fontSize: '13px', color: colors.error }}>Declining: Other -1.8%</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Products */}
+        <div style={{
+          background: colors.card,
+          borderRadius: '16px',
+          border: `1px solid ${colors.border}`,
+          padding: 'clamp(20px, 4vw, 28px)',
+          marginBottom: '24px',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+            <IconBox color="#FB923C">📦</IconBox>
+            <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '20px', fontWeight: 600 }}>
+              Top Products
+            </h2>
+          </div>
+
+          <div>
+            {/* Header row */}
+            <div className="product-grid hide-mobile" style={{ 
+              display: 'grid', 
+              gridTemplateColumns: '40px 1fr 80px 100px 100px 80px', 
+              gap: '16px',
+              padding: '0 16px 12px 16px',
+              borderBottom: `1px solid ${colors.borderSubtle}`,
+              marginBottom: '8px',
+            }}>
+              <span style={{ color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase' }}>#</span>
+              <span style={{ color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase' }}>Product</span>
+              <span className="product-details" style={{ color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase', textAlign: 'center' }}>Rating</span>
+              <span style={{ color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase', textAlign: 'right' }}>Revenue</span>
+              <span className="product-details" style={{ color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase', textAlign: 'right' }}>Profit</span>
+              <span className="product-details" style={{ color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase', textAlign: 'right' }}>Margin</span>
+            </div>
+            
+            {topProducts.map((product, i) => {
+              const profit = Math.round(product.revenue * (product.margin / 100));
+              const ratingChange = product.ratingLW ? (product.rating - product.ratingLW).toFixed(1) : null;
+              return (
+                <div key={i} className="product-grid" style={{
+                  background: i < 4 ? colors.elevated : 'transparent',
+                  borderRadius: '12px',
+                  padding: '16px',
+                  marginBottom: '8px',
+                  display: 'grid',
+                  gridTemplateColumns: '40px 1fr 80px 100px 100px 80px',
+                  gap: '16px',
+                  alignItems: 'center',
+                  border: i >= 4 ? `1px solid ${colors.borderSubtle}` : 'none',
+                }}>
+                  {/* Rank */}
+                  <span style={{
+                    width: '28px',
+                    height: '28px',
+                    borderRadius: '50%',
+                    background: i < 3 ? colors.purple : colors.elevated,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    flexShrink: 0,
+                  }}>
+                    {product.rank}
+                  </span>
+                  
+                  {/* Product info */}
+                  <div style={{ minWidth: 0 }}>
+                    <p className="product-name" style={{ fontSize: '13px', fontWeight: 500, marginBottom: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{product.name}</p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                      <span style={{ color: colors.textMuted, fontSize: '11px' }}>{product.qty} sold</span>
+                      <span style={{ color: colors.textMuted, fontSize: '11px' }}>{product.pctSales}% sales</span>
+                      <span style={{ color: product.rating >= 9 ? colors.success : colors.warning, fontSize: '11px', fontWeight: 600 }}>{product.rating}⭐</span>
+                    </div>
+                  </div>
+                  
+                  {/* Rating with LW comparison - hidden on mobile */}
+                  <div className="product-details" style={{ textAlign: 'center' }}>
+                    {product.rating ? (
+                      <>
+                        <p style={{ 
+                          fontFamily: "'Space Grotesk', sans-serif", 
+                          fontWeight: 700, 
+                          fontSize: '16px',
+                          color: product.rating >= 9 ? colors.success : product.rating >= 8 ? colors.warning : colors.error,
+                        }}>
+                          {product.rating}⭐
+                        </p>
+                        {product.ratingLW ? (
+                          <p style={{ 
+                            fontSize: '10px',
+                            color: ratingChange > 0 ? colors.success : ratingChange < 0 ? colors.error : colors.textMuted,
+                            marginTop: '2px',
+                          }}>
+                            LW: {product.ratingLW} {ratingChange > 0 ? '↑' : ratingChange < 0 ? '↓' : ''}
+                          </p>
+                        ) : (
+                          <p style={{ fontSize: '10px', color: colors.textMuted, marginTop: '2px' }}>new</p>
+                        )}
+                      </>
+                    ) : (
+                      <span style={{ color: colors.textMuted, fontSize: '12px' }}>—</span>
+                    )}
+                  </div>
+                  
+                  {/* Revenue */}
+                  <div style={{ textAlign: 'right' }}>
+                    <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '16px' }}>
+                      {(product.revenue / 1000).toFixed(0)}K
+                    </p>
+                    <p style={{ color: colors.textMuted, fontSize: '10px' }}>RSD</p>
+                  </div>
+                  
+                  {/* Profit - hidden on mobile */}
+                  <div className="product-details" style={{ textAlign: 'right' }}>
+                    <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '16px', color: colors.success }}>
+                      {(profit / 1000).toFixed(0)}K
+                    </p>
+                    <p style={{ color: colors.textMuted, fontSize: '10px' }}>RSD</p>
+                  </div>
+                  
+                  {/* Margin - hidden on mobile */}
+                  <div className="product-details" style={{ textAlign: 'right' }}>
+                    <p style={{ 
+                      fontFamily: "'Space Grotesk', sans-serif", 
+                      fontWeight: 700, 
+                      fontSize: '16px', 
+                      color: product.margin < 60 ? colors.error : product.margin >= 75 ? colors.success : colors.warning,
+                    }}>
+                      {product.margin}%
+                    </p>
+                    <p style={{ color: colors.textMuted, fontSize: '10px' }}>margin</p>
+                  </div>
+                </div>
+              );
+            })}
+            
+            {/* Totals row */}
+            <div className="product-grid" style={{
+              background: `linear-gradient(90deg, ${colors.purple}20, ${colors.purple}10)`,
+              borderRadius: '12px',
+              padding: '16px',
+              marginTop: '16px',
+              display: 'grid',
+              gridTemplateColumns: '40px 1fr 80px 100px 100px 80px',
+              gap: '16px',
+              alignItems: 'center',
+              border: `1px solid ${colors.purple}40`,
+            }}>
+              <span style={{ fontSize: '16px' }}>Σ</span>
+              <div style={{ minWidth: 0 }}>
+                <p style={{ fontSize: '13px', fontWeight: 600, color: colors.purpleLight }}>Top 8 Products Total</p>
+                <p style={{ color: colors.textMuted, fontSize: '11px' }}>87% of all sales</p>
+              </div>
+              <div className="product-details" style={{ textAlign: 'center' }}>
+                <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '13px', color: colors.success }}>
+                  9.2 avg
+                </p>
+                <p style={{ color: colors.textMuted, fontSize: '10px' }}>rating</p>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '16px' }}>
+                  {(topProducts.reduce((sum, p) => sum + p.revenue, 0) / 1000).toFixed(0)}K
+                </p>
+                <p style={{ color: colors.textMuted, fontSize: '10px' }}>RSD</p>
+              </div>
+              <div className="product-details" style={{ textAlign: 'right' }}>
+                <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '16px', color: colors.success }}>
+                  {(topProducts.reduce((sum, p) => sum + Math.round(p.revenue * (p.margin / 100)), 0) / 1000).toFixed(0)}K
+                </p>
+                <p style={{ color: colors.textMuted, fontSize: '10px' }}>RSD</p>
+              </div>
+              <div className="product-details" style={{ textAlign: 'right' }}>
+                <p style={{ 
+                  fontFamily: "'Space Grotesk', sans-serif", 
+                  fontWeight: 700, 
+                  fontSize: '16px', 
+                  color: colors.warning,
+                }}>
+                  {(topProducts.reduce((sum, p) => sum + Math.round(p.revenue * (p.margin / 100)), 0) / topProducts.reduce((sum, p) => sum + p.revenue, 0) * 100).toFixed(1)}%
+                </p>
+                <p style={{ color: colors.textMuted, fontSize: '10px' }}>avg margin</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Two column section: Revenue Analytics & Day of Week */}
+        <div className="two-col-grid" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px', marginBottom: '24px' }}>
+          
+          {/* Hourly Analysis */}
+          <div style={{
+            background: colors.card,
+            borderRadius: '16px',
+            border: `1px solid ${colors.border}`,
+            padding: 'clamp(16px, 3vw, 28px)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+              <IconBox color="#F87171">⏰</IconBox>
+              <h2 className="section-title" style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '18px', fontWeight: 600 }}>
+                Hourly Analysis
+              </h2>
+            </div>
+
+            <ResponsiveContainer width="100%" height={200}>
+              <ComposedChart data={hourlyData}>
+                <CartesianGrid strokeDasharray="3 3" stroke={colors.borderSubtle} vertical={false} />
+                <XAxis dataKey="hour" tick={{ fill: colors.textMuted, fontSize: 9 }} axisLine={{ stroke: colors.borderSubtle }} tickLine={false} />
+                <YAxis yAxisId="left" tick={{ fill: colors.textMuted, fontSize: 9 }} axisLine={false} tickLine={false} />
+                <YAxis yAxisId="right" orientation="right" tick={{ fill: colors.textMuted, fontSize: 9 }} axisLine={false} tickLine={false} />
+                <Tooltip content={<CustomTooltip />} />
+                <Bar yAxisId="left" dataKey="orders" fill={colors.purple} radius={[4, 4, 0, 0]} opacity={0.6} name="Orders" />
+                <Line yAxisId="right" type="monotone" dataKey="prepTime" stroke={colors.success} strokeWidth={2} dot={false} name="Prep Time" />
+                <Line yAxisId="right" type="monotone" dataKey="deliveryTime" stroke={colors.info} strokeWidth={2} dot={false} name="Delivery Time" />
+              </ComposedChart>
+            </ResponsiveContainer>
+
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '24px', marginTop: '16px' }}>
+              {[
+                { color: colors.purple, label: 'Orders' },
+                { color: colors.success, label: 'Prep Time' },
+                { color: colors.info, label: 'Delivery Time' },
+              ].map((item, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ width: '12px', height: '3px', background: item.color, borderRadius: '2px' }} />
+                  <span style={{ color: colors.textSecondary, fontSize: '12px' }}>{item.label}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Critical Hours */}
+            <div style={{ marginTop: '24px' }}>
+              <p style={{ color: colors.textSecondary, fontSize: '12px', marginBottom: '12px' }}>Critical Hours</p>
+              {criticalHours.map((hour, i) => (
+                <div key={i} style={{
+                  background: i === 1 ? 'rgba(239, 68, 68, 0.1)' : colors.elevated,
+                  borderRadius: '10px',
+                  padding: '12px 16px',
+                  marginBottom: '8px',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <span style={{ color: i === 1 ? colors.error : colors.warning, fontWeight: 600, fontSize: '14px' }}>{hour.hour}</span>
+                    <span style={{ color: colors.textSecondary, fontSize: '13px' }}>{hour.orders} orders</span>
+                    <span style={{ color: colors.textSecondary, fontSize: '13px' }}>{hour.revenue} RSD</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <span style={{ color: parseInt(hour.delivery) > 45 ? colors.error : colors.warning, fontSize: '13px' }}>{hour.delivery} delivery</span>
+                    <span style={{ color: colors.textPrimary, fontWeight: 600, fontSize: '13px' }}>{hour.rating}/10 ⭐</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Day of Week */}
+          <div style={{
+            background: colors.card,
+            borderRadius: '16px',
+            border: `1px solid ${colors.border}`,
+            padding: 'clamp(20px, 4vw, 28px)',
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <p style={{ color: colors.textSecondary, fontSize: '12px' }}>Day of Week Avg (13 weeks)</p>
+              <div style={{ display: 'flex', gap: '12px', fontSize: '10px' }}>
+                <span style={{ color: colors.purple }}>● Revenue</span>
+                <span style={{ color: colors.info }}>● Orders</span>
+              </div>
+            </div>
+            {(() => {
+              const maxRevenue = Math.max(...dayOfWeekData.map(d => d.avgRevenue));
+              const maxOrders = Math.max(...dayOfWeekData.map(d => d.avgOrders));
+              return dayOfWeekData.map((day, i) => {
+                const revWidth = (day.avgRevenue / maxRevenue) * 100;
+                const ordWidth = (day.avgOrders / maxOrders) * 100;
+                return (
+                  <div key={i} style={{
+                    background: day.isToday ? `linear-gradient(90deg, ${colors.purple}30, ${colors.purple}15)` : colors.elevated,
+                    borderRadius: '10px',
+                    padding: '12px 16px',
+                    marginBottom: '8px',
+                    border: day.isToday ? `1px solid ${colors.purple}50` : 'none',
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                      <span style={{ fontWeight: day.isToday ? 600 : 400, fontSize: '13px', minWidth: '80px' }}>
+                        {day.day} {day.isToday && <span style={{ color: colors.purple, fontSize: '11px' }}>(Today)</span>}
+                      </span>
+                      <div style={{ display: 'flex', gap: '16px', fontSize: '12px' }}>
+                        <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, color: colors.purple }}>
+                          {(day.avgRevenue / 1000).toFixed(0)}K
+                        </span>
+                        <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 500, color: colors.info }}>
+                          {day.avgOrders} ord
+                        </span>
+                      </div>
+                    </div>
+                    {/* Revenue bar */}
+                    <div style={{ height: '6px', background: 'rgba(255,255,255,0.1)', borderRadius: '3px', marginBottom: '4px' }}>
+                      <div style={{
+                        width: `${revWidth}%`,
+                        height: '100%',
+                        background: day.isToday ? `linear-gradient(90deg, ${colors.purple}, ${colors.purpleLight})` : colors.purple,
+                        borderRadius: '3px',
+                      }} />
+                    </div>
+                    {/* Orders bar */}
+                    <div style={{ height: '4px', background: 'rgba(255,255,255,0.1)', borderRadius: '2px' }}>
+                      <div style={{
+                        width: `${ordWidth}%`,
+                        height: '100%',
+                        background: colors.info,
+                        borderRadius: '2px',
+                        opacity: 0.8,
+                      }} />
+                    </div>
+                  </div>
+                );
+              });
+            })()}
+            {/* Today comparison */}
+            <div style={{
+              marginTop: '12px',
+              padding: '12px 16px',
+              background: colors.elevated,
+              borderRadius: '10px',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}>
+              <span style={{ fontSize: '12px', color: colors.textMuted }}>Today vs Sun Avg:</span>
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <span style={{ 
+                  fontSize: '12px', 
+                  fontWeight: 600,
+                  color: 751471 > 720671 ? colors.success : colors.error,
+                }}>
+                  Revenue: {751471 > 720671 ? '+' : ''}{((751471 - 720671) / 720671 * 100).toFixed(1)}%
+                </span>
+                <span style={{ 
+                  fontSize: '12px', 
+                  fontWeight: 600,
+                  color: 509 > 494 ? colors.success : colors.error,
+                }}>
+                  Orders: {509 > 494 ? '+' : ''}{((509 - 494) / 494 * 100).toFixed(1)}%
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Delivery, Reviews & Insights Section */}
+        <div className="two-col-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
+          
+          {/* Left column: Delivery Time & Star Distribution */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            
+            {/* Delivery Time Distribution */}
+            <div style={{
+              background: colors.card,
+              borderRadius: '16px',
+              border: `1px solid ${colors.border}`,
+              padding: 'clamp(16px, 3vw, 28px)',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+                <IconBox color="#06B6D4">🚚</IconBox>
+                <h2 className="section-title" style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '18px', fontWeight: 600 }}>
+                  Delivery Time & Ratings
+                </h2>
+              </div>
+
+              {/* Delivery time buckets with ratings */}
+              <div style={{ marginBottom: '16px' }}>
+                {[
+                  { bucket: '10-20', orders: 21, reviews: 3, rating: 10.0, color: colors.success },
+                  { bucket: '20-30', orders: 115, reviews: 9, rating: 9.6, color: colors.success },
+                  { bucket: '30-40', orders: 170, reviews: 21, rating: 9.2, color: colors.success },
+                  { bucket: '40-50', orders: 101, reviews: 17, rating: 9.5, color: colors.warning },
+                  { bucket: '50-60', orders: 52, reviews: 9, rating: 9.6, color: colors.warning },
+                  { bucket: '60+', orders: 50, reviews: 9, rating: 7.1, color: colors.error },
+                ].map((item, i) => {
+                  const maxOrders = 170;
+                  const width = (item.orders / maxOrders) * 100;
+                  return (
+                    <div key={i} style={{ marginBottom: '12px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                        <span style={{ fontSize: '12px', color: colors.textSecondary, width: '50px' }}>{item.bucket}m</span>
+                        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <div style={{ flex: 1, height: '20px', background: colors.elevated, borderRadius: '4px', position: 'relative' }}>
+                            <div style={{
+                              position: 'absolute',
+                              left: 0,
+                              top: 0,
+                              height: '100%',
+                              width: `${width}%`,
+                              background: item.color,
+                              borderRadius: '4px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'flex-end',
+                              paddingRight: '8px',
+                            }}>
+                              {width > 20 && (
+                                <span style={{ fontSize: '10px', fontWeight: 600, color: 'white' }}>{item.orders}</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: '120px', justifyContent: 'flex-end' }}>
+                          <span style={{ fontSize: '12px', color: colors.textMuted }}>{item.orders} ord</span>
+                          <span style={{ 
+                            fontSize: '12px', 
+                            fontWeight: 600,
+                            color: item.rating >= 9 ? colors.success : item.rating >= 8 ? colors.warning : colors.error,
+                            background: item.rating >= 9 ? 'rgba(34, 197, 94, 0.15)' : item.rating >= 8 ? 'rgba(245, 158, 11, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                            padding: '2px 8px',
+                            borderRadius: '6px',
+                          }}>
+                            {item.rating}⭐
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div style={{ 
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: '12px',
+                marginTop: '16px',
+              }}>
+                <div style={{
+                  padding: '12px 16px',
+                  background: colors.elevated,
+                  borderRadius: '10px',
+                  textAlign: 'center',
+                }}>
+                  <span style={{ color: colors.success, fontWeight: 600 }}>🟢 ≤40m: 60%</span>
+                  <p style={{ color: colors.textMuted, fontSize: '11px', marginTop: '4px' }}>306 orders, 9.4 avg</p>
+                </div>
+                <div style={{
+                  padding: '12px 16px',
+                  background: 'rgba(239, 68, 68, 0.1)',
+                  borderRadius: '10px',
+                  textAlign: 'center',
+                  border: `1px solid ${colors.error}30`,
+                }}>
+                  <span style={{ color: colors.error, fontWeight: 600 }}>🔴 60+m: 9.8%</span>
+                  <p style={{ color: colors.textMuted, fontSize: '11px', marginTop: '4px' }}>50 orders, 7.1 avg ⚠️</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Star Distribution */}
+            <div style={{
+              background: colors.card,
+              borderRadius: '16px',
+              border: `1px solid ${colors.border}`,
+              padding: 'clamp(20px, 4vw, 28px)',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+                <IconBox color="#FBBF24">⭐</IconBox>
+                <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '20px', fontWeight: 600 }}>
+                  Star Distribution (1-10)
+                </h2>
+              </div>
+
+              <ResponsiveContainer width="100%" height={160}>
+                <BarChart data={[
+                  { stars: '10⭐', count: 52, color: colors.success },
+                  { stars: '8⭐', count: 8, color: '#84CC16' },
+                  { stars: '6⭐', count: 3, color: colors.warning },
+                  { stars: '4⭐', count: 0, color: '#F97316' },
+                  { stars: '2⭐', count: 5, color: colors.error },
+                ]} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" stroke={colors.borderSubtle} horizontal={false} />
+                  <XAxis type="number" tick={{ fill: colors.textMuted, fontSize: 10 }} axisLine={false} tickLine={false} />
+                  <YAxis type="category" dataKey="stars" tick={{ fill: colors.textMuted, fontSize: 11 }} axisLine={false} tickLine={false} width={50} />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Bar dataKey="count" radius={[0, 4, 4, 0]}>
+                    {[
+                      { color: colors.success },
+                      { color: '#84CC16' },
+                      { color: colors.warning },
+                      { color: '#F97316' },
+                      { color: colors.error },
+                    ].map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+
+              <div style={{ 
+                textAlign: 'center', 
+                marginTop: '16px',
+                padding: '14px 16px',
+                background: `linear-gradient(90deg, ${colors.success}20, ${colors.success}10)`,
+                borderRadius: '10px',
+                border: `1px solid ${colors.success}40`,
+              }}>
+                <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '24px', color: colors.success }}>9.1/10</span>
+                <span style={{ color: colors.textSecondary, marginLeft: '8px' }}>avg (68 reviews)</span>
+                <span style={{ marginLeft: '8px' }}>⭐</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Right column: Negative Reviews */}
+          <div style={{
+            background: colors.card,
+            borderRadius: '16px',
+            border: `1px solid ${colors.border}`,
+            padding: 'clamp(20px, 4vw, 28px)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+              <IconBox color="#EF4444">🔴</IconBox>
+              <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '20px', fontWeight: 600 }}>
+                Negative Reviews (5)
+              </h2>
+            </div>
+
+            <div style={{ marginBottom: '24px' }}>
+              {[
+                { time: '19:06', venue: 'SMASH VR', product: '🍔 Burger', comment: 'No comment', highlight: false },
+                { time: '17:57', venue: 'Burgers NB', product: '🍔 Burger', comment: 'No comment', highlight: true },
+                { time: '16:54', venue: 'Burgers VR', product: '🍔 Burger', comment: 'Živ pomfrit, meso sa parčićima kostiju', highlight: false },
+                { time: '15:27', venue: 'Burgers NB', product: '🍔 Burger', comment: 'Jakooo suv burger sosa nigdeeee', highlight: true },
+                { time: '14:10', venue: 'Burgers NB', product: '🍔 Combo', comment: 'No comment', highlight: true },
+              ].map((review, i) => (
+                <div key={i} style={{
+                  background: review.highlight ? 'rgba(239, 68, 68, 0.15)' : colors.elevated,
+                  borderRadius: '10px',
+                  padding: '14px 16px',
+                  marginBottom: '8px',
+                  border: review.highlight ? `1px solid ${colors.error}40` : 'none',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                    <span style={{ 
+                      color: colors.error, 
+                      fontWeight: 600, 
+                      fontSize: '11px',
+                      background: 'rgba(239, 68, 68, 0.2)',
+                      padding: '4px 8px',
+                      borderRadius: '6px',
+                      whiteSpace: 'nowrap',
+                    }}>
+                      {review.time}
+                    </span>
+                    <span style={{
+                      fontSize: '11px',
+                      background: 'rgba(139, 92, 246, 0.2)',
+                      color: colors.purpleLight,
+                      padding: '4px 8px',
+                      borderRadius: '6px',
+                      whiteSpace: 'nowrap',
+                    }}>
+                      {review.product}
+                    </span>
+                    <div style={{ flex: 1 }}>
+                      <span style={{ 
+                        color: review.highlight ? colors.error : colors.textSecondary, 
+                        fontWeight: 500, 
+                        fontSize: '12px' 
+                      }}>
+                        {review.venue}:
+                      </span>
+                      <span style={{ 
+                        color: review.comment === 'No comment' ? colors.textMuted : colors.textPrimary, 
+                        fontSize: '12px',
+                        marginLeft: '6px',
+                        fontStyle: review.comment === 'No comment' ? 'italic' : 'normal',
+                      }}>
+                        {review.comment}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Summary stats */}
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: '1fr 1fr', 
+              gap: '12px',
+              marginBottom: '16px',
+            }}>
+              <div style={{
+                background: colors.elevated,
+                borderRadius: '10px',
+                padding: '12px',
+                textAlign: 'center',
+              }}>
+                <p style={{ fontSize: '11px', color: colors.textMuted, marginBottom: '4px' }}>By Product</p>
+                <p style={{ fontSize: '13px', fontWeight: 600 }}>🍔 5 Burgers</p>
+              </div>
+              <div style={{
+                background: colors.elevated,
+                borderRadius: '10px',
+                padding: '12px',
+                textAlign: 'center',
+              }}>
+                <p style={{ fontSize: '11px', color: colors.textMuted, marginBottom: '4px' }}>Main Issue</p>
+                <p style={{ fontSize: '13px', fontWeight: 600 }}>🥩 Dry meat</p>
+              </div>
+            </div>
+
+            {/* Alert box */}
+            <div style={{
+              background: 'rgba(239, 68, 68, 0.1)',
+              borderRadius: '12px',
+              padding: '16px 20px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              border: `1px solid ${colors.error}40`,
+            }}>
+              <span style={{ fontSize: '20px' }}>⚠️</span>
+              <div>
+                <p style={{ fontSize: '14px', color: colors.error, fontWeight: 500 }}>
+                  3 of 5 from Novi Beograd Burgers
+                </p>
+                <p style={{ fontSize: '11px', color: colors.textMuted, marginTop: '2px' }}>
+                  All burger complaints - check grill temperature & sauce portions
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Key Insights & Recommended Actions */}
+        <div className="two-col-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
+          
+          {/* Key Insights */}
+          <div style={{
+            background: `linear-gradient(135deg, ${colors.card} 0%, rgba(59, 130, 246, 0.1) 100%)`,
+            borderRadius: '16px',
+            border: `1px solid ${colors.info}40`,
+            padding: 'clamp(16px, 3vw, 28px)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+              <IconBox color="#60A5FA">💡</IconBox>
+              <h2 className="section-title" style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '18px', fontWeight: 600 }}>
+                KEY INSIGHTS
+              </h2>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {[
+                { icon: '⭐', text: 'EXCELLENT REVIEW SCORE: 9.1/10 average - up 7.1% vs last Sunday (8.5/10). Only 5 negative reviews today!', type: 'success' },
+                { icon: '💰', text: 'STRONG PROFIT MARGIN: 73.0% average margin generating 549K RSD profit on 751K revenue.', type: 'success' },
+                { icon: '🚨', text: 'NOVI BEOGRAD QUALITY CRISIS: Collina Burgers NB has 7.8/10 rating with 3 of 5 negative reviews. "Suv burger" complaints about dryness.', type: 'critical' },
+                { icon: '⚠️', text: 'SUPREME SMASH MARGIN: 61.3% margin vs 68.7% for BIG Double Smash. Consider price adjustment.', type: 'warning' },
+                { icon: '🕐', text: '17:00-18:00 DELIVERY SPIKE: 46-47 min average delivery time. Rush hour needs more riders.', type: 'warning' },
+                { icon: '🥞', text: 'PANCAKES TOP MARGIN: 80.4% avg margin on pancakes. Dubai palačinka at 72% margin with 6.0 rating - quality issue.', type: 'info' },
+              ].map((insight, i) => (
+                <div key={i} className="insight-card" style={{
+                  background: insight.type === 'critical' ? 'rgba(239, 68, 68, 0.15)' : 
+                             insight.type === 'warning' ? 'rgba(245, 158, 11, 0.1)' :
+                             insight.type === 'success' ? 'rgba(34, 197, 94, 0.1)' : colors.elevated,
+                  borderRadius: '10px',
+                  padding: '14px 16px',
+                  border: insight.type === 'critical' ? `1px solid ${colors.error}40` : 'none',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                    <span className="insight-icon" style={{ fontSize: '18px', flexShrink: 0 }}>{insight.icon}</span>
+                    <p className="insight-text" style={{ 
+                      fontSize: '13px', 
+                      lineHeight: 1.5,
+                      color: insight.type === 'critical' ? colors.error : colors.textPrimary,
+                    }}>
+                      {insight.text}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Recommended Actions */}
+          <div style={{
+            background: `linear-gradient(135deg, ${colors.card} 0%, rgba(34, 197, 94, 0.1) 100%)`,
+            borderRadius: '16px',
+            border: `1px solid ${colors.success}40`,
+            padding: 'clamp(20px, 4vw, 28px)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+              <IconBox color="#22C55E">✅</IconBox>
+              <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '20px', fontWeight: 600 }}>
+                RECOMMENDED ACTIONS
+              </h2>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {[
+                { priority: 'URGENT', action: 'Investigate Novi Beograd Burgers kitchen - "suv burger" complaints', reason: '3 of 5 negative reviews, 7.8/10 rating' },
+                { priority: 'URGENT', action: 'Review Dubai palačinka quality & freshness', reason: '6.0/10 rating - quality complaints' },
+                { priority: 'HIGH', action: 'Add delivery rider for 17:00-18:00 shift', reason: '46-47 min delivery vs 37 min median' },
+                { priority: 'HIGH', action: 'Review Supreme Triple Smash pricing or costs', reason: '61.3% margin vs 68.7% for BIG Double Smash' },
+                { priority: 'MEDIUM', action: 'Promote Cooked Meals category more', reason: '82.5% avg margin - highest category' },
+                { priority: 'MEDIUM', action: 'Upsell Sides with every burger order', reason: '86% margin on pomfrit/sides' },
+              ].map((item, i) => (
+                <div key={i} style={{
+                  background: colors.elevated,
+                  borderRadius: '10px',
+                  padding: '14px 16px',
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '12px',
+                }}>
+                  <span style={{
+                    background: item.priority === 'URGENT' ? colors.error : 
+                               item.priority === 'HIGH' ? colors.warning : colors.info,
+                    color: item.priority === 'URGENT' ? 'white' : colors.bg,
+                    padding: '4px 10px',
+                    borderRadius: '6px',
+                    fontSize: '10px',
+                    fontWeight: 700,
+                    minWidth: '60px',
+                    textAlign: 'center',
+                  }}>
+                    {item.priority}
+                  </span>
+                  <div style={{ flex: 1 }}>
+                    <p style={{ fontSize: '13px', fontWeight: 500, marginBottom: '4px' }}>{item.action}</p>
+                    <p style={{ fontSize: '11px', color: colors.textMuted }}>({item.reason})</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Kitchen & Delivery Performance */}
+        <div className="two-col-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
+          
+          {/* Kitchen Performance */}
+          <div style={{
+            background: colors.card,
+            borderRadius: '16px',
+            border: `1px solid ${colors.border}`,
+            padding: 'clamp(16px, 3vw, 28px)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
+              <IconBox color="#FBBF24">👨‍🍳</IconBox>
+              <h2 className="section-title" style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '18px', fontWeight: 600 }}>
+                Kitchen Performance
+              </h2>
+              <SimBadge />
+              <WarningBadge />
+            </div>
+
+            <div className="two-col-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              {/* Prep time by venue */}
+              <div>
+                <p style={{ color: colors.textSecondary, fontSize: '11px', marginBottom: '10px' }}>Prep Time by Venue</p>
+                {kitchenData.map((venue, i) => (
+                  <div key={i} style={{
+                    background: colors.elevated,
+                    borderRadius: '10px',
+                    padding: '12px 14px',
+                    marginBottom: '6px',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <span style={{
+                        color: venue.status === 'good' ? colors.success : venue.status === 'warning' ? colors.warning : colors.error,
+                        fontSize: '12px',
+                      }}>
+                        {venue.status === 'good' ? '✓' : venue.status === 'warning' ? '⚠' : '✗'}
+                      </span>
+                      <span style={{ fontSize: '13px' }}>{venue.venue}</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                      <span style={{ 
+                        color: venue.status === 'good' ? colors.success : venue.status === 'warning' ? colors.warning : colors.error,
+                        fontFamily: "'Space Grotesk', sans-serif",
+                        fontWeight: 600,
+                        fontSize: '14px',
+                      }}>
+                        {venue.avgPrep}m
+                      </span>
+                      <span style={{ color: colors.textMuted, fontSize: '11px' }}>{venue.target}</span>
+                      <span style={{ color: colors.textMuted, fontSize: '11px' }}>{venue.orders}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Prep time by hour chart */}
+              <div>
+                <p style={{ color: colors.textSecondary, fontSize: '12px', marginBottom: '12px' }}>Prep Time by Hour</p>
+                <ResponsiveContainer width="100%" height={200}>
+                  <BarChart data={prepTimeByHour}>
+                    <CartesianGrid strokeDasharray="3 3" stroke={colors.borderSubtle} vertical={false} />
+                    <XAxis dataKey="hour" tick={{ fill: colors.textMuted, fontSize: 9 }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fill: colors.textMuted, fontSize: 9 }} axisLine={false} tickLine={false} />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Bar dataKey="time" radius={[4, 4, 0, 0]} name="Prep Time">
+                      {prepTimeByHour.map((entry, index) => (
+                        <Cell 
+                          key={index} 
+                          fill={entry.status === 'good' ? colors.purple : entry.status === 'warning' ? colors.warning : colors.error} 
+                        />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+                <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', marginTop: '8px' }}>
+                  {[
+                    { color: colors.purple, label: '<15m Good' },
+                    { color: colors.warning, label: '15-17m Warning' },
+                    { color: colors.error, label: '>17m Critical' },
+                  ].map((item, i) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ width: '8px', height: '8px', borderRadius: '2px', background: item.color }} />
+                      <span style={{ color: colors.textMuted, fontSize: '10px' }}>{item.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Delivery Performance */}
+          <div style={{
+            background: colors.card,
+            borderRadius: '16px',
+            border: `1px solid ${colors.border}`,
+            padding: 'clamp(20px, 4vw, 28px)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+              <IconBox color="#34D399">🚚</IconBox>
+              <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '20px', fontWeight: 600 }}>
+                Delivery Performance
+              </h2>
+              <WarningBadge />
+            </div>
+
+            {/* Time breakdown bar */}
+            <div style={{ marginBottom: '24px' }}>
+              <p style={{ color: colors.textSecondary, fontSize: '12px', marginBottom: '12px' }}>Time Breakdown (avg)</p>
+              <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
+                <span style={{ color: colors.textMuted, fontSize: '11px', width: '80px' }}>Order Placed</span>
+                <div style={{ flex: 1, display: 'flex', height: '32px', borderRadius: '8px', overflow: 'hidden' }}>
+                  <div style={{ width: '29%', background: colors.warning, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 600 }}>12.4m</span>
+                  </div>
+                  <div style={{ width: '15%', background: colors.info, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 600 }}>6.4m</span>
+                  </div>
+                  <div style={{ width: '56%', background: colors.success, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 600 }}>24m</span>
+                  </div>
+                </div>
+                <span style={{ color: colors.textMuted, fontSize: '11px', width: '70px', textAlign: 'right' }}>Delivered</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', paddingLeft: '80px', paddingRight: '70px' }}>
+                <span style={{ color: colors.warning, fontSize: '11px' }}>Prep (29%)</span>
+                <span style={{ color: colors.info, fontSize: '11px' }}>Wait (15%)</span>
+                <span style={{ color: colors.success, fontSize: '11px' }}>Transit (56%)</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '16px' }}>
+                <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '16px' }}>Total: 40.1 min</span>
+                <span style={{ color: colors.success, fontSize: '14px' }}>Target: 35 min</span>
+              </div>
+            </div>
+
+            {/* By venue */}
+            <p style={{ color: colors.textSecondary, fontSize: '12px', marginBottom: '12px' }}>By Venue</p>
+            {deliveryByVenue.map((venue, i) => {
+              const bgColor = venue.venue === 'Vračar' ? 'rgba(139, 92, 246, 0.2)' : 
+                             venue.venue === 'Novi Beograd' ? 'rgba(245, 158, 11, 0.2)' :
+                             venue.venue === 'Banovo Brdo' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(34, 197, 94, 0.2)';
+              return (
+                <div key={i} style={{
+                  background: bgColor,
+                  borderRadius: '10px',
+                  padding: '14px 16px',
+                  marginBottom: '8px',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                }}>
+                  <span style={{ fontSize: '13px' }}>{venue.venue}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <span style={{ 
+                      color: venue.time <= 40 ? colors.success : venue.time <= 45 ? colors.warning : colors.error,
+                      fontFamily: "'Space Grotesk', sans-serif",
+                      fontWeight: 600,
+                      fontSize: '14px',
+                    }}>
+                      {venue.time} min
+                    </span>
+                    <span style={{ color: colors.textMuted, fontSize: '11px' }}>{venue.pctUnder35}% &lt;35m</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Customer Analysis */}
+        <div style={{
+          background: colors.card,
+          borderRadius: '16px',
+          border: `1px solid ${colors.border}`,
+          padding: 'clamp(20px, 4vw, 28px)',
+          marginBottom: '24px',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+            <IconBox color="#60A5FA">👥</IconBox>
+            <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '20px', fontWeight: 600 }}>
+              Customer Analysis
+            </h2>
+          </div>
+
+          <div className="customer-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '24px' }}>
+            {/* Overview */}
+            <div>
+              <p style={{ color: colors.textSecondary, fontSize: '12px', marginBottom: '16px' }}>Overview</p>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div className="customer-stat" style={{ background: colors.elevated, borderRadius: '12px', padding: '20px', textAlign: 'center' }}>
+                  <p className="customer-value" style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '32px', fontWeight: 700 }}>{customerData.total}</p>
+                  <p style={{ color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase' }}>Total Customers</p>
+                </div>
+                <div className="customer-stat" style={{ background: colors.elevated, borderRadius: '12px', padding: '20px', textAlign: 'center' }}>
+                  <p className="customer-value" style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '32px', fontWeight: 700, color: colors.purple }}>{customerData.repeatRate}%</p>
+                  <p style={{ color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase' }}>Repeat Rate</p>
+                </div>
+                <div className="customer-stat" style={{ background: 'rgba(59, 130, 246, 0.15)', borderRadius: '12px', padding: '20px', textAlign: 'center' }}>
+                  <p className="customer-value" style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '28px', fontWeight: 700, color: colors.info }}>{customerData.newCustomers}</p>
+                  <p style={{ color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase' }}>New (32%)</p>
+                </div>
+                <div className="customer-stat" style={{ background: 'rgba(34, 197, 94, 0.15)', borderRadius: '12px', padding: '20px', textAlign: 'center' }}>
+                  <p className="customer-value" style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '28px', fontWeight: 700, color: colors.success }}>{customerData.returning}</p>
+                  <p style={{ color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase' }}>Returning (68%)</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Avg Basket */}
+            <div>
+              <p style={{ color: colors.textSecondary, fontSize: '12px', marginBottom: '16px' }}>Avg Basket</p>
+              <div style={{ background: colors.elevated, borderRadius: '12px', padding: '20px', marginBottom: '12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '14px' }}>🆕</span>
+                    <span style={{ fontSize: '14px' }}>New Customers</span>
+                  </div>
+                  <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '18px' }}>{customerData.avgBasketNew.toLocaleString()} RSD</span>
+                </div>
+                <div style={{ height: '6px', background: 'rgba(255,255,255,0.1)', borderRadius: '3px', overflow: 'hidden' }}>
+                  <div style={{ width: '75%', height: '100%', background: colors.success, borderRadius: '3px' }} />
+                </div>
+              </div>
+              <div style={{ background: colors.elevated, borderRadius: '12px', padding: '20px', marginBottom: '16px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '14px' }}>🔄</span>
+                    <span style={{ fontSize: '14px' }}>Returning</span>
+                  </div>
+                  <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '18px' }}>{customerData.avgBasketReturning.toLocaleString()} RSD</span>
+                </div>
+                <div style={{ height: '6px', background: 'rgba(255,255,255,0.1)', borderRadius: '3px', overflow: 'hidden' }}>
+                  <div style={{ width: '65%', height: '100%', background: colors.info, borderRadius: '3px' }} />
+                </div>
+              </div>
+              <div style={{
+                background: 'rgba(59, 130, 246, 0.1)',
+                borderRadius: '10px',
+                padding: '12px 16px',
+              }}>
+                <span style={{ fontSize: '13px' }}>💡 New customers spend 15% more — loyalty program opportunity!</span>
+              </div>
+            </div>
+
+            {/* Top Customers */}
+            <div>
+              <p style={{ color: colors.textSecondary, fontSize: '12px', marginBottom: '16px' }}>🏆 Top Customers</p>
+              {topCustomers.map((customer, i) => (
+                <div key={i} style={{
+                  background: colors.elevated,
+                  borderRadius: '10px',
+                  padding: '12px 16px',
+                  marginBottom: '8px',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <span style={{
+                      width: '24px',
+                      height: '24px',
+                      borderRadius: '50%',
+                      background: i < 3 ? colors.warning : colors.textMuted,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '11px',
+                      fontWeight: 600,
+                      color: colors.bg,
+                    }}>
+                      {i + 1}
+                    </span>
+                    <span style={{ fontSize: '13px' }}>{customer.id}</span>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '14px' }}>{(customer.revenue / 1000).toFixed(0)}K</p>
+                    <p style={{ color: colors.textMuted, fontSize: '11px' }}>{customer.orders} orders</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Tomorrow's Expected KPIs */}
+        <div style={{
+          background: `linear-gradient(135deg, ${colors.card} 0%, rgba(139, 92, 246, 0.1) 100%)`,
+          borderRadius: '16px',
+          border: `1px solid ${colors.purple}40`,
+          padding: 'clamp(20px, 4vw, 28px)',
+          marginBottom: '24px',
+          position: 'relative',
+          overflow: 'hidden',
+        }}>
+          {/* Decorative glow */}
+          <div style={{
+            position: 'absolute',
+            top: '-50%',
+            right: '-10%',
+            width: '300px',
+            height: '300px',
+            background: `radial-gradient(circle, ${colors.purple}20 0%, transparent 70%)`,
+            pointerEvents: 'none',
+          }} />
+          
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', position: 'relative' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <IconBox color="#A78BFA">🔮</IconBox>
+              <div>
+                <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '20px', fontWeight: 600 }}>
+                  Tomorrow's Forecast
+                </h2>
+                <p style={{ color: colors.textMuted, fontSize: '12px' }}>Monday, December 8, 2025</p>
+              </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{
+                background: 'rgba(139, 92, 246, 0.2)',
+                color: colors.purpleLight,
+                padding: '6px 12px',
+                borderRadius: '20px',
+                fontSize: '11px',
+                fontWeight: 600,
+              }}>
+                🤖 AI PREDICTED
+              </span>
+              <span style={{
+                background: 'rgba(34, 197, 94, 0.15)',
+                color: colors.success,
+                padding: '6px 12px',
+                borderRadius: '20px',
+                fontSize: '11px',
+                fontWeight: 600,
+              }}>
+                87% confidence
+              </span>
+            </div>
+          </div>
+
+          {/* Expected KPI Cards */}
+          <div className="forecast-grid" style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(5, 1fr)',
+            gap: '16px',
+            position: 'relative',
+          }}>
+            {[
+              { 
+                icon: '💰', 
+                label: 'EXPECTED REVENUE', 
+                value: '642K', 
+                subtext: 'RSD',
+                comparison: 'vs 751K today',
+                trend: -14.5,
+                note: 'Mondays typically -15% vs Sunday',
+                color: colors.warning,
+              },
+              { 
+                icon: '📈', 
+                label: 'EXPECTED PROFIT', 
+                value: '432K', 
+                subtext: 'RSD (67.3%)',
+                comparison: 'vs 549K today',
+                trend: -15.8,
+                note: 'Margin stable at ~67%',
+                color: colors.warning,
+              },
+              { 
+                icon: '📦', 
+                label: 'EXPECTED ORDERS', 
+                value: '435', 
+                subtext: 'transactions',
+                comparison: 'vs 509 today',
+                trend: -14.5,
+                note: 'Monday avg: 420-450 orders',
+                color: colors.info,
+              },
+              { 
+                icon: '🛒', 
+                label: 'EXPECTED BASKET', 
+                value: '1,476', 
+                subtext: 'RSD',
+                comparison: 'same as today',
+                trend: 0,
+                note: 'Basket size stays consistent',
+                color: colors.success,
+              },
+              { 
+                icon: '⭐', 
+                label: 'TARGET RATING', 
+                value: '9.0+', 
+                subtext: 'out of 10',
+                comparison: 'vs 9.1 today',
+                trend: null,
+                note: 'Maintain quality standards',
+                color: colors.success,
+                isTarget: true,
+              },
+            ].map((kpi, i) => (
+              <div key={i} className="forecast-card" style={{
+                background: colors.elevated,
+                borderRadius: '14px',
+                padding: '20px',
+                border: `1px solid ${colors.borderSubtle}`,
+                position: 'relative',
+              }}>
+                {/* Forecast indicator line */}
+                <div style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: '3px',
+                  background: `linear-gradient(90deg, ${kpi.color}, ${kpi.color}80)`,
+                  borderRadius: '14px 14px 0 0',
+                }} />
+                
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px', flexWrap: 'wrap', gap: '4px' }}>
+                  <span style={{ fontSize: '24px' }}>{kpi.icon}</span>
+                  {kpi.trend !== null && (
+                    <span style={{
+                      background: kpi.trend > 0 ? 'rgba(34, 197, 94, 0.15)' : kpi.trend < 0 ? 'rgba(245, 158, 11, 0.15)' : 'rgba(255,255,255,0.1)',
+                      color: kpi.trend > 0 ? colors.success : kpi.trend < 0 ? colors.warning : colors.textSecondary,
+                      padding: '3px 8px',
+                      borderRadius: '10px',
+                      fontSize: '11px',
+                      fontWeight: 600,
+                    }}>
+                      {kpi.trend > 0 ? '↗' : kpi.trend < 0 ? '↘' : '→'} {Math.abs(kpi.trend)}%
+                    </span>
+                  )}
+                  {kpi.isTarget && (
+                    <span style={{
+                      background: 'rgba(34, 197, 94, 0.15)',
+                      color: colors.success,
+                      padding: '3px 8px',
+                      borderRadius: '10px',
+                      fontSize: '11px',
+                      fontWeight: 600,
+                    }}>
+                      TARGET
+                    </span>
+                  )}
+                </div>
+                
+                <p className="kpi-label" style={{ color: colors.textMuted, fontSize: '10px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>
+                  {kpi.label}
+                </p>
+                
+                <p className="kpi-value" style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '32px', fontWeight: 700, marginBottom: '2px' }}>
+                  {kpi.value}
+                </p>
+                <p style={{ color: colors.textSecondary, fontSize: '12px', marginBottom: '8px' }}>{kpi.subtext}</p>
+                
+                <p className="hide-mobile" style={{ color: colors.textMuted, fontSize: '11px', marginBottom: '8px' }}>{kpi.comparison}</p>
+                
+                {/* Note tooltip - hidden on small mobile */}
+                <div className="hide-mobile" style={{
+                  background: 'rgba(139, 92, 246, 0.1)',
+                  borderRadius: '8px',
+                  padding: '8px 10px',
+                  marginTop: '8px',
+                }}>
+                  <p style={{ color: colors.purpleLight, fontSize: '11px' }}>
+                    💡 {kpi.note}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Hourly prediction summary */}
+          <div style={{
+            marginTop: '24px',
+            background: colors.elevated,
+            borderRadius: '12px',
+            padding: '20px',
+            display: 'grid',
+            gridTemplateColumns: '1fr 2fr',
+            gap: '24px',
+          }}>
+            <div>
+              <p style={{ color: colors.textSecondary, fontSize: '12px', marginBottom: '12px' }}>Peak Hours Expected</p>
+              {[
+                { hour: '12:00-14:00', orders: '~85', label: 'Lunch Rush' },
+                { hour: '19:00-21:00', orders: '~120', label: 'Dinner Peak' },
+                { hour: '22:00-23:00', orders: '~55', label: 'Late Night' },
+              ].map((peak, i) => (
+                <div key={i} style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: '10px 0',
+                  borderBottom: i < 2 ? `1px solid ${colors.borderSubtle}` : 'none',
+                }}>
+                  <div>
+                    <p style={{ fontSize: '13px', fontWeight: 500 }}>{peak.hour}</p>
+                    <p style={{ color: colors.textMuted, fontSize: '11px' }}>{peak.label}</p>
+                  </div>
+                  <span style={{ 
+                    fontFamily: "'Space Grotesk', sans-serif", 
+                    fontWeight: 600, 
+                    fontSize: '14px',
+                    color: colors.purple,
+                  }}>
+                    {peak.orders} orders
+                  </span>
+                </div>
+              ))}
+            </div>
+            
+            <div>
+              <p style={{ color: colors.textSecondary, fontSize: '12px', marginBottom: '12px' }}>Recommendations for Tomorrow</p>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                {[
+                  { icon: '👨‍🍳', text: 'Staff 2 extra cooks for dinner rush (19:00-21:00)', priority: 'HIGH' },
+                  { icon: '🚚', text: 'Pre-position delivery riders by 18:30', priority: 'HIGH' },
+                  { icon: '📦', text: 'Prep extra burger patties (expect 300+ burgers)', priority: 'MEDIUM' },
+                  { icon: '🥞', text: 'Stock pancake batter - Mondays trend +5% pancakes', priority: 'LOW' },
+                ].map((rec, i) => (
+                  <div key={i} style={{
+                    background: colors.card,
+                    borderRadius: '10px',
+                    padding: '12px',
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: '10px',
+                  }}>
+                    <span style={{ fontSize: '18px' }}>{rec.icon}</span>
+                    <div style={{ flex: 1 }}>
+                      <p style={{ fontSize: '12px', lineHeight: 1.4 }}>{rec.text}</p>
+                      <span style={{
+                        display: 'inline-block',
+                        marginTop: '6px',
+                        background: rec.priority === 'HIGH' ? 'rgba(239, 68, 68, 0.15)' : rec.priority === 'MEDIUM' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(59, 130, 246, 0.15)',
+                        color: rec.priority === 'HIGH' ? colors.error : rec.priority === 'MEDIUM' ? colors.warning : colors.info,
+                        padding: '2px 8px',
+                        borderRadius: '6px',
+                        fontSize: '10px',
+                        fontWeight: 600,
+                      }}>
+                        {rec.priority}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div style={{ textAlign: 'center', padding: '16px', color: colors.textMuted, fontSize: '12px' }}>
+          Generated: Dec 8, 2025 | 509 orders | 487 customers | 68 reviews | Margins from Kalkulacija.xlsx | v4.4 (corrected + enhanced)
+        </div>
+
+      </div>
+    </div>
+  );
+};
+
+
+ReactDOM.createRoot(document.getElementById("root")).render(<CollinaDashboard />);
+  </script>
+</body>
+</html>
