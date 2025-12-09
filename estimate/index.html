@@ -983,8 +983,8 @@
             const ctx = document.getElementById('orderChart').getContext('2d');
             if (orderChart) orderChart.destroy();
 
-            // Full day from 00:00 to 24:00 (midnight to midnight)
-            const hours = Array.from({ length: 25 }, (_, i) => i); // 0 to 24
+            // Show from 10:00 to 24:00
+            const hours = Array.from({ length: 15 }, (_, i) => i + 10); // 10 to 24
             const labels = hours.map(h => h === 24 ? '24:00' : `${h}:00`);
 
             const colors = {
@@ -1002,20 +1002,29 @@
 
             // Build projected curve based on percentage-of-day extrapolation
             const projectedCurve = {};
+            const avgAtCurrentHour = avgHourlyCumulative[data.currentHour] || 1;
+            const avgAtEnd = data.projection.avgFinalTotal;
+            const avgRemaining = avgAtEnd - avgAtCurrentHour;
+            const projectedRemaining = data.projection.weightedAvg - data.currentOrders;
+            
             for (let h = 0; h <= 24; h++) {
                 if (h <= data.currentHour) {
-                    // For past/current hours, use actual data if available or average
+                    // For past/current hours, use actual data
                     projectedCurve[h] = data.todayHourlyCumulative[h] || 0;
                 } else {
-                    // For future hours, scale the average curve to match projected total
+                    // For future hours, interpolate between current and projected final
                     const hourKey = h === 24 ? 23 : h;
-                    const avgAtHour = h === 24 ? data.projection.avgFinalTotal : (avgHourlyCumulative[hourKey] || 0);
-                    const avgAtEnd = data.projection.avgFinalTotal;
-                    // Scale: current orders + (avg remaining at hour / avg total remaining) * projected remaining
-                    const avgRemaining = avgAtEnd - (avgHourlyCumulative[data.currentHour] || 0);
-                    const avgRemainingAtHour = avgAtHour - (avgHourlyCumulative[data.currentHour] || 0);
-                    const projectedRemaining = data.projection.weightedAvg - data.currentOrders;
-                    projectedCurve[h] = Math.round(data.currentOrders + (avgRemaining > 0 ? (avgRemainingAtHour / avgRemaining) * projectedRemaining : 0));
+                    const avgAtHour = avgHourlyCumulative[hourKey] || 0;
+                    
+                    // For hour 24, use the final total
+                    if (h === 24) {
+                        projectedCurve[h] = data.projection.weightedAvg;
+                    } else {
+                        // Scale remaining orders proportionally
+                        const avgRemainingAtHour = avgAtHour - avgAtCurrentHour;
+                        const ratio = avgRemaining > 0 ? avgRemainingAtHour / avgRemaining : 0;
+                        projectedCurve[h] = Math.round(data.currentOrders + (ratio * projectedRemaining));
+                    }
                 }
             }
 
@@ -1110,7 +1119,12 @@
                     },
                     scales: {
                         x: { grid: { color: 'rgba(42, 42, 58, 0.5)' }, ticks: { color: '#5a5a6e', font: { size: 11 } } },
-                        y: { grid: { color: 'rgba(42, 42, 58, 0.5)' }, ticks: { color: '#5a5a6e', font: { size: 11 } }, beginAtZero: true }
+                        y: { 
+                            grid: { color: 'rgba(42, 42, 58, 0.5)' }, 
+                            ticks: { color: '#5a5a6e', font: { size: 11 } }, 
+                            min: 0,
+                            max: 600
+                        }
                     }
                 }
             });
