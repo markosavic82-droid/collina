@@ -825,8 +825,11 @@
             const weeks = [0, 0, 0, 0]; // Total orders per week
             const weekCounts = [0, 0, 0, 0]; // Days counted per week
             
+            // Use today's date (from the data)
+            const todayDate = new Date(latestTime.getFullYear(), latestTime.getMonth(), latestTime.getDate());
+            
             for (const day of allDays) {
-                const daysDiff = Math.floor((todayStart - day.date) / (1000 * 60 * 60 * 24));
+                const daysDiff = Math.floor((todayDate - day.date) / (1000 * 60 * 60 * 24));
                 if (daysDiff >= 0 && daysDiff < 28) {
                     const weekIndex = Math.floor(daysDiff / 7);
                     weeks[weekIndex] += day.total;
