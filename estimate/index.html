@@ -458,19 +458,19 @@
             </div>
 
             <div class="historical-section">
-                <h3>Hybrid Calculation</h3>
+                <h3>Dual Method Projection</h3>
                 <div class="benchmark-grid">
                     <div class="benchmark-item">
                         <div class="benchmark-value" id="benchmarkLow">—</div>
-                        <div class="benchmark-label">Avg (base)</div>
+                        <div class="benchmark-label">% of Day</div>
                     </div>
                     <div class="benchmark-item">
                         <div class="benchmark-value" id="benchmarkWeighted">—</div>
-                        <div class="benchmark-label">+ Pace</div>
+                        <div class="benchmark-label">+ Remaining</div>
                     </div>
                     <div class="benchmark-item">
                         <div class="benchmark-value" id="benchmarkHigh">—</div>
-                        <div class="benchmark-label">+ Trend</div>
+                        <div class="benchmark-label">Average</div>
                     </div>
                 </div>
                 <div class="range-estimate">
@@ -816,21 +816,30 @@
             // Calculate average final total
             const avgFinalTotal = last4Weeks.reduce((sum, d) => sum + d.finalTotal, 0) / last4Weeks.length;
             
-            // Average at cutoff from the curve
-            const avgAtCutoff = avgHourlyCurve[cutoffHour] || 1;
-
-            // PACE: How is today performing vs average at cutoff
-            const pace = ordersAtCutoff / avgAtCutoff;
+            // METHOD 1: Percentage-of-Day
+            // What % of daily orders typically arrive by current hour?
+            const percentCompleteByHour = last4Weeks.map(d => {
+                const ordersAtCurrentHour = d.hourlyCumulative[currentHour] || 0;
+                return ordersAtCurrentHour / d.finalTotal;
+            });
+            const avgPercentComplete = percentCompleteByHour.reduce((a, b) => a + b, 0) / percentCompleteByHour.length;
             
-            // TREND: Week-over-week change (last week vs week before)
-            let trend = 0;
-            if (last4Weeks.length >= 2 && last4Weeks[1].finalTotal > 0) {
-                trend = (last4Weeks[0].finalTotal - last4Weeks[1].finalTotal) / last4Weeks[1].finalTotal;
-            }
+            // Projection: Today's orders / avg % complete
+            const method1Projection = Math.round(today.length / avgPercentComplete);
             
-            // HYBRID PROJECTION: Apply pace to average, then apply trend
-            const paceAdjusted = avgFinalTotal * pace;
-            const projectedTotal = Math.round(paceAdjusted * (1 + trend));
+            // METHOD 2: Remaining Orders
+            // Calculate avg orders that come AFTER current hour
+            const remainingOrdersByDay = last4Weeks.map(d => {
+                const ordersAtCurrentHour = d.hourlyCumulative[currentHour] || 0;
+                return d.finalTotal - ordersAtCurrentHour;
+            });
+            const avgRemainingOrders = remainingOrdersByDay.reduce((a, b) => a + b, 0) / remainingOrdersByDay.length;
+            
+            // Projection: Today's orders + avg remaining
+            const method2Projection = Math.round(today.length + avgRemainingOrders);
+            
+            // FINAL: Average both methods
+            const projectedTotal = Math.round((method1Projection + method2Projection) / 2);
 
             // Best/worst for same day of week
             const allSameDaySorted = [...sameDayOfWeek].sort((a, b) => b.finalTotal - a.finalTotal);
@@ -842,11 +851,11 @@
                 low: Math.min(...last4Weeks.map(d => d.finalTotal)),
                 high: Math.max(...last4Weeks.map(d => d.finalTotal)),
                 weightedAvg: projectedTotal,
-                avgAtCutoff: Math.round(avgAtCutoff),
                 avgFinalTotal: Math.round(avgFinalTotal),
-                pace: pace,
-                trend: trend,
-                paceAdjusted: Math.round(paceAdjusted),
+                avgPercentComplete: avgPercentComplete,
+                avgRemainingOrders: Math.round(avgRemainingOrders),
+                method1: method1Projection,
+                method2: method2Projection,
                 avgHourlyCurve: avgHourlyCurve
             };
 
@@ -912,10 +921,8 @@
 
         function updateUI(data) {
             document.getElementById('projectedTotal').textContent = data.projection.weightedAvg;
-            const pacePercent = Math.round(data.projection.pace * 100);
-            const trendPercent = Math.round(data.projection.trend * 100);
-            const trendSign = trendPercent >= 0 ? '+' : '';
-            document.getElementById('projectedRange').textContent = `pace ${pacePercent}% × trend ${trendSign}${trendPercent}%`;
+            const pctComplete = Math.round(data.projection.avgPercentComplete * 100);
+            document.getElementById('projectedRange').textContent = `${pctComplete}% complete by ${data.currentHour}:00`;
             document.getElementById('currentOrders').textContent = data.currentOrders;
             document.getElementById('lastOrderTime').textContent = `as of ${data.latestTime.getHours()}:${String(data.latestTime.getMinutes()).padStart(2, '0')}`;
 
@@ -954,9 +961,9 @@
                     </div>
                 `).join('');
 
-            // Benchmarks - show pace and trend calculation
-            document.getElementById('benchmarkLow').textContent = data.projection.avgFinalTotal;
-            document.getElementById('benchmarkWeighted').textContent = data.projection.paceAdjusted;
+            // Benchmarks - show both methods
+            document.getElementById('benchmarkLow').textContent = data.projection.method1;
+            document.getElementById('benchmarkWeighted').textContent = data.projection.method2;
             document.getElementById('benchmarkHigh').textContent = data.projection.weightedAvg;
             document.getElementById('rangeLow').textContent = data.projection.low;
             document.getElementById('rangeHigh').textContent = data.projection.high;
@@ -993,13 +1000,23 @@
             // Use the pre-calculated average curve from projection data
             const avgHourlyCumulative = data.projection.avgHourlyCurve;
 
-            // Build projected curve: apply pace and trend to average curve
-            const paceAndTrend = data.projection.pace * (1 + data.projection.trend);
+            // Build projected curve based on percentage-of-day extrapolation
             const projectedCurve = {};
             for (let h = 0; h <= 24; h++) {
-                const hourKey = h === 24 ? 23 : h;
-                const avgValue = h === 24 ? data.projection.avgFinalTotal : (avgHourlyCumulative[hourKey] || 0);
-                projectedCurve[h] = Math.round(avgValue * paceAndTrend);
+                if (h <= data.currentHour) {
+                    // For past/current hours, use actual data if available or average
+                    projectedCurve[h] = data.todayHourlyCumulative[h] || 0;
+                } else {
+                    // For future hours, scale the average curve to match projected total
+                    const hourKey = h === 24 ? 23 : h;
+                    const avgAtHour = h === 24 ? data.projection.avgFinalTotal : (avgHourlyCumulative[hourKey] || 0);
+                    const avgAtEnd = data.projection.avgFinalTotal;
+                    // Scale: current orders + (avg remaining at hour / avg total remaining) * projected remaining
+                    const avgRemaining = avgAtEnd - (avgHourlyCumulative[data.currentHour] || 0);
+                    const avgRemainingAtHour = avgAtHour - (avgHourlyCumulative[data.currentHour] || 0);
+                    const projectedRemaining = data.projection.weightedAvg - data.currentOrders;
+                    projectedCurve[h] = Math.round(data.currentOrders + (avgRemaining > 0 ? (avgRemainingAtHour / avgRemaining) * projectedRemaining : 0));
+                }
             }
 
             if (data.bestDay) {
