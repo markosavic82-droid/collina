@@ -700,5 +700,17 @@
         "priority": "LOW"
       }
     ]
+  },
+  "profitBreakdown": {
+    "avgMargin": 74.6,
+    "woltFeePercent": 11.0,
+    "operatingCosts": {
+      "staff": 85000,
+      "rent": 25000,
+      "utilities": 12000,
+      "packaging": 15000,
+      "other": 10000
+    },
+    "taxRate": 15
   }
 }

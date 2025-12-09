@@ -87,7 +87,7 @@ const CollinaDashboard = () => {
 
   const { meta, summary, vsComparison, hourlyData, prepTimeByHour, trendData, trendStats, 
           dayOfWeekAverages, topProducts, categoryPerformance, venuePerformance, 
-          criticalHours, customerData, topCustomers, forecast } = data;
+          criticalHours, customerData, topCustomers, forecast, profitBreakdown } = data;
 
   const trendConfigs = {
     revenue: {
@@ -316,6 +316,177 @@ const CollinaDashboard = () => {
               <Area type="monotone" dataKey={trendConfigs[trendMetric].dataKey} stroke={trendConfigs[trendMetric].color} strokeWidth={2} fill="url(#trendGradient)" />
             </AreaChart>
           </ResponsiveContainer>
+        </div>
+
+        {/* Profit Breakdown Section */}
+        <div style={{ background: colors.card, borderRadius: '16px', border: '1px solid ' + colors.border, padding: 'clamp(20px, 4vw, 28px)', marginBottom: '24px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <IconBox color="#22C55E">💰</IconBox>
+              <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '20px', fontWeight: 600 }}>Profit Breakdown</h2>
+            </div>
+            <span style={{ fontSize: '11px', color: colors.textMuted, background: colors.elevated, padding: '4px 10px', borderRadius: '6px' }}>* Ops costs are daily estimates</span>
+          </div>
+
+          {(() => {
+            const pb = data.profitBreakdown || { avgMargin: 71.5, woltFeePercent: 11.0, operatingCosts: { staff: 85000, rent: 25000, utilities: 12000, packaging: 15000, other: 10000 }, taxRate: 15 };
+            const bruttoRevenue = summary.totalRevenue;
+            const avgMargin = pb.avgMargin;
+            const cogs = bruttoRevenue * (1 - avgMargin / 100);
+            const grossProfit = bruttoRevenue * (avgMargin / 100);
+            const woltFeePercent = pb.woltFeePercent;
+            const woltFee = bruttoRevenue * (woltFeePercent / 100);
+            const ops = pb.operatingCosts;
+            const staffCost = ops.staff;
+            const rentCost = ops.rent;
+            const utilitiesCost = ops.utilities;
+            const packagingCost = ops.packaging;
+            const otherCost = ops.other;
+            const totalOpsCost = staffCost + rentCost + utilitiesCost + packagingCost + otherCost;
+            const ebitda = grossProfit - woltFee - totalOpsCost;
+            const ebitdaMargin = (ebitda / bruttoRevenue) * 100;
+            const taxRate = pb.taxRate;
+            const taxes = ebitda > 0 ? ebitda * (taxRate / 100) : 0;
+            const netProfit = ebitda - taxes;
+            const netMargin = (netProfit / bruttoRevenue) * 100;
+            
+            const gridStyle = { display: 'grid', gridTemplateColumns: '28px 1fr 130px 70px', gap: '12px' };
+            
+            return (
+              <div>
+                <div style={{ background: colors.elevated, borderRadius: '12px', padding: '20px', marginBottom: '24px' }}>
+                  {/* Header */}
+                  <div style={{ ...gridStyle, paddingBottom: '12px', borderBottom: '1px solid ' + colors.borderSubtle, marginBottom: '8px' }}>
+                    <span></span>
+                    <span style={{ color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase' }}>Item</span>
+                    <span style={{ color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase', textAlign: 'right' }}>Amount (RSD)</span>
+                    <span style={{ color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase', textAlign: 'right' }}>%</span>
+                  </div>
+                  
+                  {/* BRUTTO REVENUE */}
+                  <div style={{ ...gridStyle, padding: '12px 20px', background: 'linear-gradient(90deg, ' + colors.purple + '20, transparent)', margin: '0 -20px' }}>
+                    <span style={{ fontSize: '16px' }}>💵</span>
+                    <span style={{ fontWeight: 700, fontSize: '14px' }}>BRUTTO REVENUE</span>
+                    <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '16px', textAlign: 'right', color: colors.purple }}>{bruttoRevenue.toLocaleString()}</span>
+                    <span style={{ fontWeight: 600, fontSize: '14px', textAlign: 'right' }}>100%</span>
+                  </div>
+                  
+                  {/* Food Cost */}
+                  <div style={{ ...gridStyle, padding: '10px 0', borderBottom: '1px solid ' + colors.borderSubtle }}>
+                    <span style={{ fontSize: '14px' }}>🥩</span>
+                    <span style={{ color: colors.textSecondary, fontSize: '13px' }}>Food Cost (COGS)</span>
+                    <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '14px', textAlign: 'right', color: colors.error }}>−{Math.round(cogs).toLocaleString()}</span>
+                    <span style={{ fontSize: '12px', textAlign: 'right', color: colors.textMuted }}>{(100 - avgMargin).toFixed(1)}%</span>
+                  </div>
+                  
+                  {/* GROSS PROFIT */}
+                  <div style={{ ...gridStyle, padding: '12px 20px', background: 'linear-gradient(90deg, ' + colors.success + '15, transparent)', margin: '0 -20px' }}>
+                    <span style={{ fontSize: '14px' }}>📊</span>
+                    <span style={{ fontWeight: 600, fontSize: '13px', color: colors.success }}>= GROSS PROFIT</span>
+                    <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '15px', textAlign: 'right', color: colors.success }}>{Math.round(grossProfit).toLocaleString()}</span>
+                    <span style={{ fontWeight: 600, fontSize: '13px', textAlign: 'right', color: colors.success }}>{avgMargin.toFixed(1)}%</span>
+                  </div>
+                  
+                  <div style={{ height: '1px', background: colors.borderSubtle, margin: '4px 0' }} />
+                  
+                  {/* Wolt Fee */}
+                  <div style={{ ...gridStyle, padding: '8px 0' }}>
+                    <span style={{ fontSize: '14px' }}>🛵</span>
+                    <span style={{ color: colors.textSecondary, fontSize: '13px' }}>Wolt Fee</span>
+                    <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '13px', textAlign: 'right', color: colors.cyan }}>−{Math.round(woltFee).toLocaleString()}</span>
+                    <span style={{ fontSize: '12px', textAlign: 'right', color: colors.textMuted }}>{woltFeePercent}%</span>
+                  </div>
+                  
+                  {/* Staff */}
+                  <div style={{ ...gridStyle, padding: '8px 0' }}>
+                    <span style={{ fontSize: '14px' }}>👨‍🍳</span>
+                    <span style={{ color: colors.textSecondary, fontSize: '13px' }}>Staff *</span>
+                    <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '13px', textAlign: 'right', color: '#F97316' }}>−{staffCost.toLocaleString()}</span>
+                    <span style={{ fontSize: '12px', textAlign: 'right', color: colors.textMuted }}>{((staffCost / bruttoRevenue) * 100).toFixed(1)}%</span>
+                  </div>
+                  
+                  {/* Rent */}
+                  <div style={{ ...gridStyle, padding: '8px 0' }}>
+                    <span style={{ fontSize: '14px' }}>🏠</span>
+                    <span style={{ color: colors.textSecondary, fontSize: '13px' }}>Rent *</span>
+                    <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '13px', textAlign: 'right', color: '#F97316' }}>−{rentCost.toLocaleString()}</span>
+                    <span style={{ fontSize: '12px', textAlign: 'right', color: colors.textMuted }}>{((rentCost / bruttoRevenue) * 100).toFixed(1)}%</span>
+                  </div>
+                  
+                  {/* Utilities */}
+                  <div style={{ ...gridStyle, padding: '8px 0' }}>
+                    <span style={{ fontSize: '14px' }}>⚡</span>
+                    <span style={{ color: colors.textSecondary, fontSize: '13px' }}>Utilities *</span>
+                    <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '13px', textAlign: 'right', color: '#F97316' }}>−{utilitiesCost.toLocaleString()}</span>
+                    <span style={{ fontSize: '12px', textAlign: 'right', color: colors.textMuted }}>{((utilitiesCost / bruttoRevenue) * 100).toFixed(1)}%</span>
+                  </div>
+                  
+                  {/* Packaging */}
+                  <div style={{ ...gridStyle, padding: '8px 0' }}>
+                    <span style={{ fontSize: '14px' }}>📦</span>
+                    <span style={{ color: colors.textSecondary, fontSize: '13px' }}>Packaging *</span>
+                    <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '13px', textAlign: 'right', color: '#F97316' }}>−{packagingCost.toLocaleString()}</span>
+                    <span style={{ fontSize: '12px', textAlign: 'right', color: colors.textMuted }}>{((packagingCost / bruttoRevenue) * 100).toFixed(1)}%</span>
+                  </div>
+                  
+                  {/* Other */}
+                  <div style={{ ...gridStyle, padding: '8px 0', borderBottom: '1px solid ' + colors.borderSubtle }}>
+                    <span style={{ fontSize: '14px' }}>📋</span>
+                    <span style={{ color: colors.textSecondary, fontSize: '13px' }}>Other (admin, insurance) *</span>
+                    <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '13px', textAlign: 'right', color: '#F97316' }}>−{otherCost.toLocaleString()}</span>
+                    <span style={{ fontSize: '12px', textAlign: 'right', color: colors.textMuted }}>{((otherCost / bruttoRevenue) * 100).toFixed(1)}%</span>
+                  </div>
+                  
+                  {/* EBITDA */}
+                  <div style={{ ...gridStyle, padding: '12px 20px', background: 'linear-gradient(90deg, ' + colors.warning + '15, transparent)', margin: '0 -20px' }}>
+                    <span style={{ fontSize: '14px' }}>📈</span>
+                    <span style={{ fontWeight: 600, fontSize: '13px', color: colors.warning }}>= EBITDA</span>
+                    <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '15px', textAlign: 'right', color: colors.warning }}>{Math.round(ebitda).toLocaleString()}</span>
+                    <span style={{ fontWeight: 600, fontSize: '13px', textAlign: 'right', color: colors.warning }}>{ebitdaMargin.toFixed(1)}%</span>
+                  </div>
+                  
+                  {/* Taxes */}
+                  <div style={{ ...gridStyle, padding: '8px 0', borderBottom: '1px solid ' + colors.borderSubtle }}>
+                    <span style={{ fontSize: '14px' }}>🏛️</span>
+                    <span style={{ color: colors.textSecondary, fontSize: '13px' }}>Taxes (~{taxRate}%) *</span>
+                    <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '13px', textAlign: 'right', color: colors.error }}>−{Math.round(taxes).toLocaleString()}</span>
+                    <span style={{ fontSize: '12px', textAlign: 'right', color: colors.textMuted }}>{((taxes / bruttoRevenue) * 100).toFixed(1)}%</span>
+                  </div>
+                  
+                  {/* NET PROFIT */}
+                  <div style={{ ...gridStyle, padding: '14px 20px', background: 'linear-gradient(90deg, ' + colors.success + '25, ' + colors.success + '05)', margin: '8px -20px 0 -20px', borderRadius: '0 0 8px 8px' }}>
+                    <span style={{ fontSize: '18px' }}>💰</span>
+                    <span style={{ fontWeight: 700, fontSize: '15px', color: colors.success }}>= NET PROFIT</span>
+                    <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '18px', textAlign: 'right', color: colors.success }}>{Math.round(netProfit).toLocaleString()}</span>
+                    <span style={{ fontWeight: 700, fontSize: '14px', textAlign: 'right', color: colors.success }}>{netMargin.toFixed(1)}%</span>
+                  </div>
+                </div>
+
+                {/* Summary cards */}
+                <div className="four-col-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
+                  <div style={{ background: colors.elevated, borderRadius: '12px', padding: 'clamp(12px, 2vw, 16px)', textAlign: 'center' }}>
+                    <p style={{ color: colors.textMuted, fontSize: '10px', marginBottom: '4px' }}>BRUTTO</p>
+                    <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 'clamp(16px, 3vw, 20px)', color: colors.purple }}>{(bruttoRevenue / 1000).toFixed(0)}K</p>
+                  </div>
+                  <div style={{ background: colors.elevated, borderRadius: '12px', padding: 'clamp(12px, 2vw, 16px)', textAlign: 'center' }}>
+                    <p style={{ color: colors.textMuted, fontSize: '10px', marginBottom: '4px' }}>GROSS</p>
+                    <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 'clamp(16px, 3vw, 20px)', color: colors.success }}>{(grossProfit / 1000).toFixed(0)}K</p>
+                    <p style={{ color: colors.textMuted, fontSize: '9px' }}>{avgMargin.toFixed(0)}%</p>
+                  </div>
+                  <div style={{ background: colors.elevated, borderRadius: '12px', padding: 'clamp(12px, 2vw, 16px)', textAlign: 'center' }}>
+                    <p style={{ color: colors.textMuted, fontSize: '10px', marginBottom: '4px' }}>EBITDA</p>
+                    <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 'clamp(16px, 3vw, 20px)', color: colors.warning }}>{(ebitda / 1000).toFixed(0)}K</p>
+                    <p style={{ color: colors.textMuted, fontSize: '9px' }}>{ebitdaMargin.toFixed(0)}%</p>
+                  </div>
+                  <div style={{ background: 'linear-gradient(135deg, ' + colors.success + '25, ' + colors.success + '10)', borderRadius: '12px', padding: 'clamp(12px, 2vw, 16px)', textAlign: 'center', border: '2px solid ' + colors.success + '60' }}>
+                    <p style={{ color: colors.success, fontSize: '10px', marginBottom: '4px', fontWeight: 600 }}>NET 💰</p>
+                    <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 'clamp(18px, 3vw, 22px)', color: colors.success }}>{(netProfit / 1000).toFixed(0)}K</p>
+                    <p style={{ color: colors.success, fontSize: '10px', fontWeight: 500 }}>{netMargin.toFixed(1)}%</p>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
         </div>
 
         {/* Top Products */}
