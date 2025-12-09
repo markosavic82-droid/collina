@@ -458,19 +458,19 @@
             </div>
 
             <div class="historical-section">
-                <h3>vs Average Curve @ Cutoff</h3>
+                <h3>Hybrid Calculation</h3>
                 <div class="benchmark-grid">
                     <div class="benchmark-item">
                         <div class="benchmark-value" id="benchmarkLow">—</div>
-                        <div class="benchmark-label">Avg @ cutoff</div>
+                        <div class="benchmark-label">Avg (base)</div>
                     </div>
                     <div class="benchmark-item">
                         <div class="benchmark-value" id="benchmarkWeighted">—</div>
-                        <div class="benchmark-label">Today @ cutoff</div>
+                        <div class="benchmark-label">+ Pace</div>
                     </div>
                     <div class="benchmark-item">
                         <div class="benchmark-value" id="benchmarkHigh">—</div>
-                        <div class="benchmark-label">Difference</div>
+                        <div class="benchmark-label">+ Trend</div>
                     </div>
                 </div>
                 <div class="range-estimate">
@@ -819,12 +819,18 @@
             // Average at cutoff from the curve
             const avgAtCutoff = avgHourlyCurve[cutoffHour] || 1;
 
-            // Calculate percentage: how much is today above/below average curve at cutoff
-            const percentageDiff = (ordersAtCutoff - avgAtCutoff) / avgAtCutoff;
-            const percentage = 1 + percentageDiff;
+            // PACE: How is today performing vs average at cutoff
+            const pace = ordersAtCutoff / avgAtCutoff;
             
-            // Projection = average final total × percentage
-            const projectedTotal = Math.round(avgFinalTotal * percentage);
+            // TREND: Week-over-week change (last week vs week before)
+            let trend = 0;
+            if (last4Weeks.length >= 2 && last4Weeks[1].finalTotal > 0) {
+                trend = (last4Weeks[0].finalTotal - last4Weeks[1].finalTotal) / last4Weeks[1].finalTotal;
+            }
+            
+            // HYBRID PROJECTION: Apply pace to average, then apply trend
+            const paceAdjusted = avgFinalTotal * pace;
+            const projectedTotal = Math.round(paceAdjusted * (1 + trend));
 
             // Best/worst for same day of week
             const allSameDaySorted = [...sameDayOfWeek].sort((a, b) => b.finalTotal - a.finalTotal);
@@ -838,8 +844,9 @@
                 weightedAvg: projectedTotal,
                 avgAtCutoff: Math.round(avgAtCutoff),
                 avgFinalTotal: Math.round(avgFinalTotal),
-                percentageDiff: percentageDiff,
-                percentage: percentage,
+                pace: pace,
+                trend: trend,
+                paceAdjusted: Math.round(paceAdjusted),
                 avgHourlyCurve: avgHourlyCurve
             };
 
@@ -905,9 +912,10 @@
 
         function updateUI(data) {
             document.getElementById('projectedTotal').textContent = data.projection.weightedAvg;
-            const pctDiff = Math.round(data.projection.percentageDiff * 100);
-            const pctSign = pctDiff >= 0 ? '+' : '';
-            document.getElementById('projectedRange').textContent = `avg ${data.projection.avgFinalTotal} × (${pctSign}${pctDiff}%)`;
+            const pacePercent = Math.round(data.projection.pace * 100);
+            const trendPercent = Math.round(data.projection.trend * 100);
+            const trendSign = trendPercent >= 0 ? '+' : '';
+            document.getElementById('projectedRange').textContent = `pace ${pacePercent}% × trend ${trendSign}${trendPercent}%`;
             document.getElementById('currentOrders').textContent = data.currentOrders;
             document.getElementById('lastOrderTime').textContent = `as of ${data.latestTime.getHours()}:${String(data.latestTime.getMinutes()).padStart(2, '0')}`;
 
@@ -946,11 +954,10 @@
                     </div>
                 `).join('');
 
-            // Benchmarks - show average curve vs today at cutoff
-            document.getElementById('benchmarkLow').textContent = data.projection.avgAtCutoff;
-            document.getElementById('benchmarkWeighted').textContent = data.ordersAtCutoff;
-            const pctDiffBench = Math.round(data.projection.percentageDiff * 100);
-            document.getElementById('benchmarkHigh').textContent = `${pctDiffBench >= 0 ? '+' : ''}${pctDiffBench}%`;
+            // Benchmarks - show pace and trend calculation
+            document.getElementById('benchmarkLow').textContent = data.projection.avgFinalTotal;
+            document.getElementById('benchmarkWeighted').textContent = data.projection.paceAdjusted;
+            document.getElementById('benchmarkHigh').textContent = data.projection.weightedAvg;
             document.getElementById('rangeLow').textContent = data.projection.low;
             document.getElementById('rangeHigh').textContent = data.projection.high;
             // Position marker based on projection within range
@@ -986,12 +993,13 @@
             // Use the pre-calculated average curve from projection data
             const avgHourlyCumulative = data.projection.avgHourlyCurve;
 
-            // Build projected curve: apply percentage to average curve
+            // Build projected curve: apply pace and trend to average curve
+            const paceAndTrend = data.projection.pace * (1 + data.projection.trend);
             const projectedCurve = {};
             for (let h = 0; h <= 24; h++) {
                 const hourKey = h === 24 ? 23 : h;
                 const avgValue = h === 24 ? data.projection.avgFinalTotal : (avgHourlyCumulative[hourKey] || 0);
-                projectedCurve[h] = Math.round(avgValue * data.projection.percentage);
+                projectedCurve[h] = Math.round(avgValue * paceAndTrend);
             }
 
             if (data.bestDay) {
