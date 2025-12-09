@@ -1,1 +1,940 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Collina Analytics Dashboard</title>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/prop-types@15.8.1/prop-types.min.js"></script>
+  <script src="https://unpkg.com/recharts@2.12.7/umd/Recharts.js"></script>
+  <style>* { margin: 0; padding: 0; box-sizing: border-box; }</style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+    const { BarChart, Bar, LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, ComposedChart } = Recharts;
 
+// Data loader component
+const CollinaDashboard = () => {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [timeRange, setTimeRange] = useState('1D');
+  const [trendMetric, setTrendMetric] = useState('revenue');
+  const [trendDropdownOpen, setTrendDropdownOpen] = useState(false);
+
+  // Load JSON data on mount
+  useEffect(() => {
+    fetch('report-data.json')
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to load report data');
+        return res.json();
+      })
+      .then(json => {
+        setData(json);
+        setLoading(false);
+      })
+      .catch(err => {
+        setError(err.message);
+        setLoading(false);
+      });
+  }, []);
+
+  // Color palette from design system
+  const colors = {
+    bg: '#0D0B14',
+    card: '#1A1F2E',
+    elevated: '#252232',
+    border: 'rgba(255, 255, 255, 0.05)',
+    borderSubtle: '#2A2735',
+    purple: '#8B5CF6',
+    purpleLight: '#A78BFA',
+    success: '#22C55E',
+    error: '#EF4444',
+    warning: '#F59E0B',
+    info: '#3B82F6',
+    textPrimary: '#FFFFFF',
+    textSecondary: '#9CA3AF',
+    textMuted: '#6B7280',
+    cyan: '#06B6D4',
+  };
+
+  // Loading state
+  if (loading) {
+    return (
+      <div style={{ minHeight: '100vh', backgroundColor: colors.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center', color: colors.textPrimary }}>
+          <div style={{ fontSize: '48px', marginBottom: '16px' }}>📊</div>
+          <p style={{ fontSize: '18px' }}>Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div style={{ minHeight: '100vh', backgroundColor: colors.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center', color: colors.error, padding: '32px' }}>
+          <div style={{ fontSize: '48px', marginBottom: '16px' }}>⚠️</div>
+          <p style={{ fontSize: '18px', marginBottom: '8px' }}>Error loading data</p>
+          <p style={{ fontSize: '14px', color: colors.textMuted }}>{error}</p>
+          <p style={{ fontSize: '12px', color: colors.textMuted, marginTop: '16px' }}>
+            Make sure report-data.json exists in the same folder
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Extract data from JSON
+  const { meta, summary, vsComparison, hourlyData, prepTimeByHour, trendData, trendStats, 
+          dayOfWeekAverages, topProducts, categoryPerformance, venuePerformance, 
+          criticalHours, customerData, topCustomers, forecast } = data;
+
+  // Build trend configs from data
+  const trendConfigs = {
+    revenue: {
+      label: 'Revenue',
+      icon: '💰',
+      color: colors.purple,
+      dataKey: 'revenue',
+      format: (v) => `${(v/1000).toFixed(0)}K`,
+      unit: 'RSD',
+      stats: trendStats.revenue
+    },
+    orders: {
+      label: 'Orders',
+      icon: '📦',
+      color: colors.info,
+      dataKey: 'orders',
+      format: (v) => v.toString(),
+      unit: '',
+      stats: trendStats.orders
+    },
+    rating: {
+      label: 'Avg Rating',
+      icon: '⭐',
+      color: colors.warning,
+      dataKey: 'rating',
+      format: (v) => v.toFixed(1),
+      unit: '/10',
+      stats: trendStats.rating
+    },
+  };
+
+  // Custom tooltip
+  const CustomTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+      return (
+        <div style={{
+          background: colors.card,
+          border: `1px solid ${colors.borderSubtle}`,
+          borderRadius: '12px',
+          padding: '12px 16px',
+          boxShadow: '0 10px 40px rgba(0,0,0,0.3)',
+        }}>
+          <p style={{ color: colors.textSecondary, fontSize: '12px', marginBottom: '8px' }}>{label}</p>
+          {payload.map((entry, index) => (
+            <p key={index} style={{ color: entry.color || colors.purple, fontSize: '14px', fontWeight: 600 }}>
+              {entry.name}: {typeof entry.value === 'number' && entry.value > 1000 
+                ? `${(entry.value / 1000).toFixed(0)}K` 
+                : entry.value}
+            </p>
+          ))}
+        </div>
+      );
+    }
+    return null;
+  };
+
+  // Icon box component
+  const IconBox = ({ children, color = colors.purpleLight }) => (
+    <div className="icon-box" style={{
+      width: '48px',
+      height: '48px',
+      borderRadius: '14px',
+      background: `${color}20`,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontSize: '22px',
+      flexShrink: 0,
+    }}>
+      {children}
+    </div>
+  );
+
+  // Trend indicator
+  const TrendIndicator = ({ value, suffix = 'vs LW' }) => {
+    const isPositive = value >= 0;
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <span style={{
+          width: '8px',
+          height: '8px',
+          borderRadius: '50%',
+          backgroundColor: isPositive ? colors.success : colors.error,
+        }} />
+        <span style={{ 
+          color: isPositive ? colors.success : colors.error, 
+          fontSize: '13px', 
+          fontWeight: 500,
+          fontFamily: "'Inter', sans-serif",
+        }}>
+          {isPositive ? '+' : ''}{value}%
+        </span>
+        <span style={{ color: colors.textMuted, fontSize: '12px' }}>{suffix}</span>
+      </div>
+    );
+  };
+
+  // SIM badge
+  const SimBadge = () => (
+    <span style={{
+      background: 'rgba(251, 191, 36, 0.15)',
+      color: '#FBBF24',
+      padding: '3px 8px',
+      borderRadius: '6px',
+      fontSize: '10px',
+      fontWeight: 700,
+      letterSpacing: '0.5px',
+    }}>
+      SIM
+    </span>
+  );
+
+  // Warning badge
+  const WarningBadge = () => (
+    <span style={{
+      background: 'rgba(245, 158, 11, 0.15)',
+      color: '#F59E0B',
+      padding: '4px',
+      borderRadius: '6px',
+      fontSize: '14px',
+    }}>
+      ⚠️
+    </span>
+  );
+
+  // Format number with commas
+  const formatNumber = (num) => num.toLocaleString();
+
+
+  return (
+    <div style={{
+      minHeight: '100vh',
+      backgroundColor: colors.bg,
+      color: colors.textPrimary,
+      padding: 'clamp(12px, 3vw, 32px)',
+      fontFamily: "'Inter', sans-serif",
+    }}>
+      <style>
+        {`
+          @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap');
+          
+          * { -webkit-tap-highlight-color: transparent; }
+          
+          @media (max-width: 1024px) {
+            .kpi-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 16px !important; }
+            .five-col-grid { grid-template-columns: repeat(3, 1fr) !important; }
+            .venue-table { font-size: 12px !important; }
+            .product-grid { grid-template-columns: 32px 1fr 70px 80px 80px 60px !important; }
+          }
+          
+          @media (max-width: 768px) {
+            .kpi-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 12px !important; }
+            .kpi-value { font-size: 26px !important; }
+            .two-col-grid { grid-template-columns: 1fr !important; }
+            .three-col-grid { grid-template-columns: 1fr !important; }
+            .four-col-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }
+            .five-col-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }
+            .six-col-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }
+            .header-flex { flex-direction: column !important; align-items: flex-start !important; gap: 12px !important; }
+            .date-range-btns { display: none !important; }
+            .section-title { font-size: 16px !important; }
+            .chart-height { height: 160px !important; }
+            .hide-mobile { display: none !important; }
+            .trend-stats { grid-template-columns: repeat(2, 1fr) !important; }
+            .forecast-grid { grid-template-columns: repeat(2, 1fr) !important; }
+          }
+          
+          @media (max-width: 480px) {
+            .kpi-grid { grid-template-columns: 1fr 1fr !important; gap: 8px !important; padding: 12px !important; }
+            .kpi-value { font-size: 22px !important; }
+            .kpi-label { font-size: 9px !important; }
+            .four-col-grid { grid-template-columns: 1fr 1fr !important; gap: 6px !important; }
+            .five-col-grid { grid-template-columns: 1fr 1fr !important; gap: 6px !important; }
+            .six-col-grid { grid-template-columns: 1fr 1fr !important; gap: 6px !important; }
+            .section-padding { padding: 14px !important; }
+            .trend-stats { grid-template-columns: 1fr 1fr !important; gap: 8px !important; }
+            .forecast-grid { grid-template-columns: 1fr !important; }
+          }
+        `}
+      </style>
+      
+      <div style={{ maxWidth: '1600px', margin: '0 auto' }}>
+        
+        {/* Header */}
+        <div className="header-flex" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
+          <div>
+            <h1 style={{
+              fontFamily: "'Space Grotesk', sans-serif",
+              fontSize: 'clamp(24px, 5vw, 42px)',
+              fontWeight: 700,
+              background: 'linear-gradient(to right, #A78BFA, #818CF8, #6366F1)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              marginBottom: '4px',
+            }}>
+              Collina Analytics
+            </h1>
+            <p style={{ color: colors.textSecondary, fontSize: '14px' }}>
+              {meta.reportDateFormatted}
+            </p>
+          </div>
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+            {summary.avgDeliveryTime > 40 && <WarningBadge />}
+            <div className="date-range-btns" style={{
+              background: colors.card,
+              border: `1px solid ${colors.border}`,
+              borderRadius: '10px',
+              padding: '10px 16px',
+              display: 'flex',
+              gap: '8px',
+            }}>
+              {['1D', '7D', '30D'].map(range => (
+                <button
+                  key={range}
+                  onClick={() => setTimeRange(range)}
+                  style={{
+                    background: timeRange === range ? colors.purple : 'transparent',
+                    color: timeRange === range ? 'white' : colors.textSecondary,
+                    border: 'none',
+                    padding: '6px 12px',
+                    borderRadius: '6px',
+                    fontSize: '13px',
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                  }}
+                >
+                  {range}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Main KPIs */}
+        <div className="kpi-grid" style={{
+          background: colors.card,
+          borderRadius: '16px',
+          border: `1px solid ${colors.border}`,
+          padding: 'clamp(16px, 4vw, 32px)',
+          marginBottom: '24px',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(4, 1fr)',
+          gap: 'clamp(16px, 3vw, 32px)',
+        }}>
+          {/* Revenue */}
+          <div>
+            <p style={{ color: colors.textMuted, fontSize: '11px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>
+              REVENUE
+            </p>
+            <p className="kpi-value" style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 'clamp(28px, 5vw, 42px)', fontWeight: 700, marginBottom: '4px' }}>
+              {formatNumber(summary.totalRevenue)}
+            </p>
+            <p style={{ color: colors.textSecondary, fontSize: '13px', marginBottom: '8px' }}>RSD</p>
+            <TrendIndicator value={vsComparison.vsLastWeek.revenue.change} suffix={`vs last ${meta.dayOfWeek.slice(0,3)}`} />
+          </div>
+
+          {/* Profit */}
+          <div>
+            <p style={{ color: colors.textMuted, fontSize: '11px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>
+              PROFIT
+            </p>
+            <p className="kpi-value" style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 'clamp(28px, 5vw, 42px)', fontWeight: 700, color: colors.success, marginBottom: '4px' }}>
+              {formatNumber(summary.profit)}
+            </p>
+            <p style={{ color: colors.textSecondary, fontSize: '13px', marginBottom: '8px' }}>RSD ({summary.profitMargin}%)</p>
+            <TrendIndicator value={summary.profitMargin - 70} suffix="margin" />
+          </div>
+
+          {/* Orders */}
+          <div>
+            <p style={{ color: colors.textMuted, fontSize: '11px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>
+              ORDERS
+            </p>
+            <p className="kpi-value" style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 'clamp(28px, 5vw, 42px)', fontWeight: 700, marginBottom: '4px' }}>
+              {summary.totalOrders}
+            </p>
+            <p style={{ color: colors.textSecondary, fontSize: '13px', marginBottom: '8px' }}>transactions</p>
+            <TrendIndicator value={vsComparison.vsLastWeek.orders.change} suffix={`vs last ${meta.dayOfWeek.slice(0,3)}`} />
+          </div>
+
+          {/* Rating */}
+          <div>
+            <p style={{ color: colors.textMuted, fontSize: '11px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>
+              AVG RATING
+            </p>
+            <p className="kpi-value" style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 'clamp(28px, 5vw, 42px)', fontWeight: 700, marginBottom: '4px' }}>
+              {summary.avgRating}
+            </p>
+            <p style={{ color: colors.textSecondary, fontSize: '14px', marginBottom: '8px' }}>out of 10</p>
+            <TrendIndicator value={vsComparison.vsLastWeek.rating.change} suffix={`vs last ${meta.dayOfWeek.slice(0,3)}`} />
+          </div>
+        </div>
+
+        {/* Second row KPIs */}
+        <div className="six-col-grid" style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(6, 1fr)',
+          gap: '12px',
+          marginBottom: '24px',
+        }}>
+          {[
+            { icon: '🛒', label: 'AVG BASKET', value: formatNumber(summary.avgBasket), unit: 'RSD', trend: vsComparison.vsYesterday.revenue.change > 0 ? vsComparison.vsYesterday.revenue.change : null },
+            { icon: '📦', label: 'ITEMS/ORDER', value: summary.itemsPerOrder.toFixed(2), trend: null },
+            { icon: '👤', label: 'NEW CUST', value: formatNumber(customerData.newCustomers), subtext: `${(customerData.newCustomers / customerData.total * 100).toFixed(1)}%`, trend: null },
+            { icon: '🔄', label: 'RETURNING', value: formatNumber(customerData.returning), subtext: `${customerData.repeatRate}%`, trend: null },
+            { icon: '🚚', label: 'DELIVERY', value: summary.avgDeliveryTime.toFixed(1), unit: 'min', trend: null, sim: true, warning: summary.avgDeliveryTime > 40 },
+            { icon: '💰', label: 'MARGIN', value: `${summary.profitMargin}%`, subtext: `${(summary.profit/1000).toFixed(0)}K`, trend: null },
+          ].map((kpi, i) => (
+            <div key={i} style={{
+              background: colors.card,
+              borderRadius: '12px',
+              border: `1px solid ${colors.border}`,
+              padding: 'clamp(12px, 2vw, 20px)',
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                <IconBox>{kpi.icon}</IconBox>
+                <div style={{ display: 'flex', gap: '4px' }}>
+                  {kpi.sim && <SimBadge />}
+                  {kpi.warning && <WarningBadge />}
+                </div>
+              </div>
+              <p style={{ color: colors.textMuted, fontSize: '9px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px' }}>
+                {kpi.label}
+              </p>
+              <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '28px', fontWeight: 700 }}>
+                {kpi.value}
+                {kpi.unit && <span style={{ fontSize: '14px', color: colors.textSecondary, marginLeft: '4px' }}>{kpi.unit}</span>}
+              </p>
+              {kpi.subtext && <p style={{ color: colors.textSecondary, fontSize: '12px' }}>{kpi.subtext}</p>}
+              {kpi.trend !== null && <TrendIndicator value={kpi.trend} />}
+            </div>
+          ))}
+        </div>
+                    <p style={{ 
+                      fontFamily: "'Space Grotesk', sans-serif", 
+                      fontWeight: 700, 
+                      fontSize: '16px', 
+                      color: product.margin < 60 ? colors.error : product.margin >= 75 ? colors.success : colors.warning,
+                    }}>
+                      {product.margin}%
+                    </p>
+                    <p style={{ color: colors.textMuted, fontSize: '10px' }}>margin</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Two column: Hourly & Day of Week */}
+        <div className="two-col-grid" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px', marginBottom: '24px' }}>
+          
+          {/* Hourly Analysis */}
+          <div style={{
+            background: colors.card,
+            borderRadius: '16px',
+            border: `1px solid ${colors.border}`,
+            padding: 'clamp(16px, 3vw, 28px)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+              <IconBox color="#F87171">⏰</IconBox>
+              <h2 className="section-title" style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '18px', fontWeight: 600 }}>
+                Hourly Analysis
+              </h2>
+            </div>
+
+            <ResponsiveContainer width="100%" height={200}>
+              <ComposedChart data={hourlyData}>
+                <CartesianGrid strokeDasharray="3 3" stroke={colors.borderSubtle} vertical={false} />
+                <XAxis dataKey="hour" tick={{ fill: colors.textMuted, fontSize: 9 }} axisLine={{ stroke: colors.borderSubtle }} tickLine={false} />
+                <YAxis yAxisId="left" tick={{ fill: colors.textMuted, fontSize: 9 }} axisLine={false} tickLine={false} />
+                <YAxis yAxisId="right" orientation="right" tick={{ fill: colors.textMuted, fontSize: 9 }} axisLine={false} tickLine={false} />
+                <Tooltip content={<CustomTooltip />} />
+                <Bar yAxisId="left" dataKey="orders" fill={colors.purple} radius={[4, 4, 0, 0]} opacity={0.6} name="Orders" />
+                <Line yAxisId="right" type="monotone" dataKey="prepTime" stroke={colors.success} strokeWidth={2} dot={false} name="Prep Time" />
+                <Line yAxisId="right" type="monotone" dataKey="deliveryTime" stroke={colors.info} strokeWidth={2} dot={false} name="Delivery Time" />
+              </ComposedChart>
+            </ResponsiveContainer>
+
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '24px', marginTop: '16px' }}>
+              {[
+                { color: colors.purple, label: 'Orders' },
+                { color: colors.success, label: 'Prep Time' },
+                { color: colors.info, label: 'Delivery Time' },
+              ].map((item, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ width: '12px', height: '3px', background: item.color, borderRadius: '2px' }} />
+                  <span style={{ color: colors.textSecondary, fontSize: '12px' }}>{item.label}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Critical Hours */}
+            <div style={{ marginTop: '24px' }}>
+              <p style={{ color: colors.textSecondary, fontSize: '12px', marginBottom: '12px' }}>Critical Hours</p>
+              {criticalHours.map((hour, i) => (
+                <div key={i} style={{
+                  background: i === 1 ? 'rgba(239, 68, 68, 0.1)' : colors.elevated,
+                  borderRadius: '10px',
+                  padding: '12px 16px',
+                  marginBottom: '8px',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <span style={{ color: i === 1 ? colors.error : colors.warning, fontWeight: 600, fontSize: '14px' }}>{hour.hour}</span>
+                    <span style={{ color: colors.textSecondary, fontSize: '13px' }}>{hour.orders} orders</span>
+                    <span style={{ color: colors.textSecondary, fontSize: '13px' }}>{hour.revenue} RSD</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <span style={{ color: parseInt(hour.delivery) > 45 ? colors.error : colors.warning, fontSize: '13px' }}>{hour.delivery} delivery</span>
+                    <span style={{ color: colors.textPrimary, fontWeight: 600, fontSize: '13px' }}>{hour.rating}/10 ⭐</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Day of Week */}
+          <div style={{
+            background: colors.card,
+            borderRadius: '16px',
+            border: `1px solid ${colors.border}`,
+            padding: 'clamp(20px, 4vw, 28px)',
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <IconBox color="#818CF8">📅</IconBox>
+                <h2 className="section-title" style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '18px', fontWeight: 600 }}>
+                  Day of Week
+                </h2>
+              </div>
+            </div>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {dayOfWeekAverages.map((day, i) => {
+                const maxRev = Math.max(...dayOfWeekAverages.map(d => d.avgRevenue));
+                const pct = (day.avgRevenue / maxRev) * 100;
+                return (
+                  <div key={i} style={{
+                    background: day.isToday ? `${colors.purple}20` : colors.elevated,
+                    borderRadius: '10px',
+                    padding: '12px 16px',
+                    border: day.isToday ? `1px solid ${colors.purple}` : 'none',
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontWeight: day.isToday ? 700 : 500, fontSize: '13px' }}>{day.day}</span>
+                        {day.isToday && <span style={{ fontSize: '10px', background: colors.purple, padding: '2px 6px', borderRadius: '4px' }}>TODAY</span>}
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '14px' }}>
+                          {(day.avgRevenue / 1000).toFixed(0)}K
+                        </span>
+                        <span style={{ color: colors.textMuted, fontSize: '11px', marginLeft: '8px' }}>{day.avgOrders} ord</span>
+                      </div>
+                    </div>
+                    <div style={{ height: '4px', background: colors.borderSubtle, borderRadius: '2px', overflow: 'hidden' }}>
+                      <div style={{ width: `${pct}%`, height: '100%', background: day.isToday ? colors.purple : colors.success, borderRadius: '2px' }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* Venue Performance */}
+        <div className="two-col-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
+          
+          {/* Kitchen Performance */}
+          <div style={{
+            background: colors.card,
+            borderRadius: '16px',
+            border: `1px solid ${colors.border}`,
+            padding: 'clamp(16px, 3vw, 28px)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+              <IconBox color="#22C55E">👨‍🍳</IconBox>
+              <h2 className="section-title" style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '18px', fontWeight: 600 }}>
+                Kitchen Performance
+              </h2>
+              <SimBadge />
+            </div>
+            
+            {venuePerformance.kitchen.map((venue, i) => (
+              <div key={i} style={{
+                background: colors.elevated,
+                borderRadius: '10px',
+                padding: '14px 16px',
+                marginBottom: '8px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}>
+                <div>
+                  <p style={{ fontWeight: 500, fontSize: '14px', marginBottom: '4px' }}>{venue.venue}</p>
+                  <p style={{ color: colors.textMuted, fontSize: '12px' }}>{venue.orders} orders</p>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                  <div style={{ textAlign: 'right' }}>
+                    <p style={{ 
+                      fontFamily: "'Space Grotesk', sans-serif", 
+                      fontWeight: 700, 
+                      fontSize: '18px',
+                      color: venue.status === 'good' ? colors.success : venue.status === 'warning' ? colors.warning : colors.error,
+                    }}>
+                      {venue.avgPrep}m
+                    </p>
+                    <p style={{ color: colors.textMuted, fontSize: '10px' }}>target {venue.target}</p>
+                  </div>
+                  <span style={{
+                    width: '8px',
+                    height: '8px',
+                    borderRadius: '50%',
+                    background: venue.status === 'good' ? colors.success : venue.status === 'warning' ? colors.warning : colors.error,
+                  }} />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Delivery Performance */}
+          <div style={{
+            background: colors.card,
+            borderRadius: '16px',
+            border: `1px solid ${colors.border}`,
+            padding: 'clamp(16px, 3vw, 28px)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+              <IconBox color="#3B82F6">🚚</IconBox>
+              <h2 className="section-title" style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '18px', fontWeight: 600 }}>
+                Delivery by Venue
+              </h2>
+            </div>
+            
+            {venuePerformance.delivery.map((venue, i) => (
+              <div key={i} style={{
+                background: colors.elevated,
+                borderRadius: '10px',
+                padding: '14px 16px',
+                marginBottom: '8px',
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <p style={{ fontWeight: 500, fontSize: '14px' }}>{venue.venue}</p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <span style={{ 
+                      fontFamily: "'Space Grotesk', sans-serif", 
+                      fontWeight: 700, 
+                      fontSize: '16px',
+                      color: venue.time < 35 ? colors.success : venue.time < 45 ? colors.warning : colors.error,
+                    }}>
+                      {venue.time.toFixed(1)}m
+                    </span>
+                    <span style={{ 
+                      fontSize: '12px', 
+                      padding: '3px 8px', 
+                      borderRadius: '6px',
+                      background: venue.pctUnder35 >= 50 ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)',
+                      color: venue.pctUnder35 >= 50 ? colors.success : colors.error,
+                    }}>
+                      {venue.pctUnder35}% &lt;35m
+                    </span>
+                  </div>
+                </div>
+                <div style={{ height: '4px', background: colors.borderSubtle, borderRadius: '2px', overflow: 'hidden' }}>
+                  <div style={{ 
+                    width: `${venue.pctUnder35}%`, 
+                    height: '100%', 
+                    background: venue.pctUnder35 >= 50 ? colors.success : colors.error, 
+                    borderRadius: '2px' 
+                  }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Category Performance */}
+        <div style={{
+          background: colors.card,
+          borderRadius: '16px',
+          border: `1px solid ${colors.border}`,
+          padding: 'clamp(16px, 3vw, 28px)',
+          marginBottom: '24px',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+            <IconBox color="#06B6D4">📊</IconBox>
+            <h2 className="section-title" style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '18px', fontWeight: 600 }}>
+              Category Performance
+            </h2>
+          </div>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
+            {categoryPerformance.map((cat, i) => (
+              <div key={i} style={{
+                background: colors.elevated,
+                borderRadius: '12px',
+                padding: '16px',
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                  <div>
+                    <p style={{ fontWeight: 600, fontSize: '14px', marginBottom: '4px' }}>{cat.name}</p>
+                    <p style={{ color: colors.textMuted, fontSize: '12px' }}>{cat.mix}% of sales</p>
+                  </div>
+                  <span style={{
+                    fontSize: '11px',
+                    padding: '3px 8px',
+                    borderRadius: '6px',
+                    background: cat.trend >= 0 ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)',
+                    color: cat.trend >= 0 ? colors.success : colors.error,
+                  }}>
+                    {cat.trend >= 0 ? '+' : ''}{cat.trend}%
+                  </span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '18px' }}>
+                    {(cat.revenue / 1000).toFixed(0)}K
+                  </span>
+                  <span style={{ 
+                    fontSize: '13px', 
+                    fontWeight: 600,
+                    color: cat.margin >= 80 ? colors.success : cat.margin >= 70 ? colors.warning : colors.textSecondary,
+                  }}>
+                    {cat.margin}% margin
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Tomorrow's Forecast */}
+        <div style={{
+          background: colors.card,
+          borderRadius: '16px',
+          border: `1px solid ${colors.border}`,
+          padding: 'clamp(20px, 4vw, 28px)',
+          marginBottom: '24px',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+            <IconBox color="#A78BFA">🔮</IconBox>
+            <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '20px', fontWeight: 600 }}>
+              Tomorrow's Forecast
+            </h2>
+            <span style={{
+              fontSize: '11px',
+              padding: '4px 10px',
+              borderRadius: '6px',
+              background: 'rgba(139, 92, 246, 0.15)',
+              color: colors.purpleLight,
+              fontWeight: 600,
+            }}>
+              {forecast.confidence} CONFIDENCE
+            </span>
+          </div>
+
+          {/* Forecast KPIs */}
+          <div className="forecast-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
+            {[
+              { 
+                icon: '💰', 
+                label: 'EXPECTED REVENUE', 
+                value: `${(forecast.tomorrowRevenue/1000).toFixed(0)}K`, 
+                subtext: 'RSD',
+                comparison: `vs ${(summary.totalRevenue/1000).toFixed(0)}K today`,
+                trend: ((forecast.tomorrowRevenue - summary.totalRevenue) / summary.totalRevenue * 100).toFixed(1),
+                color: colors.purple,
+              },
+              { 
+                icon: '📦', 
+                label: 'EXPECTED ORDERS', 
+                value: forecast.tomorrowOrders.toString(), 
+                subtext: 'orders',
+                comparison: `vs ${summary.totalOrders} today`,
+                trend: ((forecast.tomorrowOrders - summary.totalOrders) / summary.totalOrders * 100).toFixed(1),
+                color: colors.info,
+              },
+              { 
+                icon: '🛒', 
+                label: 'AVG BASKET', 
+                value: formatNumber(Math.round(forecast.tomorrowRevenue / forecast.tomorrowOrders)), 
+                subtext: 'RSD',
+                comparison: `vs ${formatNumber(summary.avgBasket)} today`,
+                trend: 0,
+                color: colors.cyan,
+              },
+              { 
+                icon: '⭐', 
+                label: 'TARGET RATING', 
+                value: '9.0+', 
+                subtext: 'out of 10',
+                comparison: `vs ${summary.avgRating} today`,
+                trend: null,
+                note: 'Maintain quality standards',
+                color: colors.success,
+                isTarget: true,
+              },
+            ].map((kpi, i) => (
+              <div key={i} style={{
+                background: colors.elevated,
+                borderRadius: '14px',
+                padding: '20px',
+                border: `1px solid ${colors.borderSubtle}`,
+                position: 'relative',
+              }}>
+                <div style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: '3px',
+                  background: `linear-gradient(90deg, ${kpi.color}, ${kpi.color}80)`,
+                  borderRadius: '14px 14px 0 0',
+                }} />
+                
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px', flexWrap: 'wrap', gap: '4px' }}>
+                  <span style={{ fontSize: '24px' }}>{kpi.icon}</span>
+                  {kpi.trend !== null && (
+                    <span style={{
+                      background: kpi.trend > 0 ? 'rgba(34, 197, 94, 0.15)' : kpi.trend < 0 ? 'rgba(245, 158, 11, 0.15)' : 'rgba(255,255,255,0.1)',
+                      color: kpi.trend > 0 ? colors.success : kpi.trend < 0 ? colors.warning : colors.textSecondary,
+                      padding: '3px 8px',
+                      borderRadius: '10px',
+                      fontSize: '11px',
+                      fontWeight: 600,
+                    }}>
+                      {kpi.trend > 0 ? '↗' : kpi.trend < 0 ? '↘' : '→'} {Math.abs(kpi.trend)}%
+                    </span>
+                  )}
+                  {kpi.isTarget && (
+                    <span style={{
+                      background: 'rgba(34, 197, 94, 0.15)',
+                      color: colors.success,
+                      padding: '3px 8px',
+                      borderRadius: '10px',
+                      fontSize: '11px',
+                      fontWeight: 600,
+                    }}>
+                      TARGET
+                    </span>
+                  )}
+                </div>
+                
+                <p style={{ color: colors.textMuted, fontSize: '10px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>
+                  {kpi.label}
+                </p>
+                
+                <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '32px', fontWeight: 700, marginBottom: '2px' }}>
+                  {kpi.value}
+                </p>
+                <p style={{ color: colors.textSecondary, fontSize: '12px', marginBottom: '8px' }}>{kpi.subtext}</p>
+                
+                <p className="hide-mobile" style={{ color: colors.textMuted, fontSize: '11px', marginBottom: '8px' }}>{kpi.comparison}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Peak Hours & Recommendations */}
+          <div style={{
+            background: colors.elevated,
+            borderRadius: '12px',
+            padding: '20px',
+            display: 'grid',
+            gridTemplateColumns: '1fr 2fr',
+            gap: '24px',
+          }}>
+            <div>
+              <p style={{ color: colors.textSecondary, fontSize: '12px', marginBottom: '12px' }}>Peak Hours Expected</p>
+              {forecast.peakHours.map((peak, i) => (
+                <div key={i} style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: '10px 0',
+                  borderBottom: i < forecast.peakHours.length - 1 ? `1px solid ${colors.borderSubtle}` : 'none',
+                }}>
+                  <div>
+                    <p style={{ fontSize: '13px', fontWeight: 500 }}>{peak.hour}</p>
+                    <p style={{ color: colors.textMuted, fontSize: '11px' }}>{peak.label}</p>
+                  </div>
+                  <span style={{ 
+                    fontFamily: "'Space Grotesk', sans-serif", 
+                    fontWeight: 600, 
+                    fontSize: '14px',
+                    color: colors.purple,
+                  }}>
+                    ~{peak.orders} orders
+                  </span>
+                </div>
+              ))}
+            </div>
+            
+            <div>
+              <p style={{ color: colors.textSecondary, fontSize: '12px', marginBottom: '12px' }}>Recommendations for Tomorrow</p>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                {forecast.recommendations.map((rec, i) => (
+                  <div key={i} style={{
+                    background: colors.card,
+                    borderRadius: '10px',
+                    padding: '12px',
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: '10px',
+                  }}>
+                    <span style={{ fontSize: '18px' }}>{rec.icon}</span>
+                    <div style={{ flex: 1 }}>
+                      <p style={{ fontSize: '12px', lineHeight: 1.4 }}>{rec.text}</p>
+                      <span style={{
+                        display: 'inline-block',
+                        marginTop: '6px',
+                        background: rec.priority === 'HIGH' ? 'rgba(239, 68, 68, 0.15)' : rec.priority === 'MEDIUM' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(59, 130, 246, 0.15)',
+                        color: rec.priority === 'HIGH' ? colors.error : rec.priority === 'MEDIUM' ? colors.warning : colors.info,
+                        padding: '2px 8px',
+                        borderRadius: '6px',
+                        fontSize: '10px',
+                        fontWeight: 600,
+                      }}>
+                        {rec.priority}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div style={{ textAlign: 'center', padding: '16px', color: colors.textMuted, fontSize: '12px' }}>
+          Generated: {meta.reportDateFormatted} | {summary.totalOrders} orders | {summary.totalCustomers} customers | {summary.reviewCount} reviews | Data from {meta.dataSource} | v5.0 (JSON-powered)
+        </div>
+
+      </div>
+    </div>
+  );
+};
+
+ReactDOM.createRoot(document.getElementById("root")).render(<CollinaDashboard />);
+  </script>
+</body>
+</html>
