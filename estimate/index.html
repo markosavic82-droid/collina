@@ -458,19 +458,19 @@
             </div>
 
             <div class="historical-section">
-                <h3>Projection Calculation</h3>
+                <h3>Week over Week Growth</h3>
                 <div class="benchmark-grid">
                     <div class="benchmark-item">
                         <div class="benchmark-value" id="benchmarkLow">—</div>
-                        <div class="benchmark-label">Avg @ cutoff</div>
+                        <div class="benchmark-label">Last week</div>
                     </div>
                     <div class="benchmark-item">
                         <div class="benchmark-value" id="benchmarkWeighted">—</div>
-                        <div class="benchmark-label">Today @ cutoff</div>
+                        <div class="benchmark-label">This week</div>
                     </div>
                     <div class="benchmark-item">
                         <div class="benchmark-value" id="benchmarkHigh">—</div>
-                        <div class="benchmark-label">Ratio</div>
+                        <div class="benchmark-label">WoW Growth</div>
                     </div>
                 </div>
                 <div class="range-estimate">
@@ -745,7 +745,6 @@
             const ordersAtCutoff = today.filter(o => o.date <= cutoffTime).length;
 
             // Build today's hourly cumulative
-            // Only show COMPLETED hours - if it's 14:05, we only show data up to 14:00
             const currentHour = latestTime.getHours();
             const todayHourlyCumulative = {};
             for (let h = 0; h <= currentHour; h++) {
@@ -778,17 +777,11 @@
 
                 const hourlyCumulative = {};
                 for (let h = 0; h <= 23; h++) {
-                    // Count orders where hour is strictly less than h, plus orders AT hour h
-                    // This gives cumulative count at the END of hour h
                     hourlyCumulative[h] = data.orders.filter(oh => oh <= h).length;
                 }
-                // Hour 24 (midnight) should show the final total
-                hourlyCumulative[24] = data.orders.length;
 
                 const historicalAtCutoff = hourlyCumulative[cutoffHour] || 0;
                 const finalTotal = data.orders.length;
-
-                if (historicalAtCutoff < 10) continue;
 
                 const dayData = {
                     dateKey,
@@ -796,49 +789,81 @@
                     finalTotal,
                     ordersAtCutoff: historicalAtCutoff,
                     hourlyCumulative,
-                    diff: Math.abs(historicalAtCutoff - ordersAtCutoff),
-                    similarity: 1 / (1 + Math.abs(historicalAtCutoff - ordersAtCutoff))
+                    date: new Date(dateKey)
                 };
 
                 sameDayOfWeek.push(dayData);
             }
 
-            // Sort by similarity and get top 3 from same day of week
-            sameDayOfWeek.sort((a, b) => a.diff - b.diff);
-            const top3 = sameDayOfWeek.slice(0, 3);
+            // Sort by date descending (most recent first)
+            sameDayOfWeek.sort((a, b) => b.date - a.date);
             
-            if (top3.length === 0) {
-                statusText.textContent = `Not enough historical ${dayName}s for estimation.`;
+            // Get last 4 same weekdays
+            const last4Weeks = sameDayOfWeek.slice(0, 4);
+            
+            if (last4Weeks.length < 2) {
+                statusText.textContent = `Not enough historical ${dayName}s for estimation (need at least 2).`;
                 return;
             }
 
-            // Calculate averages from top 3 similar days
-            const avgAtCutoff = top3.reduce((sum, d) => sum + d.ordersAtCutoff, 0) / top3.length;
-            const avgFinalTotal = top3.reduce((sum, d) => sum + d.finalTotal, 0) / top3.length;
-            
-            // Percentage-based projection
-            // If today has 160 at cutoff and avg had 150, we're at 106.7%
-            // If avg final was 400, projection = 400 * 1.067 = 427
-            const percentage = ordersAtCutoff / avgAtCutoff;
-            const projectedTotal = Math.round(avgFinalTotal * percentage);
-            
-            // Difference for display
-            const difference = ordersAtCutoff - avgAtCutoff;
+            // Calculate average orders for last 4 same weekdays
+            const avgFinalTotal = last4Weeks.reduce((sum, d) => sum + d.finalTotal, 0) / last4Weeks.length;
+            const avgAtCutoff = last4Weeks.reduce((sum, d) => sum + d.ordersAtCutoff, 0) / last4Weeks.length;
 
-            // Best/worst for same day of week (from all same-day data)
+            // Calculate WoW growth from last 28 days
+            // Divide into 4 weekly periods (7 days each)
+            const allDays = Object.entries(dailyData)
+                .filter(([key]) => key !== todayDateKey)
+                .map(([dateKey, data]) => ({
+                    dateKey,
+                    date: new Date(dateKey),
+                    total: data.orders.length
+                }))
+                .sort((a, b) => b.date - a.date);
+
+            // Get last 28 days and group into weeks
+            const weeks = [0, 0, 0, 0]; // Total orders per week
+            const weekCounts = [0, 0, 0, 0]; // Days counted per week
+            
+            for (const day of allDays) {
+                const daysDiff = Math.floor((todayStart - day.date) / (1000 * 60 * 60 * 24));
+                if (daysDiff >= 0 && daysDiff < 28) {
+                    const weekIndex = Math.floor(daysDiff / 7);
+                    weeks[weekIndex] += day.total;
+                    weekCounts[weekIndex]++;
+                }
+            }
+
+            // Calculate WoW growth (most recent week vs previous week)
+            let wowGrowth = 0;
+            if (weeks[1] > 0) {
+                wowGrowth = (weeks[0] - weeks[1]) / weeks[1];
+            }
+
+            // Apply WoW growth to average
+            const growthMultiplier = 1 + wowGrowth;
+            const projectedTotal = Math.round(avgFinalTotal * growthMultiplier);
+
+            // Current progress percentage
+            const percentage = ordersAtCutoff / avgAtCutoff;
+
+            // Best/worst for same day of week
             const allSameDaySorted = [...sameDayOfWeek].sort((a, b) => b.finalTotal - a.finalTotal);
             const bestDay = allSameDaySorted[0] || null;
             const worstDay = allSameDaySorted[allSameDaySorted.length - 1] || null;
 
             // Projection object
             const projection = {
-                low: Math.min(...top3.map(d => d.finalTotal)),
-                high: Math.max(...top3.map(d => d.finalTotal)),
+                low: Math.min(...last4Weeks.map(d => d.finalTotal)),
+                high: Math.max(...last4Weeks.map(d => d.finalTotal)),
                 weightedAvg: projectedTotal,
                 avgAtCutoff: Math.round(avgAtCutoff),
                 avgFinalTotal: Math.round(avgFinalTotal),
-                difference: Math.round(difference),
-                percentage: percentage
+                wowGrowth: wowGrowth,
+                growthMultiplier: growthMultiplier,
+                percentage: percentage,
+                weeks: weeks,
+                weekCounts: weekCounts
             };
 
             // Venue breakdown
@@ -861,7 +886,7 @@
                 totalRevenue,
                 avgOrderValue: totalRevenue / today.length,
                 venueOrders,
-                similarDays: top3,
+                similarDays: last4Weeks,
                 projection,
                 percentComplete,
                 todayHourlyCumulative,
@@ -903,8 +928,9 @@
 
         function updateUI(data) {
             document.getElementById('projectedTotal').textContent = data.projection.weightedAvg;
-            const pctDisplay = Math.round(data.projection.percentage * 100);
-            document.getElementById('projectedRange').textContent = `avg ${data.projection.avgFinalTotal} × ${pctDisplay}%`;
+            const wowPct = Math.round(data.projection.wowGrowth * 100);
+            const wowSign = wowPct >= 0 ? '+' : '';
+            document.getElementById('projectedRange').textContent = `avg ${data.projection.avgFinalTotal} × (1${wowSign}${wowPct}% WoW)`;
             document.getElementById('currentOrders').textContent = data.currentOrders;
             document.getElementById('lastOrderTime').textContent = `as of ${data.latestTime.getHours()}:${String(data.latestTime.getMinutes()).padStart(2, '0')}`;
 
@@ -943,10 +969,11 @@
                     </div>
                 `).join('');
 
-            // Benchmarks
-            document.getElementById('benchmarkLow').textContent = data.projection.avgAtCutoff;
-            document.getElementById('benchmarkWeighted').textContent = data.ordersAtCutoff;
-            document.getElementById('benchmarkHigh').textContent = `${Math.round(data.projection.percentage * 100)}%`;
+            // Benchmarks - show weekly totals and growth
+            document.getElementById('benchmarkLow').textContent = data.projection.weeks[1] || '—';
+            document.getElementById('benchmarkWeighted').textContent = data.projection.weeks[0] || '—';
+            const wowPctBench = Math.round(data.projection.wowGrowth * 100);
+            document.getElementById('benchmarkHigh').textContent = `${wowPctBench >= 0 ? '+' : ''}${wowPctBench}%`;
             document.getElementById('rangeLow').textContent = data.projection.low;
             document.getElementById('rangeHigh').textContent = data.projection.high;
             // Position marker based on projection within range
@@ -972,7 +999,7 @@
             const colors = {
                 today: { line: '#ff6b35', bg: 'rgba(255, 107, 53, 0.1)' },
                 projection: { line: '#ff6b35', bg: 'rgba(255, 107, 53, 0.05)' },
-                similar: [{ line: '#4dabf7' }, { line: '#00d68f' }, { line: '#a855f7' }],
+                similar: [{ line: '#4dabf7' }, { line: '#00d68f' }, { line: '#a855f7' }, { line: '#f59e0b' }],
                 best: { line: '#22c55e' },
                 worst: { line: '#ef4444' }
             };
@@ -982,20 +1009,23 @@
             // Calculate average hourly cumulative from similar days for projection
             const avgHourlyCumulative = {};
             for (let h = 0; h <= 24; h++) {
+                const hourKey = h === 24 ? 23 : h; // Use 23 for final count
                 const values = data.similarDays.map(d => {
-                    return d.hourlyCumulative[h] || 0;
+                    if (h === 24) return d.finalTotal;
+                    return d.hourlyCumulative[hourKey] || 0;
                 });
                 avgHourlyCumulative[h] = values.reduce((a, b) => a + b, 0) / values.length;
             }
 
-            // Build projected curve: apply percentage to average curve
+            // Build projected curve: apply WoW growth multiplier to average curve
             const projectedCurve = {};
             for (let h = 0; h <= 24; h++) {
-                projectedCurve[h] = Math.round(avgHourlyCumulative[h] * data.projection.percentage);
+                projectedCurve[h] = Math.round(avgHourlyCumulative[h] * data.projection.growthMultiplier);
             }
 
             if (data.bestDay) {
                 const bestData = hours.map(h => {
+                    if (h === 24) return data.bestDay.finalTotal;
                     return data.bestDay.hourlyCumulative[h] || 0;
                 });
                 datasets.push({
@@ -1009,6 +1039,7 @@
 
             if (data.worstDay && data.worstDay !== data.bestDay) {
                 const worstData = hours.map(h => {
+                    if (h === 24) return data.worstDay.finalTotal;
                     return data.worstDay.hourlyCumulative[h] || 0;
                 });
                 datasets.push({
@@ -1022,6 +1053,7 @@
 
             data.similarDays.forEach((day, idx) => {
                 const dayData = hours.map(h => {
+                    if (h === 24) return day.finalTotal;
                     return day.hourlyCumulative[h] || 0;
                 });
                 datasets.push({
