@@ -434,6 +434,10 @@
                         <span class="detail-label">Avg order value</span>
                         <span class="detail-value" id="avgOrderValue">—</span>
                     </div>
+                    <div class="detail-row" style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border);">
+                        <span class="detail-label"><strong>Projected revenue</strong></span>
+                        <span class="detail-value green" id="projectedRevenue">—</span>
+                    </div>
                 </div>
             </div>
 
@@ -868,6 +872,12 @@
                 totalRevenue += order.price;
             }
 
+            // Calculate current average basket
+            const avgOrderValue = totalRevenue / today.length;
+            
+            // Projected revenue = projected orders × current avg basket
+            const projectedRevenue = projection.weightedAvg * avgOrderValue;
+            
             const percentComplete = today.length / projection.weightedAvg;
 
             updateUI({
@@ -877,7 +887,8 @@
                 latestTime,
                 dayName,
                 totalRevenue,
-                avgOrderValue: totalRevenue / today.length,
+                avgOrderValue,
+                projectedRevenue,
                 venueOrders,
                 similarDays: last4Weeks,
                 projection,
@@ -935,6 +946,7 @@
             document.getElementById('ordersAtCutoff').textContent = `${data.ordersAtCutoff} @ ${data.cutoffTime.getHours()}:${String(data.cutoffTime.getMinutes()).padStart(2, '0')}`;
             document.getElementById('currentRevenue').textContent = `${formatNumber(Math.round(data.totalRevenue))} RSD`;
             document.getElementById('avgOrderValue').textContent = `${formatNumber(Math.round(data.avgOrderValue))} RSD`;
+            document.getElementById('projectedRevenue').textContent = `${formatNumber(Math.round(data.projectedRevenue))} RSD`;
 
             // Similar days
             document.getElementById('similarDaysList').innerHTML = data.similarDays.map(day => `
@@ -1122,7 +1134,7 @@
                         y: { 
                             grid: { color: 'rgba(42, 42, 58, 0.5)' }, 
                             ticks: { color: '#5a5a6e', font: { size: 11 } }, 
-                            min: 0,
+                            min: 300,
                             max: 600
                         }
                     }
