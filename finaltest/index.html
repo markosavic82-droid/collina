@@ -1,1 +1,1362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Collina Analytics Dashboard</title>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/prop-types@15.8.1/prop-types.min.js"></script>
+  <script src="https://unpkg.com/recharts@2.12.7/umd/Recharts.js"></script>
+  <style>* { margin: 0; padding: 0; box-sizing: border-box; }</style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+const { useState, useEffect } = React;
+const { BarChart, Bar, LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, ComposedChart } = Recharts;
 
+const CollinaDashboard = () => {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [timeRange, setTimeRange] = useState('1D');
+  const [trendMetric, setTrendMetric] = useState('revenue');
+  const [trendDropdownOpen, setTrendDropdownOpen] = useState(false);
+
+  useEffect(() => {
+    fetch('report-data.json')
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to load report data');
+        return res.json();
+      })
+      .then(json => {
+        setData(json);
+        setLoading(false);
+      })
+      .catch(err => {
+        setError(err.message);
+        setLoading(false);
+      });
+  }, []);
+
+  const colors = {
+    bg: '#0D0B14',
+    card: '#1A1F2E',
+    elevated: '#252232',
+    border: 'rgba(255, 255, 255, 0.05)',
+    borderSubtle: '#2A2735',
+    purple: '#8B5CF6',
+    purpleLight: '#A78BFA',
+    success: '#22C55E',
+    error: '#EF4444',
+    warning: '#F59E0B',
+    info: '#3B82F6',
+    textPrimary: '#FFFFFF',
+    textSecondary: '#9CA3AF',
+    textMuted: '#6B7280',
+    cyan: '#06B6D4',
+  };
+
+  if (loading) {
+    return (
+      <div style={{ minHeight: '100vh', backgroundColor: colors.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center', color: colors.textPrimary }}>
+          <div style={{ fontSize: '48px', marginBottom: '16px' }}>📊</div>
+          <p style={{ fontSize: '18px' }}>Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div style={{ minHeight: '100vh', backgroundColor: colors.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center', color: colors.error, padding: '32px' }}>
+          <div style={{ fontSize: '48px', marginBottom: '16px' }}>⚠️</div>
+          <p style={{ fontSize: '18px', marginBottom: '8px' }}>Error loading data</p>
+          <p style={{ fontSize: '14px', color: colors.textMuted }}>{error}</p>
+          <p style={{ fontSize: '12px', color: colors.textMuted, marginTop: '16px' }}>
+            Make sure report-data.json exists in the same folder
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const { meta, summary, vsComparison, hourlyData, prepTimeByHour, trendData, trendStats, 
+          dayOfWeekAverages, topProducts, categoryPerformance, venuePerformance, 
+          criticalHours, customerData, topCustomers, forecast, profitBreakdown } = data;
+
+  const trendConfigs = {
+    revenue: {
+      label: 'Revenue', icon: '💰', color: colors.purple, dataKey: 'revenue',
+      format: (v) => (v/1000).toFixed(0) + 'K', unit: 'RSD', stats: trendStats.revenue
+    },
+    orders: {
+      label: 'Orders', icon: '📦', color: colors.info, dataKey: 'orders',
+      format: (v) => v.toString(), unit: '', stats: trendStats.orders
+    },
+    rating: {
+      label: 'Avg Rating', icon: '⭐', color: colors.warning, dataKey: 'rating',
+      format: (v) => v.toFixed(1), unit: '/10', stats: trendStats.rating
+    },
+  };
+
+  const CustomTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+      return (
+        <div style={{ background: colors.card, border: '1px solid ' + colors.borderSubtle, borderRadius: '12px', padding: '12px 16px', boxShadow: '0 10px 40px rgba(0,0,0,0.3)' }}>
+          <p style={{ color: colors.textSecondary, fontSize: '12px', marginBottom: '8px' }}>{label}</p>
+          {payload.map((entry, index) => (
+            <p key={index} style={{ color: entry.color || colors.purple, fontSize: '14px', fontWeight: 600 }}>
+              {entry.name}: {typeof entry.value === 'number' && entry.value > 1000 ? (entry.value / 1000).toFixed(0) + 'K' : entry.value}
+            </p>
+          ))}
+        </div>
+      );
+    }
+    return null;
+  };
+
+  const IconBox = ({ children, color = colors.purpleLight }) => (
+    <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: color + '20', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px', flexShrink: 0 }}>
+      {children}
+    </div>
+  );
+
+  const TrendIndicator = ({ value, suffix = 'vs LW' }) => {
+    const isPositive = value >= 0;
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: isPositive ? colors.success : colors.error }} />
+        <span style={{ color: isPositive ? colors.success : colors.error, fontSize: '13px', fontWeight: 500 }}>
+          {isPositive ? '+' : ''}{value}%
+        </span>
+        <span style={{ color: colors.textMuted, fontSize: '12px' }}>{suffix}</span>
+      </div>
+    );
+  };
+
+  const SimBadge = () => (
+    <span style={{ background: 'rgba(251, 191, 36, 0.15)', color: '#FBBF24', padding: '3px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: 700, letterSpacing: '0.5px' }}>SIM</span>
+  );
+
+  const WarningBadge = () => (
+    <span style={{ background: 'rgba(245, 158, 11, 0.15)', color: '#F59E0B', padding: '4px', borderRadius: '6px', fontSize: '14px' }}>⚠️</span>
+  );
+
+  const formatNumber = (num) => num.toLocaleString();
+
+  return (
+    <div style={{ minHeight: '100vh', backgroundColor: colors.bg, color: colors.textPrimary, padding: 'clamp(12px, 3vw, 32px)', fontFamily: "'Inter', sans-serif" }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap');
+        * { -webkit-tap-highlight-color: transparent; }
+        
+        @media (max-width: 1024px) {
+          .kpi-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 16px !important; }
+          .five-col-grid { grid-template-columns: repeat(3, 1fr) !important; }
+          .channel-grid { grid-template-columns: 1.5fr 1fr 1fr !important; }
+          .channel-hide { display: none !important; }
+        }
+        
+        @media (max-width: 768px) {
+          .kpi-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 12px !important; }
+          .kpi-value { font-size: 26px !important; }
+          .two-col-grid { grid-template-columns: 1fr !important; }
+          .three-col-grid { grid-template-columns: 1fr !important; }
+          .four-col-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }
+          .six-col-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }
+          .header-flex { flex-direction: column !important; align-items: flex-start !important; gap: 12px !important; }
+          .date-range-btns { display: none !important; }
+          .trend-stats { grid-template-columns: repeat(2, 1fr) !important; }
+          .forecast-grid { grid-template-columns: repeat(2, 1fr) !important; }
+          .hide-mobile { display: none !important; }
+          .section-title { font-size: 16px !important; }
+          .customer-grid { grid-template-columns: 1fr !important; }
+          .channel-grid { grid-template-columns: 1fr 1fr !important; font-size: 11px !important; }
+          .insight-text { font-size: 12px !important; }
+        }
+        
+        @media (max-width: 480px) {
+          .kpi-grid { grid-template-columns: 1fr 1fr !important; gap: 8px !important; padding: 12px !important; }
+          .kpi-value { font-size: 22px !important; }
+          .four-col-grid { grid-template-columns: 1fr 1fr !important; gap: 6px !important; }
+          .six-col-grid { grid-template-columns: 1fr 1fr !important; gap: 6px !important; }
+          .forecast-grid { grid-template-columns: 1fr !important; }
+          .customer-stat { padding: 12px !important; }
+          .customer-value { font-size: 24px !important; }
+          .review-card { padding: 10px 12px !important; }
+          .review-time { font-size: 10px !important; }
+          .insight-card { padding: 10px 12px !important; }
+          .insight-icon { font-size: 14px !important; }
+          .insight-text { font-size: 11px !important; line-height: 1.4 !important; }
+          .action-badge { font-size: 9px !important; padding: 2px 6px !important; }
+          .venue-grid { grid-template-columns: 1fr 1fr 1fr !important; font-size: 10px !important; }
+          .venue-name { max-width: 80px !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; }
+          .forecast-card { padding: 14px !important; }
+        }
+        
+        @media (max-width: 768px) {
+          .venue-grid { grid-template-columns: 1.5fr 0.8fr 0.6fr 0.8fr 0.6fr !important; gap: 6px !important; font-size: 11px !important; }
+        }
+      `}</style>
+      
+      <div style={{ maxWidth: '1600px', margin: '0 auto' }}>
+        
+        {/* Header */}
+        <div className="header-flex" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
+          <div>
+            <h1 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 'clamp(24px, 5vw, 42px)', fontWeight: 700, background: 'linear-gradient(to right, #A78BFA, #818CF8, #6366F1)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginBottom: '4px' }}>
+              Collina Analytics
+            </h1>
+            <p style={{ color: colors.textSecondary, fontSize: '14px' }}>{meta.reportDateFormatted}</p>
+          </div>
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+            {summary.avgDeliveryTime > 40 && <WarningBadge />}
+            <div className="date-range-btns" style={{ background: colors.card, border: '1px solid ' + colors.border, borderRadius: '10px', padding: '10px 16px', display: 'flex', gap: '8px' }}>
+              {['1D', '7D', '30D'].map(range => (
+                <button key={range} onClick={() => setTimeRange(range)} style={{ background: timeRange === range ? colors.purple : 'transparent', color: timeRange === range ? 'white' : colors.textSecondary, border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '13px', fontWeight: 500, cursor: 'pointer' }}>
+                  {range}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Main KPIs */}
+        <div className="kpi-grid" style={{ background: colors.card, borderRadius: '16px', border: '1px solid ' + colors.border, padding: 'clamp(16px, 4vw, 32px)', marginBottom: '24px', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 'clamp(16px, 3vw, 32px)' }}>
+          <div>
+            <p style={{ color: colors.textMuted, fontSize: '11px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>REVENUE</p>
+            <p className="kpi-value" style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 'clamp(28px, 5vw, 42px)', fontWeight: 700, marginBottom: '4px' }}>{formatNumber(summary.totalRevenue)}</p>
+            <p style={{ color: colors.textSecondary, fontSize: '13px', marginBottom: '8px' }}>RSD</p>
+            <TrendIndicator value={vsComparison.vsLastWeek.revenue.change} suffix={'vs last ' + meta.dayOfWeek.slice(0,3)} />
+          </div>
+          <div>
+            <p style={{ color: colors.textMuted, fontSize: '11px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>PROFIT</p>
+            <p className="kpi-value" style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 'clamp(28px, 5vw, 42px)', fontWeight: 700, color: colors.success, marginBottom: '4px' }}>{formatNumber(summary.profit)}</p>
+            <p style={{ color: colors.textSecondary, fontSize: '13px', marginBottom: '8px' }}>RSD ({summary.profitMargin}%)</p>
+            <TrendIndicator value={(summary.profitMargin - 70).toFixed(1)} suffix="margin" />
+          </div>
+          <div>
+            <p style={{ color: colors.textMuted, fontSize: '11px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>ORDERS</p>
+            <p className="kpi-value" style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 'clamp(28px, 5vw, 42px)', fontWeight: 700, marginBottom: '4px' }}>{summary.totalOrders}</p>
+            <p style={{ color: colors.textSecondary, fontSize: '13px', marginBottom: '8px' }}>transactions</p>
+            <TrendIndicator value={vsComparison.vsLastWeek.orders.change} suffix={'vs last ' + meta.dayOfWeek.slice(0,3)} />
+          </div>
+          <div>
+            <p style={{ color: colors.textMuted, fontSize: '11px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>AVG RATING</p>
+            <p className="kpi-value" style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 'clamp(28px, 5vw, 42px)', fontWeight: 700, marginBottom: '4px' }}>{summary.avgRating}</p>
+            <p style={{ color: colors.textSecondary, fontSize: '14px', marginBottom: '8px' }}>out of 10</p>
+            <TrendIndicator value={vsComparison.vsLastWeek.rating.change} suffix={'vs last ' + meta.dayOfWeek.slice(0,3)} />
+          </div>
+        </div>
+
+        {/* Second row KPIs */}
+        <div className="six-col-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '12px', marginBottom: '24px' }}>
+          {[
+            { icon: '🛒', label: 'AVG BASKET', value: formatNumber(summary.avgBasket), unit: 'RSD' },
+            { icon: '📦', label: 'ITEMS/ORDER', value: summary.itemsPerOrder.toFixed(2) },
+            { icon: '👤', label: 'NEW CUST', value: formatNumber(customerData.newCustomers), subtext: ((customerData.newCustomers / customerData.total) * 100).toFixed(1) + '%' },
+            { icon: '🔄', label: 'RETURNING', value: formatNumber(customerData.returning), subtext: customerData.repeatRate + '%' },
+            { icon: '🚚', label: 'DELIVERY', value: summary.avgDeliveryTime.toFixed(1), unit: 'min', sim: true, warning: summary.avgDeliveryTime > 40 },
+            { icon: '💰', label: 'MARGIN', value: summary.profitMargin + '%', subtext: (summary.profit/1000).toFixed(0) + 'K' },
+          ].map((kpi, i) => (
+            <div key={i} style={{ background: colors.card, borderRadius: '12px', border: '1px solid ' + colors.border, padding: 'clamp(12px, 2vw, 20px)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                <IconBox>{kpi.icon}</IconBox>
+                <div style={{ display: 'flex', gap: '4px' }}>
+                  {kpi.sim && <SimBadge />}
+                  {kpi.warning && <WarningBadge />}
+                </div>
+              </div>
+              <p style={{ color: colors.textMuted, fontSize: '9px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px' }}>{kpi.label}</p>
+              <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '28px', fontWeight: 700 }}>
+                {kpi.value}
+                {kpi.unit && <span style={{ fontSize: '14px', color: colors.textSecondary, marginLeft: '4px' }}>{kpi.unit}</span>}
+              </p>
+              {kpi.subtext && <p style={{ color: colors.textSecondary, fontSize: '12px' }}>{kpi.subtext}</p>}
+            </div>
+          ))}
+        </div>
+
+        {/* Trend Overview */}
+        <div style={{ background: colors.card, borderRadius: '16px', border: '1px solid ' + colors.border, padding: 'clamp(20px, 4vw, 28px)', marginBottom: '24px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <IconBox color="#F472B6">📈</IconBox>
+              <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '20px', fontWeight: 600 }}>Trend Overview</h2>
+            </div>
+            <div style={{ position: 'relative' }}>
+              <button onClick={() => setTrendDropdownOpen(!trendDropdownOpen)} style={{ background: colors.elevated, borderRadius: '8px', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '10px', border: '1px solid ' + colors.borderSubtle, cursor: 'pointer', minWidth: '160px', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: trendConfigs[trendMetric].color }} />
+                  <span style={{ color: colors.textSecondary, fontSize: '13px' }}>{trendConfigs[trendMetric].label}</span>
+                </div>
+                <span style={{ color: colors.textMuted, fontSize: '12px', transform: trendDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }}>▼</span>
+              </button>
+              {trendDropdownOpen && (
+                <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: '4px', background: colors.elevated, borderRadius: '10px', border: '1px solid ' + colors.borderSubtle, overflow: 'hidden', zIndex: 100, minWidth: '160px', boxShadow: '0 10px 40px rgba(0,0,0,0.5)' }}>
+                  {Object.entries(trendConfigs).map(([key, config]) => (
+                    <button key={key} onClick={() => { setTrendMetric(key); setTrendDropdownOpen(false); }} style={{ width: '100%', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '10px', background: trendMetric === key ? config.color + '20' : 'transparent', border: 'none', cursor: 'pointer', borderBottom: key !== 'rating' ? '1px solid ' + colors.borderSubtle : 'none' }}>
+                      <span style={{ fontSize: '16px' }}>{config.icon}</span>
+                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: config.color }} />
+                      <span style={{ color: trendMetric === key ? colors.textPrimary : colors.textSecondary, fontSize: '13px', fontWeight: trendMetric === key ? 600 : 400 }}>{config.label}</span>
+                      {trendMetric === key && <span style={{ marginLeft: 'auto', color: config.color, fontSize: '14px' }}>✓</span>}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="trend-stats" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '16px', marginBottom: '24px' }}>
+            {[
+              { label: 'CURRENT', ...trendConfigs[trendMetric].stats.current },
+              { label: 'VS YESTERDAY', ...trendConfigs[trendMetric].stats.vsYesterday },
+              { label: 'VS LAST WEEK', ...trendConfigs[trendMetric].stats.vsLastWeek },
+              { label: '14-DAY AVG', ...trendConfigs[trendMetric].stats.avg14Day },
+              { label: 'RANGE', ...trendConfigs[trendMetric].stats.range },
+            ].map((stat, i) => (
+              <div key={i} style={{ background: colors.elevated, borderRadius: '12px', padding: '16px' }}>
+                <p style={{ color: colors.textMuted, fontSize: '10px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>{stat.label}</p>
+                <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '24px', fontWeight: 700, color: stat.positive === true ? colors.success : stat.positive === false ? colors.error : colors.textPrimary }}>{stat.value}</p>
+                <p style={{ color: colors.textMuted, fontSize: '12px' }}>{stat.subtext}</p>
+              </div>
+            ))}
+          </div>
+
+          <ResponsiveContainer width="100%" height={280}>
+            <AreaChart data={trendData}>
+              <defs>
+                <linearGradient id="trendGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={trendConfigs[trendMetric].color} stopOpacity={0.3} />
+                  <stop offset="100%" stopColor={trendConfigs[trendMetric].color} stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke={colors.borderSubtle} vertical={false} />
+              <XAxis dataKey="date" tick={{ fill: colors.textMuted, fontSize: 11 }} axisLine={{ stroke: colors.borderSubtle }} tickLine={false} />
+              <YAxis tickFormatter={trendConfigs[trendMetric].format} tick={{ fill: colors.textMuted, fontSize: 11 }} axisLine={false} tickLine={false} domain={trendMetric === 'rating' ? [8, 10] : ['auto', 'auto']} />
+              <Tooltip content={<CustomTooltip />} />
+              <Area type="monotone" dataKey={trendConfigs[trendMetric].dataKey} stroke={trendConfigs[trendMetric].color} strokeWidth={2} fill="url(#trendGradient)" />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Profit Breakdown Section */}
+        <div style={{ background: colors.card, borderRadius: '16px', border: '1px solid ' + colors.border, padding: 'clamp(20px, 4vw, 28px)', marginBottom: '24px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <IconBox color="#22C55E">💰</IconBox>
+              <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '20px', fontWeight: 600 }}>Profit Breakdown</h2>
+            </div>
+            <span style={{ fontSize: '11px', color: colors.textMuted, background: colors.elevated, padding: '4px 10px', borderRadius: '6px' }}>* Ops costs are daily estimates</span>
+          </div>
+
+          {(() => {
+            const pb = data.profitBreakdown || { avgMargin: 71.5, woltFeePercent: 11.0, operatingCosts: { staff: 85000, rent: 25000, utilities: 12000, packaging: 15000, other: 10000 }, taxRate: 15 };
+            const bruttoRevenue = summary.totalRevenue;
+            const avgMargin = pb.avgMargin;
+            const cogs = bruttoRevenue * (1 - avgMargin / 100);
+            const grossProfit = bruttoRevenue * (avgMargin / 100);
+            const woltFeePercent = pb.woltFeePercent;
+            const woltFee = bruttoRevenue * (woltFeePercent / 100);
+            const ops = pb.operatingCosts;
+            const staffCost = ops.staff;
+            const rentCost = ops.rent;
+            const utilitiesCost = ops.utilities;
+            const packagingCost = ops.packaging;
+            const otherCost = ops.other;
+            const totalOpsCost = staffCost + rentCost + utilitiesCost + packagingCost + otherCost;
+            const ebitda = grossProfit - woltFee - totalOpsCost;
+            const ebitdaMargin = (ebitda / bruttoRevenue) * 100;
+            const taxRate = pb.taxRate;
+            const taxes = ebitda > 0 ? ebitda * (taxRate / 100) : 0;
+            const netProfit = ebitda - taxes;
+            const netMargin = (netProfit / bruttoRevenue) * 100;
+            
+            const gridStyle = { display: 'grid', gridTemplateColumns: '28px 1fr 130px 70px', gap: '12px' };
+            
+            return (
+              <div>
+                <div style={{ background: colors.elevated, borderRadius: '12px', padding: '20px', marginBottom: '24px' }}>
+                  {/* Header */}
+                  <div style={{ ...gridStyle, paddingBottom: '12px', borderBottom: '1px solid ' + colors.borderSubtle, marginBottom: '8px' }}>
+                    <span></span>
+                    <span style={{ color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase' }}>Item</span>
+                    <span style={{ color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase', textAlign: 'right' }}>Amount (RSD)</span>
+                    <span style={{ color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase', textAlign: 'right' }}>%</span>
+                  </div>
+                  
+                  {/* BRUTTO REVENUE */}
+                  <div style={{ ...gridStyle, padding: '12px 20px', background: 'linear-gradient(90deg, ' + colors.purple + '20, transparent)', margin: '0 -20px' }}>
+                    <span style={{ fontSize: '16px' }}>💵</span>
+                    <span style={{ fontWeight: 700, fontSize: '14px' }}>BRUTTO REVENUE</span>
+                    <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '16px', textAlign: 'right', color: colors.purple }}>{bruttoRevenue.toLocaleString()}</span>
+                    <span style={{ fontWeight: 600, fontSize: '14px', textAlign: 'right' }}>100%</span>
+                  </div>
+                  
+                  {/* Food Cost */}
+                  <div style={{ ...gridStyle, padding: '10px 0', borderBottom: '1px solid ' + colors.borderSubtle }}>
+                    <span style={{ fontSize: '14px' }}>🥩</span>
+                    <span style={{ color: colors.textSecondary, fontSize: '13px' }}>Food Cost (COGS)</span>
+                    <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '14px', textAlign: 'right', color: colors.error }}>−{Math.round(cogs).toLocaleString()}</span>
+                    <span style={{ fontSize: '12px', textAlign: 'right', color: colors.textMuted }}>{(100 - avgMargin).toFixed(1)}%</span>
+                  </div>
+                  
+                  {/* GROSS PROFIT */}
+                  <div style={{ ...gridStyle, padding: '12px 20px', background: 'linear-gradient(90deg, ' + colors.success + '15, transparent)', margin: '0 -20px' }}>
+                    <span style={{ fontSize: '14px' }}>📊</span>
+                    <span style={{ fontWeight: 600, fontSize: '13px', color: colors.success }}>= GROSS PROFIT</span>
+                    <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '15px', textAlign: 'right', color: colors.success }}>{Math.round(grossProfit).toLocaleString()}</span>
+                    <span style={{ fontWeight: 600, fontSize: '13px', textAlign: 'right', color: colors.success }}>{avgMargin.toFixed(1)}%</span>
+                  </div>
+                  
+                  <div style={{ height: '1px', background: colors.borderSubtle, margin: '4px 0' }} />
+                  
+                  {/* Wolt Fee */}
+                  <div style={{ ...gridStyle, padding: '8px 0' }}>
+                    <span style={{ fontSize: '14px' }}>🛵</span>
+                    <span style={{ color: colors.textSecondary, fontSize: '13px' }}>Wolt Fee</span>
+                    <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '13px', textAlign: 'right', color: colors.cyan }}>−{Math.round(woltFee).toLocaleString()}</span>
+                    <span style={{ fontSize: '12px', textAlign: 'right', color: colors.textMuted }}>{woltFeePercent}%</span>
+                  </div>
+                  
+                  {/* Staff */}
+                  <div style={{ ...gridStyle, padding: '8px 0' }}>
+                    <span style={{ fontSize: '14px' }}>👨‍🍳</span>
+                    <span style={{ color: colors.textSecondary, fontSize: '13px' }}>Staff *</span>
+                    <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '13px', textAlign: 'right', color: '#F97316' }}>−{staffCost.toLocaleString()}</span>
+                    <span style={{ fontSize: '12px', textAlign: 'right', color: colors.textMuted }}>{((staffCost / bruttoRevenue) * 100).toFixed(1)}%</span>
+                  </div>
+                  
+                  {/* Rent */}
+                  <div style={{ ...gridStyle, padding: '8px 0' }}>
+                    <span style={{ fontSize: '14px' }}>🏠</span>
+                    <span style={{ color: colors.textSecondary, fontSize: '13px' }}>Rent *</span>
+                    <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '13px', textAlign: 'right', color: '#F97316' }}>−{rentCost.toLocaleString()}</span>
+                    <span style={{ fontSize: '12px', textAlign: 'right', color: colors.textMuted }}>{((rentCost / bruttoRevenue) * 100).toFixed(1)}%</span>
+                  </div>
+                  
+                  {/* Utilities */}
+                  <div style={{ ...gridStyle, padding: '8px 0' }}>
+                    <span style={{ fontSize: '14px' }}>⚡</span>
+                    <span style={{ color: colors.textSecondary, fontSize: '13px' }}>Utilities *</span>
+                    <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '13px', textAlign: 'right', color: '#F97316' }}>−{utilitiesCost.toLocaleString()}</span>
+                    <span style={{ fontSize: '12px', textAlign: 'right', color: colors.textMuted }}>{((utilitiesCost / bruttoRevenue) * 100).toFixed(1)}%</span>
+                  </div>
+                  
+                  {/* Packaging */}
+                  <div style={{ ...gridStyle, padding: '8px 0' }}>
+                    <span style={{ fontSize: '14px' }}>📦</span>
+                    <span style={{ color: colors.textSecondary, fontSize: '13px' }}>Packaging *</span>
+                    <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '13px', textAlign: 'right', color: '#F97316' }}>−{packagingCost.toLocaleString()}</span>
+                    <span style={{ fontSize: '12px', textAlign: 'right', color: colors.textMuted }}>{((packagingCost / bruttoRevenue) * 100).toFixed(1)}%</span>
+                  </div>
+                  
+                  {/* Other */}
+                  <div style={{ ...gridStyle, padding: '8px 0', borderBottom: '1px solid ' + colors.borderSubtle }}>
+                    <span style={{ fontSize: '14px' }}>📋</span>
+                    <span style={{ color: colors.textSecondary, fontSize: '13px' }}>Other (admin, insurance) *</span>
+                    <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '13px', textAlign: 'right', color: '#F97316' }}>−{otherCost.toLocaleString()}</span>
+                    <span style={{ fontSize: '12px', textAlign: 'right', color: colors.textMuted }}>{((otherCost / bruttoRevenue) * 100).toFixed(1)}%</span>
+                  </div>
+                  
+                  {/* EBITDA */}
+                  <div style={{ ...gridStyle, padding: '12px 20px', background: 'linear-gradient(90deg, ' + colors.warning + '15, transparent)', margin: '0 -20px' }}>
+                    <span style={{ fontSize: '14px' }}>📈</span>
+                    <span style={{ fontWeight: 600, fontSize: '13px', color: colors.warning }}>= EBITDA</span>
+                    <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '15px', textAlign: 'right', color: colors.warning }}>{Math.round(ebitda).toLocaleString()}</span>
+                    <span style={{ fontWeight: 600, fontSize: '13px', textAlign: 'right', color: colors.warning }}>{ebitdaMargin.toFixed(1)}%</span>
+                  </div>
+                  
+                  {/* Taxes */}
+                  <div style={{ ...gridStyle, padding: '8px 0', borderBottom: '1px solid ' + colors.borderSubtle }}>
+                    <span style={{ fontSize: '14px' }}>🏛️</span>
+                    <span style={{ color: colors.textSecondary, fontSize: '13px' }}>Taxes (~{taxRate}%) *</span>
+                    <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '13px', textAlign: 'right', color: colors.error }}>−{Math.round(taxes).toLocaleString()}</span>
+                    <span style={{ fontSize: '12px', textAlign: 'right', color: colors.textMuted }}>{((taxes / bruttoRevenue) * 100).toFixed(1)}%</span>
+                  </div>
+                  
+                  {/* NET PROFIT */}
+                  <div style={{ ...gridStyle, padding: '14px 20px', background: 'linear-gradient(90deg, ' + colors.success + '25, ' + colors.success + '05)', margin: '8px -20px 0 -20px', borderRadius: '0 0 8px 8px' }}>
+                    <span style={{ fontSize: '18px' }}>💰</span>
+                    <span style={{ fontWeight: 700, fontSize: '15px', color: colors.success }}>= NET PROFIT</span>
+                    <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '18px', textAlign: 'right', color: colors.success }}>{Math.round(netProfit).toLocaleString()}</span>
+                    <span style={{ fontWeight: 700, fontSize: '14px', textAlign: 'right', color: colors.success }}>{netMargin.toFixed(1)}%</span>
+                  </div>
+                </div>
+
+                {/* Summary cards */}
+                <div className="four-col-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
+                  <div style={{ background: colors.elevated, borderRadius: '12px', padding: 'clamp(12px, 2vw, 16px)', textAlign: 'center' }}>
+                    <p style={{ color: colors.textMuted, fontSize: '10px', marginBottom: '4px' }}>BRUTTO</p>
+                    <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 'clamp(16px, 3vw, 20px)', color: colors.purple }}>{(bruttoRevenue / 1000).toFixed(0)}K</p>
+                  </div>
+                  <div style={{ background: colors.elevated, borderRadius: '12px', padding: 'clamp(12px, 2vw, 16px)', textAlign: 'center' }}>
+                    <p style={{ color: colors.textMuted, fontSize: '10px', marginBottom: '4px' }}>GROSS</p>
+                    <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 'clamp(16px, 3vw, 20px)', color: colors.success }}>{(grossProfit / 1000).toFixed(0)}K</p>
+                    <p style={{ color: colors.textMuted, fontSize: '9px' }}>{avgMargin.toFixed(0)}%</p>
+                  </div>
+                  <div style={{ background: colors.elevated, borderRadius: '12px', padding: 'clamp(12px, 2vw, 16px)', textAlign: 'center' }}>
+                    <p style={{ color: colors.textMuted, fontSize: '10px', marginBottom: '4px' }}>EBITDA</p>
+                    <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 'clamp(16px, 3vw, 20px)', color: colors.warning }}>{(ebitda / 1000).toFixed(0)}K</p>
+                    <p style={{ color: colors.textMuted, fontSize: '9px' }}>{ebitdaMargin.toFixed(0)}%</p>
+                  </div>
+                  <div style={{ background: 'linear-gradient(135deg, ' + colors.success + '25, ' + colors.success + '10)', borderRadius: '12px', padding: 'clamp(12px, 2vw, 16px)', textAlign: 'center', border: '2px solid ' + colors.success + '60' }}>
+                    <p style={{ color: colors.success, fontSize: '10px', marginBottom: '4px', fontWeight: 600 }}>NET 💰</p>
+                    <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 'clamp(18px, 3vw, 22px)', color: colors.success }}>{(netProfit / 1000).toFixed(0)}K</p>
+                    <p style={{ color: colors.success, fontSize: '10px', fontWeight: 500 }}>{netMargin.toFixed(1)}%</p>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+        </div>
+
+        {/* Channel Revenue Breakdown */}
+        <div style={{ background: colors.card, borderRadius: '16px', border: '1px solid ' + colors.border, padding: 'clamp(20px, 4vw, 28px)', marginBottom: '24px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+            <IconBox color="#06B6D4">📊</IconBox>
+            <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '20px', fontWeight: 600 }}>Channel Revenue Breakdown</h2>
+          </div>
+
+          {(() => {
+            const channels = data.channelBreakdown || [
+              { channel: 'Wolt', orders: Math.round(summary.totalOrders * 0.92), revenue: Math.round(summary.totalRevenue * 0.92), feePercent: 11.0, color: '#06B6D4' },
+              { channel: 'Collina.rs', orders: Math.round(summary.totalOrders * 0.08), revenue: Math.round(summary.totalRevenue * 0.08), feePercent: 0, color: colors.success },
+            ];
+            const totalRevenue = channels.reduce((sum, c) => sum + c.revenue, 0);
+            
+            return (
+              <div>
+                <div className="channel-grid" style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr 1fr 1fr', gap: '12px', padding: '0 0 12px 0', borderBottom: '1px solid ' + colors.borderSubtle, marginBottom: '8px' }}>
+                  <span style={{ color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase' }}>Channel</span>
+                  <span style={{ color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase', textAlign: 'right' }}>Orders</span>
+                  <span className="channel-hide" style={{ color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase', textAlign: 'right' }}>Brutto</span>
+                  <span className="channel-hide" style={{ color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase', textAlign: 'right' }}>Fee</span>
+                  <span style={{ color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase', textAlign: 'right' }}>Net Revenue</span>
+                </div>
+                
+                {channels.map((ch, i) => {
+                  const fee = ch.revenue * (ch.feePercent / 100);
+                  const netRevenue = ch.revenue - fee;
+                  const pctOfTotal = ((ch.revenue / totalRevenue) * 100).toFixed(1);
+                  
+                  return (
+                    <div key={i} className="channel-grid" style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr 1fr 1fr', gap: '12px', padding: '14px 0', alignItems: 'center', borderBottom: i < channels.length - 1 ? '1px solid ' + colors.borderSubtle : 'none' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: ch.color }} />
+                        <span style={{ fontWeight: 600, fontSize: '14px' }}>{ch.channel}</span>
+                        <span style={{ color: colors.textMuted, fontSize: '11px' }}>({pctOfTotal}%)</span>
+                      </div>
+                      <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '14px', textAlign: 'right' }}>{ch.orders}</span>
+                      <span className="channel-hide" style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '14px', textAlign: 'right' }}>{(ch.revenue / 1000).toFixed(0)}K</span>
+                      <span className="channel-hide" style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '14px', textAlign: 'right', color: ch.feePercent > 0 ? colors.error : colors.success }}>
+                        {ch.feePercent > 0 ? '−' + (fee / 1000).toFixed(0) + 'K' : '0'}
+                      </span>
+                      <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '16px', textAlign: 'right', color: ch.feePercent === 0 ? colors.success : colors.textPrimary }}>
+                        {(netRevenue / 1000).toFixed(0)}K
+                      </span>
+                    </div>
+                  );
+                })}
+
+                {/* Insight */}
+                <div style={{ background: 'rgba(34, 197, 94, 0.1)', borderRadius: '12px', padding: '16px 20px', marginTop: '16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <span style={{ fontSize: '18px' }}>💡</span>
+                  <p style={{ fontSize: '13px', color: colors.textSecondary }}>
+                    Moving 10% of orders from Wolt → Collina.rs saves <span style={{ color: colors.success, fontWeight: 600 }}>~{Math.round(summary.totalRevenue * 0.1 * 0.11 / 1000 * 30)}K RSD/month</span> in fees
+                  </p>
+                </div>
+              </div>
+            );
+          })()}
+        </div>
+
+        {/* Revenue & Orders by Location */}
+        <div style={{ background: colors.card, borderRadius: '16px', border: '1px solid ' + colors.border, padding: 'clamp(20px, 4vw, 28px)', marginBottom: '24px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <IconBox color="#34D399">📍</IconBox>
+              <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '20px', fontWeight: 600 }}>Revenue & Orders by Location</h2>
+            </div>
+            <div className="hide-mobile" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ width: '12px', height: '12px', borderRadius: '3px', background: colors.purple }} />
+                <span style={{ color: colors.textMuted, fontSize: '12px' }}>Today</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ width: '12px', height: '12px', borderRadius: '3px', background: 'rgba(255, 255, 255, 0.25)' }} />
+                <span style={{ color: colors.textMuted, fontSize: '12px' }}>Last {meta.dayOfWeek.slice(0,3)}</span>
+              </div>
+            </div>
+          </div>
+
+          {(() => {
+            const locationData = data.locationPerformance || [
+              { name: 'Vračar', revenue: Math.round(summary.totalRevenue * 0.55), lastWeekRev: Math.round(vsComparison.vsLastWeek.revenue.value * 0.53), orders: Math.round(summary.totalOrders * 0.55), lastWeekOrd: Math.round(vsComparison.vsLastWeek.orders.value * 0.53), color: '#8B5CF6' },
+              { name: 'Banovo Brdo', revenue: Math.round(summary.totalRevenue * 0.21), lastWeekRev: Math.round(vsComparison.vsLastWeek.revenue.value * 0.24), orders: Math.round(summary.totalOrders * 0.21), lastWeekOrd: Math.round(vsComparison.vsLastWeek.orders.value * 0.24), color: '#F59E0B' },
+              { name: 'Novi Beograd', revenue: Math.round(summary.totalRevenue * 0.20), lastWeekRev: Math.round(vsComparison.vsLastWeek.revenue.value * 0.18), orders: Math.round(summary.totalOrders * 0.20), lastWeekOrd: Math.round(vsComparison.vsLastWeek.orders.value * 0.18), color: '#22C55E' },
+              { name: 'Kuhinjica', revenue: Math.round(summary.totalRevenue * 0.03), lastWeekRev: Math.round(vsComparison.vsLastWeek.revenue.value * 0.03), orders: Math.round(summary.totalOrders * 0.03), lastWeekOrd: Math.round(vsComparison.vsLastWeek.orders.value * 0.03), color: '#818CF8' },
+              { name: 'Pekarica', revenue: Math.round(summary.totalRevenue * 0.01), lastWeekRev: Math.round(vsComparison.vsLastWeek.revenue.value * 0.01), orders: Math.round(summary.totalOrders * 0.01), lastWeekOrd: Math.round(vsComparison.vsLastWeek.orders.value * 0.01), color: '#EC4899' },
+            ];
+            const maxRevenue = Math.max(...locationData.map(l => Math.max(l.revenue, l.lastWeekRev))) * 1.1;
+            
+            return (
+              <div>
+                {locationData.map((loc, i) => {
+                  const currentRevWidth = (loc.revenue / maxRevenue) * 100;
+                  const lastWeekRevWidth = (loc.lastWeekRev / maxRevenue) * 100;
+                  const revTrend = ((loc.revenue - loc.lastWeekRev) / loc.lastWeekRev * 100).toFixed(1);
+                  const ordTrend = ((loc.orders - loc.lastWeekOrd) / loc.lastWeekOrd * 100).toFixed(1);
+                  const isRevPositive = parseFloat(revTrend) >= 0;
+                  const isOrdPositive = parseFloat(ordTrend) >= 0;
+                  
+                  return (
+                    <div key={i} style={{ marginBottom: '20px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: loc.color }} />
+                          <span style={{ fontSize: '14px', fontWeight: 600 }}>{loc.name}</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                          <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '16px' }}>{(loc.revenue / 1000).toFixed(0)}K</span>
+                          <span style={{ background: isRevPositive ? 'rgba(34, 197, 94, 0.15)' : 'rgba(239, 68, 68, 0.15)', color: isRevPositive ? colors.success : colors.error, padding: '3px 8px', borderRadius: '10px', fontSize: '11px', fontWeight: 600 }}>
+                            {isRevPositive ? '↗' : '↘'} {Math.abs(parseFloat(revTrend))}%
+                          </span>
+                          <span style={{ color: colors.textMuted, fontSize: '12px' }}>{loc.orders} ord</span>
+                        </div>
+                      </div>
+                      <div style={{ position: 'relative', height: '24px', background: colors.elevated, borderRadius: '6px', overflow: 'hidden' }}>
+                        <div style={{ position: 'absolute', top: '2px', left: 0, width: lastWeekRevWidth + '%', height: '20px', background: 'rgba(255, 255, 255, 0.15)', borderRadius: '5px' }} />
+                        <div style={{ position: 'absolute', top: '2px', left: 0, width: currentRevWidth + '%', height: '20px', background: 'linear-gradient(90deg, ' + loc.color + ', ' + loc.color + 'CC)', borderRadius: '5px', boxShadow: '0 0 12px ' + loc.color + '40' }} />
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {/* Summary row */}
+                <div style={{ background: colors.elevated, borderRadius: '10px', padding: '16px 20px', marginTop: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+                  <span style={{ fontSize: '14px', color: colors.textSecondary }}>Total vs Last {meta.dayOfWeek}:</span>
+                  <div style={{ display: 'flex', gap: '24px' }}>
+                    <div style={{ textAlign: 'right' }}>
+                      <span style={{ color: colors.textMuted, fontSize: '11px', display: 'block' }}>Revenue</span>
+                      <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '18px' }}>{(summary.totalRevenue / 1000).toFixed(0)}K</span>
+                      <span style={{ marginLeft: '8px', color: vsComparison.vsLastWeek.revenue.change >= 0 ? colors.success : colors.error, fontSize: '12px', fontWeight: 600 }}>
+                        {vsComparison.vsLastWeek.revenue.change >= 0 ? '↗' : '↘'} {vsComparison.vsLastWeek.revenue.change >= 0 ? '+' : ''}{vsComparison.vsLastWeek.revenue.change}%
+                      </span>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <span style={{ color: colors.textMuted, fontSize: '11px', display: 'block' }}>Orders</span>
+                      <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '18px' }}>{summary.totalOrders}</span>
+                      <span style={{ marginLeft: '8px', color: vsComparison.vsLastWeek.orders.change >= 0 ? colors.success : colors.error, fontSize: '12px', fontWeight: 600 }}>
+                        {vsComparison.vsLastWeek.orders.change >= 0 ? '↗' : '↘'} {vsComparison.vsLastWeek.orders.change >= 0 ? '+' : ''}{vsComparison.vsLastWeek.orders.change}%
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Venue Breakdown Table */}
+                <div className="venue-table" style={{ background: colors.elevated, borderRadius: '12px', padding: '20px', marginTop: '20px' }}>
+                  <p style={{ color: colors.textSecondary, fontSize: '12px', marginBottom: '16px' }}>Venue Breakdown</p>
+                  <div className="venue-grid" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr', gap: '8px', marginBottom: '8px' }}>
+                    <span style={{ color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase' }}>Venue</span>
+                    <span style={{ color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase', textAlign: 'right' }}>Revenue</span>
+                    <span style={{ color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase', textAlign: 'right' }}>Orders</span>
+                    <span style={{ color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase', textAlign: 'right' }}>Avg Basket</span>
+                    <span style={{ color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase', textAlign: 'right' }}>Rating</span>
+                  </div>
+                  {(() => {
+                    const venueBreakdown = data.venueBreakdown || [
+                      { venue: 'Collina Burgers Vračar', revenue: Math.round(summary.totalRevenue * 0.33), orders: Math.round(summary.totalOrders * 0.31), basket: 1574, rating: 9.2, color: '#8B5CF6' },
+                      { venue: 'SMASH Burgers Vračar', revenue: Math.round(summary.totalRevenue * 0.17), orders: Math.round(summary.totalOrders * 0.18), basket: 1377, rating: 9.1, color: '#A78BFA' },
+                      { venue: 'Collina Burgers Banovo Brdo', revenue: Math.round(summary.totalRevenue * 0.15), orders: Math.round(summary.totalOrders * 0.14), basket: 1599, rating: 10.0, color: '#F59E0B' },
+                      { venue: 'Collina Burgers Novi Beograd', revenue: Math.round(summary.totalRevenue * 0.14), orders: Math.round(summary.totalOrders * 0.13), basket: 1618, rating: 7.8, color: '#22C55E', warning: true },
+                      { venue: 'SMASH Burgers Novi Beograd', revenue: Math.round(summary.totalRevenue * 0.06), orders: Math.round(summary.totalOrders * 0.06), basket: 1389, rating: 10.0, color: '#4ADE80' },
+                      { venue: 'SMASH Burgers Banovo Brdo', revenue: Math.round(summary.totalRevenue * 0.04), orders: Math.round(summary.totalOrders * 0.05), basket: 1324, rating: 9.8, color: '#FBBF24' },
+                      { venue: 'Pancakes Vračar', revenue: Math.round(summary.totalRevenue * 0.04), orders: Math.round(summary.totalOrders * 0.05), basket: 1170, rating: 10.0, color: '#C084FC' },
+                      { venue: 'Kuhinjica Vračar', revenue: Math.round(summary.totalRevenue * 0.03), orders: Math.round(summary.totalOrders * 0.03), basket: 1443, rating: null, color: '#818CF8' },
+                      { venue: 'Pancakes Banovo Brdo', revenue: Math.round(summary.totalRevenue * 0.02), orders: Math.round(summary.totalOrders * 0.03), basket: 1274, rating: null, color: '#FB923C' },
+                      { venue: 'Pancakes Novi Beograd', revenue: Math.round(summary.totalRevenue * 0.01), orders: Math.round(summary.totalOrders * 0.01), basket: 978, rating: null, color: '#34D399' },
+                      { venue: 'Pekarica Collina', revenue: Math.round(summary.totalRevenue * 0.01), orders: Math.round(summary.totalOrders * 0.02), basket: 883, rating: null, color: '#EC4899' },
+                    ];
+                    return venueBreakdown.map((v, i) => (
+                      <div key={i} className="venue-grid" style={{
+                        display: 'grid',
+                        gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr',
+                        gap: '8px',
+                        padding: v.warning ? '12px 20px' : '12px 0',
+                        borderBottom: i < venueBreakdown.length - 1 ? '1px solid ' + colors.borderSubtle : 'none',
+                        background: v.warning ? 'rgba(239, 68, 68, 0.1)' : 'transparent',
+                        margin: v.warning ? '0 -20px' : '0',
+                        borderRadius: v.warning ? '8px' : '0',
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+                          <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: v.color, flexShrink: 0 }} />
+                          <span className="venue-name" style={{ fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{v.venue}</span>
+                        </div>
+                        <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '13px', textAlign: 'right' }}>{(v.revenue / 1000).toFixed(0)}K</span>
+                        <span style={{ color: colors.textSecondary, fontSize: '13px', textAlign: 'right' }}>{v.orders}</span>
+                        <span style={{ color: colors.textSecondary, fontSize: '13px', textAlign: 'right' }}>{v.basket.toLocaleString()}</span>
+                        <span style={{ fontWeight: 600, fontSize: '13px', textAlign: 'right', color: v.rating === null ? colors.textMuted : v.rating >= 9.5 ? colors.success : v.rating >= 8.5 ? colors.warning : colors.error }}>
+                          {v.rating !== null ? v.rating + '/10' : '—'}
+                        </span>
+                      </div>
+                    ));
+                  })()}
+                </div>
+              </div>
+            );
+          })()}
+        </div>
+
+        {/* Top Products */}
+        <div style={{ background: colors.card, borderRadius: '16px', border: '1px solid ' + colors.border, padding: 'clamp(20px, 4vw, 28px)', marginBottom: '24px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+            <IconBox color="#FBBF24">🏆</IconBox>
+            <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '20px', fontWeight: 600 }}>Top Products</h2>
+          </div>
+          
+          <div style={{ overflowX: 'auto' }}>
+            <div className="hide-mobile" style={{ display: 'grid', gridTemplateColumns: '40px 1fr 80px 100px 100px 80px', gap: '16px', padding: '0 0 12px 0', borderBottom: '1px solid ' + colors.borderSubtle, marginBottom: '8px' }}>
+              <span style={{ color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase' }}>#</span>
+              <span style={{ color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase' }}>Product</span>
+              <span style={{ color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase', textAlign: 'center' }}>Rating</span>
+              <span style={{ color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase', textAlign: 'right' }}>Revenue</span>
+              <span style={{ color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase', textAlign: 'right' }}>Profit</span>
+              <span style={{ color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase', textAlign: 'right' }}>Margin</span>
+            </div>
+            
+            {topProducts.map((product, i) => {
+              const profit = Math.round(product.revenue * (product.margin / 100));
+              const ratingChange = product.ratingLW ? (product.rating - product.ratingLW).toFixed(1) : null;
+              return (
+                <div key={i} style={{ display: 'grid', gridTemplateColumns: '40px 1fr 80px 100px 100px 80px', gap: '16px', padding: '12px 0', alignItems: 'center', borderBottom: i < topProducts.length - 1 ? '1px solid ' + colors.borderSubtle : 'none' }}>
+                  <span style={{ width: '28px', height: '28px', background: i < 3 ? colors.purple : colors.elevated, borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: 600 }}>{product.rank}</span>
+                  <div style={{ minWidth: 0 }}>
+                    <p style={{ fontSize: '13px', fontWeight: 500, marginBottom: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{product.name}</p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                      <span style={{ color: colors.textMuted, fontSize: '11px' }}>{product.qty} sold</span>
+                      <span style={{ color: colors.textMuted, fontSize: '11px' }}>{product.pctSales}% sales</span>
+                      <span style={{ color: product.rating >= 9 ? colors.success : colors.warning, fontSize: '11px', fontWeight: 600 }}>{product.rating || '—'}⭐</span>
+                    </div>
+                  </div>
+                  <div className="hide-mobile" style={{ textAlign: 'center' }}>
+                    {product.rating ? (
+                      <div>
+                        <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '16px', color: product.rating >= 9 ? colors.success : product.rating >= 8 ? colors.warning : colors.error }}>{product.rating}⭐</p>
+                        {product.ratingLW ? (
+                          <p style={{ fontSize: '10px', color: ratingChange > 0 ? colors.success : ratingChange < 0 ? colors.error : colors.textMuted, marginTop: '2px' }}>
+                            LW: {product.ratingLW} {ratingChange > 0 ? '↑' : ratingChange < 0 ? '↓' : ''}
+                          </p>
+                        ) : (
+                          <p style={{ fontSize: '10px', color: colors.textMuted, marginTop: '2px' }}>new</p>
+                        )}
+                      </div>
+                    ) : <span style={{ color: colors.textMuted, fontSize: '12px' }}>—</span>}
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '16px' }}>{(product.revenue / 1000).toFixed(0)}K</p>
+                    <p style={{ color: colors.textMuted, fontSize: '10px' }}>RSD</p>
+                  </div>
+                  <div className="hide-mobile" style={{ textAlign: 'right' }}>
+                    <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '16px', color: colors.success }}>{(profit / 1000).toFixed(0)}K</p>
+                    <p style={{ color: colors.textMuted, fontSize: '10px' }}>RSD</p>
+                  </div>
+                  <div className="hide-mobile" style={{ textAlign: 'right' }}>
+                    <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '16px', color: product.margin < 60 ? colors.error : product.margin >= 75 ? colors.success : colors.warning }}>{product.margin}%</p>
+                    <p style={{ color: colors.textMuted, fontSize: '10px' }}>margin</p>
+                  </div>
+                </div>
+              );
+            })}
+            
+            {/* Totals row */}
+            {(() => {
+              const totalRevenue = topProducts.reduce((sum, p) => sum + p.revenue, 0);
+              const totalProfit = topProducts.reduce((sum, p) => sum + Math.round(p.revenue * (p.margin / 100)), 0);
+              const avgRating = (topProducts.filter(p => p.rating).reduce((sum, p) => sum + p.rating, 0) / topProducts.filter(p => p.rating).length).toFixed(1);
+              const avgMargin = (totalProfit / totalRevenue * 100).toFixed(1);
+              const pctOfSales = topProducts.reduce((sum, p) => sum + p.pctSales, 0).toFixed(0);
+              return (
+                <div className="product-grid" style={{ background: 'linear-gradient(90deg, ' + colors.purple + '20, ' + colors.purple + '10)', borderRadius: '12px', padding: '16px', marginTop: '16px', display: 'grid', gridTemplateColumns: '40px 1fr 80px 100px 100px 80px', gap: '16px', alignItems: 'center', border: '1px solid ' + colors.purple + '40' }}>
+                  <span style={{ fontSize: '16px' }}>Σ</span>
+                  <div style={{ minWidth: 0 }}>
+                    <p style={{ fontSize: '13px', fontWeight: 600, color: colors.purpleLight }}>Top {topProducts.length} Products Total</p>
+                    <p style={{ color: colors.textMuted, fontSize: '11px' }}>{pctOfSales}% of all sales</p>
+                  </div>
+                  <div className="hide-mobile" style={{ textAlign: 'center' }}>
+                    <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '13px', color: colors.success }}>{avgRating} avg</p>
+                    <p style={{ color: colors.textMuted, fontSize: '10px' }}>rating</p>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '16px' }}>{(totalRevenue / 1000).toFixed(0)}K</p>
+                    <p style={{ color: colors.textMuted, fontSize: '10px' }}>RSD</p>
+                  </div>
+                  <div className="hide-mobile" style={{ textAlign: 'right' }}>
+                    <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '16px', color: colors.success }}>{(totalProfit / 1000).toFixed(0)}K</p>
+                    <p style={{ color: colors.textMuted, fontSize: '10px' }}>RSD</p>
+                  </div>
+                  <div className="hide-mobile" style={{ textAlign: 'right' }}>
+                    <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '16px', color: colors.success }}>{avgMargin}%</p>
+                    <p style={{ color: colors.textMuted, fontSize: '10px' }}>avg</p>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        </div>
+
+        {/* Two column: Hourly & Day of Week */}
+        <div className="two-col-grid" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px', marginBottom: '24px' }}>
+          <div style={{ background: colors.card, borderRadius: '16px', border: '1px solid ' + colors.border, padding: 'clamp(16px, 3vw, 28px)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+              <IconBox color="#F87171">⏰</IconBox>
+              <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '18px', fontWeight: 600 }}>Hourly Analysis</h2>
+            </div>
+            <ResponsiveContainer width="100%" height={200}>
+              <ComposedChart data={hourlyData}>
+                <CartesianGrid strokeDasharray="3 3" stroke={colors.borderSubtle} vertical={false} />
+                <XAxis dataKey="hour" tick={{ fill: colors.textMuted, fontSize: 9 }} axisLine={{ stroke: colors.borderSubtle }} tickLine={false} />
+                <YAxis yAxisId="left" tick={{ fill: colors.textMuted, fontSize: 9 }} axisLine={false} tickLine={false} />
+                <YAxis yAxisId="right" orientation="right" tick={{ fill: colors.textMuted, fontSize: 9 }} axisLine={false} tickLine={false} />
+                <Tooltip content={<CustomTooltip />} />
+                <Bar yAxisId="left" dataKey="orders" fill={colors.purple} radius={[4, 4, 0, 0]} opacity={0.6} name="Orders" />
+                <Line yAxisId="right" type="monotone" dataKey="prepTime" stroke={colors.success} strokeWidth={2} dot={false} name="Prep Time" />
+                <Line yAxisId="right" type="monotone" dataKey="deliveryTime" stroke={colors.info} strokeWidth={2} dot={false} name="Delivery Time" />
+              </ComposedChart>
+            </ResponsiveContainer>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '24px', marginTop: '16px' }}>
+              {[{ color: colors.purple, label: 'Orders' }, { color: colors.success, label: 'Prep Time' }, { color: colors.info, label: 'Delivery Time' }].map((item, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ width: '12px', height: '3px', background: item.color, borderRadius: '2px' }} />
+                  <span style={{ color: colors.textSecondary, fontSize: '12px' }}>{item.label}</span>
+                </div>
+              ))}
+            </div>
+            <div style={{ marginTop: '24px' }}>
+              <p style={{ color: colors.textSecondary, fontSize: '12px', marginBottom: '12px' }}>Critical Hours</p>
+              {criticalHours.map((hour, i) => (
+                <div key={i} style={{ background: i === 1 ? 'rgba(239, 68, 68, 0.1)' : colors.elevated, borderRadius: '10px', padding: '12px 16px', marginBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <span style={{ color: i === 1 ? colors.error : colors.warning, fontWeight: 600, fontSize: '14px' }}>{hour.hour}</span>
+                    <span style={{ color: colors.textSecondary, fontSize: '13px' }}>{hour.orders} orders</span>
+                    <span style={{ color: colors.textSecondary, fontSize: '13px' }}>{hour.revenue} RSD</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <span style={{ color: parseInt(hour.delivery) > 45 ? colors.error : colors.warning, fontSize: '13px' }}>{hour.delivery} delivery</span>
+                    <span style={{ color: colors.textPrimary, fontWeight: 600, fontSize: '13px' }}>{hour.rating}/10 ⭐</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ background: colors.card, borderRadius: '16px', border: '1px solid ' + colors.border, padding: 'clamp(20px, 4vw, 28px)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+              <IconBox color="#818CF8">📅</IconBox>
+              <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '18px', fontWeight: 600 }}>Day of Week</h2>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {dayOfWeekAverages.map((day, i) => {
+                const maxRev = Math.max(...dayOfWeekAverages.map(d => d.avgRevenue));
+                const pct = (day.avgRevenue / maxRev) * 100;
+                return (
+                  <div key={i} style={{ background: day.isToday ? colors.purple + '20' : colors.elevated, borderRadius: '10px', padding: '12px 16px', border: day.isToday ? '1px solid ' + colors.purple : 'none' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontWeight: day.isToday ? 700 : 500, fontSize: '13px' }}>{day.day}</span>
+                        {day.isToday && <span style={{ fontSize: '10px', background: colors.purple, padding: '2px 6px', borderRadius: '4px' }}>TODAY</span>}
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '14px' }}>{(day.avgRevenue / 1000).toFixed(0)}K</span>
+                        <span style={{ color: colors.textMuted, fontSize: '11px', marginLeft: '8px' }}>{day.avgOrders} ord</span>
+                      </div>
+                    </div>
+                    <div style={{ height: '4px', background: colors.borderSubtle, borderRadius: '2px', overflow: 'hidden' }}>
+                      <div style={{ width: pct + '%', height: '100%', background: day.isToday ? colors.purple : colors.success, borderRadius: '2px' }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* Venue Performance */}
+        <div className="two-col-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
+          <div style={{ background: colors.card, borderRadius: '16px', border: '1px solid ' + colors.border, padding: 'clamp(16px, 3vw, 28px)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
+              <IconBox color="#FBBF24">👨‍🍳</IconBox>
+              <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '18px', fontWeight: 600 }}>Kitchen Performance</h2>
+              <SimBadge />
+              {prepTimeByHour.some(p => p.status === 'critical') && <WarningBadge />}
+            </div>
+            
+            <div className="two-col-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              {/* Prep time by venue */}
+              <div>
+                <p style={{ color: colors.textSecondary, fontSize: '11px', marginBottom: '10px' }}>Prep Time by Venue</p>
+                {venuePerformance.kitchen.map((venue, i) => (
+                  <div key={i} style={{ background: colors.elevated, borderRadius: '10px', padding: '12px 14px', marginBottom: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <span style={{ color: venue.status === 'good' ? colors.success : venue.status === 'warning' ? colors.warning : colors.error, fontSize: '12px' }}>
+                        {venue.status === 'good' ? '✓' : venue.status === 'warning' ? '⚠' : '✗'}
+                      </span>
+                      <span style={{ fontSize: '13px' }}>{venue.venue}</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <span style={{ color: venue.status === 'good' ? colors.success : venue.status === 'warning' ? colors.warning : colors.error, fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '14px' }}>{venue.avgPrep}m</span>
+                      <span style={{ color: colors.textMuted, fontSize: '10px' }}>{venue.orders}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Prep time by hour chart */}
+              <div>
+                <p style={{ color: colors.textSecondary, fontSize: '12px', marginBottom: '12px' }}>Prep Time by Hour</p>
+                <ResponsiveContainer width="100%" height={180}>
+                  <BarChart data={prepTimeByHour}>
+                    <CartesianGrid strokeDasharray="3 3" stroke={colors.borderSubtle} vertical={false} />
+                    <XAxis dataKey="hour" tick={{ fill: colors.textMuted, fontSize: 9 }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fill: colors.textMuted, fontSize: 9 }} axisLine={false} tickLine={false} />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Bar dataKey="time" radius={[4, 4, 0, 0]} name="Prep Time">
+                      {prepTimeByHour.map((entry, index) => (
+                        <Cell key={index} fill={entry.status === 'good' ? colors.purple : entry.status === 'warning' ? colors.warning : colors.error} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+                <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', marginTop: '8px' }}>
+                  {[{ color: colors.purple, label: '<12m Good' }, { color: colors.warning, label: '12-16m Warn' }, { color: colors.error, label: '>16m Critical' }].map((item, i) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <span style={{ width: '8px', height: '8px', borderRadius: '2px', background: item.color }} />
+                      <span style={{ color: colors.textMuted, fontSize: '9px' }}>{item.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Delivery Performance */}
+          <div style={{ background: colors.card, borderRadius: '16px', border: '1px solid ' + colors.border, padding: 'clamp(16px, 3vw, 28px)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+              <IconBox color="#34D399">🚚</IconBox>
+              <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '18px', fontWeight: 600 }}>Delivery Performance</h2>
+              {summary.avgDeliveryTime > 40 && <WarningBadge />}
+            </div>
+
+            {/* Time breakdown bar */}
+            <div style={{ marginBottom: '20px' }}>
+              <p style={{ color: colors.textSecondary, fontSize: '12px', marginBottom: '12px' }}>Time Breakdown (avg)</p>
+              {(() => {
+                const avgPrep = venuePerformance.kitchen.reduce((sum, v) => sum + v.avgPrep * v.orders, 0) / venuePerformance.kitchen.reduce((sum, v) => sum + v.orders, 0) || 12;
+                const pickupTime = 6;
+                const deliveryDrive = summary.avgDeliveryTime - avgPrep - pickupTime;
+                const totalTime = avgPrep + pickupTime + deliveryDrive;
+                return (
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
+                      <span style={{ color: colors.textMuted, fontSize: '11px', width: '70px' }}>Order</span>
+                      <div style={{ flex: 1, display: 'flex', height: '28px', borderRadius: '8px', overflow: 'hidden' }}>
+                        <div style={{ width: (avgPrep / totalTime * 100) + '%', background: colors.warning, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <span style={{ fontSize: '10px', fontWeight: 600 }}>{avgPrep.toFixed(0)}m</span>
+                        </div>
+                        <div style={{ width: (pickupTime / totalTime * 100) + '%', background: colors.info, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <span style={{ fontSize: '10px', fontWeight: 600 }}>{pickupTime}m</span>
+                        </div>
+                        <div style={{ width: (deliveryDrive / totalTime * 100) + '%', background: colors.success, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <span style={{ fontSize: '10px', fontWeight: 600 }}>{deliveryDrive.toFixed(0)}m</span>
+                        </div>
+                      </div>
+                      <span style={{ color: colors.textMuted, fontSize: '11px', width: '60px', textAlign: 'right' }}>Delivered</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', paddingLeft: '70px', paddingRight: '60px' }}>
+                      <span style={{ color: colors.warning, fontSize: '10px' }}>Prep</span>
+                      <span style={{ color: colors.info, fontSize: '10px' }}>Pickup</span>
+                      <span style={{ color: colors.success, fontSize: '10px' }}>Drive</span>
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+
+            {/* Delivery by venue */}
+            <p style={{ color: colors.textSecondary, fontSize: '12px', marginBottom: '12px' }}>Delivery by Venue</p>
+            {venuePerformance.delivery.map((venue, i) => (
+              <div key={i} style={{ background: colors.elevated, borderRadius: '10px', padding: '14px 16px', marginBottom: '8px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <p style={{ fontWeight: 500, fontSize: '14px' }}>{venue.venue}</p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '16px', color: venue.time < 35 ? colors.success : venue.time < 45 ? colors.warning : colors.error }}>{venue.time.toFixed(1)}m</span>
+                    <span style={{ fontSize: '12px', padding: '3px 8px', borderRadius: '6px', background: venue.pctUnder35 >= 50 ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)', color: venue.pctUnder35 >= 50 ? colors.success : colors.error }}>{venue.pctUnder35}% &lt;35m</span>
+                  </div>
+                </div>
+                <div style={{ height: '4px', background: colors.borderSubtle, borderRadius: '2px', overflow: 'hidden' }}>
+                  <div style={{ width: venue.pctUnder35 + '%', height: '100%', background: venue.pctUnder35 >= 50 ? colors.success : colors.error, borderRadius: '2px' }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Category Performance */}
+        <div style={{ background: colors.card, borderRadius: '16px', border: '1px solid ' + colors.border, padding: 'clamp(16px, 3vw, 28px)', marginBottom: '24px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <IconBox color="#F59E0B">🥧</IconBox>
+              <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '20px', fontWeight: 600 }}>Category Performance</h2>
+            </div>
+            <div className="hide-mobile" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ width: '12px', height: '12px', borderRadius: '3px', background: colors.purple }} />
+                <span style={{ color: colors.textMuted, fontSize: '12px' }}>Revenue</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ width: '12px', height: '12px', borderRadius: '3px', background: colors.success }} />
+                <span style={{ color: colors.textMuted, fontSize: '12px' }}>Margin</span>
+              </div>
+            </div>
+          </div>
+          
+          {/* Visual bar chart */}
+          {(() => {
+            const maxRevenue = Math.max(...categoryPerformance.map(c => c.revenue));
+            return (
+              <div style={{ marginBottom: '24px' }}>
+                {categoryPerformance.map((cat, i) => {
+                  const revenueWidth = (cat.revenue / maxRevenue) * 100;
+                  return (
+                    <div key={i} style={{ marginBottom: '16px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <span style={{ fontSize: '14px', fontWeight: 600, minWidth: '100px' }}>{cat.name}</span>
+                          <span style={{ color: colors.textMuted, fontSize: '12px' }}>{cat.mix}%</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                          <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '16px' }}>{(cat.revenue / 1000).toFixed(0)}K</span>
+                          <span style={{ fontSize: '12px', fontWeight: 600, color: cat.margin >= 80 ? colors.success : cat.margin >= 70 ? colors.warning : colors.textSecondary, minWidth: '60px', textAlign: 'right' }}>{cat.margin}%</span>
+                          <span style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '6px', background: cat.trend >= 0 ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)', color: cat.trend >= 0 ? colors.success : colors.error, minWidth: '50px', textAlign: 'center' }}>
+                            {cat.trend >= 0 ? '+' : ''}{cat.trend}%
+                          </span>
+                        </div>
+                      </div>
+                      <div style={{ position: 'relative', height: '24px', background: colors.elevated, borderRadius: '6px', overflow: 'hidden' }}>
+                        <div style={{ position: 'absolute', top: 0, left: 0, width: revenueWidth + '%', height: '100%', background: 'linear-gradient(90deg, ' + colors.purple + ', ' + colors.purple + 'CC)', borderRadius: '6px' }} />
+                        <div style={{ position: 'absolute', top: '2px', left: (cat.margin) + '%', width: '2px', height: '20px', background: colors.success, borderRadius: '1px' }} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
+          
+          {/* Category cards */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
+            {categoryPerformance.map((cat, i) => (
+              <div key={i} style={{ background: colors.elevated, borderRadius: '12px', padding: '16px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                  <div>
+                    <p style={{ fontWeight: 600, fontSize: '14px', marginBottom: '4px' }}>{cat.name}</p>
+                    <p style={{ color: colors.textMuted, fontSize: '12px' }}>{cat.mix}% of sales</p>
+                  </div>
+                  <span style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '6px', background: cat.trend >= 0 ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)', color: cat.trend >= 0 ? colors.success : colors.error }}>
+                    {cat.trend >= 0 ? '+' : ''}{cat.trend}%
+                  </span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '18px' }}>{(cat.revenue / 1000).toFixed(0)}K</span>
+                  <span style={{ fontSize: '13px', fontWeight: 600, color: cat.margin >= 80 ? colors.success : cat.margin >= 70 ? colors.warning : colors.textSecondary }}>{cat.margin}% margin</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Customer Insights & Reviews */}
+        <div className="two-col-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
+          
+          {/* Customer Insights */}
+          <div style={{ background: colors.card, borderRadius: '16px', border: '1px solid ' + colors.border, padding: 'clamp(16px, 3vw, 28px)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+              <IconBox color="#EC4899">👥</IconBox>
+              <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '18px', fontWeight: 600 }}>Customer Insights</h2>
+            </div>
+
+            {/* Customer stats grid */}
+            <div className="customer-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', marginBottom: '20px' }}>
+              <div className="customer-stat" style={{ background: colors.elevated, borderRadius: '12px', padding: '16px', textAlign: 'center' }}>
+                <p style={{ color: colors.textMuted, fontSize: '10px', textTransform: 'uppercase', marginBottom: '6px' }}>Total Customers</p>
+                <p className="customer-value" style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '28px', fontWeight: 700 }}>{customerData.total}</p>
+              </div>
+              <div className="customer-stat" style={{ background: colors.elevated, borderRadius: '12px', padding: '16px', textAlign: 'center' }}>
+                <p style={{ color: colors.textMuted, fontSize: '10px', textTransform: 'uppercase', marginBottom: '6px' }}>Repeat Rate</p>
+                <p className="customer-value" style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '28px', fontWeight: 700, color: colors.success }}>{customerData.repeatRate}%</p>
+              </div>
+              <div className="customer-stat" style={{ background: colors.elevated, borderRadius: '12px', padding: '16px', textAlign: 'center' }}>
+                <p style={{ color: colors.textMuted, fontSize: '10px', textTransform: 'uppercase', marginBottom: '6px' }}>New Customers</p>
+                <p className="customer-value" style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '28px', fontWeight: 700, color: colors.info }}>{customerData.newCustomers}</p>
+                <p style={{ color: colors.textMuted, fontSize: '11px' }}>{((customerData.newCustomers / customerData.total) * 100).toFixed(1)}% of total</p>
+              </div>
+              <div className="customer-stat" style={{ background: colors.elevated, borderRadius: '12px', padding: '16px', textAlign: 'center' }}>
+                <p style={{ color: colors.textMuted, fontSize: '10px', textTransform: 'uppercase', marginBottom: '6px' }}>Returning</p>
+                <p className="customer-value" style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '28px', fontWeight: 700, color: colors.purple }}>{customerData.returning}</p>
+                <p style={{ color: colors.textMuted, fontSize: '11px' }}>{((customerData.returning / customerData.total) * 100).toFixed(1)}% of total</p>
+              </div>
+            </div>
+
+            {/* Basket comparison */}
+            <div style={{ background: colors.elevated, borderRadius: '12px', padding: '16px', marginBottom: '16px' }}>
+              <p style={{ color: colors.textSecondary, fontSize: '12px', marginBottom: '12px' }}>Average Basket Comparison</p>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ textAlign: 'center', flex: 1 }}>
+                  <p style={{ color: colors.textMuted, fontSize: '11px', marginBottom: '4px' }}>New Customers</p>
+                  <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '20px', color: colors.info }}>{formatNumber(customerData.avgBasketNew)} RSD</p>
+                </div>
+                <div style={{ width: '1px', height: '40px', background: colors.borderSubtle }} />
+                <div style={{ textAlign: 'center', flex: 1 }}>
+                  <p style={{ color: colors.textMuted, fontSize: '11px', marginBottom: '4px' }}>Returning</p>
+                  <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '20px', color: colors.purple }}>{formatNumber(customerData.avgBasketReturning)} RSD</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Top VIP Customers */}
+            <div style={{ background: colors.elevated, borderRadius: '12px', padding: '16px' }}>
+              <p style={{ color: colors.textSecondary, fontSize: '12px', marginBottom: '12px' }}>Top VIP Customers (14 days)</p>
+              {topCustomers.map((cust, i) => (
+                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: i < topCustomers.length - 1 ? '1px solid ' + colors.borderSubtle : 'none' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span style={{ width: '24px', height: '24px', background: i === 0 ? 'linear-gradient(135deg, #FFD700, #FFA500)' : colors.borderSubtle, borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 700 }}>{i + 1}</span>
+                    <span style={{ fontSize: '13px', fontWeight: 500 }}>{cust.id}</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <span style={{ color: colors.textMuted, fontSize: '12px' }}>{cust.orders} orders</span>
+                    <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '14px', color: colors.success }}>{(cust.revenue / 1000).toFixed(0)}K</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Reviews */}
+          <div style={{ background: colors.card, borderRadius: '16px', border: '1px solid ' + colors.border, padding: 'clamp(16px, 3vw, 28px)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+              <IconBox color="#FBBF24">⭐</IconBox>
+              <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '18px', fontWeight: 600 }}>Reviews</h2>
+              <span style={{ fontSize: '12px', padding: '4px 10px', borderRadius: '6px', background: colors.elevated, color: colors.textSecondary }}>{summary.reviewCount} reviews</span>
+            </div>
+
+            {/* Rating distribution */}
+            <div style={{ marginBottom: '20px' }}>
+              <p style={{ color: colors.textSecondary, fontSize: '12px', marginBottom: '12px' }}>Rating Distribution</p>
+              {(() => {
+                const ratingDist = data.ratingDistribution || [
+                  { rating: '10/10', count: Math.round(summary.reviewCount * 0.45), pct: 45 },
+                  { rating: '9/10', count: Math.round(summary.reviewCount * 0.30), pct: 30 },
+                  { rating: '8/10', count: Math.round(summary.reviewCount * 0.15), pct: 15 },
+                  { rating: '≤7/10', count: Math.round(summary.reviewCount * 0.10), pct: 10, negative: true },
+                ];
+                return ratingDist.map((r, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                    <span style={{ width: '50px', fontSize: '12px', color: r.negative ? colors.error : colors.textSecondary }}>{r.rating}</span>
+                    <div style={{ flex: 1, height: '20px', background: colors.elevated, borderRadius: '4px', overflow: 'hidden' }}>
+                      <div style={{ width: r.pct + '%', height: '100%', background: r.negative ? colors.error : colors.success, borderRadius: '4px' }} />
+                    </div>
+                    <span style={{ width: '40px', fontSize: '12px', color: colors.textMuted, textAlign: 'right' }}>{r.count}</span>
+                  </div>
+                ));
+              })()}
+            </div>
+
+            {/* Negative reviews */}
+            <div style={{ marginBottom: '16px' }}>
+              <p style={{ color: colors.textSecondary, fontSize: '12px', marginBottom: '12px' }}>Recent Negative Reviews</p>
+              {(() => {
+                const negativeReviews = data.negativeReviews || [
+                  { rating: 8, venue: 'Novi Beograd Burgers', comment: 'Burger suv, potrebna poboljšanja', time: '14:23' },
+                  { rating: 7, venue: 'Vračar Burgers', comment: 'Dugo čekanje', time: '19:45' },
+                  { rating: 8, venue: 'Pancakes NB', comment: 'Hladno posluženo', time: '12:10' },
+                ];
+                return negativeReviews.slice(0, 3).map((review, i) => (
+                  <div key={i} className="review-card" style={{ background: colors.elevated, borderRadius: '10px', padding: '12px 16px', marginBottom: '8px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px' }}>
+                      <span style={{ background: review.rating <= 7 ? 'rgba(239, 68, 68, 0.15)' : 'rgba(245, 158, 11, 0.15)', color: review.rating <= 7 ? colors.error : colors.warning, padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 600 }}>{review.rating}/10</span>
+                      <span className="review-time" style={{ color: colors.textMuted, fontSize: '11px' }}>{review.time}</span>
+                    </div>
+                    <p style={{ fontSize: '12px' }}>
+                      <span style={{ color: colors.textSecondary, fontWeight: 500 }}>{review.venue}:</span>
+                      <span style={{ marginLeft: '6px' }}>{review.comment}</span>
+                    </p>
+                  </div>
+                ));
+              })()}
+            </div>
+
+            {/* Alert box */}
+            {(() => {
+              const reviewAlert = data.reviewAlert || { venue: 'Novi Beograd Burgers', count: 2, total: 5, issue: 'burger quality' };
+              return (
+                <div style={{ background: 'rgba(239, 68, 68, 0.1)', borderRadius: '12px', padding: '16px 20px', display: 'flex', alignItems: 'center', gap: '12px', border: '1px solid rgba(239, 68, 68, 0.4)' }}>
+                  <span style={{ fontSize: '20px' }}>⚠️</span>
+                  <div>
+                    <p style={{ fontSize: '14px', color: colors.error, fontWeight: 500 }}>{reviewAlert.count} of {reviewAlert.total} negatives from {reviewAlert.venue}</p>
+                    <p style={{ fontSize: '11px', color: colors.textMuted, marginTop: '2px' }}>Check {reviewAlert.issue} - review feedback patterns</p>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        </div>
+
+        {/* Key Insights & Recommended Actions */}
+        <div className="two-col-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
+          
+          {/* Key Insights */}
+          <div style={{ background: 'linear-gradient(135deg, ' + colors.card + ' 0%, rgba(59, 130, 246, 0.1) 100%)', borderRadius: '16px', border: '1px solid rgba(59, 130, 246, 0.4)', padding: 'clamp(16px, 3vw, 28px)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+              <IconBox color="#60A5FA">💡</IconBox>
+              <h2 className="section-title" style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '18px', fontWeight: 600 }}>KEY INSIGHTS</h2>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {(() => {
+                const insights = data.keyInsights || [
+                  { icon: '⭐', text: 'EXCELLENT REVIEW SCORE: ' + summary.avgRating + '/10 average - ' + (vsComparison.vsLastWeek.rating.change >= 0 ? 'up' : 'down') + ' ' + Math.abs(vsComparison.vsLastWeek.rating.change) + '% vs last week.', type: summary.avgRating >= 9 ? 'success' : 'warning' },
+                  { icon: '💰', text: 'PROFIT MARGIN: ' + summary.profitMargin + '% average margin generating ' + (summary.profit/1000).toFixed(0) + 'K RSD profit.', type: summary.profitMargin >= 70 ? 'success' : 'warning' },
+                  { icon: '📦', text: 'ORDER VOLUME: ' + summary.totalOrders + ' orders today, ' + (vsComparison.vsLastWeek.orders.change >= 0 ? '+' : '') + vsComparison.vsLastWeek.orders.change + '% vs last ' + meta.dayOfWeek + '.', type: vsComparison.vsLastWeek.orders.change >= 0 ? 'success' : 'warning' },
+                  { icon: '🚚', text: 'DELIVERY TIME: ' + summary.avgDeliveryTime.toFixed(1) + ' min average. ' + (summary.avgDeliveryTime > 40 ? 'Above target - needs attention.' : 'Within acceptable range.'), type: summary.avgDeliveryTime <= 40 ? 'success' : summary.avgDeliveryTime <= 45 ? 'warning' : 'critical' },
+                  { icon: '🛒', text: 'BASKET SIZE: ' + formatNumber(summary.avgBasket) + ' RSD average, ' + summary.itemsPerOrder.toFixed(2) + ' items per order.', type: 'info' },
+                ];
+                return insights.map((insight, i) => (
+                  <div key={i} className="insight-card" style={{ background: insight.type === 'critical' ? 'rgba(239, 68, 68, 0.15)' : insight.type === 'warning' ? 'rgba(245, 158, 11, 0.1)' : insight.type === 'success' ? 'rgba(34, 197, 94, 0.1)' : colors.elevated, borderRadius: '10px', padding: '14px 16px', border: insight.type === 'critical' ? '1px solid rgba(239, 68, 68, 0.4)' : 'none' }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                      <span className="insight-icon" style={{ fontSize: '18px', flexShrink: 0 }}>{insight.icon}</span>
+                      <p className="insight-text" style={{ fontSize: '13px', lineHeight: 1.5, color: insight.type === 'critical' ? colors.error : colors.textPrimary }}>{insight.text}</p>
+                    </div>
+                  </div>
+                ));
+              })()}
+            </div>
+          </div>
+
+          {/* Recommended Actions */}
+          <div style={{ background: 'linear-gradient(135deg, ' + colors.card + ' 0%, rgba(34, 197, 94, 0.1) 100%)', borderRadius: '16px', border: '1px solid rgba(34, 197, 94, 0.4)', padding: 'clamp(20px, 4vw, 28px)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+              <IconBox color="#22C55E">✅</IconBox>
+              <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '20px', fontWeight: 600 }}>RECOMMENDED ACTIONS</h2>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {(() => {
+                const actions = data.recommendedActions || [
+                  { priority: summary.avgDeliveryTime > 45 ? 'URGENT' : 'HIGH', action: 'Monitor delivery times during peak hours', reason: summary.avgDeliveryTime.toFixed(1) + ' min avg delivery' },
+                  { priority: 'HIGH', action: 'Review venues with low ratings', reason: 'Quality consistency check' },
+                  { priority: 'MEDIUM', action: 'Promote high-margin categories', reason: 'Cooked meals at 82.5% margin' },
+                  { priority: 'MEDIUM', action: 'Upsell sides with burger orders', reason: '86% margin on pomfrit/sides' },
+                  { priority: 'LOW', action: 'Prepare for tomorrow\'s forecast', reason: forecast.tomorrowOrders + ' orders expected' },
+                ];
+                return actions.map((item, i) => (
+                  <div key={i} style={{ background: colors.elevated, borderRadius: '10px', padding: '14px 16px', display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                    <span className="action-badge" style={{ background: item.priority === 'URGENT' ? colors.error : item.priority === 'HIGH' ? colors.warning : colors.info, color: item.priority === 'URGENT' ? 'white' : colors.bg, padding: '4px 10px', borderRadius: '6px', fontSize: '10px', fontWeight: 700, minWidth: '60px', textAlign: 'center' }}>{item.priority}</span>
+                    <div style={{ flex: 1 }}>
+                      <p style={{ fontSize: '13px', fontWeight: 500, marginBottom: '4px' }}>{item.action}</p>
+                      <p style={{ fontSize: '11px', color: colors.textMuted }}>({item.reason})</p>
+                    </div>
+                  </div>
+                ));
+              })()}
+            </div>
+          </div>
+        </div>
+
+        {/* Tomorrow's Forecast */}
+        <div style={{ background: colors.card, borderRadius: '16px', border: '1px solid ' + colors.border, padding: 'clamp(20px, 4vw, 28px)', marginBottom: '24px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+            <IconBox color="#A78BFA">🔮</IconBox>
+            <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '20px', fontWeight: 600 }}>Tomorrow's Forecast</h2>
+            <span style={{ fontSize: '11px', padding: '4px 10px', borderRadius: '6px', background: 'rgba(139, 92, 246, 0.15)', color: colors.purpleLight, fontWeight: 600 }}>{forecast.confidence} CONFIDENCE</span>
+          </div>
+
+          <div className="forecast-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
+            {[
+              { icon: '💰', label: 'EXPECTED REVENUE', value: (forecast.tomorrowRevenue/1000).toFixed(0) + 'K', subtext: 'RSD', comparison: 'vs ' + (summary.totalRevenue/1000).toFixed(0) + 'K today', trend: ((forecast.tomorrowRevenue - summary.totalRevenue) / summary.totalRevenue * 100).toFixed(1), color: colors.purple, note: 'Based on ' + dayOfWeekAverages.find(d => !d.isToday)?.day + ' historical average' },
+              { icon: '📦', label: 'EXPECTED ORDERS', value: forecast.tomorrowOrders.toString(), subtext: 'orders', comparison: 'vs ' + summary.totalOrders + ' today', trend: ((forecast.tomorrowOrders - summary.totalOrders) / summary.totalOrders * 100).toFixed(1), color: colors.info, note: 'Prepare kitchen capacity accordingly' },
+              { icon: '🛒', label: 'AVG BASKET', value: formatNumber(Math.round(forecast.tomorrowRevenue / forecast.tomorrowOrders)), subtext: 'RSD', comparison: 'vs ' + formatNumber(summary.avgBasket) + ' today', trend: 0, color: colors.cyan, note: 'Focus on upselling sides & drinks' },
+              { icon: '⭐', label: 'TARGET RATING', value: '9.0+', subtext: 'out of 10', comparison: 'vs ' + summary.avgRating + ' today', trend: null, color: colors.success, isTarget: true, note: 'Maintain quality standards' },
+            ].map((kpi, i) => (
+              <div key={i} className="forecast-card" style={{ background: colors.elevated, borderRadius: '14px', padding: '20px', border: '1px solid ' + colors.borderSubtle, position: 'relative' }}>
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', background: 'linear-gradient(90deg, ' + kpi.color + ', ' + kpi.color + '80)', borderRadius: '14px 14px 0 0' }} />
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px', flexWrap: 'wrap', gap: '4px' }}>
+                  <span style={{ fontSize: '24px' }}>{kpi.icon}</span>
+                  {kpi.trend !== null && (
+                    <span style={{ background: kpi.trend > 0 ? 'rgba(34, 197, 94, 0.15)' : kpi.trend < 0 ? 'rgba(245, 158, 11, 0.15)' : 'rgba(255,255,255,0.1)', color: kpi.trend > 0 ? colors.success : kpi.trend < 0 ? colors.warning : colors.textSecondary, padding: '3px 8px', borderRadius: '10px', fontSize: '11px', fontWeight: 600 }}>
+                      {kpi.trend > 0 ? '↗' : kpi.trend < 0 ? '↘' : '→'} {Math.abs(kpi.trend)}%
+                    </span>
+                  )}
+                  {kpi.isTarget && <span style={{ background: 'rgba(34, 197, 94, 0.15)', color: colors.success, padding: '3px 8px', borderRadius: '10px', fontSize: '11px', fontWeight: 600 }}>TARGET</span>}
+                </div>
+                <p style={{ color: colors.textMuted, fontSize: '10px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>{kpi.label}</p>
+                <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '32px', fontWeight: 700, marginBottom: '2px' }}>{kpi.value}</p>
+                <p style={{ color: colors.textSecondary, fontSize: '12px', marginBottom: '8px' }}>{kpi.subtext}</p>
+                <p className="hide-mobile" style={{ color: colors.textMuted, fontSize: '11px', marginBottom: '8px' }}>{kpi.comparison}</p>
+                
+                {/* Note tooltip */}
+                <div className="hide-mobile" style={{ background: 'rgba(139, 92, 246, 0.1)', borderRadius: '8px', padding: '8px 10px', marginTop: '8px' }}>
+                  <p style={{ color: colors.purpleLight, fontSize: '11px' }}>💡 {kpi.note}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="two-col-grid" style={{ background: colors.elevated, borderRadius: '12px', padding: '20px', display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '24px' }}>
+            <div>
+              <p style={{ color: colors.textSecondary, fontSize: '12px', marginBottom: '12px' }}>Peak Hours Expected</p>
+              {forecast.peakHours.map((peak, i) => (
+                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: i < forecast.peakHours.length - 1 ? '1px solid ' + colors.borderSubtle : 'none' }}>
+                  <div>
+                    <p style={{ fontSize: '13px', fontWeight: 500 }}>{peak.hour}</p>
+                    <p style={{ color: colors.textMuted, fontSize: '11px' }}>{peak.label}</p>
+                  </div>
+                  <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '14px', color: colors.purple }}>~{peak.orders} orders</span>
+                </div>
+              ))}
+            </div>
+            <div>
+              <p style={{ color: colors.textSecondary, fontSize: '12px', marginBottom: '12px' }}>Recommendations for Tomorrow</p>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                {forecast.recommendations.map((rec, i) => (
+                  <div key={i} style={{ background: colors.card, borderRadius: '10px', padding: '12px', display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                    <span style={{ fontSize: '18px' }}>{rec.icon}</span>
+                    <div style={{ flex: 1 }}>
+                      <p style={{ fontSize: '12px', lineHeight: 1.4 }}>{rec.text}</p>
+                      <span style={{ display: 'inline-block', marginTop: '6px', background: rec.priority === 'HIGH' ? 'rgba(239, 68, 68, 0.15)' : rec.priority === 'MEDIUM' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(59, 130, 246, 0.15)', color: rec.priority === 'HIGH' ? colors.error : rec.priority === 'MEDIUM' ? colors.warning : colors.info, padding: '2px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: 600 }}>{rec.priority}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div style={{ textAlign: 'center', padding: '16px', color: colors.textMuted, fontSize: '12px' }}>
+          Generated: {meta.reportDateFormatted} | {summary.totalOrders} orders | {summary.totalCustomers} customers | {summary.reviewCount} reviews | Data from {meta.dataSource} | v5.0 (JSON-powered)
+        </div>
+
+      </div>
+    </div>
+  );
+};
+
+ReactDOM.createRoot(document.getElementById("root")).render(<CollinaDashboard />);
+  </script>
+</body>
+</html>
