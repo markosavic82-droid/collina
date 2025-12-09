@@ -345,6 +345,145 @@ const CollinaDashboard = () => {
           </ResponsiveContainer>
         </div>
 
+        {/* 12-Week Comparison */}
+        {data.weeklyComparison && (
+          <div style={{ background: colors.card, borderRadius: '16px', border: '1px solid ' + colors.border, padding: 'clamp(20px, 4vw, 28px)', marginBottom: '24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <IconBox color="#06B6D4">📊</IconBox>
+                <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '20px', fontWeight: 600 }}>12-Week Performance</h2>
+              </div>
+              <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+                <div style={{ background: colors.elevated, borderRadius: '8px', padding: '8px 14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '12px', color: colors.textMuted }}>Revenue Growth</span>
+                  <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '14px', color: data.weeklyComparison.summary.revenueGrowth >= 0 ? colors.success : colors.error }}>
+                    {data.weeklyComparison.summary.revenueGrowth >= 0 ? '+' : ''}{data.weeklyComparison.summary.revenueGrowth}%
+                  </span>
+                </div>
+                <div style={{ background: colors.elevated, borderRadius: '8px', padding: '8px 14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '12px', color: colors.textMuted }}>Orders Growth</span>
+                  <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '14px', color: data.weeklyComparison.summary.ordersGrowth >= 0 ? colors.success : colors.error }}>
+                    {data.weeklyComparison.summary.ordersGrowth >= 0 ? '+' : ''}{data.weeklyComparison.summary.ordersGrowth}%
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Summary Stats */}
+            <div className="four-col-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
+              <div style={{ background: colors.elevated, borderRadius: '12px', padding: '16px' }}>
+                <p style={{ color: colors.textMuted, fontSize: '10px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>AVG WEEKLY REVENUE</p>
+                <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '24px', fontWeight: 700, color: colors.purple }}>{(data.weeklyComparison.summary.avgWeeklyRevenue / 1000000).toFixed(1)}M</p>
+                <p style={{ color: colors.textMuted, fontSize: '12px' }}>RSD</p>
+              </div>
+              <div style={{ background: colors.elevated, borderRadius: '12px', padding: '16px' }}>
+                <p style={{ color: colors.textMuted, fontSize: '10px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>AVG WEEKLY ORDERS</p>
+                <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '24px', fontWeight: 700, color: colors.info }}>{data.weeklyComparison.summary.avgWeeklyOrders.toLocaleString()}</p>
+                <p style={{ color: colors.textMuted, fontSize: '12px' }}>orders</p>
+              </div>
+              <div style={{ background: colors.elevated, borderRadius: '12px', padding: '16px' }}>
+                <p style={{ color: colors.textMuted, fontSize: '10px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>AVG RATING</p>
+                <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '24px', fontWeight: 700, color: colors.warning }}>{data.weeklyComparison.summary.avgRating}</p>
+                <p style={{ color: colors.textMuted, fontSize: '12px' }}>out of 10</p>
+              </div>
+              <div style={{ background: colors.elevated, borderRadius: '12px', padding: '16px' }}>
+                <p style={{ color: colors.textMuted, fontSize: '10px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>BEST WEEK</p>
+                <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '24px', fontWeight: 700, color: colors.success }}>{data.weeklyComparison.summary.bestWeek}</p>
+                <p style={{ color: colors.textMuted, fontSize: '12px' }}>highest revenue</p>
+              </div>
+            </div>
+
+            {/* Bar Chart - Revenue & Orders */}
+            <div style={{ marginBottom: '24px' }}>
+              <p style={{ color: colors.textSecondary, fontSize: '12px', marginBottom: '12px' }}>Weekly Revenue & Orders (12 weeks)</p>
+              <ResponsiveContainer width="100%" height={280}>
+                <ComposedChart data={data.weeklyComparison.weeks}>
+                  <defs>
+                    <linearGradient id="weeklyRevenueGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor={colors.purple} stopOpacity={0.8} />
+                      <stop offset="100%" stopColor={colors.purple} stopOpacity={0.4} />
+                    </linearGradient>
+                    <linearGradient id="weeklyOrdersGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor={colors.info} stopOpacity={0.8} />
+                      <stop offset="100%" stopColor={colors.info} stopOpacity={0.4} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke={colors.borderSubtle} vertical={false} />
+                  <XAxis dataKey="week" tick={{ fill: colors.textMuted, fontSize: 11 }} axisLine={{ stroke: colors.borderSubtle }} tickLine={false} />
+                  <YAxis yAxisId="left" tickFormatter={(v) => (v / 1000000).toFixed(1) + 'M'} tick={{ fill: colors.textMuted, fontSize: 11 }} axisLine={false} tickLine={false} />
+                  <YAxis yAxisId="right" orientation="right" tick={{ fill: colors.textMuted, fontSize: 11 }} axisLine={false} tickLine={false} />
+                  <Tooltip 
+                    content={({ active, payload, label }) => {
+                      if (active && payload && payload.length) {
+                        const weekData = data.weeklyComparison.weeks.find(w => w.week === label);
+                        return (
+                          <div style={{ background: colors.card, border: '1px solid ' + colors.borderSubtle, borderRadius: '12px', padding: '12px 16px', boxShadow: '0 10px 40px rgba(0,0,0,0.3)' }}>
+                            <p style={{ color: colors.textSecondary, fontSize: '12px', marginBottom: '8px' }}>{weekData?.weekLabel} ({weekData?.startDate})</p>
+                            <p style={{ color: colors.purple, fontSize: '14px', fontWeight: 600 }}>Revenue: {(payload[0]?.value / 1000000).toFixed(2)}M RSD</p>
+                            <p style={{ color: colors.info, fontSize: '14px', fontWeight: 600 }}>Orders: {payload[1]?.value?.toLocaleString()}</p>
+                            <p style={{ color: colors.warning, fontSize: '14px', fontWeight: 600 }}>Rating: {weekData?.avgRating}/10</p>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                  <Bar yAxisId="left" dataKey="revenue" fill="url(#weeklyRevenueGradient)" radius={[4, 4, 0, 0]} name="Revenue" />
+                  <Bar yAxisId="right" dataKey="orders" fill="url(#weeklyOrdersGradient)" radius={[4, 4, 0, 0]} name="Orders" />
+                </ComposedChart>
+              </ResponsiveContainer>
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '24px', marginTop: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ width: '12px', height: '12px', background: colors.purple, borderRadius: '3px' }} />
+                  <span style={{ color: colors.textSecondary, fontSize: '12px' }}>Revenue</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ width: '12px', height: '12px', background: colors.info, borderRadius: '3px' }} />
+                  <span style={{ color: colors.textSecondary, fontSize: '12px' }}>Orders</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Rating Trend Line */}
+            <div>
+              <p style={{ color: colors.textSecondary, fontSize: '12px', marginBottom: '12px' }}>Average Rating Trend (12 weeks)</p>
+              <ResponsiveContainer width="100%" height={160}>
+                <AreaChart data={data.weeklyComparison.weeks}>
+                  <defs>
+                    <linearGradient id="ratingGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor={colors.warning} stopOpacity={0.3} />
+                      <stop offset="100%" stopColor={colors.warning} stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke={colors.borderSubtle} vertical={false} />
+                  <XAxis dataKey="week" tick={{ fill: colors.textMuted, fontSize: 11 }} axisLine={{ stroke: colors.borderSubtle }} tickLine={false} />
+                  <YAxis domain={[8.5, 10]} tick={{ fill: colors.textMuted, fontSize: 11 }} axisLine={false} tickLine={false} />
+                  <Tooltip 
+                    content={({ active, payload, label }) => {
+                      if (active && payload && payload.length) {
+                        return (
+                          <div style={{ background: colors.card, border: '1px solid ' + colors.borderSubtle, borderRadius: '12px', padding: '12px 16px', boxShadow: '0 10px 40px rgba(0,0,0,0.3)' }}>
+                            <p style={{ color: colors.textSecondary, fontSize: '12px', marginBottom: '8px' }}>{label}</p>
+                            <p style={{ color: colors.warning, fontSize: '14px', fontWeight: 600 }}>⭐ {payload[0]?.value}/10</p>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                  <Area type="monotone" dataKey="avgRating" stroke={colors.warning} strokeWidth={2} fill="url(#ratingGradient)" dot={{ fill: colors.warning, strokeWidth: 0, r: 4 }} activeDot={{ r: 6 }} />
+                </AreaChart>
+              </ResponsiveContainer>
+              <div style={{ display: 'flex', justifyContent: 'center', marginTop: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ width: '12px', height: '3px', background: colors.warning, borderRadius: '2px' }} />
+                  <span style={{ color: colors.textSecondary, fontSize: '12px' }}>Avg Rating</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Profit Breakdown Section */}
         <div style={{ background: colors.card, borderRadius: '16px', border: '1px solid ' + colors.border, padding: 'clamp(20px, 4vw, 28px)', marginBottom: '24px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
@@ -732,6 +871,7 @@ const CollinaDashboard = () => {
             
             {topProducts.map((product, i) => {
               const profit = Math.round(product.revenue * (product.margin / 100));
+              const ratingChange = product.ratingLW ? (product.rating - product.ratingLW).toFixed(1) : null;
               return (
                 <div key={i} style={{ display: 'grid', gridTemplateColumns: '40px 1fr 80px 100px 100px 80px', gap: '16px', padding: '12px 0', alignItems: 'center', borderBottom: i < topProducts.length - 1 ? '1px solid ' + colors.borderSubtle : 'none' }}>
                   <span style={{ width: '28px', height: '28px', background: i < 3 ? colors.purple : colors.elevated, borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: 600 }}>{product.rank}</span>
@@ -745,7 +885,16 @@ const CollinaDashboard = () => {
                   </div>
                   <div className="hide-mobile" style={{ textAlign: 'center' }}>
                     {product.rating ? (
-                      <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '16px', color: product.rating >= 9 ? colors.success : product.rating >= 8 ? colors.warning : colors.error }}>{product.rating}⭐</p>
+                      <div>
+                        <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '16px', color: product.rating >= 9 ? colors.success : product.rating >= 8 ? colors.warning : colors.error }}>{product.rating}⭐</p>
+                        {product.ratingLW ? (
+                          <p style={{ fontSize: '10px', color: ratingChange > 0 ? colors.success : ratingChange < 0 ? colors.error : colors.textMuted, marginTop: '2px' }}>
+                            LW: {product.ratingLW} {ratingChange > 0 ? '↑' : ratingChange < 0 ? '↓' : ''}
+                          </p>
+                        ) : (
+                          <p style={{ fontSize: '10px', color: colors.textMuted, marginTop: '2px' }}>new</p>
+                        )}
+                      </div>
                     ) : <span style={{ color: colors.textMuted, fontSize: '12px' }}>—</span>}
                   </div>
                   <div style={{ textAlign: 'right' }}>
@@ -763,6 +912,40 @@ const CollinaDashboard = () => {
                 </div>
               );
             })}
+            
+            {/* Totals row */}
+            {(() => {
+              const totalRevenue = topProducts.reduce((sum, p) => sum + p.revenue, 0);
+              const totalProfit = topProducts.reduce((sum, p) => sum + Math.round(p.revenue * (p.margin / 100)), 0);
+              const avgRating = (topProducts.filter(p => p.rating).reduce((sum, p) => sum + p.rating, 0) / topProducts.filter(p => p.rating).length).toFixed(1);
+              const avgMargin = (totalProfit / totalRevenue * 100).toFixed(1);
+              const pctOfSales = topProducts.reduce((sum, p) => sum + p.pctSales, 0).toFixed(0);
+              return (
+                <div className="product-grid" style={{ background: 'linear-gradient(90deg, ' + colors.purple + '20, ' + colors.purple + '10)', borderRadius: '12px', padding: '16px', marginTop: '16px', display: 'grid', gridTemplateColumns: '40px 1fr 80px 100px 100px 80px', gap: '16px', alignItems: 'center', border: '1px solid ' + colors.purple + '40' }}>
+                  <span style={{ fontSize: '16px' }}>Σ</span>
+                  <div style={{ minWidth: 0 }}>
+                    <p style={{ fontSize: '13px', fontWeight: 600, color: colors.purpleLight }}>Top {topProducts.length} Products Total</p>
+                    <p style={{ color: colors.textMuted, fontSize: '11px' }}>{pctOfSales}% of all sales</p>
+                  </div>
+                  <div className="hide-mobile" style={{ textAlign: 'center' }}>
+                    <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '13px', color: colors.success }}>{avgRating} avg</p>
+                    <p style={{ color: colors.textMuted, fontSize: '10px' }}>rating</p>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '16px' }}>{(totalRevenue / 1000).toFixed(0)}K</p>
+                    <p style={{ color: colors.textMuted, fontSize: '10px' }}>RSD</p>
+                  </div>
+                  <div className="hide-mobile" style={{ textAlign: 'right' }}>
+                    <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '16px', color: colors.success }}>{(totalProfit / 1000).toFixed(0)}K</p>
+                    <p style={{ color: colors.textMuted, fontSize: '10px' }}>RSD</p>
+                  </div>
+                  <div className="hide-mobile" style={{ textAlign: 'right' }}>
+                    <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '16px', color: colors.success }}>{avgMargin}%</p>
+                    <p style={{ color: colors.textMuted, fontSize: '10px' }}>avg</p>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         </div>
 
