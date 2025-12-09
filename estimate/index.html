@@ -1023,26 +1023,22 @@
                 if (h <= data.currentHour) {
                     // For past/current hours, use actual data
                     projectedCurve[h] = data.todayHourlyCumulative[h] || 0;
+                } else if (h >= 23) {
+                    // For hours 23 and 24, use the final projected total
+                    projectedCurve[h] = data.projection.weightedAvg;
                 } else {
                     // For future hours, interpolate between current and projected final
-                    const hourKey = h === 24 ? 23 : h;
-                    const avgAtHour = avgHourlyCumulative[hourKey] || 0;
-                    
-                    // For hour 24, use the final total
-                    if (h === 24) {
-                        projectedCurve[h] = data.projection.weightedAvg;
-                    } else {
-                        // Scale remaining orders proportionally
-                        const avgRemainingAtHour = avgAtHour - avgAtCurrentHour;
-                        const ratio = avgRemaining > 0 ? avgRemainingAtHour / avgRemaining : 0;
-                        projectedCurve[h] = Math.round(data.currentOrders + (ratio * projectedRemaining));
-                    }
+                    const avgAtHour = avgHourlyCumulative[h] || 0;
+                    // Scale remaining orders proportionally
+                    const avgRemainingAtHour = avgAtHour - avgAtCurrentHour;
+                    const ratio = avgRemaining > 0 ? avgRemainingAtHour / avgRemaining : 0;
+                    projectedCurve[h] = Math.round(data.currentOrders + (ratio * projectedRemaining));
                 }
             }
 
             if (data.bestDay) {
                 const bestData = hours.map(h => {
-                    if (h === 24) return data.bestDay.finalTotal;
+                    if (h >= 23) return data.bestDay.finalTotal;
                     return data.bestDay.hourlyCumulative[h] || 0;
                 });
                 datasets.push({
@@ -1056,7 +1052,7 @@
 
             if (data.worstDay && data.worstDay !== data.bestDay) {
                 const worstData = hours.map(h => {
-                    if (h === 24) return data.worstDay.finalTotal;
+                    if (h >= 23) return data.worstDay.finalTotal;
                     return data.worstDay.hourlyCumulative[h] || 0;
                 });
                 datasets.push({
@@ -1070,7 +1066,7 @@
 
             data.similarDays.forEach((day, idx) => {
                 const dayData = hours.map(h => {
-                    if (h === 24) return day.finalTotal;
+                    if (h >= 23) return day.finalTotal;
                     return day.hourlyCumulative[h] || 0;
                 });
                 datasets.push({
@@ -1134,7 +1130,7 @@
                         y: { 
                             grid: { color: 'rgba(42, 42, 58, 0.5)' }, 
                             ticks: { color: '#5a5a6e', font: { size: 11 } }, 
-                            min: 300,
+                            min: 0,
                             max: 600
                         }
                     }
