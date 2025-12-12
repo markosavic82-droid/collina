@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated": "2025-12-12T07:34:26.300751",
+    "generated": "2025-12-12T07:48:10.858488",
     "reportDate": "2025-12-11",
     "reportDateFormatted": "Thursday, December 11, 2025",
     "dayOfWeek": "Thursday",
@@ -47,6 +47,83 @@
         "change": -2.2
       }
     }
+  },
+  "reviews": {
+    "avgScore": 9.0,
+    "totalCount": 65,
+    "positiveCount": 58,
+    "negativeCount": 7,
+    "distribution": [
+      {
+        "stars": 10,
+        "count": 49,
+        "pct": 75.4
+      },
+      {
+        "stars": 8,
+        "count": 9,
+        "pct": 13.8
+      },
+      {
+        "stars": 6,
+        "count": 2,
+        "pct": 3.1
+      },
+      {
+        "stars": 4,
+        "count": 1,
+        "pct": 1.5
+      },
+      {
+        "stars": 2,
+        "count": 4,
+        "pct": 6.2
+      }
+    ],
+    "negativeReviews": [
+      {
+        "venue": "Burgers VR",
+        "hour": "23:00",
+        "score": 6,
+        "comment": "hrana je bila hladna bas"
+      },
+      {
+        "venue": "Burgers NB",
+        "hour": "22:00",
+        "score": 6,
+        "comment": "No comment"
+      },
+      {
+        "venue": "Burgers NB",
+        "hour": "22:00",
+        "score": 2,
+        "comment": "samo jedan pepsi smo dobili a trebali smo dva"
+      },
+      {
+        "venue": "Burgers NB",
+        "hour": "21:00",
+        "score": 2,
+        "comment": "No comment"
+      },
+      {
+        "venue": "SMASH NB",
+        "hour": "19:00",
+        "score": 2,
+        "comment": "Ledena hrana"
+      },
+      {
+        "venue": "Burgers BB",
+        "hour": "18:00",
+        "score": 4,
+        "comment": "The food was cold"
+      },
+      {
+        "venue": "Burgers NB",
+        "hour": "18:00",
+        "score": 2,
+        "comment": "Skinuli ste mi pare sa racuna, oznacili kao da je dostava isporucena a nije. I niko mi ne odgovara na poruke. Sta se desava sa mojom porudzbinom???"
+      }
+    ]
   },
   "hourlyData": [
     {
@@ -548,35 +625,35 @@
     "kitchen": [
       {
         "venue": "Vračar",
-        "avgPrep": 14,
+        "avgPrep": 10,
         "target": "<15m",
         "orders": 228,
         "status": "good"
       },
       {
         "venue": "Banovo Brdo",
-        "avgPrep": 13,
+        "avgPrep": 11,
         "target": "<15m",
         "orders": 66,
         "status": "good"
       },
       {
         "venue": "Novi Beograd",
-        "avgPrep": 14,
+        "avgPrep": 11,
         "target": "<15m",
         "orders": 89,
         "status": "good"
       },
       {
         "venue": "SMASH Vračar",
-        "avgPrep": 10,
+        "avgPrep": 14,
         "target": "<15m",
         "orders": 86,
         "status": "good"
       },
       {
         "venue": "SMASH NB",
-        "avgPrep": 14,
+        "avgPrep": 12,
         "target": "<15m",
         "orders": 55,
         "status": "good"
