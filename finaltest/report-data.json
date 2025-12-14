@@ -1,242 +1,230 @@
 {
   "meta": {
-    "generated": "2025-12-12T07:48:10.858488",
-    "reportDate": "2025-12-11",
-    "reportDateFormatted": "Thursday, December 11, 2025",
-    "dayOfWeek": "Thursday",
+    "generated": "2025-12-14T09:05:38.177396",
+    "reportDate": "2025-12-13",
+    "reportDateFormatted": "Saturday, December 13, 2025",
+    "dayOfWeek": "Saturday",
     "dataSource": "Wolt Export"
   },
   "summary": {
-    "totalRevenue": 839391,
-    "totalOrders": 555,
-    "totalCustomers": 471,
-    "avgBasket": 1512,
-    "avgRating": 9.0,
-    "reviewCount": 65,
-    "profit": 704618,
-    "profitMargin": 83.9,
-    "itemsPerOrder": 1.81,
+    "totalRevenue": 780139,
+    "totalOrders": 523,
+    "totalCustomers": 444,
+    "avgBasket": 1492,
+    "avgRating": 9.3,
+    "reviewCount": 62,
+    "profit": 652519,
+    "profitMargin": 83.6,
+    "itemsPerOrder": 1.83,
     "avgDeliveryTime": 41.3
   },
   "vsComparison": {
     "vsYesterday": {
       "revenue": {
-        "value": 771821,
-        "change": 8.8
+        "value": 965097,
+        "change": -19.2
       },
       "orders": {
-        "value": 512,
-        "change": 8.4
+        "value": 656,
+        "change": -20.3
       },
       "rating": {
-        "value": 9.2,
-        "change": -2.2
+        "value": 8.9,
+        "change": 4.5
       }
     },
     "vsLastWeek": {
       "revenue": {
-        "value": 779052,
-        "change": 7.7
+        "value": 711391,
+        "change": 9.7
       },
       "orders": {
-        "value": 540,
-        "change": 2.8
+        "value": 443,
+        "change": 18.1
       },
       "rating": {
         "value": 9.2,
-        "change": -2.2
+        "change": 1.1
       }
     }
   },
   "reviews": {
-    "avgScore": 9.0,
-    "totalCount": 65,
-    "positiveCount": 58,
-    "negativeCount": 7,
+    "avgScore": 9.3,
+    "totalCount": 62,
+    "positiveCount": 57,
+    "negativeCount": 5,
     "distribution": [
       {
         "stars": 10,
         "count": 49,
-        "pct": 75.4
+        "pct": 79.0
       },
       {
         "stars": 8,
-        "count": 9,
-        "pct": 13.8
+        "count": 8,
+        "pct": 12.9
       },
       {
         "stars": 6,
-        "count": 2,
-        "pct": 3.1
+        "count": 3,
+        "pct": 4.8
       },
       {
         "stars": 4,
-        "count": 1,
-        "pct": 1.5
+        "count": 0,
+        "pct": 0.0
       },
       {
         "stars": 2,
-        "count": 4,
-        "pct": 6.2
+        "count": 2,
+        "pct": 3.2
       }
     ],
     "negativeReviews": [
       {
-        "venue": "Burgers VR",
-        "hour": "23:00",
-        "score": 6,
-        "comment": "hrana je bila hladna bas"
-      },
-      {
-        "venue": "Burgers NB",
-        "hour": "22:00",
-        "score": 6,
-        "comment": "No comment"
-      },
-      {
-        "venue": "Burgers NB",
-        "hour": "22:00",
-        "score": 2,
-        "comment": "samo jedan pepsi smo dobili a trebali smo dva"
-      },
-      {
-        "venue": "Burgers NB",
-        "hour": "21:00",
-        "score": 2,
-        "comment": "No comment"
-      },
-      {
         "venue": "SMASH NB",
-        "hour": "19:00",
+        "hour": "22:00",
         "score": 2,
-        "comment": "Ledena hrana"
+        "comment": "No comment"
       },
       {
-        "venue": "Burgers BB",
-        "hour": "18:00",
-        "score": 4,
-        "comment": "The food was cold"
+        "venue": "Burgers VR",
+        "hour": "16:00",
+        "score": 6,
+        "comment": "No comment"
       },
       {
         "venue": "Burgers NB",
-        "hour": "18:00",
+        "hour": "15:00",
         "score": 2,
-        "comment": "Skinuli ste mi pare sa racuna, oznacili kao da je dostava isporucena a nije. I niko mi ne odgovara na poruke. Sta se desava sa mojom porudzbinom???"
+        "comment": "Inace nikada nisam imala zamerki za Collinine burgere, prvi put sam sada narucila ovaj vege jer postim. Burger je bio ok, ali pomfrit leden, skamenjen i nikad slaniji. Nije mogao da se jede koliko je slan, usta su pocela da me peku. Porudzibna je stigla relativno brzo, tako da mislim da hladan leden pomfrit nema nikakve veze sa dostavljacem."
+      },
+      {
+        "venue": "SMASH VR",
+        "hour": "14:00",
+        "score": 6,
+        "comment": "No comment"
+      },
+      {
+        "venue": "Pekarica",
+        "hour": "11:00",
+        "score": 6,
+        "comment": "No comment"
       }
     ]
   },
   "hourlyData": [
     {
       "hour": "8h",
-      "orders": 5,
-      "revenue": 5493,
+      "orders": 6,
+      "revenue": 5878,
       "prepTime": 8.0,
-      "deliveryTime": 48
+      "deliveryTime": 42
     },
     {
       "hour": "9h",
-      "orders": 4,
-      "revenue": 5116,
+      "orders": 3,
+      "revenue": 3424,
       "prepTime": 8.5,
-      "deliveryTime": 35
-    },
-    {
-      "hour": "10h",
-      "orders": 19,
-      "revenue": 21911,
-      "prepTime": 9.0,
-      "deliveryTime": 40
-    },
-    {
-      "hour": "11h",
-      "orders": 22,
-      "revenue": 33274,
-      "prepTime": 9.5,
-      "deliveryTime": 45
-    },
-    {
-      "hour": "12h",
-      "orders": 28,
-      "revenue": 46925,
-      "prepTime": 10.0,
-      "deliveryTime": 45
-    },
-    {
-      "hour": "13h",
-      "orders": 39,
-      "revenue": 54580,
-      "prepTime": 10.5,
-      "deliveryTime": 39
-    },
-    {
-      "hour": "14h",
-      "orders": 35,
-      "revenue": 49383,
-      "prepTime": 11.0,
-      "deliveryTime": 44
-    },
-    {
-      "hour": "15h",
-      "orders": 47,
-      "revenue": 79615,
-      "prepTime": 11.5,
       "deliveryTime": 46
     },
     {
+      "hour": "10h",
+      "orders": 10,
+      "revenue": 20552,
+      "prepTime": 9.0,
+      "deliveryTime": 47
+    },
+    {
+      "hour": "11h",
+      "orders": 21,
+      "revenue": 30462,
+      "prepTime": 9.5,
+      "deliveryTime": 41
+    },
+    {
+      "hour": "12h",
+      "orders": 17,
+      "revenue": 24689,
+      "prepTime": 10.0,
+      "deliveryTime": 36
+    },
+    {
+      "hour": "13h",
+      "orders": 24,
+      "revenue": 36307,
+      "prepTime": 10.5,
+      "deliveryTime": 36
+    },
+    {
+      "hour": "14h",
+      "orders": 47,
+      "revenue": 70908,
+      "prepTime": 11.0,
+      "deliveryTime": 45
+    },
+    {
+      "hour": "15h",
+      "orders": 42,
+      "revenue": 61395,
+      "prepTime": 11.5,
+      "deliveryTime": 41
+    },
+    {
       "hour": "16h",
-      "orders": 37,
-      "revenue": 60624,
+      "orders": 48,
+      "revenue": 73958,
       "prepTime": 12.0,
-      "deliveryTime": 39
-    },
-    {
-      "hour": "17h",
-      "orders": 38,
-      "revenue": 62984,
-      "prepTime": 12.5,
-      "deliveryTime": 45
-    },
-    {
-      "hour": "18h",
-      "orders": 39,
-      "revenue": 59426,
-      "prepTime": 13.0,
-      "deliveryTime": 45
-    },
-    {
-      "hour": "19h",
-      "orders": 60,
-      "revenue": 84229,
-      "prepTime": 13.5,
       "deliveryTime": 43
     },
     {
-      "hour": "20h",
-      "orders": 46,
-      "revenue": 74065,
-      "prepTime": 14.0,
-      "deliveryTime": 37
-    },
-    {
-      "hour": "21h",
-      "orders": 42,
-      "revenue": 59504,
-      "prepTime": 14.5,
-      "deliveryTime": 35
-    },
-    {
-      "hour": "22h",
-      "orders": 44,
-      "revenue": 65829,
-      "prepTime": 15.0,
+      "hour": "17h",
+      "orders": 37,
+      "revenue": 54625,
+      "prepTime": 12.5,
       "deliveryTime": 39
     },
     {
+      "hour": "18h",
+      "orders": 42,
+      "revenue": 53543,
+      "prepTime": 13.0,
+      "deliveryTime": 36
+    },
+    {
+      "hour": "19h",
+      "orders": 42,
+      "revenue": 65761,
+      "prepTime": 13.5,
+      "deliveryTime": 39
+    },
+    {
+      "hour": "20h",
+      "orders": 45,
+      "revenue": 69924,
+      "prepTime": 14.0,
+      "deliveryTime": 41
+    },
+    {
+      "hour": "21h",
+      "orders": 46,
+      "revenue": 75852,
+      "prepTime": 14.5,
+      "deliveryTime": 44
+    },
+    {
+      "hour": "22h",
+      "orders": 37,
+      "revenue": 52999,
+      "prepTime": 15.0,
+      "deliveryTime": 44
+    },
+    {
       "hour": "23h",
-      "orders": 39,
-      "revenue": 60465,
+      "orders": 35,
+      "revenue": 45604,
       "prepTime": 15.5,
-      "deliveryTime": 40
+      "deliveryTime": 43
     }
   ],
   "prepTimeByHour": [
@@ -293,24 +281,6 @@
   ],
   "trendData": [
     {
-      "date": "Nov 27",
-      "revenue": 816311,
-      "orders": 541,
-      "rating": 9.0
-    },
-    {
-      "date": "Nov 28",
-      "revenue": 820997,
-      "orders": 531,
-      "rating": 9.0
-    },
-    {
-      "date": "Nov 29",
-      "revenue": 604614,
-      "orders": 408,
-      "rating": 9.2
-    },
-    {
       "date": "Nov 30",
       "revenue": 706919,
       "orders": 473,
@@ -344,7 +314,7 @@
       "date": "Dec 05",
       "revenue": 847112,
       "orders": 549,
-      "rating": 8.6
+      "rating": 8.5
     },
     {
       "date": "Dec 06",
@@ -353,10 +323,16 @@
       "rating": 9.2
     },
     {
+      "date": "Dec 07",
+      "revenue": 751471,
+      "orders": 509,
+      "rating": 9.1
+    },
+    {
       "date": "Dec 08",
       "revenue": 668241,
       "orders": 482,
-      "rating": 9.3
+      "rating": 9.4
     },
     {
       "date": "Dec 09",
@@ -368,85 +344,97 @@
       "date": "Dec 10",
       "revenue": 771821,
       "orders": 512,
-      "rating": 9.2
+      "rating": 9.1
     },
     {
       "date": "Dec 11",
-      "revenue": 839391,
-      "orders": 555,
-      "rating": 9.0
+      "revenue": 840925,
+      "orders": 556,
+      "rating": 9.1
+    },
+    {
+      "date": "Dec 12",
+      "revenue": 965097,
+      "orders": 656,
+      "rating": 8.9
+    },
+    {
+      "date": "Dec 13",
+      "revenue": 780139,
+      "orders": 523,
+      "rating": 9.3
     }
   ],
   "trendStats": {
     "revenue": {
       "current": {
-        "value": "839K",
+        "value": "780K",
         "subtext": "RSD"
       },
       "vsYesterday": {
-        "value": "+8.8%",
-        "subtext": "771K prev",
-        "positive": true
+        "value": "-19.2%",
+        "subtext": "965K prev",
+        "positive": false
       },
       "vsLastWeek": {
-        "value": "+7.7%",
-        "subtext": "779K LW",
+        "value": "+9.7%",
+        "subtext": "711K LW",
         "positive": true
       },
       "avg14Day": {
-        "value": "740K",
+        "value": "758K",
         "subtext": "average"
       },
       "range": {
-        "value": "604K - 847K",
+        "value": "637K - 965K",
         "subtext": "min - max"
       }
     },
     "orders": {
       "current": {
-        "value": "555",
+        "value": "523",
         "subtext": "orders"
       },
       "vsYesterday": {
-        "value": "+8.4%",
-        "subtext": "512 prev",
-        "positive": true
+        "value": "-20.3%",
+        "subtext": "656 prev",
+        "positive": false
       },
       "vsLastWeek": {
-        "value": "+2.8%",
-        "subtext": "540 LW",
+        "value": "+18.1%",
+        "subtext": "443 LW",
         "positive": true
       },
       "avg14Day": {
-        "value": "495",
+        "value": "510",
         "subtext": "average"
       },
       "range": {
-        "value": "408 - 555",
+        "value": "443 - 656",
         "subtext": "min - max"
       }
     },
     "rating": {
       "current": {
-        "value": "9.0",
+        "value": "9.3",
         "subtext": "/10"
       },
       "vsYesterday": {
-        "value": "-2.2%",
-        "subtext": "9.2 prev",
-        "positive": false
+        "value": "+4.5%",
+        "subtext": "8.9 prev",
+        "positive": true
       },
       "vsLastWeek": {
-        "value": "-2.2%",
+        "value": "+1.1%",
         "subtext": "9.2 LW",
-        "positive": false
+        "positive": true
       },
       "avg14Day": {
         "value": "9.1",
         "subtext": "average"
       },
       "range": {
-        "value": "8.6 - 9.3",
+        "value": "8.5 - 9.4",
         "subtext": "min - max"
       }
     }
@@ -474,19 +462,19 @@
       "day": "Thu",
       "avgRevenue": 839391,
       "avgOrders": 555,
-      "isToday": true
+      "isToday": false
     },
     {
       "day": "Fri",
-      "avgRevenue": 796984,
-      "avgOrders": 531,
+      "avgRevenue": 963303,
+      "avgOrders": 655,
       "isToday": false
     },
     {
       "day": "Sat",
-      "avgRevenue": 692366,
-      "avgOrders": 447,
-      "isToday": false
+      "avgRevenue": 780139,
+      "avgOrders": 523,
+      "isToday": true
     },
     {
       "day": "Sun",
@@ -499,125 +487,132 @@
     {
       "rank": 1,
       "name": "BIG Double Collina Smash + pomfrit + Pepsi",
-      "qty": 297,
-      "pctSales": 31.7,
-      "rating": 8.4,
+      "qty": 261,
+      "pctSales": 30.0,
+      "rating": 9.2,
       "ratingLW": null,
-      "revenue": 266409,
+      "revenue": 234117,
       "margin": 86.0
     },
     {
       "rank": 2,
       "name": "🔥🍔 !!! NOVO !!!  Supreme Collina Triple Smash +Bac",
-      "qty": 90,
-      "pctSales": 12.9,
-      "rating": 7.8,
+      "qty": 77,
+      "pctSales": 11.8,
+      "rating": 10.0,
       "ratingLW": null,
-      "revenue": 108000,
+      "revenue": 92400,
       "margin": 86.0
     },
     {
       "rank": 3,
       "name": "2X Collina burger+ pomfrit + 2x Pepsi 0.33🩵",
-      "qty": 60,
-      "pctSales": 10.9,
-      "rating": 9.7,
+      "qty": 58,
+      "pctSales": 11.4,
+      "rating": 9.0,
       "ratingLW": null,
-      "revenue": 91620,
+      "revenue": 88566,
       "margin": 86.0
     },
     {
       "rank": 4,
       "name": "🔥🍔 !!! NOVO !!!  BIG DoubleCHEESE  COMBO– duplo si",
-      "qty": 77,
-      "pctSales": 8.8,
-      "rating": 8.8,
+      "qty": 80,
+      "pctSales": 9.8,
+      "rating": 9.8,
       "ratingLW": null,
-      "revenue": 73689,
+      "revenue": 76560,
       "margin": 86.0
     },
     {
       "rank": 5,
       "name": "Palačinka nutela",
-      "qty": 37,
-      "pctSales": 2.7,
-      "rating": 9.7,
+      "qty": 40,
+      "pctSales": 3.0,
+      "rating": 10.0,
       "ratingLW": null,
-      "revenue": 22335,
+      "revenue": 23470,
       "margin": 80.4
     },
     {
       "rank": 6,
       "name": "Američka palačinka nutela",
-      "qty": 25,
-      "pctSales": 2.0,
+      "qty": 32,
+      "pctSales": 2.9,
       "rating": 10.0,
       "ratingLW": null,
-      "revenue": 17175,
+      "revenue": 22810,
       "margin": 80.4
     },
     {
       "rank": 7,
-      "name": "Collina burger + pomfrit",
-      "qty": 16,
-      "pctSales": 1.7,
-      "rating": 8.0,
+      "name": "!!! NOVO !!! BIG Double Butter Smash",
+      "qty": 13,
+      "pctSales": 1.6,
+      "rating": 10.0,
       "ratingLW": null,
-      "revenue": 14010,
-      "margin": 86.0
+      "revenue": 12350,
+      "margin": 71.2
     },
     {
       "rank": 8,
-      "name": "Pohovana palačinka šunka",
-      "qty": 17,
+      "name": "Američka palačinka beli eurokrem",
+      "qty": 14,
       "pctSales": 1.2,
-      "rating": 6.0,
+      "rating": null,
       "ratingLW": null,
-      "revenue": 10275,
+      "revenue": 9510,
       "margin": 80.4
     }
   ],
   "categoryPerformance": [
     {
       "name": "Sides",
-      "revenue": 644151,
-      "mix": 76.7,
+      "revenue": 577433,
+      "mix": 74.0,
       "margin": 86.1,
       "trend": 0.0
     },
     {
       "name": "Pancakes",
-      "revenue": 84905,
-      "mix": 10.1,
+      "revenue": 85160,
+      "mix": 10.9,
       "margin": 80.4,
       "trend": 0.0
     },
     {
       "name": "Burgers",
-      "revenue": 76008,
-      "mix": 9.1,
-      "margin": 71.9,
+      "revenue": 78483,
+      "mix": 10.1,
+      "margin": 71.5,
       "trend": 0.0
     },
     {
       "name": "Cooked Meals",
-      "revenue": 19000,
+      "revenue": 18170,
       "mix": 2.3,
-      "margin": 82.1,
-      "trend": 0.0
-    },
-    {
-      "name": "Drinks",
-      "revenue": 9379,
-      "mix": 1.1,
-      "margin": 74.6,
+      "margin": 82.5,
       "trend": 0.0
     },
     {
       "name": "Bakery",
-      "revenue": 5948,
-      "mix": 0.7,
-      "margin": 77.7,
+      "revenue": 12174,
+      "mix": 1.6,
+      "margin": 79.3,
+      "trend": 0.0
+    },
+    {
+      "name": "Drinks",
+      "revenue": 6759,
+      "mix": 0.9,
+      "margin": 74.6,
+      "trend": 0.0
+    },
+    {
+      "name": "Gyros",
+      "revenue": 1960,
+      "mix": 0.3,
+      "margin": 75.0,
       "trend": 0.0
     }
   ],
@@ -625,179 +620,191 @@
     "kitchen": [
       {
         "venue": "Vračar",
-        "avgPrep": 10,
+        "avgPrep": 13,
         "target": "<15m",
-        "orders": 228,
+        "orders": 215,
         "status": "good"
       },
       {
         "venue": "Banovo Brdo",
-        "avgPrep": 11,
+        "avgPrep": 13,
         "target": "<15m",
-        "orders": 66,
+        "orders": 94,
         "status": "good"
       },
       {
         "venue": "Novi Beograd",
-        "avgPrep": 11,
+        "avgPrep": 14,
         "target": "<15m",
-        "orders": 89,
+        "orders": 57,
         "status": "good"
       },
       {
         "venue": "SMASH Vračar",
-        "avgPrep": 14,
+        "avgPrep": 12,
         "target": "<15m",
-        "orders": 86,
+        "orders": 80,
         "status": "good"
       },
       {
         "venue": "SMASH NB",
-        "avgPrep": 12,
+        "avgPrep": 14,
         "target": "<15m",
-        "orders": 55,
+        "orders": 35,
+        "status": "good"
+      },
+      {
+        "venue": "SMASH BB",
+        "avgPrep": 13,
+        "target": "<15m",
+        "orders": 20,
         "status": "good"
       }
     ],
     "delivery": [
       {
         "venue": "Vračar",
-        "time": 42.3,
-        "pctUnder35": 38
-      },
-      {
-        "venue": "Banovo Brdo",
-        "time": 39.6,
-        "pctUnder35": 53
-      },
-      {
-        "venue": "Novi Beograd",
-        "time": 42.4,
+        "time": 40.3,
         "pctUnder35": 40
       },
       {
+        "venue": "Banovo Brdo",
+        "time": 39.7,
+        "pctUnder35": 35
+      },
+      {
+        "venue": "Novi Beograd",
+        "time": 41.9,
+        "pctUnder35": 36
+      },
+      {
         "venue": "SMASH Vračar",
-        "time": 40.8,
-        "pctUnder35": 46
+        "time": 40.5,
+        "pctUnder35": 36
       },
       {
         "venue": "SMASH NB",
-        "time": 40.7,
-        "pctUnder35": 41
+        "time": 50.9,
+        "pctUnder35": 14
+      },
+      {
+        "venue": "SMASH BB",
+        "time": 45.3,
+        "pctUnder35": 30
       }
     ]
   },
   "criticalHours": [
     {
-      "hour": "19:00",
-      "orders": 60,
-      "revenue": "84K",
+      "hour": "16:00",
+      "orders": 48,
+      "revenue": "73K",
       "delivery": "43m",
-      "rating": 9.0
+      "rating": 9.3
     },
     {
-      "hour": "15:00",
+      "hour": "14:00",
       "orders": 47,
-      "revenue": "79K",
-      "delivery": "46m",
-      "rating": 9.0
+      "revenue": "70K",
+      "delivery": "45m",
+      "rating": 9.3
     },
     {
-      "hour": "20:00",
+      "hour": "21:00",
       "orders": 46,
-      "revenue": "74K",
-      "delivery": "37m",
-      "rating": 9.0
+      "revenue": "75K",
+      "delivery": "44m",
+      "rating": 9.3
     }
   ],
   "customerData": {
-    "total": 471,
-    "repeatRate": 68.2,
-    "newCustomers": 150,
-    "returning": 321,
-    "avgBasketNew": 1663,
-    "avgBasketReturning": 1436
+    "total": 444,
+    "repeatRate": 68.0,
+    "newCustomers": 142,
+    "returning": 302,
+    "avgBasketNew": 1641,
+    "avgBasketReturning": 1417
   },
   "topCustomers": [
     {
       "id": "VIP-4821",
-      "revenue": 34000,
-      "orders": 19
+      "revenue": 32000,
+      "orders": 18
     },
     {
       "id": "VIP-3156",
-      "revenue": 29000,
-      "orders": 16
-    },
-    {
-      "id": "VIP-7293",
-      "revenue": 25000,
+      "revenue": 28000,
       "orders": 15
     },
     {
+      "id": "VIP-7293",
+      "revenue": 24000,
+      "orders": 14
+    },
+    {
       "id": "VIP-5847",
-      "revenue": 23000,
-      "orders": 13
+      "revenue": 21000,
+      "orders": 12
     },
     {
       "id": "VIP-9124",
-      "revenue": 20000,
-      "orders": 12
+      "revenue": 18000,
+      "orders": 11
     }
   ],
   "forecast": {
-    "tomorrowRevenue": 796984,
-    "tomorrowOrders": 531,
-    "tomorrowRating": 9.1,
+    "tomorrowRevenue": 714745,
+    "tomorrowOrders": 483,
+    "tomorrowRating": 9.2,
     "confidence": "HIGH",
     "peakHours": [
       {
         "hour": "12:00-14:00",
-        "orders": 90,
+        "orders": 80,
         "label": "Lunch Rush"
       },
       {
         "hour": "19:00-21:00",
-        "orders": 130,
+        "orders": 110,
         "label": "Dinner Peak"
       },
       {
         "hour": "22:00-23:00",
-        "orders": 60,
+        "orders": 50,
         "label": "Late Night"
       }
     ],
     "recommendations": [
       {
         "icon": "👨‍🍳",
-        "text": "Friday is typically busy - staff 2 extra cooks for dinner rush (19:00-21:00)",
-        "priority": "HIGH"
+        "text": "Sunday typically similar to Saturday - maintain staffing levels",
+        "priority": "MEDIUM"
       },
       {
         "icon": "🚚",
-        "text": "Pre-position delivery riders by 18:30",
+        "text": "Great rating today (9.3/10)! Keep quality consistent",
         "priority": "HIGH"
       },
       {
         "icon": "📦",
-        "text": "Prep extra burger patties (expect 530+ orders)",
+        "text": "Expect ~480 orders tomorrow (Sunday)",
         "priority": "MEDIUM"
       },
       {
         "icon": "🍔",
-        "text": "Weekend approaching - check stock levels",
-        "priority": "MEDIUM"
+        "text": "Week ending strong - prep for Monday reset",
+        "priority": "LOW"
       }
     ]
   },
   "profitBreakdown": {
-    "avgMargin": 83.9,
+    "avgMargin": 83.6,
     "woltFeePercent": 11.0,
     "operatingCosts": {
-      "staff": 85000,
+      "staff": 80000,
       "rent": 25000,
       "utilities": 12000,
-      "packaging": 15000,
+      "packaging": 14000,
       "other": 10000
     },
     "taxRate": 15
