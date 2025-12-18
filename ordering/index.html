@@ -523,6 +523,32 @@
             background: #7c3aed;
         }
 
+        .stigao-btn {
+            width: 100%;
+            padding: 18px;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #f97316, #ea580c);
+            color: white;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: inherit;
+            margin-top: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .stigao-btn:hover {
+            transform: scale(1.02);
+            box-shadow: 0 8px 25px rgba(249, 115, 22, 0.4);
+        }
+
+        .stigao-btn:disabled {
+            opacity: 0.8;
+            cursor: not-allowed;
+            transform: none;
+        }
+
         /* Order History */
         .history-section {
             margin-top: 30px;
@@ -597,7 +623,7 @@
 
         <!-- Greeting -->
         <div class="greeting-section">
-            <div class="greeting" id="greeting">Ćao Poly, šta ćemo danas? 👋</div>
+            <div class="greeting" id="greeting">Ćao, šta ćemo danas? 👋</div>
         </div>
 
         <!-- Order Type Selection -->
@@ -689,14 +715,15 @@
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJibmJiYnBvZmVsYmt5dWZmc2xqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUwNTI0MzQsImV4cCI6MjA4MDYyODQzNH0.koW44soAB-bEfh8OzqjGBwdgov4Snscw1ITsg5OureU';
         
         let db = null;
+        let customer = null;  // Will be loaded from URL param
 
-        // Default Account (for testing)
-        const account = {
-            first_name: 'Test',
-            last_name: 'User',
-            phone: '+381601234567',
-            email: 'test@collina.rs',
-            address: 'Test adresa',
+        // Default Account (fallback if no customer ID)
+        const defaultAccount = {
+            first_name: 'Gost',
+            last_name: '',
+            phone: '',
+            email: '',
+            address: '',
             city: 'Beograd',
             order_count: 0
         };
@@ -723,7 +750,7 @@
         let orderHistory = [];
 
         // Initialize
-        function init() {
+        async function init() {
             // Initialize Supabase client
             try {
                 if (window.supabase) {
@@ -734,6 +761,36 @@
             } catch (e) {
                 console.error('Supabase init error:', e);
             }
+            
+            // Check for customer ID in URL (?c=123)
+            const urlParams = new URLSearchParams(window.location.search);
+            const customerId = urlParams.get('c');
+            
+            if (customerId && db) {
+                try {
+                    const { data, error } = await db
+                        .from('customers')
+                        .select('*')
+                        .eq('id', customerId)
+                        .single();
+                    
+                    if (data && !error) {
+                        customer = data;
+                        // Update greeting with customer name
+                        const greeting = document.getElementById('greeting');
+                        greeting.textContent = `Ćao ${customer.first_name}, šta ćemo danas? 👋`;
+                    } else {
+                        console.warn('Customer not found:', customerId);
+                        customer = defaultAccount;
+                    }
+                } catch (e) {
+                    console.error('Error loading customer:', e);
+                    customer = defaultAccount;
+                }
+            } else {
+                customer = defaultAccount;
+            }
+            
             renderMenu();
             updateCart();
         }
@@ -895,28 +952,28 @@
                 const order = {
                     id: orderId,
                     order_status: 'pending',
-                    source: 'app_test',
+                    source: 'app_direct',
                     payment_method: 'cash',
                     total_price: total,
                     sub_total_price: total,
                     delivery_fee: selectedOrderType === 'delivery' ? 200 : 0,
                     currency: 'RSD',
-                    client_first_name: account.first_name,
-                    client_last_name: account.last_name,
-                    client_email: account.email,
-                    client_phone: account.phone,
-                    client_address: account.address,
-                    client_city: account.city,
-                    client_order_count: account.order_count + 1,
+                    client_first_name: customer.first_name,
+                    client_last_name: customer.last_name,
+                    client_email: customer.email,
+                    client_phone: customer.phone,
+                    client_address: customer.address,
+                    client_city: customer.city,
+                    client_order_count: (customer.total_orders || 0) + 1,
                     client_marketing_consent: true,
-                    restaurant_name: selectedOrderType === 'drive_through' ? `Collina ${locationLabels[selectedLocation]}` : 'Collina Test',
+                    restaurant_name: selectedOrderType === 'drive_through' ? `Collina ${locationLabels[selectedLocation]}` : 'Collina',
                     restaurant_id: 1,
                     delivery_zone_name: 'Beograd',
                     instructions: instructions,
                     created_at: new Date().toISOString(),
                     updated_at: new Date().toISOString(),
                     raw_items: items,
-                    import_source: 'app_test'
+                    import_source: 'app_direct'
                 };
 
                 // Insert into Supabase
@@ -931,13 +988,13 @@
                 }
 
                 // Success - show modal
-                showSuccessModal(orderId, account, items, total);
+                showSuccessModal(orderId, items, total);
 
                 // Add to history
                 orderHistory.unshift({
                     id: orderId,
                     time: new Date().toLocaleTimeString('sr-RS'),
-                    account: `${account.first_name} ${account.last_name}`,
+                    account: `${customer.first_name} ${customer.last_name || ''}`,
                     total: total,
                     items: items.map(i => `${i.quantity}x ${i.name}`).join(', ')
                 });
@@ -945,7 +1002,6 @@
 
                 // Reset cart
                 cart = {};
-                account.order_count++;
                 renderMenu();
                 updateCart();
 
@@ -969,7 +1025,7 @@
         }
 
         // Show success modal
-        function showSuccessModal(orderId, account, items, total) {
+        function showSuccessModal(orderId, items, total) {
             const modal = document.getElementById('success-modal');
             const orderIdEl = document.getElementById('modal-order-id');
             const detailsEl = document.getElementById('modal-details');
@@ -989,6 +1045,8 @@
             orderIdEl.textContent = '#' + orderId;
             
             let driveRows = '';
+            let stigaoButton = '';
+            
             if (selectedOrderType === 'drive_through') {
                 driveRows = `
                     <div class="modal-detail-row">
@@ -1000,16 +1058,21 @@
                         <span>${driveETA} minuta</span>
                     </div>
                 `;
+                stigaoButton = `
+                    <button class="stigao-btn" onclick="stigaoSam(${orderId})">
+                        🚗 STIGAO SAM!
+                    </button>
+                `;
             }
             
             detailsEl.innerHTML = `
                 <div class="modal-detail-row">
                     <span>Kupac</span>
-                    <span>${account.first_name} ${account.last_name}</span>
+                    <span>${customer.first_name} ${customer.last_name || ''}</span>
                 </div>
                 <div class="modal-detail-row">
                     <span>Telefon</span>
-                    <span>${account.phone}</span>
+                    <span>${customer.phone || 'N/A'}</span>
                 </div>
                 <div class="modal-detail-row">
                     <span>Tip narudžbine</span>
@@ -1024,9 +1087,36 @@
                     <span>Ukupno</span>
                     <span style="color: var(--accent); font-weight: 600;">${total} RSD</span>
                 </div>
+                ${stigaoButton}
             `;
             
             modal.classList.add('show');
+        }
+        
+        // Stigao sam button - update order status
+        async function stigaoSam(orderId) {
+            const btn = document.querySelector('.stigao-btn');
+            btn.disabled = true;
+            btn.textContent = 'Šaljem...';
+            
+            try {
+                const { error } = await db
+                    .from('website_orders')
+                    .update({ 
+                        order_status: 'arrived',
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', orderId);
+                
+                if (error) throw error;
+                
+                btn.textContent = '✅ Stižemo!';
+                btn.style.background = 'var(--success)';
+            } catch (e) {
+                console.error('Error updating status:', e);
+                btn.textContent = '❌ Greška, probaj ponovo';
+                btn.disabled = false;
+            }
         }
 
         // Close modal
