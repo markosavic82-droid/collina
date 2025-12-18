@@ -23,6 +23,8 @@
             --text-secondary: #a1a1aa;
             --success: #22c55e;
             --border: #2d2d3a;
+            --heart: #ef4444;
+            --gold: #f59e0b;
         }
 
         body {
@@ -31,6 +33,7 @@
             color: var(--text-primary);
             min-height: 100vh;
             padding: 20px;
+            padding-bottom: 100px;
         }
 
         .container {
@@ -38,44 +41,370 @@
             margin: 0 auto;
         }
 
+        /* Header with hamburger */
         header {
-            text-align: center;
-            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
             padding-bottom: 20px;
             border-bottom: 1px solid var(--border);
         }
 
         h1 {
-            font-size: 28px;
+            font-size: 24px;
             font-weight: 700;
-            margin-bottom: 8px;
             background: linear-gradient(135deg, var(--text-primary), var(--accent));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
         }
 
-        .subtitle {
+        .hamburger-btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 10px 12px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .hamburger-btn span {
+            width: 20px;
+            height: 2px;
+            background: var(--text-primary);
+            border-radius: 2px;
+        }
+
+        /* Slide-out Menu */
+        .menu-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .menu-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .side-menu {
+            position: fixed;
+            top: 0;
+            right: -320px;
+            width: 320px;
+            height: 100%;
+            background: var(--bg-secondary);
+            z-index: 1001;
+            transition: right 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .menu-overlay.show .side-menu {
+            right: 0;
+        }
+
+        .menu-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .menu-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .close-menu {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        .menu-tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .menu-tab {
+            flex: 1;
+            padding: 14px 8px;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 12px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+
+        .menu-tab.active {
+            color: var(--accent);
+            border-bottom: 2px solid var(--accent);
+        }
+
+        .menu-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .tab-panel {
+            display: none;
+        }
+
+        .tab-panel.active {
+            display: block;
+        }
+
+        /* Points Tab */
+        .points-summary {
+            background: linear-gradient(135deg, var(--accent), #7c3aed);
+            border-radius: 16px;
+            padding: 24px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .points-big {
+            font-size: 48px;
+            font-weight: 700;
+        }
+
+        .points-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .order-history-item {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 10px;
+        }
+
+        .order-history-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .order-date {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .order-points {
+            color: var(--gold);
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .order-items {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+        }
+
+        .order-total {
+            font-weight: 600;
+        }
+
+        /* Settings Tab */
+        .settings-form {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-group label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        .form-group input {
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-card);
+            color: var(--text-primary);
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .save-settings-btn {
+            padding: 14px;
+            background: var(--accent);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            margin-top: 10px;
+        }
+
+        .settings-status {
+            text-align: center;
+            font-size: 14px;
+            padding: 10px;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .settings-status.success {
+            display: block;
+            background: rgba(34, 197, 94, 0.15);
+            color: var(--success);
+        }
+
+        /* Settings View Mode */
+        .settings-card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .setting-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .setting-row:last-child {
+            border-bottom: none;
+        }
+
+        .setting-label {
             color: var(--text-secondary);
             font-size: 14px;
         }
 
-        .section-label {
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 10px;
+        .setting-value {
+            color: var(--text-primary);
+            font-size: 14px;
+            font-weight: 500;
+            text-align: right;
+            max-width: 60%;
+            word-break: break-word;
         }
 
-        /* Greeting */
+        .edit-settings-btn {
+            width: 100%;
+            padding: 14px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+
+        .edit-settings-btn:hover {
+            border-color: var(--accent);
+            background: rgba(139, 92, 246, 0.1);
+        }
+
+        .settings-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .cancel-settings-btn {
+            flex: 1;
+            padding: 14px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text-secondary);
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .settings-buttons .save-settings-btn {
+            flex: 1;
+        }
+
+        /* Promotions Tab */
+        .promo-card {
+            background: linear-gradient(135deg, var(--bg-card), var(--bg-secondary));
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 12px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .promo-badge {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: var(--gold);
+            color: #000;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 20px;
+        }
+
+        .promo-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .promo-desc {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+        }
+
+        .promo-points {
+            font-size: 14px;
+            color: var(--accent);
+        }
+
+        /* Greeting & Loyalty Bar */
         .greeting-section {
-            margin-bottom: 24px;
+            margin-bottom: 20px;
         }
 
         .greeting {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: 600;
             color: var(--text-primary);
             text-align: center;
@@ -85,47 +414,38 @@
         }
 
         .loyalty-bar {
-            display: flex;
+            display: none;
             justify-content: center;
-            align-items: center;
-            gap: 16px;
+            gap: 24px;
             margin-top: 12px;
-            padding: 12px 16px;
+            padding: 12px;
             background: var(--bg-card);
             border-radius: 10px;
-            border: 1px solid var(--border);
         }
 
-        .loyalty-points {
+        .loyalty-item {
             display: flex;
             align-items: center;
             gap: 6px;
             font-size: 14px;
-            color: var(--text-secondary);
         }
 
-        .loyalty-points .points-value {
-            font-weight: 700;
-            color: #f59e0b;
-            font-size: 16px;
+        .loyalty-item span:first-child {
+            color: var(--gold);
         }
 
-        .loyalty-orders {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 14px;
-            color: var(--text-secondary);
-        }
-
-        .loyalty-orders .orders-value {
+        /* Order Type */
+        .section-label {
+            font-size: 12px;
             font-weight: 600;
-            color: var(--text-primary);
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
         }
 
-        /* Order Type Selection */
         .order-type-section {
-            margin-bottom: 24px;
+            margin-bottom: 20px;
         }
 
         .order-type-buttons {
@@ -135,218 +455,259 @@
 
         .order-type-btn {
             flex: 1;
-            padding: 16px 12px;
+            padding: 14px 10px;
             border: 2px solid var(--border);
             border-radius: 12px;
-            background: var(--bg-secondary);
-            color: var(--text-primary);
+            background: var(--bg-card);
             cursor: pointer;
-            transition: all 0.2s ease;
-            font-family: inherit;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .order-type-btn:hover {
-            border-color: var(--accent);
+            transition: all 0.2s;
+            text-align: center;
         }
 
         .order-type-btn.active {
             border-color: var(--accent);
-            background: rgba(139, 92, 246, 0.15);
-            box-shadow: 0 0 20px var(--accent-glow);
+            background: rgba(139, 92, 246, 0.1);
         }
 
         .order-type-icon {
             font-size: 24px;
+            display: block;
+            margin-bottom: 4px;
         }
 
         .order-type-name {
             font-size: 12px;
-            font-weight: 600;
+            color: var(--text-primary);
+            font-family: inherit;
         }
 
+        /* Drive Through Options */
         .drive-through-options {
             margin-top: 16px;
             padding: 16px;
             background: var(--bg-card);
             border-radius: 12px;
-            border: 1px solid var(--border);
-        }
-
-        .location-selector {
-            margin-bottom: 16px;
         }
 
         .location-selector label,
         .eta-selector label {
             display: block;
-            font-size: 14px;
+            font-size: 13px;
             color: var(--text-secondary);
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
 
         .location-buttons {
             display: flex;
             gap: 8px;
+            margin-bottom: 16px;
         }
 
         .location-btn {
             flex: 1;
-            padding: 12px 8px;
-            border: 2px solid var(--border);
-            border-radius: 10px;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
             background: var(--bg-secondary);
             color: var(--text-primary);
-            font-size: 13px;
-            font-weight: 600;
+            font-size: 12px;
             cursor: pointer;
-            transition: all 0.2s ease;
             font-family: inherit;
-        }
-
-        .location-btn:hover {
-            border-color: var(--accent);
         }
 
         .location-btn.active {
             border-color: var(--accent);
             background: rgba(139, 92, 246, 0.15);
-            color: var(--accent);
-        }
-
-        .eta-selector {
-            padding-top: 16px;
-            border-top: 1px solid var(--border);
         }
 
         .eta-input-wrapper {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
         }
 
         .eta-input-wrapper input {
             width: 80px;
-            padding: 12px 16px;
-            border: 2px solid var(--border);
-            border-radius: 10px;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
             background: var(--bg-secondary);
             color: var(--text-primary);
-            font-size: 18px;
-            font-weight: 600;
-            font-family: inherit;
+            font-size: 16px;
             text-align: center;
-        }
-
-        .eta-input-wrapper input:focus {
-            outline: none;
-            border-color: var(--accent);
+            font-family: inherit;
         }
 
         .eta-suffix {
-            font-size: 16px;
             color: var(--text-secondary);
         }
 
-        /* Menu Items */
+        /* Menu Section */
         .menu-section {
-            margin-bottom: 24px;
-        }
-
-        #menu-items {
-            max-height: 450px;
-            overflow-y: auto;
-            padding-right: 8px;
-        }
-
-        #menu-items::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        #menu-items::-webkit-scrollbar-track {
-            background: var(--bg-secondary);
-            border-radius: 3px;
-        }
-
-        #menu-items::-webkit-scrollbar-thumb {
-            background: var(--accent);
-            border-radius: 3px;
-        }
-
-        .menu-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 14px;
-            background: var(--bg-card);
-            border-radius: 12px;
-            margin-bottom: 8px;
-            border: 1px solid var(--border);
-        }
-
-        .item-info h3 {
-            font-size: 15px;
-            font-weight: 600;
-            margin-bottom: 6px;
-            line-height: 1.3;
-        }
-
-        .item-meta {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-        }
-
-        .item-price {
-            color: var(--accent);
-            font-weight: 500;
-            font-size: 14px;
-        }
-
-        .item-pos {
-            color: var(--text-secondary);
-            font-size: 11px;
-            font-family: monospace;
+            margin-bottom: 20px;
         }
 
         .category-label {
-            font-size: 11px;
-            font-weight: 700;
+            font-size: 14px;
+            font-weight: 600;
             color: var(--accent);
+            margin: 20px 0 12px 0;
             text-transform: uppercase;
-            letter-spacing: 1.5px;
-            margin: 16px 0 8px 0;
-            padding-bottom: 6px;
-            border-bottom: 1px solid var(--border);
+            letter-spacing: 0.5px;
         }
 
         .category-label:first-child {
             margin-top: 0;
         }
 
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        /* Favorites Section */
+        .favorites-section {
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .favorites-section.has-favorites {
+            display: block;
+        }
+
+        .favorites-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--heart);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Menu Item Card */
+        .menu-item {
+            background: var(--bg-card);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .menu-item.favorite {
+            border-color: rgba(239, 68, 68, 0.3);
+        }
+
+        .item-image {
+            position: relative;
+            width: 100%;
+            padding-top: 56.25%; /* 16:9 aspect ratio */
+            background: var(--bg-secondary);
+            overflow: hidden;
+        }
+
+        .item-image img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .item-image-placeholder {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            background: linear-gradient(135deg, var(--bg-secondary), var(--bg-card));
+        }
+
+        .favorite-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: rgba(0,0,0,0.5);
+            border: none;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0.8;
+            transition: all 0.2s;
+            z-index: 1;
+        }
+
+        .favorite-btn:hover {
+            opacity: 1;
+            transform: scale(1.1);
+        }
+
+        .favorite-btn.active {
+            opacity: 1;
+            background: rgba(239, 68, 68, 0.3);
+        }
+
+        .item-content {
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+
+        .item-name {
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 6px;
+            line-height: 1.3;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .item-price {
+            font-size: 15px;
+            color: var(--accent);
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
         .item-controls {
             display: flex;
             align-items: center;
-            gap: 12px;
+            justify-content: center;
+            gap: 16px;
+            margin-top: auto;
         }
 
         .qty-btn {
             width: 36px;
             height: 36px;
             border: none;
-            border-radius: 8px;
+            border-radius: 10px;
             background: var(--bg-secondary);
             color: var(--text-primary);
-            font-size: 18px;
+            font-size: 20px;
             cursor: pointer;
-            transition: all 0.2s ease;
-            font-family: inherit;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
         }
 
-        .qty-btn:hover {
+        .qty-btn:hover:not(:disabled) {
             background: var(--accent);
         }
 
@@ -357,12 +718,12 @@
 
         .qty-value {
             font-size: 18px;
-            font-weight: 600;
+            font-weight: 700;
             min-width: 24px;
             text-align: center;
         }
 
-        /* Cart Summary */
+        /* Cart */
         .cart-section {
             background: var(--bg-card);
             border-radius: 16px;
@@ -375,9 +736,6 @@
             font-size: 16px;
             font-weight: 600;
             margin-bottom: 16px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
         }
 
         .cart-items {
@@ -389,16 +747,24 @@
             justify-content: space-between;
             padding: 8px 0;
             font-size: 14px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .cart-item:last-child {
+            border-bottom: none;
+        }
+
+        .cart-item-name {
             color: var(--text-secondary);
         }
 
         .cart-total {
             display: flex;
             justify-content: space-between;
-            padding-top: 16px;
-            border-top: 1px solid var(--border);
+            padding-top: 12px;
+            border-top: 2px solid var(--border);
+            font-weight: 600;
             font-size: 18px;
-            font-weight: 700;
         }
 
         .cart-total span:last-child {
@@ -408,8 +774,8 @@
         .empty-cart {
             text-align: center;
             color: var(--text-secondary);
-            font-size: 14px;
             padding: 20px;
+            font-size: 14px;
         }
 
         /* Submit Button */
@@ -427,17 +793,17 @@
             font-family: inherit;
         }
 
-        .submit-btn:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 30px var(--accent-glow);
-        }
-
         .submit-btn:disabled {
             opacity: 0.5;
             cursor: not-allowed;
         }
 
-        /* Status Messages */
+        .submit-btn:not(:disabled):hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px var(--accent-glow);
+        }
+
+        /* Status */
         .status {
             margin-top: 16px;
             padding: 14px;
@@ -447,13 +813,6 @@
             display: none;
         }
 
-        .status.success {
-            display: block;
-            background: rgba(34, 197, 94, 0.15);
-            border: 1px solid var(--success);
-            color: var(--success);
-        }
-
         .status.error {
             display: block;
             background: rgba(239, 68, 68, 0.15);
@@ -461,84 +820,73 @@
             color: #ef4444;
         }
 
-        /* Success Modal */
+        /* Modal */
         .modal-overlay {
-            display: none;
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
             background: rgba(0, 0, 0, 0.8);
-            z-index: 1000;
-            align-items: center;
+            display: none;
             justify-content: center;
-            animation: fadeIn 0.3s ease;
+            align-items: center;
+            z-index: 2000;
+            padding: 20px;
         }
 
         .modal-overlay.show {
             display: flex;
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
         .modal {
             background: var(--bg-card);
             border-radius: 20px;
-            padding: 40px;
+            padding: 32px;
             max-width: 400px;
-            width: 90%;
+            width: 100%;
             text-align: center;
             border: 1px solid var(--border);
-            animation: slideUp 0.3s ease;
-        }
-
-        @keyframes slideUp {
-            from { transform: translateY(20px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
         }
 
         .modal-icon {
-            font-size: 64px;
-            margin-bottom: 20px;
+            font-size: 56px;
+            margin-bottom: 16px;
         }
 
         .modal-title {
-            font-size: 24px;
+            font-size: 22px;
             font-weight: 700;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             color: var(--success);
         }
 
         .modal-subtitle {
             color: var(--text-secondary);
-            margin-bottom: 8px;
-            font-size: 14px;
+            margin-bottom: 6px;
+            font-size: 13px;
         }
 
         .modal-order-id {
             font-family: monospace;
-            font-size: 18px;
+            font-size: 16px;
             color: var(--accent);
-            margin-bottom: 20px;
+            margin-bottom: 16px;
         }
 
         .modal-details {
             background: var(--bg-secondary);
             border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 24px;
+            padding: 14px;
+            margin-bottom: 20px;
             text-align: left;
         }
 
         .modal-detail-row {
             display: flex;
             justify-content: space-between;
-            padding: 6px 0;
-            font-size: 14px;
+            padding: 5px 0;
+            font-size: 13px;
         }
 
         .modal-detail-row span:first-child {
@@ -552,123 +900,55 @@
             border-radius: 10px;
             background: var(--accent);
             color: white;
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 600;
             cursor: pointer;
             font-family: inherit;
-        }
-
-        .modal-btn:hover {
-            background: #7c3aed;
         }
 
         .stigao-btn {
             width: 100%;
-            padding: 18px;
+            padding: 16px;
             border: none;
             border-radius: 12px;
             background: linear-gradient(135deg, #f97316, #ea580c);
             color: white;
-            font-size: 18px;
+            font-size: 16px;
             font-weight: 700;
             cursor: pointer;
             font-family: inherit;
-            margin-top: 16px;
-            transition: all 0.3s ease;
-        }
-
-        .stigao-btn:hover {
-            transform: scale(1.02);
-            box-shadow: 0 8px 25px rgba(249, 115, 22, 0.4);
+            margin-top: 12px;
         }
 
         .stigao-btn:disabled {
-            opacity: 0.8;
+            opacity: 0.7;
             cursor: not-allowed;
-            transform: none;
-        }
-
-        /* Order History */
-        .history-section {
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid var(--border);
-        }
-
-        .history-title {
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--text-secondary);
-            margin-bottom: 12px;
-        }
-
-        .history-item {
-            background: var(--bg-secondary);
-            border-radius: 8px;
-            padding: 12px;
-            margin-bottom: 8px;
-            font-size: 13px;
-        }
-
-        .history-item-header {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 6px;
-        }
-
-        .history-id {
-            color: var(--accent);
-            font-weight: 600;
-        }
-
-        .history-time {
-            color: var(--text-secondary);
-        }
-
-        .history-details {
-            color: var(--text-secondary);
-        }
-
-        /* Connection indicator */
-        .connection-status {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            font-size: 12px;
-            color: var(--text-secondary);
-            margin-bottom: 20px;
-        }
-
-        .connection-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: var(--success);
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
         }
     </style>
 </head>
 <body>
     <div class="container">
+        <!-- Header with Hamburger -->
         <header>
             <h1>🧡 Collina online</h1>
+            <button class="hamburger-btn" onclick="toggleMenu()">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
         </header>
 
         <!-- Greeting -->
         <div class="greeting-section">
             <div class="greeting" id="greeting">Ćao, šta ćemo danas? 👋</div>
-            <div class="loyalty-bar" id="loyalty-bar" style="display: none;">
-                <div class="loyalty-points">
-                    🎁 <span class="points-value" id="points-value">0</span> poena
+            <div class="loyalty-bar" id="loyalty-bar">
+                <div class="loyalty-item">
+                    <span>🎁</span>
+                    <span id="points-value">0</span> poena
                 </div>
-                <div class="loyalty-orders">
-                    📦 <span class="orders-value" id="orders-value">0</span> narudžbina
+                <div class="loyalty-item">
+                    <span>📦</span>
+                    <span id="orders-value">0</span> narudžbina
                 </div>
             </div>
         </div>
@@ -715,14 +995,25 @@
         <!-- Menu -->
         <div class="menu-section">
             <div class="section-label">Meni</div>
+            
+            <!-- Favorites Section -->
+            <div class="favorites-section" id="favorites-section">
+                <div class="favorites-label">❤️ Tvoji favoriti</div>
+                <div id="favorites-items"></div>
+            </div>
+            
             <div id="menu-items"></div>
         </div>
 
         <!-- Cart -->
         <div class="cart-section">
             <div class="cart-title">🛒 Korpa</div>
-            <div id="cart-content">
+            <div id="cart-items">
                 <div class="empty-cart">Korpa je prazna</div>
+            </div>
+            <div class="cart-total" id="cart-total" style="display: none;">
+                <span>Ukupno</span>
+                <span id="total-amount">0 RSD</span>
             </div>
         </div>
 
@@ -732,12 +1023,134 @@
         </button>
 
         <div id="status" class="status"></div>
+    </div>
 
-        <!-- Order History -->
-        <div class="history-section">
-            <div class="history-title">📋 Poslednje narudžbine (ova sesija)</div>
-            <div id="order-history">
-                <div class="empty-cart">Nema narudžbina u ovoj sesiji</div>
+    <!-- Slide-out Menu -->
+    <div class="menu-overlay" id="menu-overlay" onclick="closeMenu(event)">
+        <div class="side-menu" onclick="event.stopPropagation()">
+            <div class="menu-header">
+                <span class="menu-title">Moj nalog</span>
+                <button class="close-menu" onclick="toggleMenu()">×</button>
+            </div>
+            
+            <div class="menu-tabs">
+                <button class="menu-tab active" onclick="switchTab('points')">🎁 Poeni</button>
+                <button class="menu-tab" onclick="switchTab('settings')">⚙️ Podešavanja</button>
+                <button class="menu-tab" onclick="switchTab('promos')">🎉 Promocije</button>
+            </div>
+            
+            <div class="menu-content">
+                <!-- Points Tab -->
+                <div class="tab-panel active" id="tab-points">
+                    <div class="points-summary">
+                        <div class="points-big" id="menu-points">0</div>
+                        <div class="points-label">poena</div>
+                    </div>
+                    
+                    <div class="section-label">Istorija narudžbina</div>
+                    <div id="order-history-list">
+                        <p style="color: var(--text-secondary); font-size: 14px; text-align: center;">Učitavanje...</p>
+                    </div>
+                </div>
+                
+                <!-- Settings Tab -->
+                <div class="tab-panel" id="tab-settings">
+                    <!-- View Mode -->
+                    <div class="settings-view" id="settings-view">
+                        <div class="settings-card">
+                            <div class="setting-row">
+                                <span class="setting-label">Ime</span>
+                                <span class="setting-value" id="view-firstname">-</span>
+                            </div>
+                            <div class="setting-row">
+                                <span class="setting-label">Prezime</span>
+                                <span class="setting-value" id="view-lastname">-</span>
+                            </div>
+                            <div class="setting-row">
+                                <span class="setting-label">Telefon</span>
+                                <span class="setting-value" id="view-phone">-</span>
+                            </div>
+                            <div class="setting-row">
+                                <span class="setting-label">Email</span>
+                                <span class="setting-value" id="view-email">-</span>
+                            </div>
+                            <div class="setting-row">
+                                <span class="setting-label">Adresa</span>
+                                <span class="setting-value" id="view-address">-</span>
+                            </div>
+                            <div class="setting-row">
+                                <span class="setting-label">Grad</span>
+                                <span class="setting-value" id="view-city">-</span>
+                            </div>
+                        </div>
+                        <button class="edit-settings-btn" onclick="showEditMode()">✏️ Izmeni podatke</button>
+                    </div>
+                    
+                    <!-- Edit Mode -->
+                    <div class="settings-edit" id="settings-edit" style="display: none;">
+                        <div class="settings-form">
+                            <div class="form-group">
+                                <label>Ime</label>
+                                <input type="text" id="setting-firstname" placeholder="Tvoje ime">
+                            </div>
+                            <div class="form-group">
+                                <label>Prezime</label>
+                                <input type="text" id="setting-lastname" placeholder="Tvoje prezime">
+                            </div>
+                            <div class="form-group">
+                                <label>Telefon</label>
+                                <input type="tel" id="setting-phone" disabled>
+                            </div>
+                            <div class="form-group">
+                                <label>Email</label>
+                                <input type="email" id="setting-email" placeholder="email@example.com">
+                            </div>
+                            <div class="form-group">
+                                <label>Adresa</label>
+                                <input type="text" id="setting-address" placeholder="Ulica i broj">
+                            </div>
+                            <div class="form-group">
+                                <label>Grad</label>
+                                <input type="text" id="setting-city" placeholder="Beograd">
+                            </div>
+                            <div class="settings-buttons">
+                                <button class="cancel-settings-btn" onclick="cancelEdit()">Otkaži</button>
+                                <button class="save-settings-btn" onclick="saveSettings()">Sačuvaj</button>
+                            </div>
+                            <div class="settings-status" id="settings-status">✓ Sačuvano!</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Promotions Tab -->
+                <div class="tab-panel" id="tab-promos">
+                    <div class="promo-card">
+                        <div class="promo-badge">500 poena</div>
+                        <div class="promo-title">🥤 Besplatan napitak</div>
+                        <div class="promo-desc">Osvoji 500 poena i dobij besplatan napitak uz sledeću narudžbinu!</div>
+                        <div class="promo-points">Trenutno imaš: <span id="promo-points-1">0</span> poena</div>
+                    </div>
+                    
+                    <div class="promo-card">
+                        <div class="promo-badge">1000 poena</div>
+                        <div class="promo-title">🍔 Besplatan burger</div>
+                        <div class="promo-desc">Sakupi 1000 poena za besplatan Collina Smash burger!</div>
+                        <div class="promo-points">Trenutno imaš: <span id="promo-points-2">0</span> poena</div>
+                    </div>
+                    
+                    <div class="promo-card">
+                        <div class="promo-badge">AKCIJA</div>
+                        <div class="promo-title">🎁 Dupli poeni vikend</div>
+                        <div class="promo-desc">Svake subote i nedelje osvoji duplo poena na sve narudžbine!</div>
+                    </div>
+                    
+                    <div class="promo-card">
+                        <div class="promo-badge">VIP</div>
+                        <div class="promo-title">⭐ VIP Status</div>
+                        <div class="promo-desc">Posle 20 narudžbina postani VIP i dobij 10% popusta na sve!</div>
+                        <div class="promo-points">Tvoje narudžbine: <span id="promo-orders">0</span>/20</div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -747,11 +1160,9 @@
         <div class="modal">
             <div class="modal-icon">✅</div>
             <div class="modal-title">Narudžbina poslata!</div>
-            <div class="modal-subtitle">Uspešno sačuvano u Supabase</div>
+            <div class="modal-subtitle">Uspešno sačuvano</div>
             <div id="modal-order-id" class="modal-order-id">#1234567890</div>
-            <div id="modal-details" class="modal-details">
-                <!-- Filled dynamically -->
-            </div>
+            <div id="modal-details" class="modal-details"></div>
             <button class="modal-btn" onclick="closeModal()">Nova narudžbina</button>
         </div>
     </div>
@@ -762,9 +1173,10 @@
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJibmJiYnBvZmVsYmt5dWZmc2xqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUwNTI0MzQsImV4cCI6MjA4MDYyODQzNH0.koW44soAB-bEfh8OzqjGBwdgov4Snscw1ITsg5OureU';
         
         let db = null;
-        let customer = null;  // Will be loaded from URL param
+        let customer = null;
+        let favorites = [];
 
-        // Default Account (fallback if no customer ID)
+        // Default Account
         const defaultAccount = {
             first_name: 'Gost',
             last_name: '',
@@ -772,10 +1184,11 @@
             email: '',
             address: '',
             city: 'Beograd',
-            order_count: 0
+            total_orders: 0,
+            loyalty_points: 0
         };
 
-        // Menu Items (from Collina Wolt data with POS IDs)
+        // Menu Items
         const menuItems = [
             { id: '4043', pos_id: '4043', name: 'BIG Double Collina Smash + pomfrit + Pepsi', price: 897, category: 'Burgeri' },
             { id: '6985169', pos_id: '6985169', name: 'Supreme Collina Triple Smash COMBO', price: 1200, category: 'Burgeri' },
@@ -794,22 +1207,21 @@
         let selectedLocation = 'vracar';
         let driveETA = 10;
         let cart = {};
-        let orderHistory = [];
 
         // Initialize
         async function init() {
-            // Initialize Supabase client
             try {
                 if (window.supabase) {
                     db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-                } else {
-                    console.warn('Supabase not loaded yet');
                 }
             } catch (e) {
                 console.error('Supabase init error:', e);
             }
             
-            // Check for customer ID in URL (?c=123)
+            // Load favorites from localStorage
+            loadFavorites();
+            
+            // Check for customer ID in URL
             const urlParams = new URLSearchParams(window.location.search);
             const customerId = urlParams.get('c');
             
@@ -823,17 +1235,22 @@
                     
                     if (data && !error) {
                         customer = data;
-                        // Update greeting with customer name
-                        const greeting = document.getElementById('greeting');
-                        greeting.textContent = `Ćao ${customer.first_name}, šta ćemo danas? 👋`;
+                        document.getElementById('greeting').textContent = `Ćao ${customer.first_name}, šta ćemo danas? 👋`;
                         
                         // Show loyalty bar
-                        const loyaltyBar = document.getElementById('loyalty-bar');
-                        loyaltyBar.style.display = 'flex';
+                        document.getElementById('loyalty-bar').style.display = 'flex';
                         document.getElementById('points-value').textContent = customer.loyalty_points || 0;
                         document.getElementById('orders-value').textContent = customer.total_orders || 0;
+                        
+                        // Update menu points displays
+                        updateMenuPoints();
+                        
+                        // Populate settings form
+                        populateSettings();
+                        
+                        // Load order history
+                        loadOrderHistory();
                     } else {
-                        console.warn('Customer not found:', customerId);
                         customer = defaultAccount;
                     }
                 } catch (e) {
@@ -848,45 +1265,241 @@
             updateCart();
         }
 
-        // Render Menu (grouped by category)
+        // Load favorites from localStorage
+        function loadFavorites() {
+            const stored = localStorage.getItem('collina_favorites');
+            if (stored) {
+                favorites = JSON.parse(stored);
+            }
+        }
+
+        // Save favorites to localStorage
+        function saveFavorites() {
+            localStorage.setItem('collina_favorites', JSON.stringify(favorites));
+        }
+
+        // Toggle favorite
+        function toggleFavorite(itemId) {
+            const index = favorites.indexOf(itemId);
+            if (index > -1) {
+                favorites.splice(index, 1);
+            } else {
+                favorites.push(itemId);
+            }
+            saveFavorites();
+            renderMenu();
+        }
+
+        // Update menu points displays
+        function updateMenuPoints() {
+            const points = customer.loyalty_points || 0;
+            const orders = customer.total_orders || 0;
+            
+            document.getElementById('menu-points').textContent = points;
+            document.getElementById('promo-points-1').textContent = points;
+            document.getElementById('promo-points-2').textContent = points;
+            document.getElementById('promo-orders').textContent = orders;
+        }
+
+        // Populate settings - view mode
+        function populateSettings() {
+            // View mode
+            document.getElementById('view-firstname').textContent = customer.first_name || '-';
+            document.getElementById('view-lastname').textContent = customer.last_name || '-';
+            document.getElementById('view-phone').textContent = customer.phone || '-';
+            document.getElementById('view-email').textContent = customer.email || '-';
+            document.getElementById('view-address').textContent = customer.address || '-';
+            document.getElementById('view-city').textContent = customer.city || '-';
+            
+            // Edit mode inputs
+            document.getElementById('setting-firstname').value = customer.first_name || '';
+            document.getElementById('setting-lastname').value = customer.last_name || '';
+            document.getElementById('setting-phone').value = customer.phone || '';
+            document.getElementById('setting-email').value = customer.email || '';
+            document.getElementById('setting-address').value = customer.address || '';
+            document.getElementById('setting-city').value = customer.city || '';
+        }
+
+        // Show edit mode
+        function showEditMode() {
+            document.getElementById('settings-view').style.display = 'none';
+            document.getElementById('settings-edit').style.display = 'block';
+        }
+
+        // Cancel edit
+        function cancelEdit() {
+            document.getElementById('settings-edit').style.display = 'none';
+            document.getElementById('settings-view').style.display = 'block';
+            // Reset form to original values
+            populateSettings();
+        }
+
+        // Save settings
+        async function saveSettings() {
+            if (!customer.id || !db) return;
+            
+            const updates = {
+                first_name: document.getElementById('setting-firstname').value,
+                last_name: document.getElementById('setting-lastname').value,
+                email: document.getElementById('setting-email').value,
+                address: document.getElementById('setting-address').value,
+                city: document.getElementById('setting-city').value
+            };
+            
+            try {
+                const { error } = await db
+                    .from('customers')
+                    .update(updates)
+                    .eq('id', customer.id);
+                
+                if (!error) {
+                    // Update local customer data
+                    Object.assign(customer, updates);
+                    
+                    // Update greeting
+                    document.getElementById('greeting').textContent = `Ćao ${customer.first_name}, šta ćemo danas? 👋`;
+                    
+                    // Update view mode with new values
+                    populateSettings();
+                    
+                    // Switch back to view mode
+                    document.getElementById('settings-edit').style.display = 'none';
+                    document.getElementById('settings-view').style.display = 'block';
+                    
+                    // Show success briefly
+                    document.getElementById('settings-status').classList.add('success');
+                    setTimeout(() => {
+                        document.getElementById('settings-status').classList.remove('success');
+                    }, 2000);
+                }
+            } catch (e) {
+                console.error('Error saving settings:', e);
+            }
+        }
+
+        // Load order history
+        async function loadOrderHistory() {
+            if (!customer.phone || !db) {
+                document.getElementById('order-history-list').innerHTML = '<p style="color: var(--text-secondary); font-size: 14px; text-align: center;">Nema prethodnih narudžbina</p>';
+                return;
+            }
+            
+            try {
+                const { data, error } = await db
+                    .from('website_orders')
+                    .select('id, total_price, raw_items, created_at')
+                    .ilike('client_phone', `%${customer.phone.replace('+', '')}%`)
+                    .order('created_at', { ascending: false })
+                    .limit(10);
+                
+                if (data && data.length > 0) {
+                    document.getElementById('order-history-list').innerHTML = data.map(order => {
+                        const points = Math.floor(order.total_price / 100);
+                        const date = new Date(order.created_at).toLocaleDateString('sr-RS');
+                        const items = order.raw_items ? order.raw_items.map(i => i.name).join(', ') : 'N/A';
+                        
+                        return `
+                            <div class="order-history-item">
+                                <div class="order-history-header">
+                                    <span class="order-date">${date}</span>
+                                    <span class="order-points">+${points} poena</span>
+                                </div>
+                                <div class="order-items">${items.substring(0, 60)}${items.length > 60 ? '...' : ''}</div>
+                                <div class="order-total">${order.total_price} RSD</div>
+                            </div>
+                        `;
+                    }).join('');
+                } else {
+                    document.getElementById('order-history-list').innerHTML = '<p style="color: var(--text-secondary); font-size: 14px; text-align: center;">Nema prethodnih narudžbina</p>';
+                }
+            } catch (e) {
+                console.error('Error loading history:', e);
+            }
+        }
+
+        // Menu toggle
+        function toggleMenu() {
+            document.getElementById('menu-overlay').classList.toggle('show');
+        }
+
+        function closeMenu(event) {
+            if (event.target === document.getElementById('menu-overlay')) {
+                toggleMenu();
+            }
+        }
+
+        // Tab switching
+        function switchTab(tabName) {
+            document.querySelectorAll('.menu-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+        }
+
+        // Render Menu
         function renderMenu() {
             const container = document.getElementById('menu-items');
-            const categories = [...new Set(menuItems.map(i => i.category))];
+            const favoritesContainer = document.getElementById('favorites-items');
+            const favoritesSection = document.getElementById('favorites-section');
             
+            // Render favorites
+            const favoriteItems = menuItems.filter(item => favorites.includes(item.id));
+            if (favoriteItems.length > 0) {
+                favoritesSection.classList.add('has-favorites');
+                favoritesContainer.innerHTML = '<div class="menu-grid">' + favoriteItems.map(item => renderMenuItem(item)).join('') + '</div>';
+            } else {
+                favoritesSection.classList.remove('has-favorites');
+            }
+            
+            // Render regular menu by category
+            const categories = [...new Set(menuItems.map(i => i.category))];
             container.innerHTML = categories.map(cat => `
                 <div class="category-label">${cat}</div>
-                ${menuItems.filter(item => item.category === cat).map(item => `
-                    <div class="menu-item">
-                        <div class="item-info">
-                            <h3>${item.name}</h3>
-                            <div class="item-meta">
-                                <span class="item-price">${item.price} RSD</span>
-                                <span class="item-pos">POS: ${item.pos_id}</span>
-                            </div>
-                        </div>
+                <div class="menu-grid">
+                    ${menuItems.filter(item => item.category === cat).map(item => renderMenuItem(item)).join('')}
+                </div>
+            `).join('');
+        }
+
+        function renderMenuItem(item) {
+            const isFav = favorites.includes(item.id);
+            const emoji = item.category === 'Burgeri' ? '🍔' : item.category === 'Palačinke' ? '🥞' : '🥪';
+            
+            return `
+                <div class="menu-item ${isFav ? 'favorite' : ''}">
+                    <div class="item-image">
+                        ${item.image_url 
+                            ? `<img src="${item.image_url}" alt="${item.name}">`
+                            : `<div class="item-image-placeholder">${emoji}</div>`
+                        }
+                        <button class="favorite-btn ${isFav ? 'active' : ''}" onclick="toggleFavorite('${item.id}')">
+                            ${isFav ? '❤️' : '🤍'}
+                        </button>
+                    </div>
+                    <div class="item-content">
+                        <div class="item-name">${item.name}</div>
+                        <div class="item-price">${item.price} RSD</div>
                         <div class="item-controls">
                             <button class="qty-btn" onclick="updateQty('${item.id}', -1)" ${!cart[item.id] ? 'disabled' : ''}>−</button>
                             <span class="qty-value">${cart[item.id] || 0}</span>
                             <button class="qty-btn" onclick="updateQty('${item.id}', 1)">+</button>
                         </div>
                     </div>
-                `).join('')}
-            `).join('');
+                </div>
+            `;
         }
 
-        // Select Order Type
+        // Order Type
         function selectOrderType(type) {
             selectedOrderType = type;
             document.querySelectorAll('.order-type-btn').forEach(btn => {
                 btn.classList.toggle('active', btn.onclick.toString().includes(type));
             });
-            
-            // Show/hide drive through options
-            const optionsSection = document.getElementById('drive-through-options');
-            optionsSection.style.display = type === 'drive_through' ? 'block' : 'none';
+            document.getElementById('drive-through-options').style.display = type === 'drive_through' ? 'block' : 'none';
         }
 
-        // Select Location
+        // Location
         function selectLocation(location) {
             selectedLocation = location;
             document.querySelectorAll('.location-btn').forEach(btn => {
@@ -894,66 +1507,56 @@
             });
         }
 
-        // Update ETA
+        // ETA
         function updateETA() {
             driveETA = parseInt(document.getElementById('eta-input').value) || 10;
         }
 
-        // Update Quantity
+        // Cart
         function updateQty(itemId, delta) {
-            if (!cart[itemId]) cart[itemId] = 0;
-            cart[itemId] = Math.max(0, cart[itemId] + delta);
-            if (cart[itemId] === 0) delete cart[itemId];
+            cart[itemId] = (cart[itemId] || 0) + delta;
+            if (cart[itemId] <= 0) delete cart[itemId];
             renderMenu();
             updateCart();
         }
 
-        // Update Cart Display
         function updateCart() {
-            const container = document.getElementById('cart-content');
+            const cartItemsEl = document.getElementById('cart-items');
+            const cartTotalEl = document.getElementById('cart-total');
             const submitBtn = document.querySelector('.submit-btn');
             
-            const cartItems = Object.entries(cart).map(([id, qty]) => {
+            const items = Object.entries(cart).map(([id, qty]) => {
                 const item = menuItems.find(m => m.id === id);
-                return { ...item, qty, subtotal: item.price * qty };
+                return { ...item, qty, total: item.price * qty };
             });
-
-            if (cartItems.length === 0) {
-                container.innerHTML = '<div class="empty-cart">Korpa je prazna</div>';
+            
+            if (items.length === 0) {
+                cartItemsEl.innerHTML = '<div class="empty-cart">Korpa je prazna</div>';
+                cartTotalEl.style.display = 'none';
                 submitBtn.disabled = true;
-                return;
+            } else {
+                const total = items.reduce((sum, i) => sum + i.total, 0);
+                cartItemsEl.innerHTML = '<div class="cart-items">' + items.map(i => `
+                    <div class="cart-item">
+                        <span class="cart-item-name">${i.qty}x ${i.name}</span>
+                        <span>${i.total} RSD</span>
+                    </div>
+                `).join('') + '</div>';
+                cartTotalEl.style.display = 'flex';
+                document.getElementById('total-amount').textContent = total + ' RSD';
+                submitBtn.disabled = false;
             }
-
-            const total = cartItems.reduce((sum, item) => sum + item.subtotal, 0);
-            
-            container.innerHTML = `
-                <div class="cart-items">
-                    ${cartItems.map(item => `
-                        <div class="cart-item">
-                            <span>${item.qty}x ${item.name}</span>
-                            <span>${item.subtotal} RSD</span>
-                        </div>
-                    `).join('')}
-                </div>
-                <div class="cart-total">
-                    <span>Ukupno</span>
-                    <span>${total} RSD</span>
-                </div>
-            `;
-            
-            submitBtn.disabled = false;
         }
 
-        // Submit Order to Supabase
+        // Submit Order
         async function submitOrder() {
             const statusEl = document.getElementById('status');
             const submitBtn = document.querySelector('.submit-btn');
             
-            // Check if Supabase is initialized
             if (!db) {
                 db = window.supabase?.createClient(SUPABASE_URL, SUPABASE_KEY);
                 if (!db) {
-                    statusEl.textContent = '✗ Greška: Supabase nije učitan. Osveži stranicu.';
+                    statusEl.textContent = '✗ Greška: Supabase nije učitan.';
                     statusEl.className = 'status error';
                     return;
                 }
@@ -961,11 +1564,9 @@
             
             submitBtn.disabled = true;
             submitBtn.textContent = 'Slanje...';
-            statusEl.className = 'status';
             statusEl.style.display = 'none';
 
             try {
-                // Build items array for raw_items (includes pos_id for POS integration)
                 const items = Object.entries(cart).map(([id, qty]) => {
                     const item = menuItems.find(m => m.id === id);
                     return {
@@ -980,22 +1581,10 @@
                 });
 
                 const total = items.reduce((sum, item) => sum + item.total, 0);
-                
-                // Generate unique ID (9-digit, starting with 99 to avoid conflicts with website orders)
                 const orderId = 990000000 + Math.floor(Math.random() * 9999999);
 
-                // Build order object matching website_orders schema
-                const orderTypeLabels = {
-                    'delivery': 'Dostava',
-                    'drive_through': 'Drive through',
-                    'eat_in': 'U lokalu'
-                };
-                
-                const locationLabels = {
-                    'vracar': 'Vračar',
-                    'banovo_brdo': 'Banovo brdo',
-                    'novi_beograd': 'Novi Beograd'
-                };
+                const orderTypeLabels = { 'delivery': 'Dostava', 'drive_through': 'Drive through', 'eat_in': 'U lokalu' };
+                const locationLabels = { 'vracar': 'Vračar', 'banovo_brdo': 'Banovo brdo', 'novi_beograd': 'Novi Beograd' };
                 
                 let instructions = `Tip: ${orderTypeLabels[selectedOrderType]}`;
                 if (selectedOrderType === 'drive_through') {
@@ -1029,206 +1618,99 @@
                     import_source: 'app_direct'
                 };
 
-                // Insert into Supabase
-                const { data, error } = await db
-                    .from('website_orders')
-                    .insert([order])
-                    .select();
+                const { error } = await db.from('website_orders').insert([order]).select();
+                if (error) throw error;
 
-                if (error) {
-                    console.error('Supabase error:', error);
-                    throw new Error(`${error.message}${error.hint ? ' - ' + error.hint : ''}${error.code ? ' (Code: ' + error.code + ')' : ''}`);
-                }
-
-                // Award loyalty points (1 point per 100 RSD)
+                // Award loyalty points
                 const pointsEarned = Math.floor(total / 100);
                 if (customer.id) {
                     const newPoints = (customer.loyalty_points || 0) + pointsEarned;
                     const newOrderCount = (customer.total_orders || 0) + 1;
                     
-                    await db
-                        .from('customers')
-                        .update({ 
-                            loyalty_points: newPoints,
-                            total_orders: newOrderCount
-                        })
-                        .eq('id', customer.id);
+                    await db.from('customers').update({ 
+                        loyalty_points: newPoints,
+                        total_orders: newOrderCount
+                    }).eq('id', customer.id);
                     
-                    // Update local customer data
                     customer.loyalty_points = newPoints;
                     customer.total_orders = newOrderCount;
                     
-                    // Update UI
                     document.getElementById('points-value').textContent = newPoints;
                     document.getElementById('orders-value').textContent = newOrderCount;
+                    updateMenuPoints();
                 }
 
-                // Success - show modal
                 showSuccessModal(orderId, items, total, pointsEarned);
-
-                // Add to history
-                orderHistory.unshift({
-                    id: orderId,
-                    time: new Date().toLocaleTimeString('sr-RS'),
-                    account: `${customer.first_name} ${customer.last_name || ''}`,
-                    total: total,
-                    items: items.map(i => `${i.quantity}x ${i.name}`).join(', ')
-                });
-                updateHistory();
-
-                // Reset cart
                 cart = {};
                 renderMenu();
                 updateCart();
 
             } catch (error) {
                 console.error('Error:', error);
-                let errorMsg = error.message;
-                
-                // Check for common issues
-                if (errorMsg.includes('row-level security') || errorMsg.includes('RLS')) {
-                    errorMsg = 'RLS blokira upis. Potrebno je omogućiti INSERT na website_orders tabeli u Supabase.';
-                } else if (errorMsg.includes('violates')) {
-                    errorMsg = 'Greška u podacima: ' + errorMsg;
-                }
-                
-                statusEl.innerHTML = `✗ Greška: ${errorMsg}<br><small style="opacity:0.7">Proveri Supabase → Table Editor → website_orders → RLS Policies</small>`;
+                statusEl.textContent = `✗ Greška: ${error.message}`;
                 statusEl.className = 'status error';
             }
-
+            
             submitBtn.disabled = false;
             submitBtn.textContent = 'Pošalji narudžbinu';
         }
 
-        // Show success modal
-        function showSuccessModal(orderId, items, total, pointsEarned = 0) {
+        // Success Modal
+        function showSuccessModal(orderId, items, total, pointsEarned) {
             const modal = document.getElementById('success-modal');
-            const orderIdEl = document.getElementById('modal-order-id');
-            const detailsEl = document.getElementById('modal-details');
+            document.getElementById('modal-order-id').textContent = '#' + orderId;
             
-            const orderTypeLabels = {
-                'delivery': '🛵 Dostava',
-                'drive_through': '🚗 Drive through',
-                'eat_in': '🍽️ U lokalu'
-            };
-            
-            const locationLabels = {
-                'vracar': 'Vračar',
-                'banovo_brdo': 'Banovo brdo',
-                'novi_beograd': 'Novi Beograd'
-            };
-            
-            orderIdEl.textContent = '#' + orderId;
+            const orderTypeLabels = { 'delivery': '🛵 Dostava', 'drive_through': '🚗 Drive through', 'eat_in': '🍽️ U lokalu' };
+            const locationLabels = { 'vracar': 'Vračar', 'banovo_brdo': 'Banovo brdo', 'novi_beograd': 'Novi Beograd' };
             
             let driveRows = '';
             let stigaoButton = '';
             
             if (selectedOrderType === 'drive_through') {
                 driveRows = `
-                    <div class="modal-detail-row">
-                        <span>Lokacija</span>
-                        <span>${locationLabels[selectedLocation]}</span>
-                    </div>
-                    <div class="modal-detail-row">
-                        <span>Dolazak za</span>
-                        <span>${driveETA} minuta</span>
-                    </div>
+                    <div class="modal-detail-row"><span>Lokacija</span><span>${locationLabels[selectedLocation]}</span></div>
+                    <div class="modal-detail-row"><span>Dolazak za</span><span>${driveETA} minuta</span></div>
                 `;
-                stigaoButton = `
-                    <button class="stigao-btn" onclick="stigaoSam(${orderId})">
-                        🚗 STIGAO SAM!
-                    </button>
-                `;
+                stigaoButton = `<button class="stigao-btn" onclick="stigaoSam(${orderId})">🚗 STIGAO SAM!</button>`;
             }
             
-            detailsEl.innerHTML = `
-                <div class="modal-detail-row">
-                    <span>Kupac</span>
-                    <span>${customer.first_name} ${customer.last_name || ''}</span>
-                </div>
-                <div class="modal-detail-row">
-                    <span>Telefon</span>
-                    <span>${customer.phone || 'N/A'}</span>
-                </div>
-                <div class="modal-detail-row">
-                    <span>Tip narudžbine</span>
-                    <span>${orderTypeLabels[selectedOrderType]}</span>
-                </div>
+            document.getElementById('modal-details').innerHTML = `
+                <div class="modal-detail-row"><span>Kupac</span><span>${customer.first_name} ${customer.last_name || ''}</span></div>
+                <div class="modal-detail-row"><span>Tip</span><span>${orderTypeLabels[selectedOrderType]}</span></div>
                 ${driveRows}
-                <div class="modal-detail-row">
-                    <span>Stavke</span>
-                    <span>${items.length} artikala</span>
-                </div>
-                <div class="modal-detail-row">
-                    <span>Ukupno</span>
-                    <span style="color: var(--accent); font-weight: 600;">${total} RSD</span>
-                </div>
-                ${pointsEarned > 0 ? `
-                <div class="modal-detail-row" style="margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border);">
-                    <span>🎁 Osvojeni poeni</span>
-                    <span style="color: #f59e0b; font-weight: 600;">+${pointsEarned}</span>
-                </div>
-                ` : ''}
+                <div class="modal-detail-row"><span>Stavke</span><span>${items.length} artikala</span></div>
+                <div class="modal-detail-row"><span>Ukupno</span><span style="color: var(--accent); font-weight: 600;">${total} RSD</span></div>
+                ${pointsEarned > 0 ? `<div class="modal-detail-row" style="margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border);"><span>🎁 Osvojeni poeni</span><span style="color: #f59e0b; font-weight: 600;">+${pointsEarned}</span></div>` : ''}
                 ${stigaoButton}
             `;
             
             modal.classList.add('show');
         }
-        
-        // Stigao sam button - update order status
+
+        function closeModal() {
+            document.getElementById('success-modal').classList.remove('show');
+        }
+
         async function stigaoSam(orderId) {
             const btn = document.querySelector('.stigao-btn');
             btn.disabled = true;
             btn.textContent = 'Šaljem...';
             
             try {
-                const { error } = await db
-                    .from('website_orders')
-                    .update({ 
-                        order_status: 'arrived',
-                        updated_at: new Date().toISOString()
-                    })
-                    .eq('id', orderId);
-                
-                if (error) throw error;
+                await db.from('website_orders').update({ 
+                    order_status: 'arrived',
+                    updated_at: new Date().toISOString()
+                }).eq('id', orderId);
                 
                 btn.textContent = '✅ Stižemo!';
                 btn.style.background = 'var(--success)';
             } catch (e) {
-                console.error('Error updating status:', e);
-                btn.textContent = '❌ Greška, probaj ponovo';
+                btn.textContent = '❌ Greška';
                 btn.disabled = false;
             }
         }
 
-        // Close modal
-        function closeModal() {
-            document.getElementById('success-modal').classList.remove('show');
-        }
-
-        // Update Order History Display
-        function updateHistory() {
-            const container = document.getElementById('order-history');
-            
-            if (orderHistory.length === 0) {
-                container.innerHTML = '<div class="empty-cart">Nema narudžbina u ovoj sesiji</div>';
-                return;
-            }
-
-            container.innerHTML = orderHistory.slice(0, 5).map(order => `
-                <div class="history-item">
-                    <div class="history-item-header">
-                        <span class="history-id">#${order.id}</span>
-                        <span class="history-time">${order.time}</span>
-                    </div>
-                    <div class="history-details">
-                        ${order.account} · ${order.items} · <strong>${order.total} RSD</strong>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        // Start when DOM is ready
+        // Start
         document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
