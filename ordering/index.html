@@ -84,6 +84,45 @@
             border-radius: 12px;
         }
 
+        .loyalty-bar {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 16px;
+            margin-top: 12px;
+            padding: 12px 16px;
+            background: var(--bg-card);
+            border-radius: 10px;
+            border: 1px solid var(--border);
+        }
+
+        .loyalty-points {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .loyalty-points .points-value {
+            font-weight: 700;
+            color: #f59e0b;
+            font-size: 16px;
+        }
+
+        .loyalty-orders {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .loyalty-orders .orders-value {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
         /* Order Type Selection */
         .order-type-section {
             margin-bottom: 24px;
@@ -624,6 +663,14 @@
         <!-- Greeting -->
         <div class="greeting-section">
             <div class="greeting" id="greeting">Ćao, šta ćemo danas? 👋</div>
+            <div class="loyalty-bar" id="loyalty-bar" style="display: none;">
+                <div class="loyalty-points">
+                    🎁 <span class="points-value" id="points-value">0</span> poena
+                </div>
+                <div class="loyalty-orders">
+                    📦 <span class="orders-value" id="orders-value">0</span> narudžbina
+                </div>
+            </div>
         </div>
 
         <!-- Order Type Selection -->
@@ -779,6 +826,12 @@
                         // Update greeting with customer name
                         const greeting = document.getElementById('greeting');
                         greeting.textContent = `Ćao ${customer.first_name}, šta ćemo danas? 👋`;
+                        
+                        // Show loyalty bar
+                        const loyaltyBar = document.getElementById('loyalty-bar');
+                        loyaltyBar.style.display = 'flex';
+                        document.getElementById('points-value').textContent = customer.loyalty_points || 0;
+                        document.getElementById('orders-value').textContent = customer.total_orders || 0;
                     } else {
                         console.warn('Customer not found:', customerId);
                         customer = defaultAccount;
@@ -987,8 +1040,31 @@
                     throw new Error(`${error.message}${error.hint ? ' - ' + error.hint : ''}${error.code ? ' (Code: ' + error.code + ')' : ''}`);
                 }
 
+                // Award loyalty points (1 point per 100 RSD)
+                const pointsEarned = Math.floor(total / 100);
+                if (customer.id) {
+                    const newPoints = (customer.loyalty_points || 0) + pointsEarned;
+                    const newOrderCount = (customer.total_orders || 0) + 1;
+                    
+                    await db
+                        .from('customers')
+                        .update({ 
+                            loyalty_points: newPoints,
+                            total_orders: newOrderCount
+                        })
+                        .eq('id', customer.id);
+                    
+                    // Update local customer data
+                    customer.loyalty_points = newPoints;
+                    customer.total_orders = newOrderCount;
+                    
+                    // Update UI
+                    document.getElementById('points-value').textContent = newPoints;
+                    document.getElementById('orders-value').textContent = newOrderCount;
+                }
+
                 // Success - show modal
-                showSuccessModal(orderId, items, total);
+                showSuccessModal(orderId, items, total, pointsEarned);
 
                 // Add to history
                 orderHistory.unshift({
@@ -1025,7 +1101,7 @@
         }
 
         // Show success modal
-        function showSuccessModal(orderId, items, total) {
+        function showSuccessModal(orderId, items, total, pointsEarned = 0) {
             const modal = document.getElementById('success-modal');
             const orderIdEl = document.getElementById('modal-order-id');
             const detailsEl = document.getElementById('modal-details');
@@ -1087,6 +1163,12 @@
                     <span>Ukupno</span>
                     <span style="color: var(--accent); font-weight: 600;">${total} RSD</span>
                 </div>
+                ${pointsEarned > 0 ? `
+                <div class="modal-detail-row" style="margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border);">
+                    <span>🎁 Osvojeni poeni</span>
+                    <span style="color: #f59e0b; font-weight: 600;">+${pointsEarned}</span>
+                </div>
+                ` : ''}
                 ${stigaoButton}
             `;
             
