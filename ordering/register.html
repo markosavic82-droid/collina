@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Collina - Registracija</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0f0f13;
+            --bg-secondary: #1a1a23;
+            --bg-card: #22222d;
+            --accent: #8B5CF6;
+            --accent-glow: rgba(139, 92, 246, 0.3);
+            --text-primary: #f4f4f5;
+            --text-secondary: #a1a1aa;
+            --success: #22c55e;
+            --border: #2d2d3a;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, var(--text-primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .welcome {
+            font-size: 18px;
+            color: var(--text-primary);
+            text-align: center;
+            padding: 20px;
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(139, 92, 246, 0.05));
+            border-radius: 12px;
+            margin-bottom: 24px;
+        }
+
+        .form-section {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 24px;
+            border: 1px solid var(--border);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 16px;
+            font-family: inherit;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .form-group input::placeholder {
+            color: var(--text-secondary);
+            opacity: 0.6;
+        }
+
+        .form-group input:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 18px;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--accent), #7c3aed);
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            margin-top: 10px;
+        }
+
+        .submit-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px var(--accent-glow);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .status {
+            margin-top: 16px;
+            padding: 14px;
+            border-radius: 10px;
+            font-size: 14px;
+            text-align: center;
+            display: none;
+        }
+
+        .status.error {
+            display: block;
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid #ef4444;
+            color: #ef4444;
+        }
+
+        .status.success {
+            display: block;
+            background: rgba(34, 197, 94, 0.15);
+            border: 1px solid var(--success);
+            color: var(--success);
+        }
+
+        .info-text {
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 13px;
+            margin-top: 20px;
+        }
+
+        /* Success Screen */
+        .success-screen {
+            display: none;
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .success-screen.show {
+            display: block;
+        }
+
+        .success-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+
+        .success-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--success);
+            margin-bottom: 10px;
+        }
+
+        .success-message {
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+        }
+
+        .redirect-btn {
+            display: inline-block;
+            padding: 16px 32px;
+            background: linear-gradient(135deg, var(--accent), #7c3aed);
+            color: white;
+            text-decoration: none;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .redirect-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px var(--accent-glow);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🧡 Collina online</h1>
+        </header>
+
+        <!-- Registration Form -->
+        <div id="registration-form">
+            <div class="welcome">
+                Dobrodošli! 👋<br>
+                <small>Registruj se za brzu narudžbinu</small>
+            </div>
+
+            <div class="form-section">
+                <div class="form-group">
+                    <label>Telefon</label>
+                    <input type="tel" id="phone" disabled>
+                </div>
+
+                <div class="form-group">
+                    <label>Ime *</label>
+                    <input type="text" id="first_name" placeholder="Tvoje ime" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Prezime</label>
+                    <input type="text" id="last_name" placeholder="Tvoje prezime">
+                </div>
+
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="email" placeholder="email@example.com">
+                </div>
+
+                <div class="form-group">
+                    <label>Adresa za dostavu *</label>
+                    <input type="text" id="address" placeholder="Ulica i broj" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Grad</label>
+                    <input type="text" id="city" placeholder="Beograd" value="Beograd">
+                </div>
+
+                <button class="submit-btn" onclick="register()">Registruj se</button>
+
+                <div id="status" class="status"></div>
+
+                <p class="info-text">
+                    Posle registracije možeš naručiti kad god hoćeš! 🍔
+                </p>
+            </div>
+        </div>
+
+        <!-- Success Screen -->
+        <div id="success-screen" class="success-screen">
+            <div class="success-icon">✅</div>
+            <div class="success-title">Registracija uspešna!</div>
+            <div class="success-message">Sada možeš da naručiš</div>
+            <a id="order-link" href="#" class="redirect-btn">Naruči sada 🍔</a>
+        </div>
+    </div>
+
+    <script>
+        // Supabase Config
+        const SUPABASE_URL = 'https://bbnbbbpofelbkyuffslj.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJibmJiYnBvZmVsYmt5dWZmc2xqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUwNTI0MzQsImV4cCI6MjA4MDYyODQzNH0.koW44soAB-bEfh8OzqjGBwdgov4Snscw1ITsg5OureU';
+        
+        let db = null;
+        let phoneNumber = '';
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize Supabase
+            if (window.supabase) {
+                db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            }
+
+            // Get phone from URL
+            const urlParams = new URLSearchParams(window.location.search);
+            phoneNumber = urlParams.get('phone') || '';
+            
+            // Format and display phone
+            if (phoneNumber) {
+                const formattedPhone = '+' + phoneNumber;
+                document.getElementById('phone').value = formattedPhone;
+            } else {
+                // No phone in URL - show error
+                document.getElementById('status').textContent = 'Greška: Nedostaje broj telefona. Vrati se na WhatsApp.';
+                document.getElementById('status').className = 'status error';
+            }
+        });
+
+        // Register new customer
+        async function register() {
+            const statusEl = document.getElementById('status');
+            const submitBtn = document.querySelector('.submit-btn');
+            
+            const firstName = document.getElementById('first_name').value.trim();
+            const lastName = document.getElementById('last_name').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const address = document.getElementById('address').value.trim();
+            const city = document.getElementById('city').value.trim();
+
+            // Validation
+            if (!firstName) {
+                statusEl.textContent = 'Molimo unesi ime';
+                statusEl.className = 'status error';
+                return;
+            }
+
+            if (!address) {
+                statusEl.textContent = 'Molimo unesi adresu';
+                statusEl.className = 'status error';
+                return;
+            }
+
+            if (!phoneNumber) {
+                statusEl.textContent = 'Greška: Nedostaje broj telefona';
+                statusEl.className = 'status error';
+                return;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Registracija...';
+            statusEl.style.display = 'none';
+
+            try {
+                const formattedPhone = '+' + phoneNumber;
+
+                // Check if already exists
+                const { data: existing } = await db
+                    .from('customers')
+                    .select('id')
+                    .ilike('phone', '%' + phoneNumber + '%')
+                    .limit(1);
+
+                if (existing && existing.length > 0) {
+                    // Already registered - redirect to order
+                    window.location.href = `index.html?c=${existing[0].id}`;
+                    return;
+                }
+
+                // Insert new customer
+                const { data, error } = await db
+                    .from('customers')
+                    .insert([{
+                        phone: formattedPhone,
+                        first_name: firstName,
+                        last_name: lastName,
+                        email: email,
+                        address: address,
+                        city: city || 'Beograd',
+                        total_orders: 0
+                    }])
+                    .select();
+
+                if (error) throw error;
+
+                const newCustomerId = data[0].id;
+
+                // Show success and redirect
+                document.getElementById('registration-form').style.display = 'none';
+                document.getElementById('success-screen').classList.add('show');
+                document.getElementById('order-link').href = `index.html?c=${newCustomerId}`;
+
+            } catch (error) {
+                console.error('Error:', error);
+                statusEl.textContent = `Greška: ${error.message}`;
+                statusEl.className = 'status error';
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Registruj se';
+            }
+        }
+    </script>
+</body>
+</html>
