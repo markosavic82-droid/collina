@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Collina Online</title>
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * {
@@ -688,7 +688,7 @@
         const SUPABASE_URL = 'https://bbnbbbpofelbkyuffslj.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJibmJiYnBvZmVsYmt5dWZmc2xqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUwNTI0MzQsImV4cCI6MjA4MDYyODQzNH0.koW44soAB-bEfh8OzqjGBwdgov4Snscw1ITsg5OureU';
         
-        const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        let db = null;
 
         // Default Account (for testing)
         const account = {
@@ -724,6 +724,16 @@
 
         // Initialize
         function init() {
+            // Initialize Supabase client
+            try {
+                if (window.supabase) {
+                    db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                } else {
+                    console.warn('Supabase not loaded yet');
+                }
+            } catch (e) {
+                console.error('Supabase init error:', e);
+            }
             renderMenu();
             updateCart();
         }
@@ -828,6 +838,16 @@
         async function submitOrder() {
             const statusEl = document.getElementById('status');
             const submitBtn = document.querySelector('.submit-btn');
+            
+            // Check if Supabase is initialized
+            if (!db) {
+                db = window.supabase?.createClient(SUPABASE_URL, SUPABASE_KEY);
+                if (!db) {
+                    statusEl.textContent = '✗ Greška: Supabase nije učitan. Osveži stranicu.';
+                    statusEl.className = 'status error';
+                    return;
+                }
+            }
             
             submitBtn.disabled = true;
             submitBtn.textContent = 'Slanje...';
@@ -1036,8 +1056,8 @@
             `).join('');
         }
 
-        // Start
-        init();
+        // Start when DOM is ready
+        document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
 </html>
