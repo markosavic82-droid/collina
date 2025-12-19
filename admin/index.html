@@ -1,1 +1,1079 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Collina Admin</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg-primary: #1a1a1a;
+            --bg-secondary: #2d2d2d;
+            --bg-card: #3d3d3d;
+            --accent: #c97b7b;
+            --success: #7db88f;
+            --danger: #ef4444;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0a0;
+            --border: #4d4d4d;
+        }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg-primary); color: var(--text-primary); min-height: 100vh; }
+        
+        /* Login */
+        .login-screen { display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+        .login-box { background: var(--bg-secondary); border-radius: 20px; padding: 40px; width: 100%; max-width: 400px; text-align: center; }
+        .login-logo { font-size: 48px; margin-bottom: 16px; }
+        .login-title { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
+        .login-subtitle { color: var(--text-secondary); margin-bottom: 32px; }
+        .login-input { width: 100%; padding: 16px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg-primary); color: var(--text-primary); font-size: 16px; margin-bottom: 16px; text-align: center; letter-spacing: 4px; }
+        .login-btn { width: 100%; padding: 16px; background: var(--accent); border: none; border-radius: 12px; color: white; font-size: 16px; font-weight: 600; cursor: pointer; }
+        .login-error { color: var(--danger); margin-top: 16px; display: none; }
+        
+        /* Admin Layout */
+        .admin-container { display: none; min-height: 100vh; }
+        .admin-container.show { display: flex; }
+        
+        /* Sidebar */
+        .sidebar { width: 220px; background: var(--bg-secondary); padding: 20px; position: fixed; height: 100vh; }
+        .sidebar-logo { display: flex; align-items: center; gap: 12px; padding-bottom: 24px; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
+        .sidebar-logo-icon { font-size: 28px; }
+        .sidebar-logo-text { font-size: 18px; font-weight: 700; }
+        .sidebar-nav { display: flex; flex-direction: column; gap: 8px; }
+        .nav-item { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 10px; cursor: pointer; border: none; background: transparent; color: var(--text-secondary); font-size: 14px; text-align: left; width: 100%; }
+        .nav-item:hover { background: var(--bg-card); color: var(--text-primary); }
+        .nav-item.active { background: var(--accent); color: white; }
+        .sidebar-footer { position: absolute; bottom: 20px; left: 20px; right: 20px; }
+        .logout-btn { width: 100%; padding: 12px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; color: var(--text-secondary); cursor: pointer; font-size: 14px; }
+        
+        /* Main */
+        .main-content { flex: 1; margin-left: 220px; padding: 32px; }
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .page-title { font-size: 24px; font-weight: 700; }
+        .add-btn { display: flex; align-items: center; gap: 8px; padding: 12px 20px; background: var(--accent); border: none; border-radius: 10px; color: white; font-size: 14px; font-weight: 600; cursor: pointer; }
+        
+        /* Sections */
+        .section { display: none; }
+        .section.active { display: block; }
+        
+        /* Cards */
+        .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+        .card { background: var(--bg-secondary); border-radius: 14px; padding: 16px; border: 1px solid var(--border); }
+        .card-header { display: flex; align-items: center; gap: 14px; margin-bottom: 12px; }
+        .card-image { width: 70px; height: 70px; border-radius: 10px; background: var(--bg-card); display: flex; align-items: center; justify-content: center; font-size: 28px; overflow: hidden; flex-shrink: 0; }
+        .card-image img { width: 100%; height: 100%; object-fit: cover; }
+        .card-info { flex: 1; min-width: 0; }
+        .card-title { font-size: 15px; font-weight: 600; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .card-subtitle { font-size: 13px; color: var(--text-secondary); }
+        .card-price { font-size: 16px; font-weight: 700; color: var(--accent); }
+        .card-actions { display: flex; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
+        .card-btn { flex: 1; padding: 10px; border: 1px solid var(--border); border-radius: 8px; background: transparent; color: var(--text-primary); font-size: 13px; cursor: pointer; }
+        .card-btn:hover { background: var(--bg-card); }
+        .card-btn.primary { background: var(--accent); border-color: var(--accent); }
+        .card-btn.danger { color: var(--danger); border-color: var(--danger); }
+        
+        /* Toggle */
+        .toggle { width: 44px; height: 24px; background: var(--bg-card); border-radius: 12px; position: relative; cursor: pointer; flex-shrink: 0; }
+        .toggle.active { background: var(--success); }
+        .toggle::after { content: ''; position: absolute; width: 20px; height: 20px; background: white; border-radius: 50%; top: 2px; left: 2px; transition: all 0.2s; }
+        .toggle.active::after { left: 22px; }
+        
+        /* Modal */
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: center; z-index: 1000; padding: 20px; }
+        .modal-overlay.show { display: flex; }
+        .modal { background: var(--bg-secondary); border-radius: 16px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 20px; border-bottom: 1px solid var(--border); }
+        .modal-title { font-size: 18px; font-weight: 700; }
+        .modal-close { width: 36px; height: 36px; border: none; border-radius: 50%; background: var(--bg-card); color: var(--text-primary); font-size: 18px; cursor: pointer; }
+        .modal-body { padding: 20px; }
+        .modal-footer { display: flex; gap: 12px; padding: 20px; border-top: 1px solid var(--border); }
+        .modal-btn { flex: 1; padding: 14px; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; }
+        .modal-btn.secondary { background: var(--bg-card); color: var(--text-primary); }
+        .modal-btn.primary { background: var(--accent); color: white; }
+        .modal-btn.danger { background: var(--danger); color: white; }
+        
+        /* Form */
+        .form-group { margin-bottom: 16px; }
+        .form-label { display: block; font-size: 13px; color: var(--text-secondary); margin-bottom: 6px; }
+        .form-input { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-primary); color: var(--text-primary); font-size: 14px; }
+        .form-input:focus { outline: none; border-color: var(--accent); }
+        .form-textarea { min-height: 80px; resize: vertical; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        
+        /* Image Upload */
+        .image-upload { border: 2px dashed var(--border); border-radius: 10px; padding: 24px; text-align: center; cursor: pointer; }
+        .image-upload:hover { border-color: var(--accent); }
+        .image-upload.has-image { padding: 0; border: none; }
+        .image-upload img { width: 100%; height: 150px; object-fit: cover; border-radius: 10px; }
+        .image-upload-icon { font-size: 36px; margin-bottom: 8px; }
+        .image-upload-text { color: var(--text-secondary); font-size: 13px; }
+        
+        /* Table */
+        .table-container { background: var(--bg-secondary); border-radius: 14px; overflow: hidden; border: 1px solid var(--border); }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 14px 16px; text-align: left; }
+        th { background: var(--bg-card); font-weight: 600; font-size: 13px; color: var(--text-secondary); }
+        td { border-top: 1px solid var(--border); font-size: 14px; }
+        
+        /* Settings */
+        .settings-card { background: var(--bg-secondary); border-radius: 14px; padding: 20px; margin-bottom: 20px; border: 1px solid var(--border); }
+        .settings-title { font-size: 16px; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+        .settings-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); }
+        .settings-row:last-child { border-bottom: none; }
+        .settings-input { width: 100px; padding: 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-primary); color: var(--text-primary); font-size: 14px; text-align: right; }
+        
+        /* Location */
+        .location-card { background: var(--bg-secondary); border-radius: 14px; padding: 20px; border: 1px solid var(--border); margin-bottom: 16px; }
+        .location-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+        .location-info h3 { font-size: 16px; margin-bottom: 4px; }
+        .location-info p { color: var(--text-secondary); font-size: 13px; }
+        .location-details { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); }
+        .location-field label { display: block; font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; }
+        .location-field input { width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-primary); color: var(--text-primary); font-size: 13px; }
+        
+        /* Toast */
+        .toast-container { position: fixed; top: 20px; right: 20px; z-index: 2000; }
+        .toast { background: var(--bg-card); border-radius: 10px; padding: 14px 20px; display: flex; align-items: center; gap: 10px; margin-bottom: 10px; animation: slideIn 0.3s ease; border-left: 4px solid var(--success); }
+        .toast.error { border-left-color: var(--danger); }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        
+        /* Category Tabs */
+        .category-tabs { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+        .category-tab { padding: 8px 16px; border: 1px solid var(--border); border-radius: 20px; background: transparent; color: var(--text-secondary); cursor: pointer; font-size: 13px; }
+        .category-tab.active { background: var(--accent); border-color: var(--accent); color: white; }
+        
+        /* Empty */
+        .empty-state { text-align: center; padding: 60px 20px; color: var(--text-secondary); }
+        .empty-state-icon { font-size: 48px; margin-bottom: 12px; }
+    </style>
+</head>
+<body>
+    <!-- Login -->
+    <div class="login-screen" id="login-screen">
+        <div class="login-box">
+            <div class="login-logo">🍔</div>
+            <div class="login-title">Collina Admin</div>
+            <div class="login-subtitle">Unesite lozinku za pristup</div>
+            <input type="password" class="login-input" id="login-password" placeholder="••••••" onkeypress="if(event.key==='Enter')login()">
+            <button class="login-btn" onclick="login()">Prijavi se</button>
+            <div class="login-error" id="login-error">Pogrešna lozinka</div>
+        </div>
+    </div>
 
+    <!-- Admin -->
+    <div class="admin-container" id="admin-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-logo">
+                <span class="sidebar-logo-icon">🍔</span>
+                <span class="sidebar-logo-text">Collina</span>
+            </div>
+            <nav class="sidebar-nav">
+                <button class="nav-item active" onclick="showSection('menu')">
+                    <span>🍔</span><span>Meni</span>
+                </button>
+                <button class="nav-item" onclick="showSection('promocije')">
+                    <span>🎉</span><span>Promocije</span>
+                </button>
+                <button class="nav-item" onclick="showSection('loyalty')">
+                    <span>🎫</span><span>Loyalty</span>
+                </button>
+                <button class="nav-item" onclick="showSection('locations')">
+                    <span>📍</span><span>Lokacije</span>
+                </button>
+                <button class="nav-item" onclick="showSection('settings')">
+                    <span>⚙️</span><span>Podešavanja</span>
+                </button>
+            </nav>
+            <div class="sidebar-footer">
+                <button class="logout-btn" onclick="logout()">🚪 Odjavi se</button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- MENU Section -->
+            <div class="section active" id="section-menu">
+                <div class="page-header">
+                    <h1 class="page-title">🍔 Meni</h1>
+                    <button class="add-btn" onclick="openMenuModal()">+ Dodaj stavku</button>
+                </div>
+                <div class="category-tabs" id="menu-category-tabs"></div>
+                <div class="cards-grid" id="menu-grid"></div>
+            </div>
+
+            <!-- PROMOCIJE Section -->
+            <div class="section" id="section-promocije">
+                <div class="page-header">
+                    <h1 class="page-title">🎉 Promocije</h1>
+                    <button class="add-btn" onclick="openPromoModal()">+ Dodaj promociju</button>
+                </div>
+                <div class="cards-grid" id="promo-grid"></div>
+            </div>
+
+            <!-- LOYALTY Section -->
+            <div class="section" id="section-loyalty">
+                <div class="page-header">
+                    <h1 class="page-title">🎫 Loyalty & Promo</h1>
+                </div>
+                
+                <h3 style="margin-bottom:16px;">Promo kodovi</h3>
+                <button class="add-btn" onclick="openCodeModal()" style="margin-bottom:16px;">+ Novi kod</button>
+                <div class="table-container" style="margin-bottom:32px;">
+                    <table>
+                        <thead>
+                            <tr><th>Kod</th><th>Nagrada</th><th>Korišćen</th><th>Status</th><th>Akcije</th></tr>
+                        </thead>
+                        <tbody id="codes-table"></tbody>
+                    </table>
+                </div>
+
+                <h3 style="margin-bottom:16px;">Kuponi</h3>
+                <button class="add-btn" onclick="openCouponModal()" style="margin-bottom:16px;">+ Novi kupon</button>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr><th>Kupon</th><th>Tip</th><th>Vrednost</th><th>Status</th><th>Akcije</th></tr>
+                        </thead>
+                        <tbody id="coupons-table"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- LOCATIONS Section -->
+            <div class="section" id="section-locations">
+                <div class="page-header">
+                    <h1 class="page-title">📍 Lokacije</h1>
+                </div>
+                <div id="locations-list"></div>
+            </div>
+
+            <!-- SETTINGS Section -->
+            <div class="section" id="section-settings">
+                <div class="page-header">
+                    <h1 class="page-title">⚙️ Podešavanja</h1>
+                </div>
+                
+                <div class="settings-card">
+                    <div class="settings-title">🛵 Dostava</div>
+                    <div class="settings-row">
+                        <span>Cena dostave</span>
+                        <div><input type="number" class="settings-input" id="setting-delivery_fee" onchange="saveSetting('delivery_fee', this.value)"> RSD</div>
+                    </div>
+                    <div class="settings-row">
+                        <span>Besplatna dostava od</span>
+                        <div><input type="number" class="settings-input" id="setting-free_delivery_threshold" onchange="saveSetting('free_delivery_threshold', this.value)"> RSD</div>
+                    </div>
+                    <div class="settings-row">
+                        <span>Minimalna narudžbina</span>
+                        <div><input type="number" class="settings-input" id="setting-min_order" onchange="saveSetting('min_order', this.value)"> RSD</div>
+                    </div>
+                </div>
+
+                <div class="settings-card">
+                    <div class="settings-title">💰 Poeni</div>
+                    <div class="settings-row">
+                        <span>1 poen za svakih</span>
+                        <div><input type="number" class="settings-input" id="setting-points_per_rsd" onchange="saveSetting('points_per_rsd', this.value)"> RSD</div>
+                    </div>
+                    <div class="settings-row">
+                        <span>Besplatan napitak</span>
+                        <div><input type="number" class="settings-input" id="setting-reward_drink_points" onchange="saveSetting('reward_drink_points', this.value)"> poena</div>
+                    </div>
+                    <div class="settings-row">
+                        <span>Besplatan burger</span>
+                        <div><input type="number" class="settings-input" id="setting-reward_burger_points" onchange="saveSetting('reward_burger_points', this.value)"> poena</div>
+                    </div>
+                    <div class="settings-row">
+                        <span>Besplatan obrok</span>
+                        <div><input type="number" class="settings-input" id="setting-reward_meal_points" onchange="saveSetting('reward_meal_points', this.value)"> poena</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Menu Modal -->
+    <div class="modal-overlay" id="menu-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title" id="menu-modal-title">Dodaj stavku</h2>
+                <button class="modal-close" onclick="closeMenuModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Slika</label>
+                    <div class="image-upload" id="menu-image-upload" onclick="document.getElementById('menu-image-input').click()">
+                        <div class="image-upload-icon">📷</div>
+                        <div class="image-upload-text">Klikni za upload</div>
+                    </div>
+                    <input type="file" id="menu-image-input" accept="image/*" style="display:none" onchange="previewImage(this, 'menu-image-upload')">
+                    <input type="hidden" id="menu-image-url">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Naziv</label>
+                    <input type="text" class="form-input" id="menu-name" placeholder="npr. BIG Double Collina Smash">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Cena (RSD)</label>
+                        <input type="number" class="form-input" id="menu-price" placeholder="897">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Kategorija</label>
+                        <select class="form-input" id="menu-category">
+                            <option value="burgeri">🍔 Burgeri</option>
+                            <option value="palacnke">🥞 Palačinke</option>
+                            <option value="kuvano">🍲 Kuvano</option>
+                            <option value="dorucak">🍳 Doručak</option>
+                            <option value="pekara">🥐 Pekara</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Opis</label>
+                    <textarea class="form-input form-textarea" id="menu-description" placeholder="Kratak opis stavke..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Sastojci (razdvojeni zarezom)</label>
+                    <input type="text" class="form-input" id="menu-ingredients" placeholder="Pljeskavica, Čedar, Salata, Paradajz">
+                </div>
+                <div class="form-group" style="display:flex;align-items:center;gap:12px;">
+                    <label class="form-label" style="margin:0;">Aktivno</label>
+                    <div class="toggle active" id="menu-active" onclick="this.classList.toggle('active')"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn secondary" onclick="closeMenuModal()">Otkaži</button>
+                <button class="modal-btn danger" id="menu-delete-btn" onclick="deleteMenuItem()" style="display:none;">Obriši</button>
+                <button class="modal-btn primary" onclick="saveMenuItem()">Sačuvaj</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Promo Modal -->
+    <div class="modal-overlay" id="promo-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title" id="promo-modal-title">Dodaj promociju</h2>
+                <button class="modal-close" onclick="closePromoModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Slika</label>
+                    <div class="image-upload" id="promo-image-upload" onclick="document.getElementById('promo-image-input').click()">
+                        <div class="image-upload-icon">📷</div>
+                        <div class="image-upload-text">Klikni za upload</div>
+                    </div>
+                    <input type="file" id="promo-image-input" accept="image/*" style="display:none" onchange="previewImage(this, 'promo-image-upload')">
+                    <input type="hidden" id="promo-image-url">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Naziv</label>
+                    <input type="text" class="form-input" id="promo-name" placeholder="npr. Burger + Palačinka COMBO">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Opis</label>
+                    <input type="text" class="form-input" id="promo-description" placeholder="npr. BIG Double + Dubai palačinka">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Stara cena (RSD)</label>
+                        <input type="number" class="form-input" id="promo-old-price" placeholder="1817">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Nova cena (RSD)</label>
+                        <input type="number" class="form-input" id="promo-price" placeholder="1499">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Badge</label>
+                    <input type="text" class="form-input" id="promo-badge" placeholder="npr. -18%">
+                </div>
+                <div class="form-group" style="display:flex;align-items:center;gap:12px;">
+                    <label class="form-label" style="margin:0;">Aktivno</label>
+                    <div class="toggle active" id="promo-active" onclick="this.classList.toggle('active')"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn secondary" onclick="closePromoModal()">Otkaži</button>
+                <button class="modal-btn danger" id="promo-delete-btn" onclick="deletePromo()" style="display:none;">Obriši</button>
+                <button class="modal-btn primary" onclick="savePromo()">Sačuvaj</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Promo Code Modal -->
+    <div class="modal-overlay" id="code-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title">Novi promo kod</h2>
+                <button class="modal-close" onclick="closeCodeModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Kod</label>
+                    <input type="text" class="form-input" id="code-code" placeholder="npr. WELCOME50" style="text-transform:uppercase;">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Tip nagrade</label>
+                        <select class="form-input" id="code-type">
+                            <option value="points">Poeni</option>
+                            <option value="percent">Procenat popusta</option>
+                            <option value="fixed">Fiksni popust (RSD)</option>
+                            <option value="free_delivery">Besplatna dostava</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Vrednost</label>
+                        <input type="number" class="form-input" id="code-value" placeholder="50">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Max korišćenja (prazno = neograničeno)</label>
+                    <input type="number" class="form-input" id="code-max-uses" placeholder="">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn secondary" onclick="closeCodeModal()">Otkaži</button>
+                <button class="modal-btn primary" onclick="saveCode()">Sačuvaj</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Coupon Modal -->
+    <div class="modal-overlay" id="coupon-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title">Novi kupon</h2>
+                <button class="modal-close" onclick="closeCouponModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Naziv</label>
+                        <input type="text" class="form-input" id="coupon-name" placeholder="npr. 30% popust">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Ikonica</label>
+                        <input type="text" class="form-input" id="coupon-icon" placeholder="🏷️">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Opis</label>
+                    <input type="text" class="form-input" id="coupon-description" placeholder="Na sledeću narudžbinu">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Tip</label>
+                        <select class="form-input" id="coupon-type">
+                            <option value="percent">Procenat popusta</option>
+                            <option value="fixed">Fiksni popust (RSD)</option>
+                            <option value="free_delivery">Besplatna dostava</option>
+                            <option value="free_item">Gratis stavka</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Vrednost</label>
+                        <input type="number" class="form-input" id="coupon-value" placeholder="30">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Min nivo korisnika</label>
+                    <input type="number" class="form-input" id="coupon-min-level" placeholder="1" value="1">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn secondary" onclick="closeCouponModal()">Otkaži</button>
+                <button class="modal-btn primary" onclick="saveCoupon()">Sačuvaj</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <script>
+        // CONFIG
+        const SUPABASE_URL = 'https://bbnbbbpofelbkyuffslj.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJibmJiYnBvZmVsYmt5dWZmc2xqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUwNTI0MzQsImV4cCI6MjA4MDYyODQzNH0.koW44soAB-bEfh8OzqjGBwdgov4Snscw1ITsg5OureU';
+        const ADMIN_PASSWORD = 'collina2024';
+        
+        let db = null;
+        let editingMenuId = null;
+        let editingPromoId = null;
+        let menuItems = [];
+        let promocije = [];
+        let categories = [];
+
+        // Init
+        async function init() {
+            db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            
+            // Check if already logged in
+            if (sessionStorage.getItem('admin_logged_in')) {
+                showAdmin();
+            }
+        }
+
+        // Login
+        function login() {
+            const password = document.getElementById('login-password').value;
+            if (password === ADMIN_PASSWORD) {
+                sessionStorage.setItem('admin_logged_in', 'true');
+                showAdmin();
+            } else {
+                document.getElementById('login-error').style.display = 'block';
+            }
+        }
+
+        function logout() {
+            sessionStorage.removeItem('admin_logged_in');
+            location.reload();
+        }
+
+        function showAdmin() {
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('admin-container').classList.add('show');
+            loadAllData();
+        }
+
+        // Load Data
+        async function loadAllData() {
+            await Promise.all([
+                loadCategories(),
+                loadMenuItems(),
+                loadPromocije(),
+                loadCodes(),
+                loadCoupons(),
+                loadLocations(),
+                loadSettings()
+            ]);
+        }
+
+        async function loadCategories() {
+            const { data } = await db.from('categories').select('*').order('sort_order');
+            categories = data || [];
+            renderCategoryTabs();
+        }
+
+        async function loadMenuItems() {
+            const { data } = await db.from('menu_items').select('*').order('sort_order');
+            menuItems = data || [];
+            renderMenuGrid();
+        }
+
+        async function loadPromocije() {
+            const { data } = await db.from('promocije').select('*').order('sort_order');
+            promocije = data || [];
+            renderPromoGrid();
+        }
+
+        async function loadCodes() {
+            const { data } = await db.from('promo_codes').select('*').order('code');
+            renderCodesTable(data || []);
+        }
+
+        async function loadCoupons() {
+            const { data } = await db.from('coupons').select('*').order('name');
+            renderCouponsTable(data || []);
+        }
+
+        async function loadLocations() {
+            const { data } = await db.from('locations').select('*');
+            renderLocations(data || []);
+        }
+
+        async function loadSettings() {
+            const { data } = await db.from('settings').select('*');
+            (data || []).forEach(s => {
+                const el = document.getElementById('setting-' + s.key);
+                if (el) el.value = s.value;
+            });
+        }
+
+        // Navigation
+        function showSection(name) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.getElementById('section-' + name).classList.add('active');
+            event.target.closest('.nav-item').classList.add('active');
+        }
+
+        // Render Functions
+        function renderCategoryTabs() {
+            const tabs = document.getElementById('menu-category-tabs');
+            tabs.innerHTML = `<button class="category-tab active" onclick="filterMenu('all')">Sve</button>` +
+                categories.map(c => `<button class="category-tab" onclick="filterMenu('${c.id}')">${c.emoji} ${c.name}</button>`).join('');
+        }
+
+        function renderMenuGrid(filter = 'all') {
+            const grid = document.getElementById('menu-grid');
+            const items = filter === 'all' ? menuItems : menuItems.filter(i => i.category === filter);
+            
+            if (items.length === 0) {
+                grid.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🍔</div><p>Nema stavki u meniju</p></div>`;
+                return;
+            }
+            
+            grid.innerHTML = items.map(item => `
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-image">${item.image_url ? `<img src="${item.image_url}">` : '🍔'}</div>
+                        <div class="card-info">
+                            <div class="card-title">${item.name}</div>
+                            <div class="card-subtitle">${item.category}</div>
+                            <div class="card-price">${item.price} RSD</div>
+                        </div>
+                        <div class="toggle ${item.is_active ? 'active' : ''}" onclick="toggleMenuItem('${item.id}', ${!item.is_active})"></div>
+                    </div>
+                    <div class="card-actions">
+                        <button class="card-btn" onclick="editMenuItem('${item.id}')">✏️ Izmeni</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function filterMenu(category) {
+            document.querySelectorAll('.category-tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            renderMenuGrid(category);
+        }
+
+        function renderPromoGrid() {
+            const grid = document.getElementById('promo-grid');
+            if (promocije.length === 0) {
+                grid.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🎉</div><p>Nema promocija</p></div>`;
+                return;
+            }
+            
+            grid.innerHTML = promocije.map(p => `
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-image">${p.image_url ? `<img src="${p.image_url}">` : '🎉'}</div>
+                        <div class="card-info">
+                            <div class="card-title">${p.name}</div>
+                            <div class="card-subtitle">${p.description || ''}</div>
+                            <div class="card-price"><s style="color:var(--text-secondary);font-size:13px;">${p.old_price}</s> ${p.price} RSD</div>
+                        </div>
+                        <div class="toggle ${p.is_active ? 'active' : ''}" onclick="togglePromo('${p.id}', ${!p.is_active})"></div>
+                    </div>
+                    <div class="card-actions">
+                        <button class="card-btn" onclick="editPromo('${p.id}')">✏️ Izmeni</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderCodesTable(codes) {
+            const tbody = document.getElementById('codes-table');
+            tbody.innerHTML = codes.map(c => `
+                <tr>
+                    <td><strong>${c.code}</strong></td>
+                    <td>${c.reward_type === 'points' ? '+' + c.reward_value + ' poena' : c.reward_type === 'percent' ? c.reward_value + '% popust' : c.reward_type === 'free_delivery' ? 'Besplatna dostava' : c.reward_value + ' RSD'}</td>
+                    <td>${c.times_used}x${c.max_uses ? ' / ' + c.max_uses : ''}</td>
+                    <td><div class="toggle ${c.is_active ? 'active' : ''}" onclick="toggleCode('${c.id}', ${!c.is_active})"></div></td>
+                    <td><button class="card-btn danger" onclick="deleteCode('${c.id}')" style="padding:6px 12px;">🗑️</button></td>
+                </tr>
+            `).join('');
+        }
+
+        function renderCouponsTable(coupons) {
+            const tbody = document.getElementById('coupons-table');
+            tbody.innerHTML = coupons.map(c => `
+                <tr>
+                    <td>${c.icon} <strong>${c.name}</strong></td>
+                    <td>${c.coupon_type}</td>
+                    <td>${c.value || '-'}</td>
+                    <td><div class="toggle ${c.is_active ? 'active' : ''}" onclick="toggleCoupon('${c.id}', ${!c.is_active})"></div></td>
+                    <td><button class="card-btn danger" onclick="deleteCoupon('${c.id}')" style="padding:6px 12px;">🗑️</button></td>
+                </tr>
+            `).join('');
+        }
+
+        function renderLocations(locs) {
+            const list = document.getElementById('locations-list');
+            list.innerHTML = locs.map(loc => `
+                <div class="location-card">
+                    <div class="location-header">
+                        <div class="location-info">
+                            <h3>📍 ${loc.name}</h3>
+                            <p>${loc.address}</p>
+                        </div>
+                        <div class="toggle ${loc.is_active ? 'active' : ''}" onclick="toggleLocation('${loc.id}', ${!loc.is_active})"></div>
+                    </div>
+                    <div class="location-details">
+                        <div class="location-field">
+                            <label>Telefon</label>
+                            <input type="text" value="${loc.phone || ''}" onchange="updateLocation('${loc.id}', 'phone', this.value)">
+                        </div>
+                        <div class="location-field">
+                            <label>Otvara se</label>
+                            <input type="time" value="${loc.open_time || '09:00'}" onchange="updateLocation('${loc.id}', 'open_time', this.value)">
+                        </div>
+                        <div class="location-field">
+                            <label>Zatvara se</label>
+                            <input type="time" value="${loc.close_time || '23:00'}" onchange="updateLocation('${loc.id}', 'close_time', this.value)">
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Menu CRUD
+        function openMenuModal() {
+            editingMenuId = null;
+            document.getElementById('menu-modal-title').textContent = 'Dodaj stavku';
+            document.getElementById('menu-delete-btn').style.display = 'none';
+            document.getElementById('menu-name').value = '';
+            document.getElementById('menu-price').value = '';
+            document.getElementById('menu-category').value = 'burgeri';
+            document.getElementById('menu-description').value = '';
+            document.getElementById('menu-ingredients').value = '';
+            document.getElementById('menu-image-url').value = '';
+            document.getElementById('menu-image-upload').innerHTML = '<div class="image-upload-icon">📷</div><div class="image-upload-text">Klikni za upload</div>';
+            document.getElementById('menu-image-upload').classList.remove('has-image');
+            document.getElementById('menu-active').classList.add('active');
+            document.getElementById('menu-modal').classList.add('show');
+        }
+
+        function editMenuItem(id) {
+            const item = menuItems.find(i => i.id === id);
+            if (!item) return;
+            
+            editingMenuId = id;
+            document.getElementById('menu-modal-title').textContent = 'Izmeni stavku';
+            document.getElementById('menu-delete-btn').style.display = 'block';
+            document.getElementById('menu-name').value = item.name;
+            document.getElementById('menu-price').value = item.price;
+            document.getElementById('menu-category').value = item.category;
+            document.getElementById('menu-description').value = item.description || '';
+            document.getElementById('menu-ingredients').value = (item.ingredients || []).join(', ');
+            document.getElementById('menu-image-url').value = item.image_url || '';
+            
+            const uploadEl = document.getElementById('menu-image-upload');
+            if (item.image_url) {
+                uploadEl.innerHTML = `<img src="${item.image_url}">`;
+                uploadEl.classList.add('has-image');
+            } else {
+                uploadEl.innerHTML = '<div class="image-upload-icon">📷</div><div class="image-upload-text">Klikni za upload</div>';
+                uploadEl.classList.remove('has-image');
+            }
+            
+            document.getElementById('menu-active').classList.toggle('active', item.is_active);
+            document.getElementById('menu-modal').classList.add('show');
+        }
+
+        function closeMenuModal() {
+            document.getElementById('menu-modal').classList.remove('show');
+        }
+
+        async function saveMenuItem() {
+            const data = {
+                name: document.getElementById('menu-name').value,
+                price: parseInt(document.getElementById('menu-price').value),
+                category: document.getElementById('menu-category').value,
+                description: document.getElementById('menu-description').value,
+                ingredients: document.getElementById('menu-ingredients').value.split(',').map(s => s.trim()).filter(s => s),
+                image_url: document.getElementById('menu-image-url').value,
+                is_active: document.getElementById('menu-active').classList.contains('active')
+            };
+
+            if (!data.name || !data.price) {
+                showToast('Unesi naziv i cenu', 'error');
+                return;
+            }
+
+            try {
+                if (editingMenuId) {
+                    await db.from('menu_items').update(data).eq('id', editingMenuId);
+                } else {
+                    data.id = 'item_' + Date.now();
+                    await db.from('menu_items').insert([data]);
+                }
+                closeMenuModal();
+                await loadMenuItems();
+                showToast('Stavka sačuvana!');
+            } catch (e) {
+                showToast('Greška: ' + e.message, 'error');
+            }
+        }
+
+        async function deleteMenuItem() {
+            if (!editingMenuId || !confirm('Obriši ovu stavku?')) return;
+            await db.from('menu_items').delete().eq('id', editingMenuId);
+            closeMenuModal();
+            await loadMenuItems();
+            showToast('Stavka obrisana');
+        }
+
+        async function toggleMenuItem(id, active) {
+            await db.from('menu_items').update({ is_active: active }).eq('id', id);
+            await loadMenuItems();
+        }
+
+        // Promo CRUD
+        function openPromoModal() {
+            editingPromoId = null;
+            document.getElementById('promo-modal-title').textContent = 'Dodaj promociju';
+            document.getElementById('promo-delete-btn').style.display = 'none';
+            document.getElementById('promo-name').value = '';
+            document.getElementById('promo-description').value = '';
+            document.getElementById('promo-old-price').value = '';
+            document.getElementById('promo-price').value = '';
+            document.getElementById('promo-badge').value = '';
+            document.getElementById('promo-image-url').value = '';
+            document.getElementById('promo-image-upload').innerHTML = '<div class="image-upload-icon">📷</div><div class="image-upload-text">Klikni za upload</div>';
+            document.getElementById('promo-image-upload').classList.remove('has-image');
+            document.getElementById('promo-active').classList.add('active');
+            document.getElementById('promo-modal').classList.add('show');
+        }
+
+        function editPromo(id) {
+            const promo = promocije.find(p => p.id === id);
+            if (!promo) return;
+            
+            editingPromoId = id;
+            document.getElementById('promo-modal-title').textContent = 'Izmeni promociju';
+            document.getElementById('promo-delete-btn').style.display = 'block';
+            document.getElementById('promo-name').value = promo.name;
+            document.getElementById('promo-description').value = promo.description || '';
+            document.getElementById('promo-old-price').value = promo.old_price || '';
+            document.getElementById('promo-price').value = promo.price;
+            document.getElementById('promo-badge').value = promo.badge || '';
+            document.getElementById('promo-image-url').value = promo.image_url || '';
+            
+            const uploadEl = document.getElementById('promo-image-upload');
+            if (promo.image_url) {
+                uploadEl.innerHTML = `<img src="${promo.image_url}">`;
+                uploadEl.classList.add('has-image');
+            }
+            
+            document.getElementById('promo-active').classList.toggle('active', promo.is_active);
+            document.getElementById('promo-modal').classList.add('show');
+        }
+
+        function closePromoModal() {
+            document.getElementById('promo-modal').classList.remove('show');
+        }
+
+        async function savePromo() {
+            const data = {
+                name: document.getElementById('promo-name').value,
+                description: document.getElementById('promo-description').value,
+                old_price: parseInt(document.getElementById('promo-old-price').value) || null,
+                price: parseInt(document.getElementById('promo-price').value),
+                badge: document.getElementById('promo-badge').value,
+                image_url: document.getElementById('promo-image-url').value,
+                is_active: document.getElementById('promo-active').classList.contains('active')
+            };
+
+            if (!data.name || !data.price) {
+                showToast('Unesi naziv i cenu', 'error');
+                return;
+            }
+
+            try {
+                if (editingPromoId) {
+                    await db.from('promocije').update(data).eq('id', editingPromoId);
+                } else {
+                    data.id = 'promo_' + Date.now();
+                    await db.from('promocije').insert([data]);
+                }
+                closePromoModal();
+                await loadPromocije();
+                showToast('Promocija sačuvana!');
+            } catch (e) {
+                showToast('Greška: ' + e.message, 'error');
+            }
+        }
+
+        async function deletePromo() {
+            if (!editingPromoId || !confirm('Obriši ovu promociju?')) return;
+            await db.from('promocije').delete().eq('id', editingPromoId);
+            closePromoModal();
+            await loadPromocije();
+            showToast('Promocija obrisana');
+        }
+
+        async function togglePromo(id, active) {
+            await db.from('promocije').update({ is_active: active }).eq('id', id);
+            await loadPromocije();
+        }
+
+        // Promo Codes
+        function openCodeModal() {
+            document.getElementById('code-code').value = '';
+            document.getElementById('code-type').value = 'points';
+            document.getElementById('code-value').value = '';
+            document.getElementById('code-max-uses').value = '';
+            document.getElementById('code-modal').classList.add('show');
+        }
+
+        function closeCodeModal() {
+            document.getElementById('code-modal').classList.remove('show');
+        }
+
+        async function saveCode() {
+            const data = {
+                id: 'code_' + Date.now(),
+                code: document.getElementById('code-code').value.toUpperCase(),
+                reward_type: document.getElementById('code-type').value,
+                reward_value: parseInt(document.getElementById('code-value').value) || 0,
+                max_uses: parseInt(document.getElementById('code-max-uses').value) || null,
+                is_active: true
+            };
+
+            if (!data.code) {
+                showToast('Unesi kod', 'error');
+                return;
+            }
+
+            try {
+                await db.from('promo_codes').insert([data]);
+                closeCodeModal();
+                await loadCodes();
+                showToast('Kod kreiran!');
+            } catch (e) {
+                showToast('Greška: ' + e.message, 'error');
+            }
+        }
+
+        async function toggleCode(id, active) {
+            await db.from('promo_codes').update({ is_active: active }).eq('id', id);
+            await loadCodes();
+        }
+
+        async function deleteCode(id) {
+            if (!confirm('Obriši ovaj kod?')) return;
+            await db.from('promo_codes').delete().eq('id', id);
+            await loadCodes();
+            showToast('Kod obrisan');
+        }
+
+        // Coupons
+        function openCouponModal() {
+            document.getElementById('coupon-name').value = '';
+            document.getElementById('coupon-icon').value = '';
+            document.getElementById('coupon-description').value = '';
+            document.getElementById('coupon-type').value = 'percent';
+            document.getElementById('coupon-value').value = '';
+            document.getElementById('coupon-min-level').value = '1';
+            document.getElementById('coupon-modal').classList.add('show');
+        }
+
+        function closeCouponModal() {
+            document.getElementById('coupon-modal').classList.remove('show');
+        }
+
+        async function saveCoupon() {
+            const data = {
+                id: 'coupon_' + Date.now(),
+                name: document.getElementById('coupon-name').value,
+                icon: document.getElementById('coupon-icon').value,
+                description: document.getElementById('coupon-description').value,
+                coupon_type: document.getElementById('coupon-type').value,
+                value: parseInt(document.getElementById('coupon-value').value) || 0,
+                min_level: parseInt(document.getElementById('coupon-min-level').value) || 1,
+                is_active: true
+            };
+
+            if (!data.name) {
+                showToast('Unesi naziv', 'error');
+                return;
+            }
+
+            try {
+                await db.from('coupons').insert([data]);
+                closeCouponModal();
+                await loadCoupons();
+                showToast('Kupon kreiran!');
+            } catch (e) {
+                showToast('Greška: ' + e.message, 'error');
+            }
+        }
+
+        async function toggleCoupon(id, active) {
+            await db.from('coupons').update({ is_active: active }).eq('id', id);
+            await loadCoupons();
+        }
+
+        async function deleteCoupon(id) {
+            if (!confirm('Obriši ovaj kupon?')) return;
+            await db.from('coupons').delete().eq('id', id);
+            await loadCoupons();
+            showToast('Kupon obrisan');
+        }
+
+        // Locations
+        async function toggleLocation(id, active) {
+            await db.from('locations').update({ is_active: active }).eq('id', id);
+            await loadLocations();
+            showToast(active ? 'Lokacija aktivirana' : 'Lokacija deaktivirana');
+        }
+
+        async function updateLocation(id, field, value) {
+            await db.from('locations').update({ [field]: value }).eq('id', id);
+            showToast('Sačuvano');
+        }
+
+        // Settings
+        async function saveSetting(key, value) {
+            await db.from('settings').update({ value: value }).eq('key', key);
+            showToast('Podešavanje sačuvano');
+        }
+
+        // Image Upload
+        async function previewImage(input, uploadId) {
+            if (!input.files || !input.files[0]) return;
+            
+            const file = input.files[0];
+            const uploadEl = document.getElementById(uploadId);
+            
+            // Preview immediately
+            const reader = new FileReader();
+            reader.onload = e => {
+                uploadEl.innerHTML = `<img src="${e.target.result}">`;
+                uploadEl.classList.add('has-image');
+            };
+            reader.readAsDataURL(file);
+            
+            // Upload to Supabase Storage
+            try {
+                const fileName = `${Date.now()}_${file.name}`;
+                const { data, error } = await db.storage.from('menu-images').upload(fileName, file);
+                
+                if (error) throw error;
+                
+                const { data: urlData } = db.storage.from('menu-images').getPublicUrl(fileName);
+                
+                // Store URL
+                if (uploadId === 'menu-image-upload') {
+                    document.getElementById('menu-image-url').value = urlData.publicUrl;
+                } else if (uploadId === 'promo-image-upload') {
+                    document.getElementById('promo-image-url').value = urlData.publicUrl;
+                }
+                
+                showToast('Slika uploadovana!');
+            } catch (e) {
+                console.error('Upload error:', e);
+                showToast('Greška pri uploadu. Koristi URL slike.', 'error');
+            }
+        }
+
+        // Toast
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `<span>${type === 'success' ? '✅' : '❌'}</span><span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        // Init
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
