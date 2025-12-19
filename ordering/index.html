@@ -3127,36 +3127,51 @@
                 if (db) {
                     console.log('Inserting customer:', newCustomer);
                     
-                    // Insert to Supabase
-                    const { data, error } = await db.from('customers').insert([newCustomer]).select();
+                    // First check if customer with this phone already exists
+                    const { data: existingCustomer } = await db.from('customers')
+                        .select('*')
+                        .eq('phone', phone)
+                        .single();
                     
-                    console.log('Supabase response:', { data, error });
-                    
-                    if (error) {
-                        console.error('Supabase error:', error);
-                        throw error;
-                    }
-                    
-                    if (data && data.length > 0) {
-                        customer = data[0];
-                        console.log('Customer created:', customer);
+                    if (existingCustomer) {
+                        // Customer exists - update and use existing
+                        console.log('Customer already exists:', existingCustomer);
+                        customer = existingCustomer;
                         
                         // Update URL with customer ID
                         const newUrl = window.location.pathname + '?c=' + customer.id;
                         window.history.replaceState({}, '', newUrl);
-                    } else {
-                        // Insert succeeded but no data returned - fetch latest
-                        console.log('No data returned, fetching by phone...');
-                        const { data: fetchedData } = await db.from('customers')
-                            .select('*')
-                            .eq('phone', phone)
-                            .order('created_at', { ascending: false })
-                            .limit(1)
-                            .single();
                         
-                        if (fetchedData) {
-                            customer = fetchedData;
-                            console.log('Fetched customer:', customer);
+                        alert('Već imaš nalog! Ulogovan si kao ' + customer.first_name);
+                    } else {
+                        // Insert new customer
+                        const { data, error } = await db.from('customers').insert([newCustomer]).select();
+                        
+                        console.log('Supabase response:', { data, error });
+                        
+                        if (error) {
+                            console.error('Supabase error:', error);
+                            
+                            // Handle conflict (duplicate)
+                            if (error.code === '23505' || error.message?.includes('duplicate')) {
+                                const { data: found } = await db.from('customers')
+                                    .select('*')
+                                    .eq('phone', phone)
+                                    .single();
+                                if (found) {
+                                    customer = found;
+                                    const newUrl = window.location.pathname + '?c=' + customer.id;
+                                    window.history.replaceState({}, '', newUrl);
+                                    alert('Već imaš nalog! Ulogovan si kao ' + customer.first_name);
+                                }
+                            } else {
+                                throw error;
+                            }
+                        } else if (data && data.length > 0) {
+                            customer = data[0];
+                            console.log('Customer created:', customer);
+                            
+                            // Update URL with customer ID
                             const newUrl = window.location.pathname + '?c=' + customer.id;
                             window.history.replaceState({}, '', newUrl);
                         }
