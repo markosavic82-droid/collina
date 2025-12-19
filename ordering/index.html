@@ -3361,10 +3361,7 @@
     <div class="screen" id="screen-menu">
         <!-- Header with Avatar -->
         <div class="home-header">
-            <div>
-                <div class="home-welcome">Dobrodošli,</div>
-                <div class="home-name" id="menu-name">Gost</div>
-            </div>
+            <div class="home-greeting" id="menu-greeting">Ćao, Gost</div>
             <div class="home-avatar" id="menu-avatar" onclick="toggleMenu()">👤</div>
         </div>
 
@@ -3388,22 +3385,28 @@
 
     <!-- KLUB SCREEN -->
     <div class="screen" id="screen-coupons">
-        <!-- Header -->
-        <div class="klub-header">
-            <div class="klub-title">🏆 Collina Klub</div>
-            <div class="klub-stats">
-                <div class="klub-stat">
-                    <div class="klub-stat-value" id="klub-points">0</div>
-                    <div class="klub-stat-label">poena</div>
-                </div>
-                <div class="klub-stat">
-                    <div class="klub-stat-value" id="klub-coupons">5</div>
-                    <div class="klub-stat-label">kupona</div>
-                </div>
-                <div class="klub-stat">
-                    <div class="klub-stat-value" id="klub-level">1</div>
-                    <div class="klub-stat-label">nivo</div>
-                </div>
+        <!-- Greeting Header -->
+        <div class="home-header">
+            <div class="home-greeting" id="klub-greeting">Ćao, Gost</div>
+            <div class="home-avatar" id="klub-avatar" onclick="toggleMenu()">👤</div>
+        </div>
+
+        <!-- Stats Row (same as home) -->
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="stat-icon">💰</div>
+                <div class="stat-value" id="klub-points">0</div>
+                <div class="stat-label">poena</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🎫</div>
+                <div class="stat-value" id="klub-coupons">5</div>
+                <div class="stat-label">kupona</div>
+            </div>
+            <div class="stat-card highlight">
+                <div class="stat-icon">⭐</div>
+                <div class="stat-value" id="klub-level">1</div>
+                <div class="stat-label">nivo</div>
             </div>
         </div>
 
@@ -3544,10 +3547,7 @@
     <div class="screen" id="screen-checkout">
         <!-- Header with Avatar -->
         <div class="home-header">
-            <div>
-                <div class="home-welcome">Tvoja</div>
-                <div class="home-name">Korpa</div>
-            </div>
+            <div class="home-greeting" id="checkout-greeting">Ćao, Gost</div>
             <div class="home-avatar" id="checkout-avatar" onclick="toggleMenu()">👤</div>
         </div>
 
@@ -3866,51 +3866,19 @@
         const defaultCustomer = { first_name: 'Gost', last_name: '', phone: '', email: '', address: '', city: 'Beograd', loyalty_points: 0, total_orders: 0 };
 
         // Locations data
-        const locations = {
-            banovo_brdo: {
-                name: 'Collina Banovo Brdo',
-                address: 'Požeška 108a, Beograd'
-            },
-            vracar: {
-                name: 'Collina Vračar',
-                address: 'Gospodara Vučića 170, Beograd'
-            },
-            novi_beograd: {
-                name: 'Collina Novi Beograd',
-                address: 'Bulevar Arsenija Čarnojevića 115, Beograd'
-            }
+        let locations = {
+            banovo_brdo: { name: 'Collina Banovo Brdo', address: 'Požeška 108a, Beograd' },
+            vracar: { name: 'Collina Vračar', address: 'Gospodara Vučića 170, Beograd' },
+            novi_beograd: { name: 'Collina Novi Beograd', address: 'Bulevar Arsenija Čarnojevića 115, Beograd' }
         };
 
         let selectedLocation = null;
 
-        // MENU DATA
-        const menuItems = [
-            { id: '4043', name: 'BIG Double Collina Smash + pomfrit + Pepsi', price: 897, category: 'Burgeri', desc: 'Dva sočna smash patty-ja sa topljenim sirom i našim specijalnim Collina sosom.', ingredients: ['Pljeskavica x2', 'Čedar', 'Salata', 'Paradajz', 'Collina sos'], toppings: ['bacon', 'egg', 'cheese'] },
-            { id: '6985169', name: 'Supreme Collina Triple Smash COMBO', price: 1200, category: 'Burgeri', desc: 'Naš najveći burger sa tri smash patty-ja i duplim sirom.', ingredients: ['Pljeskavica x3', 'Čedar x2', 'Salata', 'Paradajz', 'Luk'], toppings: ['bacon', 'egg'] },
-            { id: '6985167', name: 'BIG DoubleCHEESE COMBO', price: 957, category: 'Burgeri', desc: 'Klasičan dvostruki čizburger sa ekstra sirom.', ingredients: ['Pljeskavica x2', 'Čedar x2', 'Krastavac', 'Luk', 'Senf'], toppings: ['bacon', 'jalapeno'] },
-            { id: '6985164', name: '2X Collina burger + pomfrit + 2x Pepsi', price: 1527, category: 'Burgeri', desc: 'Savršen paket za dvoje.', ingredients: ['Collina burger x2', 'Pomfrit x2', 'Pepsi x2'], toppings: [] },
-            { id: '3747', name: 'Double Spicy Smash', price: 890, category: 'Burgeri', desc: 'Za ljubitelje ljutog - sa ljutim sosom i jalapeño.', ingredients: ['Pljeskavica x2', 'Jalapeño', 'Ljuti sos', 'Čedar'], toppings: ['bacon', 'cheese'] },
-            { id: '8645', name: 'Chili burger + pomfrit', price: 865, category: 'Burgeri', desc: 'Pikantni burger sa domaćim chili sosom.', ingredients: ['Pljeskavica', 'Chili sos', 'Čedar', 'Pomfrit'], toppings: ['bacon', 'egg'] },
-            { id: '6985146', name: 'Dubai palačinka', price: 920, category: 'Palačinke', desc: 'Viralni hit - sa pistachio kremom i kadaifom.', ingredients: ['Palačinka', 'Pistachio krem', 'Kadaif', 'Čokolada'], toppings: ['whipped_cream'] },
-            { id: '5117', name: 'Palačinka nutela', price: 585, category: 'Palačinke', desc: 'Klasična palačinka sa nutellom.', ingredients: ['Palačinka', 'Nutella', 'Šlag'], toppings: ['banana', 'whipped_cream'] },
-            { id: '5121', name: 'Američka palačinka nutela', price: 575, category: 'Palačinke', desc: 'Pufnaste američke palačinke.', ingredients: ['Američke palačinke x3', 'Nutella', 'Šlag'], toppings: ['banana', 'fruit'] },
-            { id: '5170', name: 'Good morning sendvič XL + pomfrit', price: 585, category: 'Doručak', desc: 'Bogat doručak sendvič.', ingredients: ['Tost', 'Jaje x2', 'Slanina', 'Čedar', 'Pomfrit'], toppings: ['egg', 'bacon'] },
-            { id: '5171', name: 'Omlet sa sirom', price: 450, category: 'Doručak', desc: 'Pufnast omlet sa tri vrste sira.', ingredients: ['Jaja x3', 'Čedar', 'Gauda', 'Feta'], toppings: ['bacon'] },
-            { id: '6001', name: 'Ćevapi 10kom + lepinja', price: 750, category: 'Kuvano', desc: 'Domaći ćevapi sa svežom lepinjom i lukom.', ingredients: ['Ćevapi x10', 'Lepinja', 'Luk', 'Kajmak'], toppings: [] },
-            { id: '6002', name: 'Pljeskavica punjena', price: 680, category: 'Kuvano', desc: 'Pljeskavica punjena sirom i kajmakom.', ingredients: ['Pljeskavica', 'Sir', 'Kajmak', 'Lepinja'], toppings: [] },
-            { id: '7001', name: 'Burek sa mesom', price: 320, category: 'Pekara', desc: 'Sveže pečen burek sa mlevenim mesom.', ingredients: ['Kore', 'Mleveno meso', 'Luk'], toppings: [] },
-            { id: '7002', name: 'Burek sa sirom', price: 280, category: 'Pekara', desc: 'Klasičan burek sa sirom.', ingredients: ['Kore', 'Sir'], toppings: [] }
-        ];
-
-        const toppings = {
-            bacon: { name: 'Slanina', price: 120 },
-            egg: { name: 'Jaje', price: 80 },
-            jalapeno: { name: 'Jalapeño', price: 60 },
-            cheese: { name: 'Ekstra sir', price: 100 },
-            whipped_cream: { name: 'Šlag', price: 50 },
-            banana: { name: 'Banana', price: 70 },
-            fruit: { name: 'Voće', price: 100 }
-        };
+        // MENU DATA (loaded from Supabase)
+        let menuItems = [];
+        let toppings = {};
+        let promocije = [];
+        let appSettings = {};
 
         const recommendedItems = [
             { id: 'pepsi', name: '+ Pepsi 0.5l', price: 150 },
@@ -3931,20 +3899,15 @@
         let activeOrder = null;
         let orderHistory = [];
 
-        // Promocije data
-        const promocije = [
-            { id: 'promo1', name: 'Burger + Palačinka COMBO', desc: 'BIG Double Collina + Dubai palačinka po specijalnoj ceni!', oldPrice: 1817, price: 1499, badge: '-18%', emoji: '🍔🥞' },
-            { id: 'promo2', name: 'Porodični paket', desc: '4x Burger + 2x Pomfrit + 4x Pepsi za celu porodicu', oldPrice: 3600, price: 2999, badge: '-17%', emoji: '👨‍👩‍👧‍👦' },
-            { id: 'promo3', name: 'Doručak za dvoje', desc: '2x Good morning sendvič + 2x Kafa', oldPrice: 1400, price: 999, badge: '-29%', emoji: '☕🥪' },
-            { id: 'promo4', name: 'Student COMBO', desc: 'Bilo koji burger + Pepsi 0.5l', oldPrice: 1050, price: 799, badge: 'AKCIJA', emoji: '🎓' }
-        ];
-
         // INIT
         async function init() {
             try {
                 db = window.supabase?.createClient(SUPABASE_URL, SUPABASE_KEY);
                 console.log('Supabase initialized:', !!db);
             } catch(e) { console.error('Supabase init error:', e); }
+
+            // Load app data from Supabase
+            await loadAppData();
 
             favorites = JSON.parse(localStorage.getItem('collina_favorites') || '[]');
 
@@ -3990,6 +3953,124 @@
             
             // Load order history
             loadOrderHistory();
+        }
+
+        // Load menu, promocije, locations, settings from Supabase
+        async function loadAppData() {
+            if (!db) {
+                console.log('No DB, using fallback data');
+                loadFallbackData();
+                return;
+            }
+
+            try {
+                // Load menu items
+                const { data: menuData } = await db.from('menu_items').select('*').eq('is_active', true).order('sort_order');
+                if (menuData && menuData.length > 0) {
+                    menuItems = menuData.map(item => ({
+                        id: item.id,
+                        name: item.name,
+                        price: item.price,
+                        category: mapCategory(item.category),
+                        desc: item.description,
+                        ingredients: item.ingredients || [],
+                        toppings: item.toppings || [],
+                        image_url: item.image_url
+                    }));
+                    console.log('Loaded menu items from DB:', menuItems.length);
+                } else {
+                    loadFallbackData();
+                }
+
+                // Load promocije
+                const { data: promoData } = await db.from('promocije').select('*').eq('is_active', true).order('sort_order');
+                if (promoData && promoData.length > 0) {
+                    promocije = promoData.map(p => ({
+                        id: p.id,
+                        name: p.name,
+                        desc: p.description,
+                        oldPrice: p.old_price,
+                        price: p.price,
+                        badge: p.badge,
+                        image_url: p.image_url,
+                        emoji: '🎉'
+                    }));
+                    console.log('Loaded promocije from DB:', promocije.length);
+                }
+
+                // Load toppings
+                const { data: toppingsData } = await db.from('toppings').select('*').eq('is_active', true);
+                if (toppingsData && toppingsData.length > 0) {
+                    toppings = {};
+                    toppingsData.forEach(t => {
+                        toppings[t.id] = { name: t.name, price: t.price };
+                    });
+                    console.log('Loaded toppings from DB:', Object.keys(toppings).length);
+                }
+
+                // Load locations
+                const { data: locData } = await db.from('locations').select('*').eq('is_active', true);
+                if (locData && locData.length > 0) {
+                    locations = {};
+                    locData.forEach(loc => {
+                        locations[loc.id] = { name: loc.name, address: loc.address };
+                    });
+                    console.log('Loaded locations from DB:', Object.keys(locations).length);
+                }
+
+                // Load settings
+                const { data: settingsData } = await db.from('settings').select('*');
+                if (settingsData) {
+                    appSettings = {};
+                    settingsData.forEach(s => {
+                        appSettings[s.key] = parseInt(s.value) || s.value;
+                    });
+                    console.log('Loaded settings from DB:', appSettings);
+                }
+
+            } catch(e) {
+                console.error('Error loading app data:', e);
+                loadFallbackData();
+            }
+        }
+
+        // Map DB category to display category
+        function mapCategory(dbCategory) {
+            const map = {
+                'burgeri': 'Burgeri',
+                'palacnke': 'Palačinke',
+                'kuvano': 'Kuvano',
+                'dorucak': 'Doručak',
+                'pekara': 'Pekara',
+                'promocije': 'Promocije'
+            };
+            return map[dbCategory] || dbCategory;
+        }
+
+        // Fallback data if DB is empty or unavailable
+        function loadFallbackData() {
+            if (menuItems.length === 0) {
+                menuItems = [
+                    { id: '4043', name: 'BIG Double Collina Smash', price: 897, category: 'Burgeri', desc: 'Dva sočna smash patty-ja sa sirom.', ingredients: ['Pljeskavica x2', 'Čedar', 'Salata'], toppings: ['bacon', 'egg', 'cheese'] },
+                    { id: '6985169', name: 'Supreme Triple Smash COMBO', price: 1200, category: 'Burgeri', desc: 'Tri smash patty-ja.', ingredients: ['Pljeskavica x3', 'Čedar x2'], toppings: ['bacon', 'egg'] },
+                    { id: '6985146', name: 'Dubai palačinka', price: 920, category: 'Palačinke', desc: 'Sa pistachio kremom.', ingredients: ['Palačinka', 'Pistachio krem'], toppings: [] },
+                    { id: '5117', name: 'Palačinka nutela', price: 585, category: 'Palačinke', desc: 'Klasična sa nutellom.', ingredients: ['Palačinka', 'Nutella'], toppings: [] }
+                ];
+            }
+            if (promocije.length === 0) {
+                promocije = [
+                    { id: 'promo1', name: 'Burger + Palačinka COMBO', desc: 'Specijalna cena!', oldPrice: 1817, price: 1499, badge: '-18%', emoji: '🍔🥞' },
+                    { id: 'promo2', name: 'Porodični paket', desc: '4x Burger + pomfrit', oldPrice: 3600, price: 2999, badge: '-17%', emoji: '👨‍👩‍👧‍👦' }
+                ];
+            }
+            if (Object.keys(toppings).length === 0) {
+                toppings = {
+                    bacon: { name: 'Slanina', price: 120 },
+                    egg: { name: 'Jaje', price: 80 },
+                    cheese: { name: 'Ekstra sir', price: 100 }
+                };
+            }
+            console.log('Using fallback data');
         }
 
         function checkWelcomeScreen() {
@@ -4449,10 +4530,20 @@
             const pts = customer?.loyalty_points || 50;
             const coupons = customer?.coupons_count || 5;
             const name = customer?.first_name || 'Gost';
+            const initial = name.charAt(0).toUpperCase();
             
-            // Update header
+            // Update header on all screens
             document.getElementById('home-greeting').textContent = `Ćao, ${name}`;
-            document.getElementById('home-avatar').textContent = name.charAt(0).toUpperCase();
+            document.getElementById('home-avatar').textContent = initial;
+            
+            document.getElementById('menu-greeting').textContent = `Ćao, ${name}`;
+            document.getElementById('menu-avatar').textContent = initial;
+            
+            document.getElementById('klub-greeting').textContent = `Ćao, ${name}`;
+            document.getElementById('klub-avatar').textContent = initial;
+            
+            document.getElementById('checkout-greeting').textContent = `Ćao, ${name}`;
+            document.getElementById('checkout-avatar').textContent = initial;
             
             // Update stats
             document.getElementById('home-points').textContent = pts.toLocaleString();
@@ -4552,10 +4643,11 @@
             container.innerHTML = filteredItems.map(item => {
                 const isFav = favorites.includes(item.id);
                 const emoji = getEmoji(item.category);
+                const hasImage = item.image_url;
                 return `
                     <div class="menu-item ${isFav ? 'favorite' : ''}">
                         <div class="item-image" onclick="openProductSheet('${item.id}')">
-                            <div class="item-image-placeholder">${emoji}</div>
+                            ${hasImage ? `<img src="${item.image_url}" style="width:100%;height:100%;object-fit:cover;border-radius:10px;">` : `<div class="item-image-placeholder">${emoji}</div>`}
                             <button class="favorite-btn" onclick="event.stopPropagation(); toggleFavorite('${item.id}')">${isFav ? '❤️' : '🤍'}</button>
                         </div>
                         <div class="item-info" onclick="openProductSheet('${item.id}')">
@@ -4644,15 +4736,15 @@
             container.innerHTML = promocije.map(promo => `
                 <div class="promo-menu-card">
                     <div class="promo-menu-image">
-                        <img src="${FOOD_PHOTO}" alt="${promo.name}">
+                        <img src="${promo.image_url || FOOD_PHOTO}" alt="${promo.name}">
                         <span class="promo-menu-badge">${promo.badge}</span>
                     </div>
                     <div class="promo-menu-content">
                         <div class="promo-menu-title">${promo.name}</div>
-                        <div class="promo-menu-desc">${promo.desc}</div>
+                        <div class="promo-menu-desc">${promo.desc || ''}</div>
                         <div class="promo-menu-footer">
                             <div class="promo-menu-prices">
-                                <span class="promo-menu-old-price">${promo.oldPrice} RSD</span>
+                                ${promo.oldPrice ? `<span class="promo-menu-old-price">${promo.oldPrice} RSD</span>` : ''}
                                 <span class="promo-menu-price">${promo.price} RSD</span>
                             </div>
                             <div class="promo-controls">
@@ -5398,7 +5490,8 @@
             sheetQty = 1;
             selectedToppings = [];
 
-            document.getElementById('product-image-large').innerHTML = `<img src="${FOOD_PHOTO}" alt="${item.name}" style="width: 100%; height: 100%; object-fit: cover;">`;
+            const imageUrl = item.image_url || FOOD_PHOTO;
+            document.getElementById('product-image-large').innerHTML = `<img src="${imageUrl}" alt="${item.name}" style="width: 100%; height: 100%; object-fit: cover;">`;
             document.getElementById('product-sheet-name').textContent = item.name;
             document.getElementById('product-sheet-price').textContent = item.price + ' RSD';
             document.getElementById('product-sheet-desc').textContent = item.desc || '';
