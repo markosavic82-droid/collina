@@ -1,0 +1,4935 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Collina Online</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg-primary: #1a1214;
+            --bg-secondary: #241a1c;
+            --bg-card: #2d2123;
+            --accent: #c97b7b;
+            --accent-glow: rgba(201, 123, 123, 0.3);
+            --accent-dark: #a65d5d;
+            --text-primary: #f5eeef;
+            --text-secondary: #b8a5a8;
+            --success: #7db88f;
+            --border: #3d2f31;
+            --heart: #d98282;
+            --gold: #d4a574;
+            --warning: #d49a6a;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding-bottom: 80px;
+        }
+
+        /* App Screens */
+        .screen { display: none; padding: 20px; max-width: 500px; margin: 0 auto; }
+        .screen.active { display: block; }
+
+        /* Registration Form Screen */
+        .register-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--bg-primary);
+            z-index: 2000;
+            display: none;
+            flex-direction: column;
+            padding: 24px;
+            overflow-y: auto;
+        }
+
+        .register-screen.show {
+            display: flex;
+        }
+
+        .register-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .register-back-btn {
+            width: 40px;
+            height: 40px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            cursor: pointer;
+            margin-right: 16px;
+        }
+
+        .register-title {
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .register-subtitle {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-bottom: 32px;
+            line-height: 1.5;
+        }
+
+        .register-form {
+            flex: 1;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: var(--text-secondary);
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-size: 16px;
+            font-family: inherit;
+            transition: border-color 0.2s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .form-input::placeholder {
+            color: var(--text-secondary);
+            opacity: 0.6;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .register-benefits {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 24px;
+        }
+
+        .register-benefits-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .register-benefits-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .register-benefit-tag {
+            background: var(--bg-secondary);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Location Options */
+        .location-options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .location-option {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px 16px;
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .location-option:hover {
+            border-color: var(--accent);
+        }
+
+        .location-option.selected {
+            border-color: var(--accent);
+            background: rgba(201, 123, 123, 0.1);
+        }
+
+        .location-option-radio {
+            width: 22px;
+            height: 22px;
+            border: 2px solid var(--border);
+            border-radius: 50%;
+            flex-shrink: 0;
+            position: relative;
+            transition: all 0.2s;
+        }
+
+        .location-option.selected .location-option-radio {
+            border-color: var(--accent);
+        }
+
+        .location-option.selected .location-option-radio::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 12px;
+            height: 12px;
+            background: var(--accent);
+            border-radius: 50%;
+        }
+
+        .location-option-content {
+            flex: 1;
+        }
+
+        .location-option-name {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .location-option-address {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .register-submit-btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+            border: none;
+            border-radius: 14px;
+            color: white;
+            font-size: 17px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .register-submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(201, 123, 123, 0.4);
+        }
+
+        .register-submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Success Screen */
+        .success-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--bg-primary);
+            z-index: 2100;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 30px 24px;
+            text-align: center;
+        }
+
+        .success-screen.show {
+            display: flex;
+        }
+
+        .success-icon {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, var(--success), #5a9a6d);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            margin-bottom: 24px;
+            animation: successPop 0.5s ease;
+        }
+
+        @keyframes successPop {
+            0% { transform: scale(0); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        .success-title {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .success-subtitle {
+            font-size: 16px;
+            color: var(--text-secondary);
+            margin-bottom: 32px;
+        }
+
+        .success-gifts {
+            width: 100%;
+            max-width: 340px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 32px;
+        }
+
+        .success-gifts-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .success-gift-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .success-gift-row:last-child {
+            border-bottom: none;
+        }
+
+        .success-gift-icon {
+            font-size: 24px;
+        }
+
+        .success-gift-text {
+            flex: 1;
+            text-align: left;
+            font-size: 14px;
+        }
+
+        .success-gift-check {
+            color: var(--success);
+            font-size: 18px;
+        }
+
+        .success-continue-btn {
+            width: 100%;
+            max-width: 340px;
+            padding: 18px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+            border: none;
+            border-radius: 14px;
+            color: white;
+            font-size: 17px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        /* Welcome Screen */
+        .welcome-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--bg-primary);
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 30px 24px;
+            text-align: center;
+        }
+
+        .welcome-overlay.hidden {
+            display: none;
+        }
+
+        .welcome-logo {
+            font-size: 64px;
+            margin-bottom: 8px;
+        }
+
+        .welcome-brand {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .welcome-title {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 32px;
+            color: var(--text-primary);
+        }
+
+        .welcome-gifts-card {
+            background: linear-gradient(135deg, var(--bg-card), var(--bg-secondary));
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 24px;
+            width: 100%;
+            max-width: 340px;
+            margin-bottom: 32px;
+        }
+
+        .welcome-gifts-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: var(--accent);
+        }
+
+        .welcome-gift-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+            text-align: left;
+        }
+
+        .welcome-gift-item:last-child {
+            border-bottom: none;
+        }
+
+        .welcome-gift-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--bg-secondary);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .welcome-gift-text {
+            flex: 1;
+        }
+
+        .welcome-gift-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .welcome-gift-desc {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .welcome-gift-check {
+            color: var(--success);
+            font-size: 18px;
+        }
+
+        .welcome-register-btn {
+            width: 100%;
+            max-width: 340px;
+            padding: 18px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+            border: none;
+            border-radius: 14px;
+            color: white;
+            font-size: 17px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            margin-bottom: 16px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .welcome-register-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(201, 123, 123, 0.4);
+        }
+
+        .welcome-later-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 14px;
+            cursor: pointer;
+            font-family: inherit;
+            padding: 8px 16px;
+            transition: color 0.2s;
+        }
+
+        .welcome-later-btn:hover {
+            color: var(--text-primary);
+        }
+
+        /* Registration Required Modal */
+        .register-required-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            z-index: 1500;
+            display: none;
+            justify-content: center;
+            align-items: flex-end;
+        }
+
+        .register-required-modal.show {
+            display: flex;
+        }
+
+        .register-required-content {
+            background: var(--bg-secondary);
+            border-radius: 24px 24px 0 0;
+            padding: 32px 24px;
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+        }
+
+        .register-required-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .register-required-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .register-required-desc {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+            line-height: 1.5;
+        }
+
+        .register-required-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            margin-bottom: 12px;
+        }
+
+        .register-required-cancel {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 14px;
+            cursor: pointer;
+            font-family: inherit;
+            padding: 8px;
+        }
+
+        /* Home Screen */
+        .home-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 0 20px;
+        }
+
+        .home-greeting {
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .home-avatar {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        /* Home Location Card */
+        .home-location-card {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            margin-bottom: 20px;
+        }
+
+        .home-location-icon {
+            width: 44px;
+            height: 44px;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .home-location-info {
+            flex: 1;
+        }
+
+        .home-location-label {
+            font-size: 11px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 2px;
+        }
+
+        .home-location-name {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .home-location-address {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .home-location-change {
+            padding: 8px 14px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        /* Stats Row */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 16px 12px;
+            text-align: center;
+        }
+
+        .stat-card.highlight {
+            background: linear-gradient(135deg, var(--accent), #a65d5d);
+            border: none;
+        }
+
+        .stat-icon {
+            width: 36px;
+            height: 36px;
+            background: var(--bg-secondary);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            margin: 0 auto 10px;
+        }
+
+        .stat-card.highlight .stat-icon {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .stat-value {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 2px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .stat-card.highlight .stat-label {
+            color: rgba(255,255,255,0.8);
+        }
+
+        /* Section Title */
+        .home-section-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 14px;
+        }
+
+        /* Coupons Scroll */
+        .coupons-scroll {
+            display: flex;
+            gap: 12px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+            margin-bottom: 24px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .coupons-scroll::-webkit-scrollbar { display: none; }
+
+        .coupon-card {
+            flex-shrink: 0;
+            width: 130px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 16px 12px;
+            text-align: center;
+        }
+
+        .coupon-icon {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .coupon-name {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            line-height: 1.3;
+        }
+
+        .coupon-desc {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+        }
+
+        .coupon-add-btn {
+            width: 100%;
+            padding: 10px;
+            background: var(--accent);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+
+        .coupon-add-btn:hover {
+            background: var(--accent-dark);
+        }
+
+        .coupon-add-btn.added {
+            background: var(--success);
+        }
+
+        /* Featured Scroll */
+        .featured-scroll {
+            display: flex;
+            gap: 14px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+            margin-bottom: 20px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .featured-scroll::-webkit-scrollbar { display: none; }
+
+        .featured-card {
+            flex-shrink: 0;
+            width: 280px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.2s;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .featured-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .featured-card-image {
+            width: 100%;
+            height: 140px;
+            background: var(--bg-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .featured-card-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .featured-card-badge {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 5px 10px;
+            border-radius: 8px;
+        }
+
+        .featured-card-content {
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .featured-card-name {
+            font-size: 15px;
+            font-weight: 600;
+            line-height: 1.3;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .featured-card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .featured-card-price {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        /* Home Action Buttons */
+        .home-action-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .home-action-btn {
+            padding: 16px 12px;
+            border: none;
+            border-radius: 14px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .home-action-btn.order-btn {
+            background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+            color: white;
+        }
+
+        .home-action-btn.order-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(201, 123, 123, 0.4);
+        }
+
+        .home-action-btn.points-btn {
+            background: linear-gradient(135deg, var(--success), #5a9a6d);
+            color: white;
+        }
+
+        .home-action-btn.points-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(125, 184, 143, 0.4);
+        }
+
+        /* Klub Screen */
+        .klub-header {
+            text-align: center;
+            padding: 20px 0 24px;
+            background: linear-gradient(135deg, var(--bg-card), var(--bg-secondary));
+            border-radius: 20px;
+            margin-bottom: 20px;
+        }
+
+        .klub-title {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+
+        .klub-stats {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+        }
+
+        .klub-stat {
+            text-align: center;
+        }
+
+        .klub-stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .klub-stat-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .klub-tabs {
+            display: flex;
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 4px;
+            margin-bottom: 20px;
+        }
+
+        .klub-tab {
+            flex: 1;
+            padding: 12px 8px;
+            background: transparent;
+            border: none;
+            border-radius: 10px;
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+
+        .klub-tab.active {
+            background: var(--accent);
+            color: white;
+        }
+
+        .klub-content {
+            padding-bottom: 100px;
+        }
+
+        .klub-panel {
+            display: none;
+        }
+
+        .klub-panel.active {
+            display: block;
+        }
+
+        /* Kuponi Tab */
+        .klub-coupons-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .klub-coupon-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+        }
+
+        .klub-coupon-icon {
+            width: 48px;
+            height: 48px;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+
+        .klub-coupon-info {
+            flex: 1;
+        }
+
+        .klub-coupon-name {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .klub-coupon-desc {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .klub-coupon-btn {
+            padding: 10px 18px;
+            background: var(--accent);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+
+        .klub-coupon-btn:hover {
+            background: var(--accent-dark);
+        }
+
+        /* Poeni Tab */
+        .poeni-summary {
+            background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .poeni-big {
+            font-size: 56px;
+            font-weight: 700;
+        }
+
+        .poeni-label {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        .add-wolt-btn {
+            width: 100%;
+            padding: 16px;
+            background: var(--success);
+            border: none;
+            border-radius: 14px;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            margin-bottom: 24px;
+        }
+
+        .reward-card {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            margin-bottom: 12px;
+        }
+
+        .reward-icon {
+            font-size: 32px;
+        }
+
+        .reward-info {
+            flex: 1;
+        }
+
+        .reward-name {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .reward-progress-bar {
+            height: 8px;
+            background: var(--bg-secondary);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 4px;
+        }
+
+        .reward-progress-fill {
+            height: 100%;
+            background: var(--accent);
+            border-radius: 4px;
+            transition: width 0.3s;
+        }
+
+        .reward-progress-text {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .reward-badge {
+            background: var(--gold);
+            color: #1a1214;
+            font-size: 14px;
+            font-weight: 700;
+            padding: 6px 12px;
+            border-radius: 8px;
+        }
+
+        .qr-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            text-align: center;
+        }
+
+        .qr-code {
+            width: 160px;
+            height: 160px;
+            background: white;
+            margin: 0 auto 16px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .qr-text {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .qr-id {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--accent);
+        }
+
+        /* Kod Tab */
+        .kod-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+
+        .kod-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .kod-input {
+            width: 100%;
+            padding: 16px;
+            background: var(--bg-secondary);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-size: 18px;
+            font-weight: 600;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-family: inherit;
+            margin-bottom: 16px;
+        }
+
+        .kod-input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .kod-submit-btn {
+            width: 100%;
+            padding: 16px;
+            background: var(--accent);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .kod-result {
+            margin-top: 16px;
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .kod-result.success {
+            display: block;
+            background: rgba(125, 184, 143, 0.2);
+            color: var(--success);
+        }
+
+        .kod-result.error {
+            display: block;
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+
+        .kod-hints {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 24px;
+        }
+
+        .kod-hint {
+            padding: 14px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            font-size: 14px;
+        }
+
+        .kod-history {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 16px;
+        }
+
+        .kod-history-empty {
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .kod-history-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .kod-history-item:last-child {
+            border-bottom: none;
+        }
+
+        .kod-history-code {
+            font-weight: 600;
+            color: var(--success);
+        }
+
+        .kod-history-reward {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .kod-history-date {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        /* Promo Banner */
+        .promo-banner {
+            background: linear-gradient(135deg, #7db88f, #5a9a6d);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .promo-banner::after {
+            content: '';
+            position: absolute;
+            right: -20px;
+            top: -20px;
+            width: 120px;
+            height: 120px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50%;
+        }
+
+        .promo-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .promo-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .promo-subtitle {
+            font-size: 13px;
+            opacity: 0.9;
+            margin-bottom: 12px;
+        }
+
+        .promo-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 16px;
+            background: rgba(0,0,0,0.3);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .promo-image {
+            font-size: 48px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Bottom Navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: center;
+            padding: 8px 0 12px;
+            z-index: 500;
+        }
+
+        .bottom-nav-inner {
+            display: flex;
+            gap: 8px;
+            max-width: 500px;
+            width: 100%;
+            justify-content: space-around;
+            padding: 0 20px;
+        }
+
+        .bottom-nav-btn {
+            flex: 1;
+            padding: 8px 8px 4px;
+            background: none;
+            border: none;
+            border-radius: 12px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            text-align: center;
+            font-family: inherit;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .bottom-nav-btn.active {
+            color: var(--accent);
+        }
+
+        .bottom-nav-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 4px;
+            height: 4px;
+            background: var(--accent);
+            border-radius: 50%;
+        }
+
+        .bottom-nav-icon {
+            font-size: 22px;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .bottom-nav-label {
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        /* Back Button */
+        .back-btn {
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            font-size: 24px;
+            cursor: pointer;
+            padding: 8px;
+        }
+
+        /* Active Order Banner */
+        .active-order-banner {
+            display: none;
+            background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+            border-radius: 12px;
+            padding: 14px 16px;
+            margin-bottom: 16px;
+            cursor: pointer;
+        }
+
+        .active-order-banner.show { display: block; }
+
+        .active-order-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .active-order-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+        }
+
+        .active-order-status-icon { font-size: 18px; }
+        .active-order-id { font-size: 12px; opacity: 0.8; }
+
+        .active-order-progress {
+            height: 6px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+
+        .active-order-progress-bar {
+            height: 100%;
+            background: white;
+            border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+
+        .active-order-bottom {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            opacity: 0.9;
+        }
+
+        /* Section Labels */
+        .section-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin: 16px 0 10px;
+        }
+
+        /* Category Tabs */
+        .category-tabs {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 12px;
+            margin-bottom: 8px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .category-tabs::-webkit-scrollbar { display: none; }
+
+        .category-tab {
+            flex-shrink: 0;
+            padding: 10px 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            font-family: inherit;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+
+        .category-tab.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+
+        .category-tab:hover:not(.active) {
+            border-color: var(--accent);
+            color: var(--text-primary);
+        }
+
+        /* Favorites Section */
+        .favorites-grid {
+            display: none;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 16px;
+            padding-bottom: 100px;
+        }
+
+        .favorites-grid.show {
+            display: grid;
+        }
+
+        .favorites-section-title {
+            font-size: 16px;
+            font-weight: 600;
+            padding: 8px 0;
+            color: var(--text-primary);
+        }
+
+        .favorite-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .favorite-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .favorite-card-image {
+            width: 100%;
+            aspect-ratio: 16/10;
+            background: var(--bg-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .favorite-card-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .favorite-card-orders {
+            position: absolute;
+            bottom: 8px;
+            left: 8px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            font-size: 10px;
+            font-weight: 500;
+            padding: 4px 8px;
+            border-radius: 10px;
+        }
+
+        .favorite-card-remove {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: rgba(0,0,0,0.5);
+            border: none;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .favorite-card-content {
+            padding: 12px;
+        }
+
+        .favorite-card-name {
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 6px;
+            line-height: 1.3;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .favorite-card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .favorite-card-price {
+            font-size: 15px;
+            color: var(--accent);
+            font-weight: 700;
+        }
+
+        .card-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-qty-btn {
+            width: 28px;
+            height: 28px;
+            border: none;
+            border-radius: 6px;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .card-qty-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .card-qty-value {
+            font-size: 14px;
+            font-weight: 600;
+            min-width: 18px;
+            text-align: center;
+        }
+
+        .favorites-empty {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-secondary);
+        }
+
+        .favorites-empty-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+
+        .favorites-empty-text {
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        /* Promocije Cards */
+        .promo-menu-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            overflow: hidden;
+            margin-bottom: 12px;
+        }
+
+        .promo-menu-image {
+            width: 100%;
+            aspect-ratio: 16/9;
+            background: linear-gradient(135deg, var(--bg-secondary), var(--bg-card));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .promo-menu-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .promo-menu-badge {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: var(--gold);
+            color: #000;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 20px;
+            z-index: 1;
+        }
+
+        .promo-menu-content {
+            padding: 14px;
+        }
+
+        .promo-menu-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .promo-menu-desc {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+        }
+
+        .promo-menu-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .promo-menu-prices {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .promo-menu-old-price {
+            font-size: 13px;
+            color: var(--text-secondary);
+            text-decoration: line-through;
+        }
+
+        .promo-menu-price {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .promo-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .promo-qty-btn {
+            width: 36px;
+            height: 36px;
+            border: none;
+            border-radius: 8px;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 20px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .promo-qty-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .promo-qty-value {
+            font-size: 18px;
+            font-weight: 700;
+            min-width: 24px;
+            text-align: center;
+        }
+
+        /* Category Label */
+        .category-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--accent);
+            margin: 20px 0 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Menu Item */
+        .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px;
+            background: var(--bg-card);
+            border-radius: 12px;
+            margin-bottom: 10px;
+            border: 1px solid var(--border);
+        }
+
+        .menu-item.favorite { border-color: rgba(239, 68, 68, 0.3); }
+
+        .item-image {
+            position: relative;
+            width: 70px;
+            height: 70px;
+            border-radius: 10px;
+            overflow: hidden;
+            flex-shrink: 0;
+            cursor: pointer;
+        }
+
+        .item-image-placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            background: linear-gradient(135deg, var(--bg-secondary), var(--bg-card));
+        }
+
+        .favorite-btn {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            background: rgba(0,0,0,0.5);
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            font-size: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .item-info { flex: 1; min-width: 0; cursor: pointer; }
+        .item-name { font-size: 14px; font-weight: 500; margin-bottom: 4px; }
+        .item-price { font-size: 15px; color: var(--accent); font-weight: 700; }
+
+        .item-controls { display: flex; align-items: center; gap: 10px; }
+        .qty-btn {
+            width: 32px;
+            height: 32px;
+            border: none;
+            border-radius: 8px;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 18px;
+            cursor: pointer;
+        }
+        .qty-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+        .qty-value { font-size: 16px; font-weight: 600; min-width: 20px; text-align: center; }
+
+        /* Sticky Cart Button */
+        .sticky-cart {
+            position: fixed;
+            bottom: 70px;
+            left: 0;
+            right: 0;
+            padding: 12px 20px;
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border);
+            z-index: 450;
+            display: none;
+        }
+
+        .sticky-cart.show { display: block; }
+        .sticky-cart.hidden { display: none; }
+
+        .sticky-cart-btn {
+            max-width: 500px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+            border: none;
+            border-radius: 14px;
+            color: white;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .sticky-cart-left { display: flex; align-items: center; gap: 10px; }
+        .cart-icon { font-size: 20px; }
+        .cart-count {
+            background: white;
+            color: var(--accent);
+            font-size: 12px;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+        .sticky-cart-label { font-size: 16px; font-weight: 600; }
+        .sticky-cart-total { font-size: 18px; font-weight: 700; }
+
+        /* Checkout Screen */
+        .checkout-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 0;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 20px;
+        }
+
+        .checkout-title { font-size: 20px; font-weight: 700; }
+
+        .order-type-buttons { display: flex; gap: 10px; margin-bottom: 20px; }
+        .order-type-btn {
+            flex: 1;
+            padding: 14px 8px;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            background: var(--bg-card);
+            cursor: pointer;
+            text-align: center;
+        }
+        .order-type-btn.active { border-color: var(--accent); background: rgba(201, 123, 123, 0.1); }
+        .order-type-icon { font-size: 24px; display: block; margin-bottom: 4px; }
+        .order-type-name { font-size: 12px; color: var(--text-primary); }
+
+        .checkout-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: var(--bg-card);
+            border-radius: 10px;
+            margin-bottom: 8px;
+        }
+
+        .checkout-item-info { flex: 1; }
+        .checkout-item-name { font-size: 14px; margin-bottom: 2px; }
+        .checkout-item-price { font-size: 13px; color: var(--accent); }
+        .checkout-item-actions { display: flex; align-items: center; gap: 12px; }
+        .checkout-item-controls { display: flex; align-items: center; gap: 8px; }
+        .checkout-qty-btn {
+            width: 28px;
+            height: 28px;
+            border: none;
+            border-radius: 6px;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .checkout-delete-btn {
+            width: 32px;
+            height: 32px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .checkout-delete-btn:hover {
+            background: rgba(239, 68, 68, 0.3);
+        }
+
+        .recommendations { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 16px; }
+        .rec-item {
+            flex-shrink: 0;
+            padding: 10px 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            font-size: 13px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .rec-item:hover { border-color: var(--accent); }
+        .rec-item.added { background: var(--accent); border-color: var(--accent); color: white; }
+
+        .comment-input {
+            width: 100%;
+            padding: 14px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: var(--bg-card);
+            color: var(--text-primary);
+            font-size: 14px;
+            font-family: inherit;
+            resize: none;
+            margin-bottom: 16px;
+        }
+
+        /* Checkout Location Card */
+        .checkout-location-card {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            margin-bottom: 20px;
+        }
+
+        .checkout-location-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--bg-secondary);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .checkout-location-info {
+            flex: 1;
+        }
+
+        .checkout-location-label {
+            font-size: 11px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 2px;
+        }
+
+        .checkout-location-value {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .checkout-location-change {
+            padding: 8px 14px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        /* Checkout Coupons */
+        .checkout-coupons {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+            margin-bottom: 16px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .checkout-coupons::-webkit-scrollbar { display: none; }
+
+        .checkout-coupon {
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 14px;
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .checkout-coupon:hover {
+            border-color: var(--accent);
+        }
+
+        .checkout-coupon.selected {
+            border-color: var(--success);
+            background: rgba(125, 184, 143, 0.15);
+        }
+
+        .checkout-coupon-icon {
+            font-size: 16px;
+        }
+
+        .checkout-coupon-name {
+            font-size: 12px;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        .checkout-coupon.selected .checkout-coupon-name {
+            color: var(--success);
+        }
+
+        .checkout-summary {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+
+        .summary-row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 14px; }
+        .summary-row.total { border-top: 1px solid var(--border); padding-top: 12px; margin-top: 8px; font-weight: 700; font-size: 18px; }
+        .summary-row.total span:last-child { color: var(--accent); }
+        .summary-row.discount span:last-child { color: var(--success); }
+        .summary-row.free-items { color: var(--success); font-size: 13px; }
+
+        .checkout-submit-btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+            border: none;
+            border-radius: 14px;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        /* Order Tracking Screen */
+        .tracking-screen { text-align: center; padding: 40px 20px; }
+
+        .tracking-order-id {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 30px;
+        }
+
+        .tracking-status {
+            font-size: 64px;
+            margin-bottom: 16px;
+        }
+
+        .tracking-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .tracking-subtitle {
+            font-size: 16px;
+            color: var(--text-secondary);
+            margin-bottom: 30px;
+        }
+
+        .tracking-timer {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .timer-label { font-size: 14px; color: var(--text-secondary); margin-bottom: 8px; }
+        .timer-value { font-size: 48px; font-weight: 700; color: var(--accent); }
+        .timer-unit { font-size: 16px; color: var(--text-secondary); }
+
+        .tracking-progress {
+            height: 8px;
+            background: var(--bg-secondary);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 30px;
+        }
+
+        .tracking-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), var(--success));
+            border-radius: 4px;
+            transition: width 1s ease;
+        }
+
+        .tracking-details {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 16px;
+            text-align: left;
+            margin-bottom: 20px;
+        }
+
+        .tracking-detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            font-size: 14px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .tracking-detail-row:last-child { border-bottom: none; }
+        .tracking-detail-row span:first-child { color: var(--text-secondary); }
+
+        .new-order-btn {
+            width: 100%;
+            padding: 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-size: 16px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        /* Side Menu */
+        .menu-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .menu-overlay.show { opacity: 1; visibility: visible; }
+
+        .side-menu {
+            position: fixed;
+            top: 0;
+            right: -320px;
+            width: 320px;
+            height: 100%;
+            background: var(--bg-secondary);
+            z-index: 1001;
+            transition: right 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .menu-overlay.show .side-menu { right: 0; }
+
+        .menu-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .menu-title { font-size: 18px; font-weight: 600; }
+        .close-menu { background: none; border: none; color: var(--text-secondary); font-size: 28px; cursor: pointer; }
+
+        .menu-tabs { display: flex; border-bottom: 1px solid var(--border); }
+        .menu-tab {
+            flex: 1;
+            padding: 14px 8px;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 12px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        .menu-tab.active { color: var(--accent); border-bottom: 2px solid var(--accent); }
+
+        .menu-content { flex: 1; overflow-y: auto; padding: 20px; }
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+
+        .points-summary {
+            background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+            border-radius: 16px;
+            padding: 24px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .points-big { font-size: 48px; font-weight: 700; }
+        .points-label { font-size: 14px; opacity: 0.9; }
+
+        .claim-wolt-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #25D366, #128C7E);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            margin-bottom: 20px;
+        }
+
+        .promo-card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 10px;
+            position: relative;
+        }
+
+        .promo-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: var(--gold);
+            color: #000;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 10px;
+        }
+
+        .promo-title { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+        .promo-desc { font-size: 12px; color: var(--text-secondary); margin-bottom: 10px; }
+        .promo-progress { height: 6px; background: var(--bg-secondary); border-radius: 3px; overflow: hidden; margin-bottom: 6px; }
+        .promo-progress-bar { height: 100%; background: var(--accent); border-radius: 3px; }
+        .promo-points { font-size: 12px; color: var(--accent); }
+
+        /* Order History Items */
+        .history-item {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 10px;
+            border-left: 3px solid var(--accent);
+        }
+
+        .history-item.delivered { border-left-color: var(--success); }
+        .history-item.cancelled { border-left-color: #ef4444; }
+
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+
+        .history-date { font-size: 12px; color: var(--text-secondary); }
+        .history-status {
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 10px;
+            background: var(--accent);
+            color: white;
+        }
+
+        .history-item.delivered .history-status { background: var(--success); }
+        .history-item.cancelled .history-status { background: #ef4444; }
+
+        .history-items-list {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+
+        .history-breakdown {
+            margin-bottom: 10px;
+            padding: 10px;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+        }
+
+        .history-item-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 0;
+            font-size: 13px;
+        }
+
+        .history-item-row:not(:last-child) {
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 8px;
+            margin-bottom: 4px;
+        }
+
+        .history-item-qty {
+            font-weight: 600;
+            color: var(--accent);
+            min-width: 28px;
+        }
+
+        .history-item-name {
+            flex: 1;
+            color: var(--text-primary);
+        }
+
+        .history-item-price {
+            color: var(--text-secondary);
+            font-size: 12px;
+        }
+
+        .history-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 8px;
+            border-top: 1px solid var(--border);
+            font-size: 13px;
+        }
+
+        .history-type { color: var(--text-secondary); }
+        .history-total { font-weight: 600; color: var(--accent); }
+
+        .history-details {
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid var(--border);
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .history-detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 3px 0;
+        }
+
+        /* Settings View */
+        .settings-card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .setting-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 14px;
+        }
+
+        .setting-row:last-child { border-bottom: none; }
+        .setting-label { color: var(--text-secondary); }
+        .setting-value { text-align: right; max-width: 60%; }
+
+        .edit-settings-btn {
+            width: 100%;
+            padding: 14px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-size: 14px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        /* Modals */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            padding: 20px;
+        }
+
+        .modal-overlay.show { display: flex; }
+
+        .modal {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 28px;
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .modal-icon { font-size: 48px; margin-bottom: 16px; }
+        .modal-title { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+        .modal-subtitle { color: var(--text-secondary); margin-bottom: 20px; font-size: 14px; }
+
+        .modal-btn {
+            width: 100%;
+            padding: 14px;
+            background: var(--accent);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .form-group { margin-bottom: 14px; text-align: left; }
+        .form-group label { display: block; font-size: 12px; color: var(--text-secondary); margin-bottom: 6px; }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        /* Product Sheet */
+        .product-sheet-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 3000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .product-sheet-overlay.show { opacity: 1; visibility: visible; }
+
+        .product-sheet {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            max-height: 85vh;
+            background: var(--bg-secondary);
+            border-radius: 24px 24px 0 0;
+            z-index: 3001;
+            transform: translateY(100%);
+            transition: transform 0.3s ease;
+            overflow-y: auto;
+        }
+
+        .product-sheet-overlay.show .product-sheet { transform: translateY(0); }
+
+        .product-sheet-handle { width: 40px; height: 4px; background: var(--border); border-radius: 2px; margin: 12px auto; }
+
+        .product-image-large {
+            width: 100%;
+            aspect-ratio: 16/9;
+            background: var(--bg-card);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 64px;
+        }
+
+        .product-sheet-content { padding: 20px; }
+        .product-sheet-name { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+        .product-sheet-price { font-size: 20px; font-weight: 700; color: var(--accent); margin-bottom: 12px; }
+        .product-sheet-desc { font-size: 14px; color: var(--text-secondary); margin-bottom: 16px; line-height: 1.5; }
+
+        .ingredients-list { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+        .ingredient-tag { padding: 6px 12px; background: var(--bg-card); border-radius: 20px; font-size: 12px; color: var(--text-secondary); }
+
+        .topping-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: var(--bg-card);
+            border-radius: 10px;
+            margin-bottom: 8px;
+            border: 2px solid var(--border);
+            cursor: pointer;
+        }
+
+        .topping-item.selected { border-color: var(--accent); background: rgba(201, 123, 123, 0.1); }
+        .topping-info { display: flex; align-items: center; gap: 10px; }
+        .topping-checkbox { width: 20px; height: 20px; border: 2px solid var(--border); border-radius: 5px; }
+        .topping-item.selected .topping-checkbox { background: var(--accent); border-color: var(--accent); }
+        .topping-name { font-size: 14px; }
+        .topping-price { font-size: 14px; color: var(--accent); font-weight: 600; }
+
+        .product-sheet-footer {
+            padding: 16px 20px;
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border);
+            position: sticky;
+            bottom: 0;
+        }
+
+        .add-to-cart-row { display: flex; gap: 12px; align-items: center; }
+
+        .sheet-qty-controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: var(--bg-card);
+            padding: 8px 12px;
+            border-radius: 10px;
+        }
+
+        .sheet-qty-btn {
+            width: 36px;
+            height: 36px;
+            border: none;
+            border-radius: 8px;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        .sheet-qty-value { font-size: 18px; font-weight: 600; min-width: 24px; text-align: center; }
+
+        .add-to-cart-btn {
+            flex: 1;
+            padding: 16px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+        }
+
+    </style>
+</head>
+<body>
+    <!-- WELCOME SCREEN (First Visit) -->
+    <div class="welcome-overlay" id="welcome-overlay">
+        <div class="welcome-logo">🧡</div>
+        <div class="welcome-brand">Collina</div>
+        <div class="welcome-title">Dobrodošli u Collina Club!</div>
+        
+        <div class="welcome-gifts-card">
+            <div class="welcome-gifts-header">
+                🎁 5 poklona za registraciju
+            </div>
+            <div class="welcome-gift-item">
+                <div class="welcome-gift-icon">🏷️</div>
+                <div class="welcome-gift-text">
+                    <div class="welcome-gift-title">30% popust</div>
+                    <div class="welcome-gift-desc">Na prvu narudžbinu</div>
+                </div>
+                <div class="welcome-gift-check">✓</div>
+            </div>
+            <div class="welcome-gift-item">
+                <div class="welcome-gift-icon">🛵</div>
+                <div class="welcome-gift-text">
+                    <div class="welcome-gift-title">Besplatna dostava</div>
+                    <div class="welcome-gift-desc">1x bez troškova dostave</div>
+                </div>
+                <div class="welcome-gift-check">✓</div>
+            </div>
+            <div class="welcome-gift-item">
+                <div class="welcome-gift-icon">🍪</div>
+                <div class="welcome-gift-text">
+                    <div class="welcome-gift-title">Gratis kolačić</div>
+                    <div class="welcome-gift-desc">Uz bilo koju narudžbinu</div>
+                </div>
+                <div class="welcome-gift-check">✓</div>
+            </div>
+            <div class="welcome-gift-item">
+                <div class="welcome-gift-icon">🍟</div>
+                <div class="welcome-gift-text">
+                    <div class="welcome-gift-title">Gratis pomfrit</div>
+                    <div class="welcome-gift-desc">Uz bilo koju narudžbinu</div>
+                </div>
+                <div class="welcome-gift-check">✓</div>
+            </div>
+            <div class="welcome-gift-item">
+                <div class="welcome-gift-icon">🥞</div>
+                <div class="welcome-gift-text">
+                    <div class="welcome-gift-title">Gratis palačinka</div>
+                    <div class="welcome-gift-desc">Uz bilo koju narudžbinu</div>
+                </div>
+                <div class="welcome-gift-check">✓</div>
+            </div>
+            <div class="welcome-gift-item">
+                <div class="welcome-gift-icon">💰</div>
+                <div class="welcome-gift-text">
+                    <div class="welcome-gift-title">50 početnih poena</div>
+                    <div class="welcome-gift-desc">Odmah na tvom računu</div>
+                </div>
+                <div class="welcome-gift-check">✓</div>
+            </div>
+        </div>
+
+        <button class="welcome-register-btn" onclick="startRegistration()">
+            Registruj se sada
+        </button>
+        <button class="welcome-later-btn" onclick="dismissWelcome()">
+            Uradiću to kasnije →
+        </button>
+    </div>
+
+    <!-- REGISTRATION FORM SCREEN -->
+    <div class="register-screen" id="register-screen">
+        <div class="register-header">
+            <button class="register-back-btn" onclick="closeRegisterScreen()">←</button>
+            <div class="register-title">Registracija</div>
+        </div>
+        
+        <div class="register-subtitle">
+            Popuni podatke i dobij 5 poklona dobrodošlice! 🎁
+        </div>
+
+        <div class="register-form">
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Ime *</label>
+                    <input type="text" class="form-input" id="reg-first-name" placeholder="Tvoje ime">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Prezime</label>
+                    <input type="text" class="form-input" id="reg-last-name" placeholder="Tvoje prezime">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Broj telefona *</label>
+                <input type="tel" class="form-input" id="reg-phone" placeholder="+381 6X XXX XXXX">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Email</label>
+                <input type="email" class="form-input" id="reg-email" placeholder="email@primer.com">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Adresa za dostavu</label>
+                <input type="text" class="form-input" id="reg-address" placeholder="Ulica i broj">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Omiljeni lokal *</label>
+                <div class="location-options" id="location-options">
+                    <div class="location-option" onclick="selectLocation('banovo_brdo')" data-location="banovo_brdo">
+                        <div class="location-option-radio"></div>
+                        <div class="location-option-content">
+                            <div class="location-option-name">Collina Banovo Brdo</div>
+                            <div class="location-option-address">Požeška 108a, Beograd</div>
+                        </div>
+                    </div>
+                    <div class="location-option" onclick="selectLocation('vracar')" data-location="vracar">
+                        <div class="location-option-radio"></div>
+                        <div class="location-option-content">
+                            <div class="location-option-name">Collina Vračar</div>
+                            <div class="location-option-address">Gospodara Vučića 170, Beograd</div>
+                        </div>
+                    </div>
+                    <div class="location-option" onclick="selectLocation('novi_beograd')" data-location="novi_beograd">
+                        <div class="location-option-radio"></div>
+                        <div class="location-option-content">
+                            <div class="location-option-name">Collina Novi Beograd</div>
+                            <div class="location-option-address">Bulevar Arsenija Čarnojevića 115, Beograd</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="register-benefits">
+                <div class="register-benefits-title">🎁 Dobićeš odmah:</div>
+                <div class="register-benefits-list">
+                    <span class="register-benefit-tag">🏷️ 30% popust</span>
+                    <span class="register-benefit-tag">🛵 Besplatna dostava</span>
+                    <span class="register-benefit-tag">🍪 Gratis kolačić</span>
+                    <span class="register-benefit-tag">🍟 Gratis pomfrit</span>
+                    <span class="register-benefit-tag">🥞 Gratis palačinka</span>
+                    <span class="register-benefit-tag">💰 50 poena</span>
+                </div>
+            </div>
+        </div>
+
+        <button class="register-submit-btn" onclick="submitRegistration()">
+            Registruj se
+        </button>
+    </div>
+
+    <!-- SUCCESS SCREEN -->
+    <div class="success-screen" id="success-screen">
+        <div class="success-icon">✓</div>
+        <div class="success-title">Dobrodošao/la!</div>
+        <div class="success-subtitle" id="success-name">Tvoj nalog je kreiran</div>
+
+        <div class="success-gifts">
+            <div class="success-gifts-title">🎁 Tvoji pokloni</div>
+            <div class="success-gift-row">
+                <span class="success-gift-icon">🏷️</span>
+                <span class="success-gift-text">30% popust na prvu narudžbinu</span>
+                <span class="success-gift-check">✓</span>
+            </div>
+            <div class="success-gift-row">
+                <span class="success-gift-icon">🛵</span>
+                <span class="success-gift-text">1x besplatna dostava</span>
+                <span class="success-gift-check">✓</span>
+            </div>
+            <div class="success-gift-row">
+                <span class="success-gift-icon">🍪</span>
+                <span class="success-gift-text">Gratis kolačić</span>
+                <span class="success-gift-check">✓</span>
+            </div>
+            <div class="success-gift-row">
+                <span class="success-gift-icon">🍟</span>
+                <span class="success-gift-text">Gratis pomfrit</span>
+                <span class="success-gift-check">✓</span>
+            </div>
+            <div class="success-gift-row">
+                <span class="success-gift-icon">🥞</span>
+                <span class="success-gift-text">Gratis palačinka</span>
+                <span class="success-gift-check">✓</span>
+            </div>
+            <div class="success-gift-row">
+                <span class="success-gift-icon">💰</span>
+                <span class="success-gift-text">50 početnih poena</span>
+                <span class="success-gift-check">✓</span>
+            </div>
+        </div>
+
+        <button class="success-continue-btn" onclick="closeSuccessScreen()">
+            Započni naručivanje 🍔
+        </button>
+    </div>
+
+    <!-- REGISTRATION REQUIRED MODAL -->
+    <div class="register-required-modal" id="register-required-modal">
+        <div class="register-required-content">
+            <div class="register-required-icon">🔐</div>
+            <div class="register-required-title" id="register-required-title">Registracija potrebna</div>
+            <div class="register-required-desc" id="register-required-desc">
+                Da bi završio narudžbinu, potrebno je da se registruješ. 
+                Dobićeš 5 poklona dobrodošlice!
+            </div>
+            <button class="register-required-btn" onclick="startRegistration()">
+                Registruj se sada
+            </button>
+            <button class="register-required-cancel" onclick="closeRegisterModal()">
+                Otkaži
+            </button>
+        </div>
+    </div>
+
+    <!-- HOME SCREEN -->
+    <div class="screen active" id="screen-home">
+        <!-- Header with Avatar on Right -->
+        <div class="home-header">
+            <div class="home-greeting" id="home-greeting">Ćao, Gost</div>
+            <div class="home-avatar" id="home-avatar" onclick="toggleMenu()">👤</div>
+        </div>
+
+        <!-- Home Location Card -->
+        <div class="home-location-card" id="home-location-card">
+            <div class="home-location-icon">📍</div>
+            <div class="home-location-info">
+                <div class="home-location-label">Tvoj lokal</div>
+                <div class="home-location-name" id="home-location-name">Izaberi lokal</div>
+                <div class="home-location-address" id="home-location-address">-</div>
+            </div>
+            <button class="home-location-change" onclick="showLocationPicker()">Promeni</button>
+        </div>
+
+        <!-- Stats Row -->
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="stat-icon">💰</div>
+                <div class="stat-value" id="home-points">50</div>
+                <div class="stat-label">poena</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🎫</div>
+                <div class="stat-value" id="home-coupons">5</div>
+                <div class="stat-label">kupona</div>
+            </div>
+            <div class="stat-card highlight">
+                <div class="stat-icon">⭐</div>
+                <div class="stat-value" id="home-level">1</div>
+                <div class="stat-label">nivo</div>
+            </div>
+        </div>
+
+        <!-- Coupons Section -->
+        <div class="home-section-title">Tvoji kuponi</div>
+        <div class="coupons-scroll" id="coupons-scroll">
+            <div class="coupon-card">
+                <div class="coupon-icon">🏷️</div>
+                <div class="coupon-name">30% popust</div>
+                <div class="coupon-desc">Prva narudžbina</div>
+                <button class="coupon-add-btn" onclick="addCouponToCart('discount30')">Dodaj</button>
+            </div>
+            <div class="coupon-card">
+                <div class="coupon-icon">🛵</div>
+                <div class="coupon-name">Besplatna dostava</div>
+                <div class="coupon-desc">1x dostava</div>
+                <button class="coupon-add-btn" onclick="addCouponToCart('free_delivery')">Dodaj</button>
+            </div>
+            <div class="coupon-card">
+                <div class="coupon-icon">🍪</div>
+                <div class="coupon-name">Gratis kolačić</div>
+                <div class="coupon-desc">Uz narudžbinu</div>
+                <button class="coupon-add-btn" onclick="addCouponToCart('free_cookie')">Dodaj</button>
+            </div>
+            <div class="coupon-card">
+                <div class="coupon-icon">🍟</div>
+                <div class="coupon-name">Gratis pomfrit</div>
+                <div class="coupon-desc">Uz narudžbinu</div>
+                <button class="coupon-add-btn" onclick="addCouponToCart('free_fries')">Dodaj</button>
+            </div>
+            <div class="coupon-card">
+                <div class="coupon-icon">🥞</div>
+                <div class="coupon-name">Gratis palačinka</div>
+                <div class="coupon-desc">Uz narudžbinu</div>
+                <button class="coupon-add-btn" onclick="addCouponToCart('free_pancake')">Dodaj</button>
+            </div>
+        </div>
+
+        <!-- Featured Products -->
+        <div class="home-section-title">Preporučujemo</div>
+        <div class="featured-scroll" id="featured-scroll">
+            <div class="featured-card" onclick="openProductSheet('4043')">
+                <div class="featured-card-image">
+                    <img src="https://restos.one/photos/Grand_collina_combo.jpg" alt="Food">
+                    <div class="featured-card-badge">🔥 Hit</div>
+                </div>
+                <div class="featured-card-content">
+                    <div class="featured-card-name">BIG Double Collina Smash</div>
+                    <div class="featured-card-footer">
+                        <div class="featured-card-price">897 RSD</div>
+                        <div class="card-controls" onclick="event.stopPropagation()">
+                            <button class="card-qty-btn" onclick="updateQty('4043', -1)" id="feat-minus-4043">−</button>
+                            <span class="card-qty-value" id="feat-qty-4043">0</span>
+                            <button class="card-qty-btn" onclick="updateQty('4043', 1)">+</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="featured-card" onclick="openProductSheet('6985146')">
+                <div class="featured-card-image">
+                    <img src="https://restos.one/photos/Grand_collina_combo.jpg" alt="Food">
+                    <div class="featured-card-badge">⭐ Novo</div>
+                </div>
+                <div class="featured-card-content">
+                    <div class="featured-card-name">Dubai palačinka</div>
+                    <div class="featured-card-footer">
+                        <div class="featured-card-price">920 RSD</div>
+                        <div class="card-controls" onclick="event.stopPropagation()">
+                            <button class="card-qty-btn" onclick="updateQty('6985146', -1)" id="feat-minus-6985146">−</button>
+                            <span class="card-qty-value" id="feat-qty-6985146">0</span>
+                            <button class="card-qty-btn" onclick="updateQty('6985146', 1)">+</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="featured-card" onclick="openProductSheet('6985169')">
+                <div class="featured-card-image">
+                    <img src="https://restos.one/photos/Grand_collina_combo.jpg" alt="Food">
+                    <div class="featured-card-badge">👑 Premium</div>
+                </div>
+                <div class="featured-card-content">
+                    <div class="featured-card-name">Supreme Triple Smash</div>
+                    <div class="featured-card-footer">
+                        <div class="featured-card-price">1200 RSD</div>
+                        <div class="card-controls" onclick="event.stopPropagation()">
+                            <button class="card-qty-btn" onclick="updateQty('6985169', -1)" id="feat-minus-6985169">−</button>
+                            <span class="card-qty-value" id="feat-qty-6985169">0</span>
+                            <button class="card-qty-btn" onclick="updateQty('6985169', 1)">+</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="featured-card" onclick="openProductSheet('6001')">
+                <div class="featured-card-image">
+                    <img src="https://restos.one/photos/Grand_collina_combo.jpg" alt="Food">
+                </div>
+                <div class="featured-card-content">
+                    <div class="featured-card-name">Ćevapi 10kom + lepinja</div>
+                    <div class="featured-card-footer">
+                        <div class="featured-card-price">750 RSD</div>
+                        <div class="card-controls" onclick="event.stopPropagation()">
+                            <button class="card-qty-btn" onclick="updateQty('6001', -1)" id="feat-minus-6001">−</button>
+                            <span class="card-qty-value" id="feat-qty-6001">0</span>
+                            <button class="card-qty-btn" onclick="updateQty('6001', 1)">+</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons Row -->
+        <div class="home-action-buttons">
+            <button class="home-action-btn points-btn" onclick="showClaimModal()">
+                ➕ Dodaj poene
+            </button>
+            <button class="home-action-btn order-btn" onclick="showScreen('menu')">
+                🍔 Naruči sada
+            </button>
+        </div>
+    </div>
+
+    <!-- MENU SCREEN -->
+    <div class="screen" id="screen-menu">
+        <!-- Header with Avatar -->
+        <div class="home-header">
+            <div>
+                <div class="home-welcome">Dobrodošli,</div>
+                <div class="home-name" id="menu-name">Gost</div>
+            </div>
+            <div class="home-avatar" id="menu-avatar" onclick="toggleMenu()">👤</div>
+        </div>
+
+        <!-- Active Order Banner -->
+        <div class="active-order-banner" id="active-order-banner" onclick="showScreen('tracking')">
+            <div class="active-order-top">
+                <div class="active-order-status">
+                    <span class="active-order-status-icon" id="banner-status-icon">⏳</span>
+                    <span id="banner-status-text">Čekamo potvrdu</span>
+                </div>
+                <span class="active-order-id" id="banner-order-id">#000000</span>
+            </div>
+            <div class="active-order-progress">
+                <div class="active-order-progress-bar" id="banner-progress" style="width: 10%"></div>
+            </div>
+            <div class="active-order-bottom">
+                <span id="banner-time">Procena: ~25 min</span>
+                <span>Tap za detalje →</span>
+            </div>
+        </div>
+
+        <!-- Category Tabs -->
+        <div class="category-tabs" id="category-tabs">
+            <button class="category-tab active" onclick="filterCategory('Promocije')">🎉 Promocije</button>
+            <button class="category-tab" onclick="filterCategory('Omiljeno')">❤️ Omiljeno</button>
+            <button class="category-tab" onclick="filterCategory('Burgeri')">🍔 Burgeri</button>
+            <button class="category-tab" onclick="filterCategory('Palačinke')">🥞 Palačinke</button>
+            <button class="category-tab" onclick="filterCategory('Kuvano')">🍲 Kuvano</button>
+            <button class="category-tab" onclick="filterCategory('Doručak')">🍳 Doručak</button>
+            <button class="category-tab" onclick="filterCategory('Pekara')">🥐 Pekara</button>
+        </div>
+
+        <!-- Favorites Grid (shown when Omiljeno selected) -->
+        <div class="favorites-grid" id="favorites-grid"></div>
+
+        <!-- Menu Items -->
+        <div id="menu-items"></div>
+    </div>
+
+    <!-- KLUB SCREEN -->
+    <div class="screen" id="screen-coupons">
+        <!-- Header -->
+        <div class="klub-header">
+            <div class="klub-title">🏆 Collina Klub</div>
+            <div class="klub-stats">
+                <div class="klub-stat">
+                    <div class="klub-stat-value" id="klub-points">0</div>
+                    <div class="klub-stat-label">poena</div>
+                </div>
+                <div class="klub-stat">
+                    <div class="klub-stat-value" id="klub-coupons">5</div>
+                    <div class="klub-stat-label">kupona</div>
+                </div>
+                <div class="klub-stat">
+                    <div class="klub-stat-value" id="klub-level">1</div>
+                    <div class="klub-stat-label">nivo</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="klub-tabs">
+            <button class="klub-tab active" onclick="switchKlubTab('kuponi')">🎫 Kuponi</button>
+            <button class="klub-tab" onclick="switchKlubTab('poeni')">💰 Poeni</button>
+            <button class="klub-tab" onclick="switchKlubTab('kod')">🎁 Kod</button>
+        </div>
+
+        <!-- Tab Content -->
+        <div class="klub-content">
+            <!-- Kuponi Tab -->
+            <div class="klub-panel active" id="klub-kuponi">
+                <div class="section-label">Tvoji kuponi (<span id="kuponi-count">5</span>)</div>
+                <div class="klub-coupons-list">
+                    <div class="klub-coupon-item">
+                        <div class="klub-coupon-icon">🏷️</div>
+                        <div class="klub-coupon-info">
+                            <div class="klub-coupon-name">30% popust</div>
+                            <div class="klub-coupon-desc">Na sledeću narudžbinu</div>
+                        </div>
+                        <button class="klub-coupon-btn" onclick="useKlubCoupon('discount30')">Koristi</button>
+                    </div>
+                    <div class="klub-coupon-item">
+                        <div class="klub-coupon-icon">🛵</div>
+                        <div class="klub-coupon-info">
+                            <div class="klub-coupon-name">Besplatna dostava</div>
+                            <div class="klub-coupon-desc">Za dostavu</div>
+                        </div>
+                        <button class="klub-coupon-btn" onclick="useKlubCoupon('free_delivery')">Koristi</button>
+                    </div>
+                    <div class="klub-coupon-item">
+                        <div class="klub-coupon-icon">🍪</div>
+                        <div class="klub-coupon-info">
+                            <div class="klub-coupon-name">Gratis kolačić</div>
+                            <div class="klub-coupon-desc">Uz bilo koju narudžbinu</div>
+                        </div>
+                        <button class="klub-coupon-btn" onclick="useKlubCoupon('free_cookie')">Koristi</button>
+                    </div>
+                    <div class="klub-coupon-item">
+                        <div class="klub-coupon-icon">🍟</div>
+                        <div class="klub-coupon-info">
+                            <div class="klub-coupon-name">Gratis pomfrit</div>
+                            <div class="klub-coupon-desc">Uz bilo koju narudžbinu</div>
+                        </div>
+                        <button class="klub-coupon-btn" onclick="useKlubCoupon('free_fries')">Koristi</button>
+                    </div>
+                    <div class="klub-coupon-item">
+                        <div class="klub-coupon-icon">🥞</div>
+                        <div class="klub-coupon-info">
+                            <div class="klub-coupon-name">Gratis palačinka</div>
+                            <div class="klub-coupon-desc">Uz bilo koju narudžbinu</div>
+                        </div>
+                        <button class="klub-coupon-btn" onclick="useKlubCoupon('free_pancake')">Koristi</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Poeni Tab -->
+            <div class="klub-panel" id="klub-poeni">
+                <div class="poeni-summary">
+                    <div class="poeni-big" id="poeni-display">0</div>
+                    <div class="poeni-label">poena</div>
+                </div>
+
+                <button class="add-wolt-btn" onclick="showClaimModal()">➕ Dodaj Wolt poene</button>
+
+                <div class="section-label">Dostupne nagrade</div>
+                <div class="reward-card">
+                    <div class="reward-icon">🥤</div>
+                    <div class="reward-info">
+                        <div class="reward-name">Besplatan napitak</div>
+                        <div class="reward-progress-bar">
+                            <div class="reward-progress-fill" id="reward-progress-1"></div>
+                        </div>
+                        <div class="reward-progress-text"><span id="reward-pts-1">0</span> / 500 poena</div>
+                    </div>
+                    <div class="reward-badge">500</div>
+                </div>
+                <div class="reward-card">
+                    <div class="reward-icon">🍔</div>
+                    <div class="reward-info">
+                        <div class="reward-name">Besplatan burger</div>
+                        <div class="reward-progress-bar">
+                            <div class="reward-progress-fill" id="reward-progress-2"></div>
+                        </div>
+                        <div class="reward-progress-text"><span id="reward-pts-2">0</span> / 1000 poena</div>
+                    </div>
+                    <div class="reward-badge">1000</div>
+                </div>
+                <div class="reward-card">
+                    <div class="reward-icon">🍽️</div>
+                    <div class="reward-info">
+                        <div class="reward-name">Besplatan obrok</div>
+                        <div class="reward-progress-bar">
+                            <div class="reward-progress-fill" id="reward-progress-3"></div>
+                        </div>
+                        <div class="reward-progress-text"><span id="reward-pts-3">0</span> / 2000 poena</div>
+                    </div>
+                    <div class="reward-badge">2000</div>
+                </div>
+
+                <div class="section-label">QR kod za restoran</div>
+                <div class="qr-card">
+                    <div class="qr-code" id="qr-code"></div>
+                    <div class="qr-text">Skeniraj u restoranu za skupljanje poena</div>
+                    <div class="qr-id" id="qr-customer-id">ID: CLN-000</div>
+                </div>
+            </div>
+
+            <!-- Kod Tab -->
+            <div class="klub-panel" id="klub-kod">
+                <div class="kod-section">
+                    <div class="kod-title">🎁 Unesi promo kod</div>
+                    <input type="text" class="kod-input" id="promo-code-input" placeholder="npr. COLLINA2024" maxlength="20">
+                    <button class="kod-submit-btn" onclick="redeemCode()">Aktiviraj kod</button>
+                    <div class="kod-result" id="kod-result"></div>
+                </div>
+
+                <div class="section-label">Gde mogu da nađem kod?</div>
+                <div class="kod-hints">
+                    <div class="kod-hint">📃 Na računu u restoranu</div>
+                    <div class="kod-hint">📱 Instagram @collina.rs</div>
+                    <div class="kod-hint">💬 SMS/WhatsApp promocije</div>
+                    <div class="kod-hint">👥 Od prijatelja (referral)</div>
+                </div>
+
+                <div class="section-label">Poslednje aktivirano</div>
+                <div class="kod-history" id="kod-history">
+                    <div class="kod-history-empty">Još nemaš aktiviranih kodova</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CHECKOUT SCREEN -->
+    <div class="screen" id="screen-checkout">
+        <!-- Header with Avatar -->
+        <div class="home-header">
+            <div>
+                <div class="home-welcome">Tvoja</div>
+                <div class="home-name">Korpa</div>
+            </div>
+            <div class="home-avatar" id="checkout-avatar" onclick="toggleMenu()">👤</div>
+        </div>
+
+        <div class="section-label">Način preuzimanja</div>
+        <div class="order-type-buttons">
+            <button class="order-type-btn active" onclick="selectOrderType('delivery')" id="type-delivery">
+                <span class="order-type-icon">🛵</span>
+                <span class="order-type-name">Dostava</span>
+            </button>
+            <button class="order-type-btn" onclick="selectOrderType('drive_through')" id="type-drive">
+                <span class="order-type-icon">🚗</span>
+                <span class="order-type-name">Drive-Thru</span>
+            </button>
+            <button class="order-type-btn" onclick="selectOrderType('eat_in')" id="type-eatin">
+                <span class="order-type-icon">🍽️</span>
+                <span class="order-type-name">U lokalu</span>
+            </button>
+        </div>
+
+        <!-- Location/Address Info -->
+        <div class="checkout-location-card" id="checkout-location-card">
+            <div class="checkout-location-icon" id="checkout-location-icon">📍</div>
+            <div class="checkout-location-info">
+                <div class="checkout-location-label" id="checkout-location-label">Adresa dostave</div>
+                <div class="checkout-location-value" id="checkout-location-value">-</div>
+            </div>
+            <button class="checkout-location-change" onclick="changeCheckoutLocation()">Promeni</button>
+        </div>
+
+        <div class="section-label">Tvoje stavke</div>
+        <div id="checkout-items"></div>
+
+        <div class="section-label">Preporučujemo</div>
+        <div class="recommendations" id="checkout-recommendations"></div>
+
+        <!-- Coupons Section -->
+        <div class="section-label">Kuponi</div>
+        <div class="checkout-coupons" id="checkout-coupons">
+            <div class="checkout-coupon" data-coupon="discount30" onclick="toggleCheckoutCoupon('discount30')">
+                <span class="checkout-coupon-icon">🏷️</span>
+                <span class="checkout-coupon-name">30% popust</span>
+            </div>
+            <div class="checkout-coupon" data-coupon="free_delivery" onclick="toggleCheckoutCoupon('free_delivery')">
+                <span class="checkout-coupon-icon">🛵</span>
+                <span class="checkout-coupon-name">Besplatna dostava</span>
+            </div>
+            <div class="checkout-coupon" data-coupon="free_cookie" onclick="toggleCheckoutCoupon('free_cookie')">
+                <span class="checkout-coupon-icon">🍪</span>
+                <span class="checkout-coupon-name">+ Kolačić</span>
+            </div>
+            <div class="checkout-coupon" data-coupon="free_fries" onclick="toggleCheckoutCoupon('free_fries')">
+                <span class="checkout-coupon-icon">🍟</span>
+                <span class="checkout-coupon-name">+ Pomfrit</span>
+            </div>
+            <div class="checkout-coupon" data-coupon="free_pancake" onclick="toggleCheckoutCoupon('free_pancake')">
+                <span class="checkout-coupon-icon">🥞</span>
+                <span class="checkout-coupon-name">+ Palačinka</span>
+            </div>
+        </div>
+
+        <div class="section-label">Komentar za restoran</div>
+        <textarea class="comment-input" id="order-comment" rows="2" placeholder="Bez luka, extra sos..."></textarea>
+
+        <div class="checkout-summary">
+            <div class="summary-row"><span>Stavke</span><span id="summary-items">0 RSD</span></div>
+            <div class="summary-row discount" id="summary-discount-row" style="display: none;"><span>Popust (30%)</span><span id="summary-discount">-0 RSD</span></div>
+            <div class="summary-row" id="summary-delivery-row"><span>Dostava</span><span id="summary-delivery">0 RSD</span></div>
+            <div class="summary-row free-items" id="summary-free-items" style="display: none;"><span>Gratis</span><span id="summary-free-list">-</span></div>
+            <div class="summary-row total"><span>Ukupno</span><span id="summary-total">0 RSD</span></div>
+        </div>
+
+        <button class="checkout-submit-btn" onclick="submitOrder()">Pošalji narudžbinu</button>
+    </div>
+
+    <!-- TRACKING SCREEN -->
+    <div class="screen" id="screen-tracking">
+        <div class="tracking-screen">
+            <div class="tracking-order-id" id="tracking-order-id">Narudžbina #000000000</div>
+            
+            <div class="tracking-status" id="tracking-status-icon">⏳</div>
+            <div class="tracking-title" id="tracking-title">Čekamo potvrdu</div>
+            <div class="tracking-subtitle" id="tracking-subtitle">Restoran pregleda narudžbinu...</div>
+
+            <div class="tracking-timer">
+                <div class="timer-label" id="timer-label">Procenjeno vreme</div>
+                <div class="timer-value" id="timer-value">--</div>
+                <div class="timer-unit">minuta</div>
+            </div>
+
+            <div class="tracking-progress">
+                <div class="tracking-progress-bar" id="tracking-progress" style="width: 10%"></div>
+            </div>
+
+            <div class="tracking-details">
+                <div class="tracking-detail-row"><span>Tip</span><span id="tracking-type">Dostava</span></div>
+                <div class="tracking-detail-row"><span>Stavke</span><span id="tracking-items">0</span></div>
+                <div class="tracking-detail-row"><span>Ukupno</span><span id="tracking-total">0 RSD</span></div>
+            </div>
+
+            <button class="new-order-btn" onclick="newOrder()">Nova narudžbina</button>
+        </div>
+    </div>
+
+    <!-- BOTTOM NAVIGATION -->
+    <div class="bottom-nav" id="bottom-nav">
+        <div class="bottom-nav-inner">
+            <button class="bottom-nav-btn active" onclick="showScreen('home')" data-screen="home">
+                <span class="bottom-nav-icon">🏠</span>
+                <span class="bottom-nav-label">Početna</span>
+            </button>
+            <button class="bottom-nav-btn" onclick="showScreen('menu')" data-screen="menu">
+                <span class="bottom-nav-icon">🍽️</span>
+                <span class="bottom-nav-label">Meni</span>
+            </button>
+            <button class="bottom-nav-btn" onclick="showScreen('coupons')" data-screen="coupons">
+                <span class="bottom-nav-icon">🎫</span>
+                <span class="bottom-nav-label">Klub</span>
+            </button>
+            <button class="bottom-nav-btn" onclick="showScreen('checkout')" data-screen="checkout">
+                <span class="bottom-nav-icon">🛒</span>
+                <span class="bottom-nav-label">Korpa</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- STICKY CART BUTTON -->
+    <div class="sticky-cart" id="sticky-cart">
+        <button class="sticky-cart-btn" onclick="showScreen('checkout')">
+            <div class="sticky-cart-left">
+                <span class="cart-icon">🛒</span>
+                <span class="cart-count" id="cart-count">0</span>
+                <span class="sticky-cart-label">Moja korpa</span>
+            </div>
+            <span class="sticky-cart-total" id="sticky-total">0 RSD</span>
+        </button>
+    </div>
+
+    <!-- SIDE MENU -->
+    <div class="menu-overlay" id="menu-overlay" onclick="closeMenuOverlay(event)">
+        <div class="side-menu" onclick="event.stopPropagation()">
+            <div class="menu-header">
+                <span class="menu-title">Moj nalog</span>
+                <button class="close-menu" onclick="toggleMenu()">×</button>
+            </div>
+            
+            <div class="menu-tabs">
+                <button class="menu-tab active" onclick="switchTab('history')">📋 Istorija</button>
+                <button class="menu-tab" onclick="switchTab('settings')">⚙️ Profil</button>
+            </div>
+            
+            <div class="menu-content">
+                <div class="tab-panel active" id="tab-history">
+                    <div class="section-label">Prethodne narudžbine</div>
+                    <div id="order-history-list">
+                        <div style="text-align:center;color:var(--text-secondary);padding:20px;">Učitavanje...</div>
+                    </div>
+                </div>
+                
+                <div class="tab-panel" id="tab-settings">
+                    <div class="settings-card">
+                        <div class="setting-row"><span class="setting-label">Ime</span><span class="setting-value" id="view-firstname">-</span></div>
+                        <div class="setting-row"><span class="setting-label">Prezime</span><span class="setting-value" id="view-lastname">-</span></div>
+                        <div class="setting-row"><span class="setting-label">Telefon</span><span class="setting-value" id="view-phone">-</span></div>
+                        <div class="setting-row"><span class="setting-label">Email</span><span class="setting-value" id="view-email">-</span></div>
+                        <div class="setting-row"><span class="setting-label">Adresa</span><span class="setting-value" id="view-address">-</span></div>
+                    </div>
+                    <button class="edit-settings-btn" onclick="showEditSettings()">✏️ Izmeni podatke</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PRODUCT DETAIL SHEET -->
+    <div id="product-sheet-overlay" class="product-sheet-overlay" onclick="closeProductSheet()">
+        <div class="product-sheet" onclick="event.stopPropagation()">
+            <div class="product-sheet-handle"></div>
+            <div class="product-image-large" id="product-image-large">🍔</div>
+            <div class="product-sheet-content">
+                <div class="product-sheet-name" id="product-sheet-name">Product</div>
+                <div class="product-sheet-price" id="product-sheet-price">0 RSD</div>
+                <div class="product-sheet-desc" id="product-sheet-desc">Description</div>
+                <div class="section-label">Sastojci</div>
+                <div class="ingredients-list" id="product-ingredients"></div>
+                <div id="toppings-section" style="display:none;">
+                    <div class="section-label">Dodaci</div>
+                    <div id="product-toppings"></div>
+                </div>
+            </div>
+            <div class="product-sheet-footer">
+                <div class="add-to-cart-row">
+                    <div class="sheet-qty-controls">
+                        <button class="sheet-qty-btn" onclick="updateSheetQty(-1)">−</button>
+                        <span class="sheet-qty-value" id="sheet-qty">1</span>
+                        <button class="sheet-qty-btn" onclick="updateSheetQty(1)">+</button>
+                    </div>
+                    <button class="add-to-cart-btn" onclick="addToCartFromSheet()">
+                        <span>Dodaj u korpu</span>
+                        <span id="sheet-total">0 RSD</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CLAIM WOLT MODAL -->
+    <div id="claim-modal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-icon">🧾</div>
+            <div class="modal-title">Dodaj Wolt poene</div>
+            <div class="form-group">
+                <label>Ime i prvo slovo prezimena</label>
+                <input type="text" id="claim-name" placeholder="npr. Marko M">
+            </div>
+            <div class="form-group">
+                <label>Datum narudžbine</label>
+                <input type="date" id="claim-date">
+            </div>
+            <div id="claim-result" style="display:none; margin: 16px 0; padding: 16px; background: var(--bg-secondary); border-radius: 10px;"></div>
+            <button class="modal-btn" onclick="searchWoltOrder()" style="margin-bottom:10px" id="claim-search-btn">Pronađi</button>
+            <button class="modal-btn" onclick="closeClaimModal()" style="background:var(--bg-secondary)">Zatvori</button>
+        </div>
+    </div>
+
+    <script>
+        // CONFIG
+        const SUPABASE_URL = 'https://bbnbbbpofelbkyuffslj.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJibmJiYnBvZmVsYmt5dWZmc2xqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUwNTI0MzQsImV4cCI6MjA4MDYyODQzNH0.koW44soAB-bEfh8OzqjGBwdgov4Snscw1ITsg5OureU';
+        
+        let db = null;
+        let customer = null;
+        const defaultCustomer = { first_name: 'Gost', last_name: '', phone: '', email: '', address: '', city: 'Beograd', loyalty_points: 0, total_orders: 0 };
+
+        // Locations data
+        const locations = {
+            banovo_brdo: {
+                name: 'Collina Banovo Brdo',
+                address: 'Požeška 108a, Beograd'
+            },
+            vracar: {
+                name: 'Collina Vračar',
+                address: 'Gospodara Vučića 170, Beograd'
+            },
+            novi_beograd: {
+                name: 'Collina Novi Beograd',
+                address: 'Bulevar Arsenija Čarnojevića 115, Beograd'
+            }
+        };
+
+        let selectedLocation = null;
+
+        // MENU DATA
+        const menuItems = [
+            { id: '4043', name: 'BIG Double Collina Smash + pomfrit + Pepsi', price: 897, category: 'Burgeri', desc: 'Dva sočna smash patty-ja sa topljenim sirom i našim specijalnim Collina sosom.', ingredients: ['Pljeskavica x2', 'Čedar', 'Salata', 'Paradajz', 'Collina sos'], toppings: ['bacon', 'egg', 'cheese'] },
+            { id: '6985169', name: 'Supreme Collina Triple Smash COMBO', price: 1200, category: 'Burgeri', desc: 'Naš najveći burger sa tri smash patty-ja i duplim sirom.', ingredients: ['Pljeskavica x3', 'Čedar x2', 'Salata', 'Paradajz', 'Luk'], toppings: ['bacon', 'egg'] },
+            { id: '6985167', name: 'BIG DoubleCHEESE COMBO', price: 957, category: 'Burgeri', desc: 'Klasičan dvostruki čizburger sa ekstra sirom.', ingredients: ['Pljeskavica x2', 'Čedar x2', 'Krastavac', 'Luk', 'Senf'], toppings: ['bacon', 'jalapeno'] },
+            { id: '6985164', name: '2X Collina burger + pomfrit + 2x Pepsi', price: 1527, category: 'Burgeri', desc: 'Savršen paket za dvoje.', ingredients: ['Collina burger x2', 'Pomfrit x2', 'Pepsi x2'], toppings: [] },
+            { id: '3747', name: 'Double Spicy Smash', price: 890, category: 'Burgeri', desc: 'Za ljubitelje ljutog - sa ljutim sosom i jalapeño.', ingredients: ['Pljeskavica x2', 'Jalapeño', 'Ljuti sos', 'Čedar'], toppings: ['bacon', 'cheese'] },
+            { id: '8645', name: 'Chili burger + pomfrit', price: 865, category: 'Burgeri', desc: 'Pikantni burger sa domaćim chili sosom.', ingredients: ['Pljeskavica', 'Chili sos', 'Čedar', 'Pomfrit'], toppings: ['bacon', 'egg'] },
+            { id: '6985146', name: 'Dubai palačinka', price: 920, category: 'Palačinke', desc: 'Viralni hit - sa pistachio kremom i kadaifom.', ingredients: ['Palačinka', 'Pistachio krem', 'Kadaif', 'Čokolada'], toppings: ['whipped_cream'] },
+            { id: '5117', name: 'Palačinka nutela', price: 585, category: 'Palačinke', desc: 'Klasična palačinka sa nutellom.', ingredients: ['Palačinka', 'Nutella', 'Šlag'], toppings: ['banana', 'whipped_cream'] },
+            { id: '5121', name: 'Američka palačinka nutela', price: 575, category: 'Palačinke', desc: 'Pufnaste američke palačinke.', ingredients: ['Američke palačinke x3', 'Nutella', 'Šlag'], toppings: ['banana', 'fruit'] },
+            { id: '5170', name: 'Good morning sendvič XL + pomfrit', price: 585, category: 'Doručak', desc: 'Bogat doručak sendvič.', ingredients: ['Tost', 'Jaje x2', 'Slanina', 'Čedar', 'Pomfrit'], toppings: ['egg', 'bacon'] },
+            { id: '5171', name: 'Omlet sa sirom', price: 450, category: 'Doručak', desc: 'Pufnast omlet sa tri vrste sira.', ingredients: ['Jaja x3', 'Čedar', 'Gauda', 'Feta'], toppings: ['bacon'] },
+            { id: '6001', name: 'Ćevapi 10kom + lepinja', price: 750, category: 'Kuvano', desc: 'Domaći ćevapi sa svežom lepinjom i lukom.', ingredients: ['Ćevapi x10', 'Lepinja', 'Luk', 'Kajmak'], toppings: [] },
+            { id: '6002', name: 'Pljeskavica punjena', price: 680, category: 'Kuvano', desc: 'Pljeskavica punjena sirom i kajmakom.', ingredients: ['Pljeskavica', 'Sir', 'Kajmak', 'Lepinja'], toppings: [] },
+            { id: '7001', name: 'Burek sa mesom', price: 320, category: 'Pekara', desc: 'Sveže pečen burek sa mlevenim mesom.', ingredients: ['Kore', 'Mleveno meso', 'Luk'], toppings: [] },
+            { id: '7002', name: 'Burek sa sirom', price: 280, category: 'Pekara', desc: 'Klasičan burek sa sirom.', ingredients: ['Kore', 'Sir'], toppings: [] }
+        ];
+
+        const toppings = {
+            bacon: { name: 'Slanina', price: 120 },
+            egg: { name: 'Jaje', price: 80 },
+            jalapeno: { name: 'Jalapeño', price: 60 },
+            cheese: { name: 'Ekstra sir', price: 100 },
+            whipped_cream: { name: 'Šlag', price: 50 },
+            banana: { name: 'Banana', price: 70 },
+            fruit: { name: 'Voće', price: 100 }
+        };
+
+        const recommendedItems = [
+            { id: 'pepsi', name: '+ Pepsi 0.5l', price: 150 },
+            { id: 'sos', name: '+ Extra sos', price: 50 },
+            { id: 'pomfrit', name: '+ Pomfrit', price: 200 }
+        ];
+
+        // STATE
+        let cart = {};
+        let selectedOrderType = 'delivery';
+        let selectedCategory = 'Promocije';
+        let favorites = [];
+        let currentProduct = null;
+        let sheetQty = 1;
+        let selectedToppings = [];
+        let currentOrderId = null;
+        let addedRecommendations = [];
+        let activeOrder = null;
+        let orderHistory = [];
+
+        // Promocije data
+        const promocije = [
+            { id: 'promo1', name: 'Burger + Palačinka COMBO', desc: 'BIG Double Collina + Dubai palačinka po specijalnoj ceni!', oldPrice: 1817, price: 1499, badge: '-18%', emoji: '🍔🥞' },
+            { id: 'promo2', name: 'Porodični paket', desc: '4x Burger + 2x Pomfrit + 4x Pepsi za celu porodicu', oldPrice: 3600, price: 2999, badge: '-17%', emoji: '👨‍👩‍👧‍👦' },
+            { id: 'promo3', name: 'Doručak za dvoje', desc: '2x Good morning sendvič + 2x Kafa', oldPrice: 1400, price: 999, badge: '-29%', emoji: '☕🥪' },
+            { id: 'promo4', name: 'Student COMBO', desc: 'Bilo koji burger + Pepsi 0.5l', oldPrice: 1050, price: 799, badge: 'AKCIJA', emoji: '🎓' }
+        ];
+
+        // INIT
+        async function init() {
+            try {
+                db = window.supabase?.createClient(SUPABASE_URL, SUPABASE_KEY);
+                console.log('Supabase initialized:', !!db);
+            } catch(e) { console.error('Supabase init error:', e); }
+
+            favorites = JSON.parse(localStorage.getItem('collina_favorites') || '[]');
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const customerId = urlParams.get('c');
+            
+            console.log('Customer ID from URL:', customerId);
+
+            if (customerId && db) {
+                try {
+                    const { data, error } = await db.from('customers').select('*').eq('id', customerId).single();
+                    console.log('Loaded customer:', data, error);
+                    
+                    if (data) {
+                        customer = data;
+                        // Hide welcome screen for registered users
+                        document.getElementById('welcome-overlay').classList.add('hidden');
+                        localStorage.setItem('collina_welcome_seen', 'true');
+                    } else {
+                        customer = defaultCustomer;
+                        checkWelcomeScreen();
+                    }
+                } catch(e) { 
+                    console.error('Customer load error:', e);
+                    customer = defaultCustomer; 
+                    checkWelcomeScreen();
+                }
+            } else {
+                customer = defaultCustomer;
+                checkWelcomeScreen();
+            }
+
+            renderMenu();
+            updateCartUI();
+            updateHomeScreen();
+            
+            // Check for active order in localStorage
+            const savedActiveOrder = localStorage.getItem('collina_active_order');
+            if (savedActiveOrder) {
+                activeOrder = JSON.parse(savedActiveOrder);
+                updateActiveOrderBanner();
+            }
+            
+            // Load order history
+            loadOrderHistory();
+        }
+
+        function checkWelcomeScreen() {
+            const welcomeSeen = localStorage.getItem('collina_welcome_seen');
+            if (welcomeSeen) {
+                document.getElementById('welcome-overlay').classList.add('hidden');
+            }
+        }
+
+        function dismissWelcome() {
+            document.getElementById('welcome-overlay').classList.add('hidden');
+            localStorage.setItem('collina_welcome_seen', 'true');
+        }
+
+        function startRegistration() {
+            // Close any modals/overlays
+            document.getElementById('welcome-overlay').classList.add('hidden');
+            document.getElementById('register-required-modal').classList.remove('show');
+            
+            // Show registration form screen
+            document.getElementById('register-screen').classList.add('show');
+        }
+
+        function closeRegisterScreen() {
+            document.getElementById('register-screen').classList.remove('show');
+        }
+
+        function selectLocation(locationId) {
+            selectedLocation = locationId;
+            
+            // Update UI
+            document.querySelectorAll('.location-option').forEach(opt => {
+                opt.classList.remove('selected');
+                if (opt.dataset.location === locationId) {
+                    opt.classList.add('selected');
+                }
+            });
+        }
+
+        function showLocationPicker() {
+            // For now, open registration if guest, otherwise show a simple picker
+            if (isGuest()) {
+                startRegistration();
+            } else {
+                // TODO: Add location change modal for registered users
+                alert('Promeni lokaciju u podešavanjima profila');
+            }
+        }
+
+        function updateHomeLocation() {
+            const locId = customer?.favorite_location || selectedLocation || localStorage.getItem('collina_location');
+            
+            if (locId && locations[locId]) {
+                document.getElementById('home-location-name').textContent = locations[locId].name;
+                document.getElementById('home-location-address').textContent = locations[locId].address;
+            } else {
+                document.getElementById('home-location-name').textContent = 'Izaberi lokal';
+                document.getElementById('home-location-address').textContent = 'Pritisni da izabereš';
+            }
+        }
+
+        async function submitRegistration() {
+            const firstName = document.getElementById('reg-first-name').value.trim();
+            const lastName = document.getElementById('reg-last-name').value.trim();
+            const phone = document.getElementById('reg-phone').value.trim();
+            const email = document.getElementById('reg-email').value.trim();
+            const address = document.getElementById('reg-address').value.trim();
+
+            // Validation
+            if (!firstName) {
+                alert('Molimo unesite ime');
+                return;
+            }
+            if (!phone) {
+                alert('Molimo unesite broj telefona');
+                return;
+            }
+            if (!selectedLocation) {
+                alert('Molimo izaberite omiljeni lokal');
+                return;
+            }
+
+            // Create customer object
+            const newCustomer = {
+                first_name: firstName,
+                last_name: lastName || '',
+                phone: phone,
+                email: email || '',
+                address: address || '',
+                favorite_location: selectedLocation,
+                loyalty_points: 50,
+                total_orders: 0,
+                coupons_count: 5,
+                source: 'app_registration',
+                created_at: new Date().toISOString()
+            };
+
+            try {
+                if (db) {
+                    console.log('Inserting customer:', newCustomer);
+                    
+                    // First check if customer with this phone already exists
+                    const { data: existingCustomer } = await db.from('customers')
+                        .select('*')
+                        .eq('phone', phone)
+                        .single();
+                    
+                    if (existingCustomer) {
+                        // Customer exists - update and use existing
+                        console.log('Customer already exists:', existingCustomer);
+                        customer = existingCustomer;
+                        
+                        // Update URL with customer ID
+                        const newUrl = window.location.pathname + '?c=' + customer.id;
+                        window.history.replaceState({}, '', newUrl);
+                        
+                        alert('Već imaš nalog! Ulogovan si kao ' + customer.first_name);
+                    } else {
+                        // Insert new customer
+                        const { data, error } = await db.from('customers').insert([newCustomer]).select();
+                        
+                        console.log('Supabase response:', { data, error });
+                        
+                        if (error) {
+                            console.error('Supabase error:', error);
+                            
+                            // Handle conflict (duplicate)
+                            if (error.code === '23505' || error.message?.includes('duplicate')) {
+                                const { data: found } = await db.from('customers')
+                                    .select('*')
+                                    .eq('phone', phone)
+                                    .single();
+                                if (found) {
+                                    customer = found;
+                                    const newUrl = window.location.pathname + '?c=' + customer.id;
+                                    window.history.replaceState({}, '', newUrl);
+                                    alert('Već imaš nalog! Ulogovan si kao ' + customer.first_name);
+                                }
+                            } else {
+                                throw error;
+                            }
+                        } else if (data && data.length > 0) {
+                            customer = data[0];
+                            console.log('Customer created:', customer);
+                            
+                            // Update URL with customer ID
+                            const newUrl = window.location.pathname + '?c=' + customer.id;
+                            window.history.replaceState({}, '', newUrl);
+                        }
+                    }
+                } else {
+                    // Fallback - store locally
+                    customer = { ...newCustomer, id: Date.now() };
+                    localStorage.setItem('collina_customer', JSON.stringify(customer));
+                }
+
+                // Save location to localStorage as backup
+                localStorage.setItem('collina_location', selectedLocation);
+
+                // Mark welcome as seen
+                localStorage.setItem('collina_welcome_seen', 'true');
+
+                // Hide register screen, show success
+                document.getElementById('register-screen').classList.remove('show');
+                document.getElementById('success-screen').classList.add('show');
+                document.getElementById('success-name').textContent = `${firstName}, tvoj nalog je kreiran!`;
+
+            } catch (e) {
+                console.error('Registration error:', e);
+                alert('Greška pri registraciji. Pokušaj ponovo.');
+            }
+        }
+
+        function closeSuccessScreen() {
+            document.getElementById('success-screen').classList.remove('show');
+            
+            // Update UI with new customer data
+            updateHomeScreen();
+            
+            // Go to home screen
+            showScreen('home');
+        }
+
+        function showRegisterModal(reason) {
+            const modal = document.getElementById('register-required-modal');
+            const title = document.getElementById('register-required-title');
+            const desc = document.getElementById('register-required-desc');
+            
+            if (reason === 'order') {
+                title.textContent = 'Registracija potrebna';
+                desc.textContent = 'Da bi završio narudžbinu, potrebno je da se registruješ. Dobićeš 5 poklona dobrodošlice!';
+            } else if (reason === 'rewards') {
+                title.textContent = 'Otključaj nagrade';
+                desc.textContent = 'Registruj se da pristupiš nagradama i sakupljaš poene sa svakom narudžbinom!';
+            }
+            
+            modal.classList.add('show');
+        }
+
+        function closeRegisterModal() {
+            document.getElementById('register-required-modal').classList.remove('show');
+        }
+
+        function isGuest() {
+            return !customer || customer.id === 0 || customer.first_name === 'Gost';
+        }
+
+        // SCREENS
+        function showScreen(screen) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById('screen-' + screen).classList.add('active');
+            
+            // Update bottom nav
+            document.querySelectorAll('.bottom-nav-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.screen === screen) {
+                    btn.classList.add('active');
+                }
+            });
+            
+            if (screen === 'checkout') {
+                renderCheckout();
+                updateCheckoutAvatar();
+            }
+            
+            if (screen === 'menu') {
+                updateActiveOrderBanner();
+                updateMenuHeader();
+            }
+            
+            if (screen === 'home') {
+                updateHomeScreen();
+            }
+            
+            if (screen === 'coupons') {
+                updateKlubScreen();
+            }
+            
+            // Handle bottom nav and sticky cart visibility
+            const bottomNav = document.getElementById('bottom-nav');
+            const stickyCart = document.getElementById('sticky-cart');
+            const cartCount = Object.values(cart).reduce((a, b) => a + b, 0);
+            
+            if (screen === 'tracking') {
+                bottomNav.style.display = 'none';
+                stickyCart.classList.remove('show');
+                stickyCart.classList.add('hidden');
+            } else {
+                bottomNav.style.display = 'flex';
+                stickyCart.classList.remove('hidden');
+                // Only show sticky cart on menu screen when cart has items
+                if (screen === 'menu' && cartCount > 0) {
+                    stickyCart.classList.add('show');
+                } else {
+                    stickyCart.classList.remove('show');
+                }
+            }
+        }
+
+        function updateMenuHeader() {
+            const name = customer?.first_name || 'Gost';
+            document.getElementById('menu-name').textContent = name;
+            document.getElementById('menu-avatar').textContent = name.charAt(0).toUpperCase();
+        }
+
+        function updateCheckoutAvatar() {
+            const name = customer?.first_name || 'Gost';
+            document.getElementById('checkout-avatar').textContent = name.charAt(0).toUpperCase();
+        }
+
+        // KLUB FUNCTIONS
+        function switchKlubTab(tab) {
+            document.querySelectorAll('.klub-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.klub-panel').forEach(p => p.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById('klub-' + tab).classList.add('active');
+        }
+
+        function updateKlubScreen() {
+            const pts = customer?.loyalty_points || 0;
+            const coupons = customer?.coupons_count || 5;
+            const level = Math.floor(pts / 500) + 1;
+            
+            // Header stats
+            document.getElementById('klub-points').textContent = pts;
+            document.getElementById('klub-coupons').textContent = coupons;
+            document.getElementById('klub-level').textContent = level;
+            document.getElementById('kuponi-count').textContent = coupons;
+            
+            // Poeni tab
+            document.getElementById('poeni-display').textContent = pts;
+            document.getElementById('reward-pts-1').textContent = pts;
+            document.getElementById('reward-pts-2').textContent = pts;
+            document.getElementById('reward-pts-3').textContent = pts;
+            document.getElementById('reward-progress-1').style.width = Math.min(pts / 500 * 100, 100) + '%';
+            document.getElementById('reward-progress-2').style.width = Math.min(pts / 1000 * 100, 100) + '%';
+            document.getElementById('reward-progress-3').style.width = Math.min(pts / 2000 * 100, 100) + '%';
+            
+            // QR Code - simple customer ID display
+            const customerId = customer?.id || 0;
+            document.getElementById('qr-customer-id').textContent = 'ID: CLN-' + customerId;
+            
+            // Generate simple QR-like visual
+            const qrEl = document.getElementById('qr-code');
+            qrEl.innerHTML = `
+                <svg viewBox="0 0 100 100" width="140" height="140" style="background: white; border-radius: 8px;">
+                    <rect x="10" y="10" width="25" height="25" fill="#333"/>
+                    <rect x="65" y="10" width="25" height="25" fill="#333"/>
+                    <rect x="10" y="65" width="25" height="25" fill="#333"/>
+                    <rect x="15" y="15" width="15" height="15" fill="white"/>
+                    <rect x="70" y="15" width="15" height="15" fill="white"/>
+                    <rect x="15" y="70" width="15" height="15" fill="white"/>
+                    <rect x="20" y="20" width="5" height="5" fill="#333"/>
+                    <rect x="75" y="20" width="5" height="5" fill="#333"/>
+                    <rect x="20" y="75" width="5" height="5" fill="#333"/>
+                    <rect x="40" y="10" width="5" height="5" fill="#333"/>
+                    <rect x="50" y="10" width="5" height="5" fill="#333"/>
+                    <rect x="40" y="20" width="5" height="5" fill="#333"/>
+                    <rect x="45" y="25" width="5" height="5" fill="#333"/>
+                    <rect x="55" y="20" width="5" height="5" fill="#333"/>
+                    <rect x="40" y="40" width="20" height="20" fill="#333"/>
+                    <rect x="45" y="45" width="10" height="10" fill="white"/>
+                    <rect x="48" y="48" width="4" height="4" fill="#333"/>
+                    <text x="50" y="95" text-anchor="middle" font-size="8" fill="#333">CLN-${customerId}</text>
+                </svg>
+            `;
+            
+            // Load code history
+            loadCodeHistory();
+        }
+
+        function useKlubCoupon(couponId) {
+            if (isGuest()) {
+                showRegisterModal('rewards');
+                return;
+            }
+            
+            // Apply coupon in checkout
+            appliedCoupon = couponId;
+            
+            // Update UI
+            document.querySelectorAll('.checkout-coupon').forEach(c => c.classList.remove('selected'));
+            const checkoutCoupon = document.querySelector(`.checkout-coupon[data-coupon="${couponId}"]`);
+            if (checkoutCoupon) checkoutCoupon.classList.add('selected');
+            
+            // Go to checkout
+            showScreen('checkout');
+            renderCheckout();
+        }
+
+        // Promo Codes
+        const promoCodes = {
+            'WELCOME50': { type: 'points', value: 50, desc: '50 bonus poena' },
+            'COLLINA2024': { type: 'points', value: 100, desc: '100 bonus poena' },
+            'BURGER20': { type: 'coupon', value: 'discount20', desc: '20% popust na burgere' },
+            'FREEDOSTAVA': { type: 'coupon', value: 'free_delivery', desc: 'Besplatna dostava' },
+            'BIRTHDAY': { type: 'coupon', value: 'free_burger', desc: 'Gratis burger' },
+            'FRIEND100': { type: 'points', value: 100, desc: '100 poena (referral)' },
+            'TESTCODE': { type: 'points', value: 25, desc: '25 test poena' }
+        };
+
+        function redeemCode() {
+            const input = document.getElementById('promo-code-input');
+            const result = document.getElementById('kod-result');
+            const code = input.value.trim().toUpperCase();
+            
+            if (!code) {
+                result.className = 'kod-result error';
+                result.textContent = 'Unesi kod';
+                result.style.display = 'block';
+                return;
+            }
+            
+            if (isGuest()) {
+                showRegisterModal('rewards');
+                return;
+            }
+            
+            // Check if code exists
+            const promo = promoCodes[code];
+            if (!promo) {
+                result.className = 'kod-result error';
+                result.textContent = 'Neispravan kod';
+                result.style.display = 'block';
+                return;
+            }
+            
+            // Check if already used
+            const usedCodes = JSON.parse(localStorage.getItem('collina_used_codes') || '[]');
+            if (usedCodes.includes(code)) {
+                result.className = 'kod-result error';
+                result.textContent = 'Ovaj kod je već iskorišćen';
+                result.style.display = 'block';
+                return;
+            }
+            
+            // Apply reward
+            if (promo.type === 'points') {
+                customer.loyalty_points = (customer.loyalty_points || 0) + promo.value;
+                // Update in Supabase
+                if (db && customer.id) {
+                    db.from('customers').update({ loyalty_points: customer.loyalty_points }).eq('id', customer.id);
+                }
+            }
+            
+            // Mark as used
+            usedCodes.push(code);
+            localStorage.setItem('collina_used_codes', JSON.stringify(usedCodes));
+            
+            // Save to history
+            const codeHistory = JSON.parse(localStorage.getItem('collina_code_history') || '[]');
+            codeHistory.unshift({
+                code: code,
+                reward: promo.desc,
+                date: new Date().toISOString()
+            });
+            localStorage.setItem('collina_code_history', JSON.stringify(codeHistory));
+            
+            // Show success
+            result.className = 'kod-result success';
+            result.textContent = '✓ ' + promo.desc + ' aktivirano!';
+            result.style.display = 'block';
+            
+            // Clear input
+            input.value = '';
+            
+            // Update displays
+            updateKlubScreen();
+            updateHomeScreen();
+        }
+
+        function loadCodeHistory() {
+            const historyEl = document.getElementById('kod-history');
+            const codeHistory = JSON.parse(localStorage.getItem('collina_code_history') || '[]');
+            
+            if (codeHistory.length === 0) {
+                historyEl.innerHTML = '<div class="kod-history-empty">Još nemaš aktiviranih kodova</div>';
+                return;
+            }
+            
+            historyEl.innerHTML = codeHistory.slice(0, 5).map(item => {
+                const date = new Date(item.date);
+                const dateStr = date.toLocaleDateString('sr-RS');
+                return `
+                    <div class="kod-history-item">
+                        <div>
+                            <div class="kod-history-code">✓ ${item.code}</div>
+                            <div class="kod-history-reward">${item.reward}</div>
+                        </div>
+                        <div class="kod-history-date">${dateStr}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateHomeScreen() {
+            const pts = customer?.loyalty_points || 50;
+            const coupons = customer?.coupons_count || 5;
+            const name = customer?.first_name || 'Gost';
+            
+            // Update header
+            document.getElementById('home-greeting').textContent = `Ćao, ${name}`;
+            document.getElementById('home-avatar').textContent = name.charAt(0).toUpperCase();
+            
+            // Update stats
+            document.getElementById('home-points').textContent = pts.toLocaleString();
+            document.getElementById('home-coupons').textContent = coupons;
+            
+            // Calculate level (1 level per 500 points)
+            const level = Math.floor(pts / 500) + 1;
+            document.getElementById('home-level').textContent = level;
+            
+            // Update location
+            updateHomeLocation();
+        }
+
+        function addCouponToCart(couponId) {
+            if (isGuest()) {
+                showRegisterModal('rewards');
+                return;
+            }
+            
+            // Add coupon to cart (will be handled in checkout)
+            const btn = event.target;
+            btn.textContent = '✓ Dodato';
+            btn.classList.add('added');
+            
+            setTimeout(() => {
+                btn.textContent = 'Dodaj';
+                btn.classList.remove('added');
+            }, 2000);
+        }
+
+        function addPromoToCart(promoId) {
+            cart[promoId] = (cart[promoId] || 0) + 1;
+            updateCartUI();
+            
+            const btn = event.target;
+            btn.textContent = '✓ Dodato u korpu';
+            btn.style.background = 'var(--success)';
+            
+            setTimeout(() => {
+                btn.textContent = 'Dodaj u korpu';
+                btn.style.background = 'var(--accent)';
+            }, 2000);
+        }
+
+        function newOrder() {
+            cart = {};
+            addedRecommendations = [];
+            showScreen('menu');
+            updateCartUI();
+            renderMenu();
+        }
+
+        const FOOD_PHOTO = 'https://restos.one/photos/Grand_collina_combo.jpg';
+
+        // MENU
+        function getEmoji(category) {
+            // Return food image instead of emoji
+            return `<img src="${FOOD_PHOTO}" alt="Food" style="width: 100%; height: 100%; object-fit: cover; border-radius: inherit;">`;
+        }
+
+        function filterCategory(category) {
+            selectedCategory = category;
+            
+            // Update tab styles
+            document.querySelectorAll('.category-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            renderMenu();
+        }
+
+        function renderMenu() {
+            const container = document.getElementById('menu-items');
+            const favGrid = document.getElementById('favorites-grid');
+            
+            // Hide both by default
+            container.style.display = 'none';
+            favGrid.classList.remove('show');
+            
+            if (selectedCategory === 'Omiljeno') {
+                renderFavorites();
+                return;
+            }
+            
+            if (selectedCategory === 'Promocije') {
+                renderPromocije();
+                return;
+            }
+            
+            // Show regular menu
+            container.style.display = 'block';
+            
+            // Filter items by category
+            const filteredItems = menuItems.filter(i => i.category === selectedCategory);
+            
+            container.innerHTML = filteredItems.map(item => {
+                const isFav = favorites.includes(item.id);
+                const emoji = getEmoji(item.category);
+                return `
+                    <div class="menu-item ${isFav ? 'favorite' : ''}">
+                        <div class="item-image" onclick="openProductSheet('${item.id}')">
+                            <div class="item-image-placeholder">${emoji}</div>
+                            <button class="favorite-btn" onclick="event.stopPropagation(); toggleFavorite('${item.id}')">${isFav ? '❤️' : '🤍'}</button>
+                        </div>
+                        <div class="item-info" onclick="openProductSheet('${item.id}')">
+                            <div class="item-name">${item.name}</div>
+                            <div class="item-price">${item.price} RSD</div>
+                        </div>
+                        <div class="item-controls">
+                            <button class="qty-btn" onclick="updateQty('${item.id}', -1)" ${!cart[item.id] ? 'disabled' : ''}>−</button>
+                            <span class="qty-value">${cart[item.id] || 0}</span>
+                            <button class="qty-btn" onclick="updateQty('${item.id}', 1)">+</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Top 6 most popular products
+        const topProducts = [
+            { id: '4043', name: 'BIG Double Collina Smash', orders: 1250 },
+            { id: '6985146', name: 'Dubai palačinka', orders: 980 },
+            { id: '6985169', name: 'Supreme Triple Smash', orders: 875 },
+            { id: '5117', name: 'Palačinka nutela', orders: 820 },
+            { id: '6001', name: 'Ćevapi 10kom', orders: 760 },
+            { id: '5170', name: 'Good morning XL', orders: 690 }
+        ];
+
+        function renderFavorites() {
+            const favGrid = document.getElementById('favorites-grid');
+            const container = document.getElementById('menu-items');
+            container.style.display = 'none';
+            
+            const favItems = menuItems.filter(i => favorites.includes(i.id));
+            
+            let html = '';
+            
+            // Personal Favorites Section
+            if (favItems.length > 0) {
+                html += `<div class="favorites-section-title" style="grid-column: span 2;">❤️ Tvoji omiljeni</div>`;
+                html += favItems.map(item => renderFavoriteCard(item, true)).join('');
+            }
+            
+            // Top 6 Popular Section
+            html += `<div class="favorites-section-title" style="grid-column: span 2; margin-top: ${favItems.length > 0 ? '20px' : '0'};">🔥 Najpopularnije</div>`;
+            html += topProducts.map(top => {
+                const item = menuItems.find(i => i.id === top.id);
+                if (item) {
+                    return renderFavoriteCard(item, false, top.orders);
+                }
+                return '';
+            }).join('');
+            
+            favGrid.classList.add('show');
+            favGrid.innerHTML = html;
+        }
+
+        function renderFavoriteCard(item, isPersonal, orderCount = null) {
+            const isFav = favorites.includes(item.id);
+            return `
+                <div class="favorite-card">
+                    <div class="favorite-card-image" onclick="openProductSheet('${item.id}')">
+                        ${getEmoji(item.category)}
+                        ${isPersonal ? `<button class="favorite-card-remove" onclick="event.stopPropagation(); toggleFavorite('${item.id}')">❤️</button>` : ''}
+                        ${orderCount ? `<div class="favorite-card-orders">${orderCount}+ narudžbina</div>` : ''}
+                    </div>
+                    <div class="favorite-card-content">
+                        <div class="favorite-card-name" onclick="openProductSheet('${item.id}')">${item.name}</div>
+                        <div class="favorite-card-footer">
+                            <div class="favorite-card-price">${item.price} RSD</div>
+                            <div class="card-controls">
+                                <button class="card-qty-btn" onclick="event.stopPropagation(); updateQty('${item.id}', -1)" ${!cart[item.id] ? 'disabled' : ''}>−</button>
+                                <span class="card-qty-value">${cart[item.id] || 0}</span>
+                                <button class="card-qty-btn" onclick="event.stopPropagation(); updateQty('${item.id}', 1)">+</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderPromocije() {
+            const container = document.getElementById('menu-items');
+            const favGrid = document.getElementById('favorites-grid');
+            favGrid.classList.remove('show');
+            container.style.display = 'block';
+            
+            container.innerHTML = promocije.map(promo => `
+                <div class="promo-menu-card">
+                    <div class="promo-menu-image">
+                        <img src="${FOOD_PHOTO}" alt="${promo.name}">
+                        <span class="promo-menu-badge">${promo.badge}</span>
+                    </div>
+                    <div class="promo-menu-content">
+                        <div class="promo-menu-title">${promo.name}</div>
+                        <div class="promo-menu-desc">${promo.desc}</div>
+                        <div class="promo-menu-footer">
+                            <div class="promo-menu-prices">
+                                <span class="promo-menu-old-price">${promo.oldPrice} RSD</span>
+                                <span class="promo-menu-price">${promo.price} RSD</span>
+                            </div>
+                            <div class="promo-controls">
+                                <button class="promo-qty-btn" onclick="updatePromoQty('${promo.id}', -1)" ${!cart[promo.id] ? 'disabled' : ''}>−</button>
+                                <span class="promo-qty-value">${cart[promo.id] || 0}</span>
+                                <button class="promo-qty-btn" onclick="updatePromoQty('${promo.id}', 1)">+</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updatePromoQty(id, delta) {
+            cart[id] = (cart[id] || 0) + delta;
+            if (cart[id] <= 0) delete cart[id];
+            renderMenu();
+            updateCartUI();
+        }
+
+        function toggleFavorite(id) {
+            const idx = favorites.indexOf(id);
+            if (idx > -1) favorites.splice(idx, 1);
+            else favorites.push(id);
+            localStorage.setItem('collina_favorites', JSON.stringify(favorites));
+            renderMenu();
+        }
+
+        function updateQty(id, delta) {
+            cart[id] = (cart[id] || 0) + delta;
+            if (cart[id] <= 0) delete cart[id];
+            renderMenu();
+            updateCartUI();
+            updateFeaturedQty();
+        }
+
+        function updateFeaturedQty() {
+            // Update featured cards quantity displays
+            const featuredIds = ['4043', '6985146', '6985169', '6001'];
+            featuredIds.forEach(id => {
+                const qtyEl = document.getElementById('feat-qty-' + id);
+                const minusBtn = document.getElementById('feat-minus-' + id);
+                if (qtyEl) {
+                    qtyEl.textContent = cart[id] || 0;
+                }
+                if (minusBtn) {
+                    minusBtn.disabled = !cart[id];
+                }
+            });
+        }
+
+        // CART UI
+        function getCartItemPrice(id) {
+            const item = menuItems.find(i => i.id === id);
+            if (item) return item.price;
+            const promo = promocije.find(p => p.id === id);
+            if (promo) return promo.price;
+            return 0;
+        }
+
+        function getCartItemName(id) {
+            const item = menuItems.find(i => i.id === id);
+            if (item) return item.name;
+            const promo = promocije.find(p => p.id === id);
+            if (promo) return promo.name;
+            return '';
+        }
+
+        function updateCartUI() {
+            const count = Object.values(cart).reduce((a, b) => a + b, 0);
+            const total = Object.entries(cart).reduce((sum, [id, qty]) => {
+                return sum + (getCartItemPrice(id) * qty);
+            }, 0);
+
+            document.getElementById('cart-count').textContent = count;
+            document.getElementById('sticky-total').textContent = total + ' RSD';
+            
+            // Show/hide sticky cart on menu screen
+            const stickyCart = document.getElementById('sticky-cart');
+            const menuScreen = document.getElementById('screen-menu');
+            if (menuScreen.classList.contains('active') && count > 0) {
+                stickyCart.classList.add('show');
+            } else {
+                stickyCart.classList.remove('show');
+            }
+        }
+
+        // CHECKOUT
+        function renderCheckout() {
+            const itemsContainer = document.getElementById('checkout-items');
+            const items = Object.entries(cart).map(([id, qty]) => {
+                return { id, name: getCartItemName(id), price: getCartItemPrice(id), qty };
+            }).filter(item => item.name);
+
+            itemsContainer.innerHTML = items.map(item => `
+                <div class="checkout-item">
+                    <div class="checkout-item-info">
+                        <div class="checkout-item-name">${item.name}</div>
+                        <div class="checkout-item-price">${item.price} RSD</div>
+                    </div>
+                    <div class="checkout-item-actions">
+                        <div class="checkout-item-controls">
+                            <button class="checkout-qty-btn" onclick="updateCartQty('${item.id}', -1)">−</button>
+                            <span>${item.qty}</span>
+                            <button class="checkout-qty-btn" onclick="updateCartQty('${item.id}', 1)">+</button>
+                        </div>
+                        <button class="checkout-delete-btn" onclick="removeFromCart('${item.id}')">🗑️</button>
+                    </div>
+                </div>
+            `).join('');
+
+            // Recommendations
+            document.getElementById('checkout-recommendations').innerHTML = recommendedItems.map(rec => `
+                <div class="rec-item ${addedRecommendations.includes(rec.id) ? 'added' : ''}" onclick="toggleRecommendation('${rec.id}')">
+                    ${rec.name} ${rec.price} RSD
+                </div>
+            `).join('');
+
+            updateCheckoutLocation();
+            updateCheckoutSummary();
+        }
+
+        function updateCartQty(id, delta) {
+            cart[id] = (cart[id] || 0) + delta;
+            if (cart[id] <= 0) delete cart[id];
+            renderCheckout();
+            updateCartUI();
+        }
+
+        function removeFromCart(id) {
+            delete cart[id];
+            renderCheckout();
+            updateCartUI();
+        }
+
+        function toggleRecommendation(id) {
+            const idx = addedRecommendations.indexOf(id);
+            if (idx > -1) addedRecommendations.splice(idx, 1);
+            else addedRecommendations.push(id);
+            renderCheckout();
+        }
+
+        let appliedCoupon = null;
+
+        function selectOrderType(type) {
+            selectedOrderType = type;
+            document.querySelectorAll('.order-type-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById('type-' + (type === 'drive_through' ? 'drive' : type === 'eat_in' ? 'eatin' : 'delivery')).classList.add('active');
+            updateCheckoutLocation();
+            updateCheckoutSummary();
+        }
+
+        function updateCheckoutLocation() {
+            const card = document.getElementById('checkout-location-card');
+            const icon = document.getElementById('checkout-location-icon');
+            const label = document.getElementById('checkout-location-label');
+            const value = document.getElementById('checkout-location-value');
+            
+            if (selectedOrderType === 'delivery') {
+                icon.textContent = '📍';
+                label.textContent = 'Adresa dostave';
+                value.textContent = customer?.address || 'Dodaj adresu';
+            } else {
+                icon.textContent = '🏪';
+                label.textContent = selectedOrderType === 'drive_through' ? 'Drive-Thru lokal' : 'Lokal';
+                const locId = customer?.favorite_location || localStorage.getItem('collina_location');
+                if (locId && locations[locId]) {
+                    value.textContent = locations[locId].name;
+                } else {
+                    value.textContent = 'Izaberi lokal';
+                }
+            }
+        }
+
+        function changeCheckoutLocation() {
+            if (selectedOrderType === 'delivery') {
+                const newAddress = prompt('Unesi adresu dostave:', customer?.address || '');
+                if (newAddress) {
+                    customer.address = newAddress;
+                    updateCheckoutLocation();
+                }
+            } else {
+                // Show location picker
+                const locOptions = Object.entries(locations).map(([id, loc]) => `${id}: ${loc.name}`).join('\n');
+                const choice = prompt(`Izaberi lokal:\n\nbanovo_brdo: Collina Banovo Brdo\nvracar: Collina Vračar\nnovi_beograd: Collina Novi Beograd\n\nUnesi ID:`);
+                if (choice && locations[choice]) {
+                    localStorage.setItem('collina_location', choice);
+                    if (customer) customer.favorite_location = choice;
+                    updateCheckoutLocation();
+                }
+            }
+        }
+
+        function toggleCheckoutCoupon(couponId) {
+            const couponEl = document.querySelector(`.checkout-coupon[data-coupon="${couponId}"]`);
+            
+            if (appliedCoupon === couponId) {
+                // Deselect
+                appliedCoupon = null;
+                couponEl.classList.remove('selected');
+            } else {
+                // Deselect previous
+                document.querySelectorAll('.checkout-coupon').forEach(c => c.classList.remove('selected'));
+                // Select new
+                appliedCoupon = couponId;
+                couponEl.classList.add('selected');
+            }
+            
+            updateCheckoutSummary();
+        }
+
+        function updateCheckoutSummary() {
+            const itemsTotal = Object.entries(cart).reduce((sum, [id, qty]) => {
+                const item = menuItems.find(i => i.id === id);
+                if (item) return sum + (item.price * qty);
+                
+                const promo = promocije.find(p => p.id === id);
+                if (promo) return sum + (promo.price * qty);
+                
+                return sum;
+            }, 0);
+
+            const recsTotal = addedRecommendations.reduce((sum, id) => {
+                const rec = recommendedItems.find(r => r.id === id);
+                return sum + (rec ? rec.price : 0);
+            }, 0);
+
+            let subtotal = itemsTotal + recsTotal;
+            let discount = 0;
+            let deliveryFee = selectedOrderType === 'delivery' ? 200 : 0;
+            let freeItems = [];
+
+            // Apply coupon
+            if (appliedCoupon === 'discount30') {
+                discount = Math.round(subtotal * 0.3);
+            } else if (appliedCoupon === 'free_delivery') {
+                deliveryFee = 0;
+            } else if (appliedCoupon === 'free_cookie') {
+                freeItems.push('🍪 Kolačić');
+            } else if (appliedCoupon === 'free_fries') {
+                freeItems.push('🍟 Pomfrit');
+            } else if (appliedCoupon === 'free_pancake') {
+                freeItems.push('🥞 Palačinka');
+            }
+
+            const total = subtotal - discount + deliveryFee;
+
+            // Update display
+            document.getElementById('summary-items').textContent = subtotal.toLocaleString() + ' RSD';
+            
+            // Discount row
+            const discountRow = document.getElementById('summary-discount-row');
+            if (discount > 0) {
+                discountRow.style.display = 'flex';
+                document.getElementById('summary-discount').textContent = '-' + discount.toLocaleString() + ' RSD';
+            } else {
+                discountRow.style.display = 'none';
+            }
+
+            // Delivery row
+            const deliveryEl = document.getElementById('summary-delivery');
+            if (appliedCoupon === 'free_delivery' && selectedOrderType === 'delivery') {
+                deliveryEl.innerHTML = '<span style="text-decoration: line-through; margin-right: 8px;">200 RSD</span> <span style="color: var(--success);">Besplatno!</span>';
+            } else {
+                deliveryEl.textContent = deliveryFee + ' RSD';
+            }
+
+            // Free items row
+            const freeItemsRow = document.getElementById('summary-free-items');
+            if (freeItems.length > 0) {
+                freeItemsRow.style.display = 'flex';
+                document.getElementById('summary-free-list').textContent = freeItems.join(', ');
+            } else {
+                freeItemsRow.style.display = 'none';
+            }
+
+            document.getElementById('summary-total').textContent = total.toLocaleString() + ' RSD';
+        }
+
+        // SUBMIT ORDER
+        async function submitOrder() {
+            // Check if guest - require registration
+            if (isGuest()) {
+                showRegisterModal('order');
+                return;
+            }
+
+            const total = parseInt(document.getElementById('summary-total').textContent);
+            const orderId = 990000000 + Math.floor(Math.random() * 9999999);
+            currentOrderId = orderId;
+
+            const items = Object.entries(cart).map(([id, qty]) => {
+                const item = menuItems.find(i => i.id === id);
+                return { id, name: item.name, price: item.price, qty, total: item.price * qty };
+            });
+
+            const order = {
+                id: orderId,
+                order_status: 'pending',
+                source: 'app_direct',
+                payment_method: 'cash',
+                total_price: total,
+                client_first_name: customer.first_name,
+                client_last_name: customer.last_name,
+                client_phone: customer.phone,
+                client_address: customer.address,
+                instructions: document.getElementById('order-comment').value,
+                raw_items: items,
+                created_at: new Date().toISOString()
+            };
+
+            try {
+                if (db) {
+                    await db.from('website_orders').insert([order]);
+
+                    // Award points
+                    if (customer.id) {
+                        const points = Math.floor(total / 100);
+                        const newPoints = (customer.loyalty_points || 0) + points;
+                        const newOrders = (customer.total_orders || 0) + 1;
+                        await db.from('customers').update({ loyalty_points: newPoints, total_orders: newOrders }).eq('id', customer.id);
+                        customer.loyalty_points = newPoints;
+                        customer.total_orders = newOrders;
+                        updatePointsDisplay();
+                    }
+                }
+
+                // Show tracking
+                showTracking(orderId, total, items.length);
+            } catch(e) {
+                console.error(e);
+                alert('Greška pri slanju narudžbine');
+            }
+        }
+
+        function showTracking(orderId, total, itemCount) {
+            // Save active order
+            activeOrder = {
+                id: orderId,
+                status: 'pending',
+                statusText: 'Čekamo potvrdu',
+                statusIcon: '⏳',
+                progress: 10,
+                time: '~25 min',
+                type: selectedOrderType,
+                total: total,
+                items: itemCount,
+                createdAt: new Date().toISOString()
+            };
+            localStorage.setItem('collina_active_order', JSON.stringify(activeOrder));
+            
+            document.getElementById('tracking-order-id').textContent = 'Narudžbina #' + orderId;
+            document.getElementById('tracking-type').textContent = selectedOrderType === 'delivery' ? 'Dostava' : selectedOrderType === 'drive_through' ? 'Drive through' : 'U lokalu';
+            document.getElementById('tracking-items').textContent = itemCount + ' stavki';
+            document.getElementById('tracking-total').textContent = total + ' RSD';
+            document.getElementById('timer-value').textContent = '~25';
+            
+            showScreen('tracking');
+            updateActiveOrderBanner();
+
+            // Simulate confirmation after 3 seconds
+            setTimeout(() => {
+                if (!activeOrder) return;
+                
+                activeOrder.status = 'confirmed';
+                activeOrder.statusText = 'Spremamo';
+                activeOrder.statusIcon = '👨‍🍳';
+                activeOrder.progress = 30;
+                activeOrder.time = '20 min';
+                localStorage.setItem('collina_active_order', JSON.stringify(activeOrder));
+                
+                document.getElementById('tracking-status-icon').textContent = '✅';
+                document.getElementById('tracking-title').textContent = 'Potvrđeno!';
+                document.getElementById('tracking-subtitle').textContent = 'Spremamo tvoju narudžbinu';
+                document.getElementById('timer-label').textContent = 'Preostalo vreme';
+                document.getElementById('timer-value').textContent = '20';
+                document.getElementById('tracking-progress').style.width = '30%';
+                updateActiveOrderBanner();
+
+                // Simulate countdown
+                let mins = 20;
+                const interval = setInterval(() => {
+                    if (!activeOrder) { clearInterval(interval); return; }
+                    
+                    mins--;
+                    activeOrder.progress = 30 + (20 - mins) * 3.5;
+                    activeOrder.time = mins + ' min';
+                    localStorage.setItem('collina_active_order', JSON.stringify(activeOrder));
+                    updateActiveOrderBanner();
+                    
+                    if (mins <= 0) {
+                        clearInterval(interval);
+                        activeOrder.status = 'ready';
+                        activeOrder.statusText = 'Spremno!';
+                        activeOrder.statusIcon = '🎉';
+                        activeOrder.progress = 100;
+                        activeOrder.time = 'Gotovo';
+                        localStorage.setItem('collina_active_order', JSON.stringify(activeOrder));
+                        
+                        document.getElementById('tracking-status-icon').textContent = '🎉';
+                        document.getElementById('tracking-title').textContent = 'Spremno!';
+                        document.getElementById('tracking-subtitle').textContent = 'Tvoja narudžbina je gotova';
+                        document.getElementById('timer-value').textContent = '0';
+                        document.getElementById('tracking-progress').style.width = '100%';
+                        updateActiveOrderBanner();
+                        
+                        // Add to history after a few seconds
+                        setTimeout(() => {
+                            completeOrder();
+                        }, 5000);
+                    } else {
+                        document.getElementById('timer-value').textContent = mins;
+                        document.getElementById('tracking-progress').style.width = activeOrder.progress + '%';
+                    }
+                }, 3000); // Speed up for demo (3sec = 1min)
+            }, 3000);
+        }
+
+        function updateActiveOrderBanner() {
+            const banner = document.getElementById('active-order-banner');
+            if (activeOrder && activeOrder.status !== 'completed') {
+                banner.classList.add('show');
+                document.getElementById('banner-status-icon').textContent = activeOrder.statusIcon;
+                document.getElementById('banner-status-text').textContent = activeOrder.statusText;
+                document.getElementById('banner-order-id').textContent = '#' + activeOrder.id;
+                document.getElementById('banner-progress').style.width = activeOrder.progress + '%';
+                document.getElementById('banner-time').textContent = activeOrder.status === 'pending' ? 'Procena: ' + activeOrder.time : activeOrder.time;
+            } else {
+                banner.classList.remove('show');
+            }
+        }
+
+        function completeOrder() {
+            if (!activeOrder) return;
+            
+            // Save to history
+            const historyItem = {
+                ...activeOrder,
+                status: 'delivered',
+                completedAt: new Date().toISOString()
+            };
+            
+            const history = JSON.parse(localStorage.getItem('collina_order_history') || '[]');
+            history.unshift(historyItem);
+            localStorage.setItem('collina_order_history', JSON.stringify(history.slice(0, 20))); // Keep last 20
+            
+            // Clear active order
+            activeOrder = null;
+            localStorage.removeItem('collina_active_order');
+            updateActiveOrderBanner();
+            loadOrderHistory();
+        }
+
+        async function loadOrderHistory() {
+            const historyList = document.getElementById('order-history-list');
+            
+            // Load from localStorage first (includes simulated orders)
+            const localHistory = JSON.parse(localStorage.getItem('collina_order_history') || '[]');
+            
+            // Also try to load from database if customer is logged in
+            let dbHistory = [];
+            if (customer.phone && db) {
+                try {
+                    const { data } = await db.from('website_orders')
+                        .select('id, total_price, raw_items, created_at, order_status, instructions')
+                        .ilike('client_phone', `%${customer.phone.replace('+', '')}%`)
+                        .order('created_at', { ascending: false })
+                        .limit(20);
+                    
+                    if (data) {
+                        dbHistory = data.map(o => ({
+                            id: o.id,
+                            total: o.total_price,
+                            items: o.raw_items?.length || 0,
+                            rawItems: o.raw_items || [],
+                            itemsList: o.raw_items?.map(i => i.name).join(', ') || '',
+                            status: o.order_status === 'delivered' ? 'delivered' : 'completed',
+                            createdAt: o.created_at,
+                            type: o.instructions?.includes('Drive') ? 'drive_through' : o.instructions?.includes('lokal') ? 'eat_in' : 'delivery'
+                        }));
+                    }
+                } catch(e) { console.error(e); }
+            }
+            
+            // Combine and deduplicate by ID
+            const allHistory = [...localHistory, ...dbHistory];
+            const uniqueHistory = allHistory.filter((item, index, self) => 
+                index === self.findIndex(t => t.id === item.id)
+            ).slice(0, 20);
+            
+            if (uniqueHistory.length === 0) {
+                historyList.innerHTML = '<div style="text-align:center;color:var(--text-secondary);padding:20px;">Nema prethodnih narudžbina</div>';
+                return;
+            }
+            
+            historyList.innerHTML = uniqueHistory.map(order => {
+                const date = new Date(order.createdAt || order.completedAt);
+                const dateStr = date.toLocaleDateString('sr-RS') + ' ' + date.toLocaleTimeString('sr-RS', { hour: '2-digit', minute: '2-digit' });
+                const typeLabel = order.type === 'delivery' ? '🛵 Dostava' : order.type === 'drive_through' ? '🚗 Drive' : '🍽️ U lokalu';
+                const statusLabel = order.status === 'delivered' ? 'Isporučeno' : order.status === 'cancelled' ? 'Otkazano' : 'Završeno';
+                const statusClass = order.status === 'delivered' ? 'delivered' : order.status === 'cancelled' ? 'cancelled' : '';
+                
+                // Build items breakdown
+                let itemsBreakdown = '';
+                if (order.rawItems && order.rawItems.length > 0) {
+                    itemsBreakdown = order.rawItems.map(item => `
+                        <div class="history-item-row">
+                            <span class="history-item-qty">${item.qty || 1}x</span>
+                            <span class="history-item-name">${item.name}</span>
+                            <span class="history-item-price">${item.price || ''} RSD</span>
+                        </div>
+                    `).join('');
+                } else if (order.itemsList) {
+                    itemsBreakdown = `<div class="history-item-row"><span class="history-item-name">${order.itemsList}</span></div>`;
+                } else {
+                    itemsBreakdown = `<div class="history-item-row"><span class="history-item-name">${order.items || 0} stavki</span></div>`;
+                }
+                
+                return `
+                    <div class="history-item ${statusClass}">
+                        <div class="history-header">
+                            <span class="history-date">${dateStr}</span>
+                            <span class="history-status">${statusLabel}</span>
+                        </div>
+                        <div class="history-breakdown">
+                            ${itemsBreakdown}
+                        </div>
+                        <div class="history-footer">
+                            <span class="history-type">${typeLabel}</span>
+                            <span class="history-total">${order.total?.toLocaleString() || 0} RSD</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // PRODUCT SHEET
+        function openProductSheet(id) {
+            const item = menuItems.find(i => i.id === id);
+            if (!item) return;
+            currentProduct = item;
+            sheetQty = 1;
+            selectedToppings = [];
+
+            document.getElementById('product-image-large').innerHTML = `<img src="${FOOD_PHOTO}" alt="${item.name}" style="width: 100%; height: 100%; object-fit: cover;">`;
+            document.getElementById('product-sheet-name').textContent = item.name;
+            document.getElementById('product-sheet-price').textContent = item.price + ' RSD';
+            document.getElementById('product-sheet-desc').textContent = item.desc || '';
+            document.getElementById('product-ingredients').innerHTML = (item.ingredients || []).map(i => `<span class="ingredient-tag">${i}</span>`).join('');
+
+            const toppingsSection = document.getElementById('toppings-section');
+            const toppingsEl = document.getElementById('product-toppings');
+            if (item.toppings?.length > 0) {
+                toppingsSection.style.display = 'block';
+                toppingsEl.innerHTML = item.toppings.map(tid => {
+                    const t = toppings[tid];
+                    return t ? `<div class="topping-item" id="topping-${tid}" onclick="toggleTopping('${tid}')"><div class="topping-info"><div class="topping-checkbox"></div><span class="topping-name">${t.name}</span></div><span class="topping-price">+${t.price} RSD</span></div>` : '';
+                }).join('');
+            } else {
+                toppingsSection.style.display = 'none';
+            }
+
+            document.getElementById('sheet-qty').textContent = sheetQty;
+            updateSheetTotal();
+            document.getElementById('product-sheet-overlay').classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeProductSheet() {
+            document.getElementById('product-sheet-overlay').classList.remove('show');
+            document.body.style.overflow = '';
+        }
+
+        function toggleTopping(id) {
+            const idx = selectedToppings.indexOf(id);
+            const el = document.getElementById('topping-' + id);
+            if (idx > -1) { selectedToppings.splice(idx, 1); el?.classList.remove('selected'); }
+            else { selectedToppings.push(id); el?.classList.add('selected'); }
+            updateSheetTotal();
+        }
+
+        function updateSheetQty(delta) {
+            sheetQty = Math.max(1, sheetQty + delta);
+            document.getElementById('sheet-qty').textContent = sheetQty;
+            updateSheetTotal();
+        }
+
+        function updateSheetTotal() {
+            if (!currentProduct) return;
+            let total = currentProduct.price;
+            selectedToppings.forEach(tid => { if (toppings[tid]) total += toppings[tid].price; });
+            document.getElementById('sheet-total').textContent = (total * sheetQty) + ' RSD';
+        }
+
+        function addToCartFromSheet() {
+            if (!currentProduct) return;
+            cart[currentProduct.id] = (cart[currentProduct.id] || 0) + sheetQty;
+            renderMenu();
+            updateCartUI();
+            closeProductSheet();
+        }
+
+        // SIDE MENU
+        function toggleMenu() {
+            document.getElementById('menu-overlay').classList.toggle('show');
+            populateSettings();
+            loadOrderHistory();
+        }
+
+        function closeMenuOverlay(e) {
+            if (e.target === document.getElementById('menu-overlay')) toggleMenu();
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('.menu-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById('tab-' + tab).classList.add('active');
+        }
+
+        // POINTS
+        function updatePointsDisplay() {
+            // Points are now shown on home screen stats
+            // This function kept for compatibility
+        }
+
+        function populateSettings() {
+            if (!customer) return;
+            document.getElementById('view-firstname').textContent = customer.first_name || '-';
+            document.getElementById('view-lastname').textContent = customer.last_name || '-';
+            document.getElementById('view-phone').textContent = customer.phone || '-';
+            document.getElementById('view-email').textContent = customer.email || '-';
+            document.getElementById('view-address').textContent = customer.address || '-';
+        }
+
+        function showEditSettings() { alert('Funkcija u izradi'); }
+
+        // CLAIM WOLT
+        function showClaimModal() {
+            document.getElementById('claim-result').style.display = 'none';
+            document.getElementById('claim-name').value = '';
+            document.getElementById('claim-date').value = '';
+            document.getElementById('claim-modal').classList.add('show');
+        }
+
+        function closeClaimModal() {
+            document.getElementById('claim-modal').classList.remove('show');
+        }
+
+        async function searchWoltOrder() {
+            const name = document.getElementById('claim-name').value.trim();
+            const date = document.getElementById('claim-date').value;
+            const result = document.getElementById('claim-result');
+            
+            if (!name || !date) {
+                result.style.display = 'block';
+                result.innerHTML = '<div style="color:#ef4444;">Unesi ime i datum</div>';
+                return;
+            }
+
+            result.style.display = 'block';
+            result.innerHTML = '<div>Tražim...</div>';
+
+            // Simulate search
+            setTimeout(() => {
+                result.innerHTML = `
+                    <div style="color:var(--success);font-weight:600;margin-bottom:8px;">✅ Pronađena narudžbina!</div>
+                    <div>📅 ${date}</div>
+                    <div>💰 1,500 RSD → <span style="color:var(--gold);">+15 poena</span></div>
+                    <button onclick="claimPoints()" style="width:100%;padding:12px;background:var(--success);border:none;border-radius:8px;color:white;font-weight:600;margin-top:12px;cursor:pointer;">Preuzmi poene</button>
+                `;
+            }, 1000);
+        }
+
+        async function claimPoints() {
+            if (customer.id && db) {
+                const newPts = (customer.loyalty_points || 0) + 15;
+                await db.from('customers').update({ loyalty_points: newPts }).eq('id', customer.id);
+                customer.loyalty_points = newPts;
+                updatePointsDisplay();
+            }
+            closeClaimModal();
+            alert('✅ 15 poena dodato!');
+        }
+
+        // START
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
