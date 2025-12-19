@@ -3982,19 +3982,25 @@
                     loadFallbackData();
                 }
 
-                // Load promocije
+                // Load promocije (with menu item reference)
                 const { data: promoData } = await db.from('promocije').select('*').eq('is_active', true).order('sort_order');
                 if (promoData && promoData.length > 0) {
-                    promocije = promoData.map(p => ({
-                        id: p.id,
-                        name: p.name,
-                        desc: p.description,
-                        oldPrice: p.old_price,
-                        price: p.price,
-                        badge: p.badge,
-                        image_url: p.image_url,
-                        emoji: '🎉'
-                    }));
+                    promocije = promoData.map(p => {
+                        // Find the menu item this promo refers to
+                        const menuItem = menuItems.find(m => m.id === p.menu_item_id);
+                        return {
+                            id: p.id,
+                            menu_item_id: p.menu_item_id,
+                            name: menuItem?.name || 'Promocija',
+                            desc: menuItem?.desc || '',
+                            oldPrice: p.old_price,
+                            price: p.new_price,
+                            badge: p.badge,
+                            image_url: menuItem?.image_url,
+                            category: menuItem?.category,
+                            emoji: '🎉'
+                        };
+                    });
                     console.log('Loaded promocije from DB:', promocije.length);
                 }
 
