@@ -2303,6 +2303,103 @@
             opacity: 0.9;
         }
 
+        /* Toast Notifications */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: none;
+        }
+
+        .toast {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+            animation: toast-in 0.4s ease;
+            pointer-events: auto;
+            min-width: 280px;
+            max-width: 90vw;
+        }
+
+        .toast.toast-out {
+            animation: toast-out 0.3s ease forwards;
+        }
+
+        @keyframes toast-in {
+            from {
+                opacity: 0;
+                transform: translateY(-20px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        @keyframes toast-out {
+            from {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+            to {
+                opacity: 0;
+                transform: translateY(-20px) scale(0.95);
+            }
+        }
+
+        .toast-icon {
+            font-size: 32px;
+            flex-shrink: 0;
+        }
+
+        .toast-content {
+            flex: 1;
+        }
+
+        .toast-title {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .toast-message {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .toast.success {
+            border-color: var(--success);
+            background: linear-gradient(135deg, var(--bg-card), rgba(125, 184, 143, 0.1));
+        }
+
+        .toast.success .toast-title {
+            color: var(--success);
+        }
+
+        .toast.error {
+            border-color: #ef4444;
+            background: linear-gradient(135deg, var(--bg-card), rgba(239, 68, 68, 0.1));
+        }
+
+        .toast.error .toast-title {
+            color: #ef4444;
+        }
+
+        .toast.info {
+            border-color: var(--accent);
+            background: linear-gradient(135deg, var(--bg-card), rgba(201, 123, 123, 0.1));
+        }
+
         .tracking-items-list {
             background: var(--bg-card);
             border: 1px solid var(--border);
@@ -3755,6 +3852,9 @@
             <button class="modal-btn" onclick="closeClaimModal()" style="background:var(--bg-secondary)">Zatvori</button>
         </div>
     </div>
+
+    <!-- TOAST NOTIFICATION -->
+    <div class="toast-container" id="toast-container"></div>
 
     <script>
         // CONFIG
@@ -5417,26 +5517,103 @@
             result.style.display = 'block';
             result.innerHTML = '<div>Tražim...</div>';
 
-            // Simulate search
-            setTimeout(() => {
+            try {
+                if (!db) {
+                    result.innerHTML = '<div style="color:#ef4444;">Greška: Nema konekcije</div>';
+                    return;
+                }
+
+                // Query wolt_orders by consumer_name and created_at date
+                const startDate = date + 'T00:00:00';
+                const endDate = date + 'T23:59:59';
+                
+                const { data, error } = await db
+                    .from('wolt_orders')
+                    .select('id, consumer_name, amount, created_at, venue_name')
+                    .ilike('consumer_name', `%${name}%`)
+                    .gte('created_at', startDate)
+                    .lte('created_at', endDate)
+                    .limit(1);
+
+                if (error) {
+                    console.error('Search error:', error);
+                    result.innerHTML = '<div style="color:#ef4444;">Greška pri pretrazi</div>';
+                    return;
+                }
+
+                if (!data || data.length === 0) {
+                    result.innerHTML = '<div style="color:#ef4444;">Nije pronađena narudžbina za to ime i datum</div>';
+                    return;
+                }
+
+                const order = data[0];
+                const totalRSD = order.amount / 100; // amount is in para (100 para = 1 RSD)
+                const points = Math.floor(totalRSD / 100); // 1 point per 100 RSD
+
                 result.innerHTML = `
                     <div style="color:var(--success);font-weight:600;margin-bottom:8px;">✅ Pronađena narudžbina!</div>
-                    <div>📅 ${date}</div>
-                    <div>💰 1,500 RSD → <span style="color:var(--gold);">+15 poena</span></div>
-                    <button onclick="claimPoints()" style="width:100%;padding:12px;background:var(--success);border:none;border-radius:8px;color:white;font-weight:600;margin-top:12px;cursor:pointer;">Preuzmi poene</button>
+                    <div style="font-size:13px;color:var(--text-secondary);margin-bottom:4px;">${order.venue_name}</div>
+                    <div>📅 ${new Date(order.created_at).toLocaleDateString('sr-RS')}</div>
+                    <div>💰 ${totalRSD.toLocaleString()} RSD → <span style="color:var(--gold);">+${points} poena</span></div>
+                    <button onclick="claimWoltPoints('${order.id}', ${points})" style="width:100%;padding:12px;background:var(--success);border:none;border-radius:8px;color:white;font-weight:600;margin-top:12px;cursor:pointer;font-family:inherit;">Preuzmi poene</button>
                 `;
-            }, 1000);
+            } catch (e) {
+                console.error('Search error:', e);
+                result.innerHTML = '<div style="color:#ef4444;">Greška pri pretrazi</div>';
+            }
+        }
+
+        async function claimWoltPoints(orderId, points) {
+            // Check if this order was already claimed
+            const claimedOrders = JSON.parse(localStorage.getItem('collina_claimed_wolt') || '[]');
+            if (claimedOrders.includes(orderId)) {
+                showToast('error', 'Već iskorišćeno', 'Ova narudžbina je već iskorišćena za poene');
+                return;
+            }
+
+            if (customer.id && db) {
+                const newPts = (customer.loyalty_points || 0) + points;
+                await db.from('customers').update({ loyalty_points: newPts }).eq('id', customer.id);
+                customer.loyalty_points = newPts;
+                updateHomeScreen();
+                updateKlubScreen();
+            }
+
+            // Mark order as claimed
+            claimedOrders.push(orderId);
+            localStorage.setItem('collina_claimed_wolt', JSON.stringify(claimedOrders));
+
+            closeClaimModal();
+            showToast('success', 'Poeni dodati!', `+${points} poena dodato na tvoj nalog`);
         }
 
         async function claimPoints() {
-            if (customer.id && db) {
-                const newPts = (customer.loyalty_points || 0) + 15;
-                await db.from('customers').update({ loyalty_points: newPts }).eq('id', customer.id);
-                customer.loyalty_points = newPts;
-                updatePointsDisplay();
-            }
-            closeClaimModal();
-            alert('✅ 15 poena dodato!');
+            // Legacy function - kept for compatibility
+            claimWoltPoints('legacy', 15);
+        }
+
+        function showToast(type, title, message, duration = 3000) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            
+            const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️';
+            
+            toast.innerHTML = `
+                <div class="toast-icon">${icon}</div>
+                <div class="toast-content">
+                    <div class="toast-title">${title}</div>
+                    <div class="toast-message">${message}</div>
+                </div>
+            `;
+            
+            container.appendChild(toast);
+            
+            // Auto remove
+            setTimeout(() => {
+                toast.classList.add('toast-out');
+                setTimeout(() => toast.remove(), 300);
+            }, duration);
         }
 
         // START
