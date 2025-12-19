@@ -1703,6 +1703,107 @@
             margin-bottom: 16px;
         }
 
+        /* Checkout Location Card */
+        .checkout-location-card {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            margin-bottom: 20px;
+        }
+
+        .checkout-location-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--bg-secondary);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .checkout-location-info {
+            flex: 1;
+        }
+
+        .checkout-location-label {
+            font-size: 11px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 2px;
+        }
+
+        .checkout-location-value {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .checkout-location-change {
+            padding: 8px 14px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        /* Checkout Coupons */
+        .checkout-coupons {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+            margin-bottom: 16px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .checkout-coupons::-webkit-scrollbar { display: none; }
+
+        .checkout-coupon {
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 14px;
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .checkout-coupon:hover {
+            border-color: var(--accent);
+        }
+
+        .checkout-coupon.selected {
+            border-color: var(--success);
+            background: rgba(125, 184, 143, 0.15);
+        }
+
+        .checkout-coupon-icon {
+            font-size: 16px;
+        }
+
+        .checkout-coupon-name {
+            font-size: 12px;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        .checkout-coupon.selected .checkout-coupon-name {
+            color: var(--success);
+        }
+
         .checkout-summary {
             background: var(--bg-card);
             border-radius: 12px;
@@ -1713,6 +1814,8 @@
         .summary-row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 14px; }
         .summary-row.total { border-top: 1px solid var(--border); padding-top: 12px; margin-top: 8px; font-weight: 700; font-size: 18px; }
         .summary-row.total span:last-child { color: var(--accent); }
+        .summary-row.discount span:last-child { color: var(--success); }
+        .summary-row.free-items { color: var(--success); font-size: 13px; }
 
         .checkout-submit-btn {
             width: 100%;
@@ -1956,6 +2059,43 @@
             color: var(--text-secondary);
             margin-bottom: 8px;
             line-height: 1.4;
+        }
+
+        .history-breakdown {
+            margin-bottom: 10px;
+            padding: 10px;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+        }
+
+        .history-item-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 0;
+            font-size: 13px;
+        }
+
+        .history-item-row:not(:last-child) {
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 8px;
+            margin-bottom: 4px;
+        }
+
+        .history-item-qty {
+            font-weight: 600;
+            color: var(--accent);
+            min-width: 28px;
+        }
+
+        .history-item-name {
+            flex: 1;
+            color: var(--text-primary);
+        }
+
+        .history-item-price {
+            color: var(--text-secondary);
+            font-size: 12px;
         }
 
         .history-footer {
@@ -2705,12 +2845,22 @@
             </button>
             <button class="order-type-btn" onclick="selectOrderType('drive_through')" id="type-drive">
                 <span class="order-type-icon">🚗</span>
-                <span class="order-type-name">Drive</span>
+                <span class="order-type-name">Drive-Thru</span>
             </button>
             <button class="order-type-btn" onclick="selectOrderType('eat_in')" id="type-eatin">
                 <span class="order-type-icon">🍽️</span>
                 <span class="order-type-name">U lokalu</span>
             </button>
+        </div>
+
+        <!-- Location/Address Info -->
+        <div class="checkout-location-card" id="checkout-location-card">
+            <div class="checkout-location-icon" id="checkout-location-icon">📍</div>
+            <div class="checkout-location-info">
+                <div class="checkout-location-label" id="checkout-location-label">Adresa dostave</div>
+                <div class="checkout-location-value" id="checkout-location-value">-</div>
+            </div>
+            <button class="checkout-location-change" onclick="changeCheckoutLocation()">Promeni</button>
         </div>
 
         <div class="section-label">Tvoje stavke</div>
@@ -2719,12 +2869,39 @@
         <div class="section-label">Preporučujemo</div>
         <div class="recommendations" id="checkout-recommendations"></div>
 
+        <!-- Coupons Section -->
+        <div class="section-label">Kuponi</div>
+        <div class="checkout-coupons" id="checkout-coupons">
+            <div class="checkout-coupon" data-coupon="discount30" onclick="toggleCheckoutCoupon('discount30')">
+                <span class="checkout-coupon-icon">🏷️</span>
+                <span class="checkout-coupon-name">30% popust</span>
+            </div>
+            <div class="checkout-coupon" data-coupon="free_delivery" onclick="toggleCheckoutCoupon('free_delivery')">
+                <span class="checkout-coupon-icon">🛵</span>
+                <span class="checkout-coupon-name">Besplatna dostava</span>
+            </div>
+            <div class="checkout-coupon" data-coupon="free_cookie" onclick="toggleCheckoutCoupon('free_cookie')">
+                <span class="checkout-coupon-icon">🍪</span>
+                <span class="checkout-coupon-name">+ Kolačić</span>
+            </div>
+            <div class="checkout-coupon" data-coupon="free_fries" onclick="toggleCheckoutCoupon('free_fries')">
+                <span class="checkout-coupon-icon">🍟</span>
+                <span class="checkout-coupon-name">+ Pomfrit</span>
+            </div>
+            <div class="checkout-coupon" data-coupon="free_pancake" onclick="toggleCheckoutCoupon('free_pancake')">
+                <span class="checkout-coupon-icon">🥞</span>
+                <span class="checkout-coupon-name">+ Palačinka</span>
+            </div>
+        </div>
+
         <div class="section-label">Komentar za restoran</div>
         <textarea class="comment-input" id="order-comment" rows="2" placeholder="Bez luka, extra sos..."></textarea>
 
         <div class="checkout-summary">
             <div class="summary-row"><span>Stavke</span><span id="summary-items">0 RSD</span></div>
-            <div class="summary-row"><span>Dostava</span><span id="summary-delivery">0 RSD</span></div>
+            <div class="summary-row discount" id="summary-discount-row" style="display: none;"><span>Popust (30%)</span><span id="summary-discount">-0 RSD</span></div>
+            <div class="summary-row" id="summary-delivery-row"><span>Dostava</span><span id="summary-delivery">0 RSD</span></div>
+            <div class="summary-row free-items" id="summary-free-items" style="display: none;"><span>Gratis</span><span id="summary-free-list">-</span></div>
             <div class="summary-row total"><span>Ukupno</span><span id="summary-total">0 RSD</span></div>
         </div>
 
@@ -2803,34 +2980,15 @@
             </div>
             
             <div class="menu-tabs">
-                <button class="menu-tab active" onclick="switchTab('points')">🎁 Poeni</button>
-                <button class="menu-tab" onclick="switchTab('history')">📋 Istorija</button>
-                <button class="menu-tab" onclick="switchTab('settings')">⚙️</button>
+                <button class="menu-tab active" onclick="switchTab('history')">📋 Istorija</button>
+                <button class="menu-tab" onclick="switchTab('settings')">⚙️ Profil</button>
             </div>
             
             <div class="menu-content">
-                <div class="tab-panel active" id="tab-points">
-                    <div class="points-summary">
-                        <div class="points-big" id="menu-points">0</div>
-                        <div class="points-label">poena</div>
-                    </div>
-                    
-                    <button class="claim-wolt-btn" onclick="showClaimModal()">➕ Dodaj Wolt poene</button>
-                    
-                    <div class="section-label">Dostupne nagrade</div>
-                    <div class="promo-card">
-                        <div class="promo-badge">500</div>
-                        <div class="promo-title">🥤 Besplatan napitak</div>
-                        <div class="promo-desc">Osvoji 500 poena za besplatan napitak!</div>
-                        <div class="promo-progress"><div class="promo-progress-bar" id="progress-1"></div></div>
-                        <div class="promo-points"><span id="promo-points-1">0</span> / 500</div>
-                    </div>
-                    <div class="promo-card">
-                        <div class="promo-badge">1000</div>
-                        <div class="promo-title">🍔 Besplatan burger</div>
-                        <div class="promo-desc">Sakupi 1000 poena za besplatan burger!</div>
-                        <div class="promo-progress"><div class="promo-progress-bar" id="progress-2"></div></div>
-                        <div class="promo-points"><span id="promo-points-2">0</span> / 1000</div>
+                <div class="tab-panel active" id="tab-history">
+                    <div class="section-label">Prethodne narudžbine</div>
+                    <div id="order-history-list">
+                        <div style="text-align:center;color:var(--text-secondary);padding:20px;">Učitavanje...</div>
                     </div>
                 </div>
                 
@@ -2843,13 +3001,6 @@
                         <div class="setting-row"><span class="setting-label">Adresa</span><span class="setting-value" id="view-address">-</span></div>
                     </div>
                     <button class="edit-settings-btn" onclick="showEditSettings()">✏️ Izmeni podatke</button>
-                </div>
-
-                <div class="tab-panel" id="tab-history">
-                    <div class="section-label">Prethodne narudžbine</div>
-                    <div id="order-history-list">
-                        <div style="text-align:center;color:var(--text-secondary);padding:20px;">Učitavanje...</div>
-                    </div>
                 </div>
             </div>
         </div>
@@ -2993,22 +3144,23 @@
         async function init() {
             try {
                 db = window.supabase?.createClient(SUPABASE_URL, SUPABASE_KEY);
-            } catch(e) { console.error(e); }
+                console.log('Supabase initialized:', !!db);
+            } catch(e) { console.error('Supabase init error:', e); }
 
             favorites = JSON.parse(localStorage.getItem('collina_favorites') || '[]');
 
             const urlParams = new URLSearchParams(window.location.search);
             const customerId = urlParams.get('c');
+            
+            console.log('Customer ID from URL:', customerId);
 
             if (customerId && db) {
                 try {
-                    const { data } = await db.from('customers').select('*').eq('id', customerId).single();
+                    const { data, error } = await db.from('customers').select('*').eq('id', customerId).single();
+                    console.log('Loaded customer:', data, error);
+                    
                     if (data) {
                         customer = data;
-                        document.getElementById('greeting').textContent = `Ćao ${customer.first_name}, šta ćemo danas? 👋`;
-                        document.getElementById('loyalty-bar').classList.add('show');
-                        updatePointsDisplay();
-                        populateSettings();
                         // Hide welcome screen for registered users
                         document.getElementById('welcome-overlay').classList.add('hidden');
                         localStorage.setItem('collina_welcome_seen', 'true');
@@ -3017,6 +3169,7 @@
                         checkWelcomeScreen();
                     }
                 } catch(e) { 
+                    console.error('Customer load error:', e);
                     customer = defaultCustomer; 
                     checkWelcomeScreen();
                 }
@@ -3659,6 +3812,7 @@
                 </div>
             `).join('');
 
+            updateCheckoutLocation();
             updateCheckoutSummary();
         }
 
@@ -3669,16 +3823,77 @@
             renderCheckout();
         }
 
+        let appliedCoupon = null;
+
         function selectOrderType(type) {
             selectedOrderType = type;
             document.querySelectorAll('.order-type-btn').forEach(btn => btn.classList.remove('active'));
             document.getElementById('type-' + (type === 'drive_through' ? 'drive' : type === 'eat_in' ? 'eatin' : 'delivery')).classList.add('active');
+            updateCheckoutLocation();
+            updateCheckoutSummary();
+        }
+
+        function updateCheckoutLocation() {
+            const card = document.getElementById('checkout-location-card');
+            const icon = document.getElementById('checkout-location-icon');
+            const label = document.getElementById('checkout-location-label');
+            const value = document.getElementById('checkout-location-value');
+            
+            if (selectedOrderType === 'delivery') {
+                icon.textContent = '📍';
+                label.textContent = 'Adresa dostave';
+                value.textContent = customer?.address || 'Dodaj adresu';
+            } else {
+                icon.textContent = '🏪';
+                label.textContent = selectedOrderType === 'drive_through' ? 'Drive-Thru lokal' : 'Lokal';
+                const locId = customer?.favorite_location || localStorage.getItem('collina_location');
+                if (locId && locations[locId]) {
+                    value.textContent = locations[locId].name;
+                } else {
+                    value.textContent = 'Izaberi lokal';
+                }
+            }
+        }
+
+        function changeCheckoutLocation() {
+            if (selectedOrderType === 'delivery') {
+                const newAddress = prompt('Unesi adresu dostave:', customer?.address || '');
+                if (newAddress) {
+                    customer.address = newAddress;
+                    updateCheckoutLocation();
+                }
+            } else {
+                // Show location picker
+                const locOptions = Object.entries(locations).map(([id, loc]) => `${id}: ${loc.name}`).join('\n');
+                const choice = prompt(`Izaberi lokal:\n\nbanovo_brdo: Collina Banovo Brdo\nvracar: Collina Vračar\nnovi_beograd: Collina Novi Beograd\n\nUnesi ID:`);
+                if (choice && locations[choice]) {
+                    localStorage.setItem('collina_location', choice);
+                    if (customer) customer.favorite_location = choice;
+                    updateCheckoutLocation();
+                }
+            }
+        }
+
+        function toggleCheckoutCoupon(couponId) {
+            const couponEl = document.querySelector(`.checkout-coupon[data-coupon="${couponId}"]`);
+            
+            if (appliedCoupon === couponId) {
+                // Deselect
+                appliedCoupon = null;
+                couponEl.classList.remove('selected');
+            } else {
+                // Deselect previous
+                document.querySelectorAll('.checkout-coupon').forEach(c => c.classList.remove('selected'));
+                // Select new
+                appliedCoupon = couponId;
+                couponEl.classList.add('selected');
+            }
+            
             updateCheckoutSummary();
         }
 
         function updateCheckoutSummary() {
             const itemsTotal = Object.entries(cart).reduce((sum, [id, qty]) => {
-                // Check menuItems first, then promocije
                 const item = menuItems.find(i => i.id === id);
                 if (item) return sum + (item.price * qty);
                 
@@ -3693,11 +3908,55 @@
                 return sum + (rec ? rec.price : 0);
             }, 0);
 
-            const deliveryFee = selectedOrderType === 'delivery' ? 200 : 0;
-            const total = itemsTotal + recsTotal + deliveryFee;
+            let subtotal = itemsTotal + recsTotal;
+            let discount = 0;
+            let deliveryFee = selectedOrderType === 'delivery' ? 200 : 0;
+            let freeItems = [];
 
-            document.getElementById('summary-items').textContent = itemsTotal.toLocaleString() + ' RSD';
-            document.getElementById('summary-delivery').textContent = deliveryFee + ' RSD';
+            // Apply coupon
+            if (appliedCoupon === 'discount30') {
+                discount = Math.round(subtotal * 0.3);
+            } else if (appliedCoupon === 'free_delivery') {
+                deliveryFee = 0;
+            } else if (appliedCoupon === 'free_cookie') {
+                freeItems.push('🍪 Kolačić');
+            } else if (appliedCoupon === 'free_fries') {
+                freeItems.push('🍟 Pomfrit');
+            } else if (appliedCoupon === 'free_pancake') {
+                freeItems.push('🥞 Palačinka');
+            }
+
+            const total = subtotal - discount + deliveryFee;
+
+            // Update display
+            document.getElementById('summary-items').textContent = subtotal.toLocaleString() + ' RSD';
+            
+            // Discount row
+            const discountRow = document.getElementById('summary-discount-row');
+            if (discount > 0) {
+                discountRow.style.display = 'flex';
+                document.getElementById('summary-discount').textContent = '-' + discount.toLocaleString() + ' RSD';
+            } else {
+                discountRow.style.display = 'none';
+            }
+
+            // Delivery row
+            const deliveryEl = document.getElementById('summary-delivery');
+            if (appliedCoupon === 'free_delivery' && selectedOrderType === 'delivery') {
+                deliveryEl.innerHTML = '<span style="text-decoration: line-through; margin-right: 8px;">200 RSD</span> <span style="color: var(--success);">Besplatno!</span>';
+            } else {
+                deliveryEl.textContent = deliveryFee + ' RSD';
+            }
+
+            // Free items row
+            const freeItemsRow = document.getElementById('summary-free-items');
+            if (freeItems.length > 0) {
+                freeItemsRow.style.display = 'flex';
+                document.getElementById('summary-free-list').textContent = freeItems.join(', ');
+            } else {
+                freeItemsRow.style.display = 'none';
+            }
+
             document.getElementById('summary-total').textContent = total.toLocaleString() + ' RSD';
         }
 
@@ -3896,6 +4155,7 @@
                             id: o.id,
                             total: o.total_price,
                             items: o.raw_items?.length || 0,
+                            rawItems: o.raw_items || [],
                             itemsList: o.raw_items?.map(i => i.name).join(', ') || '',
                             status: o.order_status === 'delivered' ? 'delivered' : 'completed',
                             createdAt: o.created_at,
@@ -3923,16 +4183,34 @@
                 const statusLabel = order.status === 'delivered' ? 'Isporučeno' : order.status === 'cancelled' ? 'Otkazano' : 'Završeno';
                 const statusClass = order.status === 'delivered' ? 'delivered' : order.status === 'cancelled' ? 'cancelled' : '';
                 
+                // Build items breakdown
+                let itemsBreakdown = '';
+                if (order.rawItems && order.rawItems.length > 0) {
+                    itemsBreakdown = order.rawItems.map(item => `
+                        <div class="history-item-row">
+                            <span class="history-item-qty">${item.qty || 1}x</span>
+                            <span class="history-item-name">${item.name}</span>
+                            <span class="history-item-price">${item.price || ''} RSD</span>
+                        </div>
+                    `).join('');
+                } else if (order.itemsList) {
+                    itemsBreakdown = `<div class="history-item-row"><span class="history-item-name">${order.itemsList}</span></div>`;
+                } else {
+                    itemsBreakdown = `<div class="history-item-row"><span class="history-item-name">${order.items || 0} stavki</span></div>`;
+                }
+                
                 return `
                     <div class="history-item ${statusClass}">
                         <div class="history-header">
                             <span class="history-date">${dateStr}</span>
                             <span class="history-status">${statusLabel}</span>
                         </div>
-                        <div class="history-items-list">${order.itemsList || order.items + ' stavki'}</div>
+                        <div class="history-breakdown">
+                            ${itemsBreakdown}
+                        </div>
                         <div class="history-footer">
                             <span class="history-type">${typeLabel}</span>
-                            <span class="history-total">${order.total} RSD</span>
+                            <span class="history-total">${order.total?.toLocaleString() || 0} RSD</span>
                         </div>
                     </div>
                 `;
@@ -4009,6 +4287,8 @@
         // SIDE MENU
         function toggleMenu() {
             document.getElementById('menu-overlay').classList.toggle('show');
+            populateSettings();
+            loadOrderHistory();
         }
 
         function closeMenuOverlay(e) {
@@ -4024,18 +4304,12 @@
 
         // POINTS
         function updatePointsDisplay() {
-            const pts = customer.loyalty_points || 0;
-            const ords = customer.total_orders || 0;
-            document.getElementById('points-value').textContent = pts;
-            document.getElementById('orders-value').textContent = ords;
-            document.getElementById('menu-points').textContent = pts;
-            document.getElementById('promo-points-1').textContent = pts;
-            document.getElementById('promo-points-2').textContent = pts;
-            document.getElementById('progress-1').style.width = Math.min(pts / 500 * 100, 100) + '%';
-            document.getElementById('progress-2').style.width = Math.min(pts / 1000 * 100, 100) + '%';
+            // Points are now shown on home screen stats
+            // This function kept for compatibility
         }
 
         function populateSettings() {
+            if (!customer) return;
             document.getElementById('view-firstname').textContent = customer.first_name || '-';
             document.getElementById('view-lastname').textContent = customer.last_name || '-';
             document.getElementById('view-phone').textContent = customer.phone || '-';
