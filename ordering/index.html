@@ -918,41 +918,89 @@
             box-shadow: 0 6px 20px rgba(125, 184, 143, 0.4);
         }
 
-        /* Coupons Screen */
-        .coupons-stats {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-bottom: 24px;
+        /* Klub Screen */
+        .klub-header {
+            text-align: center;
+            padding: 20px 0 24px;
+            background: linear-gradient(135deg, var(--bg-card), var(--bg-secondary));
+            border-radius: 20px;
+            margin-bottom: 20px;
         }
 
-        .coupons-stat-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 20px;
+        .klub-title {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+
+        .klub-stats {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+        }
+
+        .klub-stat {
             text-align: center;
         }
 
-        .coupons-stat-value {
-            font-size: 32px;
+        .klub-stat-value {
+            font-size: 28px;
             font-weight: 700;
             color: var(--accent);
-            margin-bottom: 4px;
         }
 
-        .coupons-stat-label {
-            font-size: 14px;
+        .klub-stat-label {
+            font-size: 12px;
             color: var(--text-secondary);
         }
 
-        .coupons-list {
+        .klub-tabs {
+            display: flex;
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 4px;
+            margin-bottom: 20px;
+        }
+
+        .klub-tab {
+            flex: 1;
+            padding: 12px 8px;
+            background: transparent;
+            border: none;
+            border-radius: 10px;
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+
+        .klub-tab.active {
+            background: var(--accent);
+            color: white;
+        }
+
+        .klub-content {
+            padding-bottom: 100px;
+        }
+
+        .klub-panel {
+            display: none;
+        }
+
+        .klub-panel.active {
+            display: block;
+        }
+
+        /* Kuponi Tab */
+        .klub-coupons-list {
             display: flex;
             flex-direction: column;
             gap: 12px;
         }
 
-        .coupon-list-item {
+        .klub-coupon-item {
             display: flex;
             align-items: center;
             gap: 14px;
@@ -962,7 +1010,7 @@
             border-radius: 14px;
         }
 
-        .coupon-list-icon {
+        .klub-coupon-icon {
             width: 48px;
             height: 48px;
             background: var(--bg-secondary);
@@ -974,22 +1022,22 @@
             flex-shrink: 0;
         }
 
-        .coupon-list-info {
+        .klub-coupon-info {
             flex: 1;
         }
 
-        .coupon-list-name {
+        .klub-coupon-name {
             font-size: 15px;
             font-weight: 600;
             margin-bottom: 4px;
         }
 
-        .coupon-list-desc {
+        .klub-coupon-desc {
             font-size: 13px;
             color: var(--text-secondary);
         }
 
-        .coupon-list-btn {
+        .klub-coupon-btn {
             padding: 10px 18px;
             background: var(--accent);
             border: none;
@@ -1002,12 +1050,251 @@
             transition: all 0.2s;
         }
 
-        .coupon-list-btn:hover {
+        .klub-coupon-btn:hover {
             background: var(--accent-dark);
         }
 
-        .coupon-list-btn.applied {
+        /* Poeni Tab */
+        .poeni-summary {
+            background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .poeni-big {
+            font-size: 56px;
+            font-weight: 700;
+        }
+
+        .poeni-label {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        .add-wolt-btn {
+            width: 100%;
+            padding: 16px;
             background: var(--success);
+            border: none;
+            border-radius: 14px;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            margin-bottom: 24px;
+        }
+
+        .reward-card {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            margin-bottom: 12px;
+        }
+
+        .reward-icon {
+            font-size: 32px;
+        }
+
+        .reward-info {
+            flex: 1;
+        }
+
+        .reward-name {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .reward-progress-bar {
+            height: 8px;
+            background: var(--bg-secondary);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 4px;
+        }
+
+        .reward-progress-fill {
+            height: 100%;
+            background: var(--accent);
+            border-radius: 4px;
+            transition: width 0.3s;
+        }
+
+        .reward-progress-text {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .reward-badge {
+            background: var(--gold);
+            color: #1a1214;
+            font-size: 14px;
+            font-weight: 700;
+            padding: 6px 12px;
+            border-radius: 8px;
+        }
+
+        .qr-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            text-align: center;
+        }
+
+        .qr-code {
+            width: 160px;
+            height: 160px;
+            background: white;
+            margin: 0 auto 16px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .qr-text {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .qr-id {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--accent);
+        }
+
+        /* Kod Tab */
+        .kod-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+
+        .kod-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .kod-input {
+            width: 100%;
+            padding: 16px;
+            background: var(--bg-secondary);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-size: 18px;
+            font-weight: 600;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-family: inherit;
+            margin-bottom: 16px;
+        }
+
+        .kod-input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .kod-submit-btn {
+            width: 100%;
+            padding: 16px;
+            background: var(--accent);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .kod-result {
+            margin-top: 16px;
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .kod-result.success {
+            display: block;
+            background: rgba(125, 184, 143, 0.2);
+            color: var(--success);
+        }
+
+        .kod-result.error {
+            display: block;
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+
+        .kod-hints {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 24px;
+        }
+
+        .kod-hint {
+            padding: 14px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            font-size: 14px;
+        }
+
+        .kod-history {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 16px;
+        }
+
+        .kod-history-empty {
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .kod-history-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .kod-history-item:last-child {
+            border-bottom: none;
+        }
+
+        .kod-history-code {
+            font-weight: 600;
+            color: var(--success);
+        }
+
+        .kod-history-reward {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .kod-history-date {
+            font-size: 12px;
+            color: var(--text-secondary);
         }
 
         /* Promo Banner */
@@ -2749,80 +3036,157 @@
         <div id="menu-items"></div>
     </div>
 
-    <!-- COUPONS SCREEN -->
+    <!-- KLUB SCREEN -->
     <div class="screen" id="screen-coupons">
-        <!-- Header with Avatar -->
-        <div class="home-header">
-            <div>
-                <div class="home-welcome">Tvoji</div>
-                <div class="home-name">Kuponi</div>
-            </div>
-            <div class="home-avatar" id="coupons-avatar" onclick="toggleMenu()">👤</div>
-        </div>
-
-        <div class="coupons-stats">
-            <div class="coupons-stat-card">
-                <div class="coupons-stat-value" id="coupons-available">5</div>
-                <div class="coupons-stat-label">dostupno</div>
-            </div>
-            <div class="coupons-stat-card">
-                <div class="coupons-stat-value" id="coupons-used">0</div>
-                <div class="coupons-stat-label">iskorišćeno</div>
-            </div>
-        </div>
-
-        <div class="section-label">Dostupni kuponi</div>
-        <div class="coupons-list" id="coupons-list">
-            <div class="coupon-list-item">
-                <div class="coupon-list-icon">🏷️</div>
-                <div class="coupon-list-info">
-                    <div class="coupon-list-name">30% popust</div>
-                    <div class="coupon-list-desc">Na prvu narudžbinu</div>
+        <!-- Header -->
+        <div class="klub-header">
+            <div class="klub-title">🏆 Collina Klub</div>
+            <div class="klub-stats">
+                <div class="klub-stat">
+                    <div class="klub-stat-value" id="klub-points">0</div>
+                    <div class="klub-stat-label">poena</div>
                 </div>
-                <button class="coupon-list-btn" onclick="applyCoupon('discount30')">Primeni</button>
-            </div>
-            <div class="coupon-list-item">
-                <div class="coupon-list-icon">🛵</div>
-                <div class="coupon-list-info">
-                    <div class="coupon-list-name">Besplatna dostava</div>
-                    <div class="coupon-list-desc">1x bez troškova dostave</div>
+                <div class="klub-stat">
+                    <div class="klub-stat-value" id="klub-coupons">5</div>
+                    <div class="klub-stat-label">kupona</div>
                 </div>
-                <button class="coupon-list-btn" onclick="applyCoupon('free_delivery')">Primeni</button>
-            </div>
-            <div class="coupon-list-item">
-                <div class="coupon-list-icon">🍪</div>
-                <div class="coupon-list-info">
-                    <div class="coupon-list-name">Gratis kolačić</div>
-                    <div class="coupon-list-desc">Uz bilo koju narudžbinu</div>
+                <div class="klub-stat">
+                    <div class="klub-stat-value" id="klub-level">1</div>
+                    <div class="klub-stat-label">nivo</div>
                 </div>
-                <button class="coupon-list-btn" onclick="applyCoupon('free_cookie')">Primeni</button>
-            </div>
-            <div class="coupon-list-item">
-                <div class="coupon-list-icon">🍟</div>
-                <div class="coupon-list-info">
-                    <div class="coupon-list-name">Gratis pomfrit</div>
-                    <div class="coupon-list-desc">Uz bilo koju narudžbinu</div>
-                </div>
-                <button class="coupon-list-btn" onclick="applyCoupon('free_fries')">Primeni</button>
-            </div>
-            <div class="coupon-list-item">
-                <div class="coupon-list-icon">🥞</div>
-                <div class="coupon-list-info">
-                    <div class="coupon-list-name">Gratis palačinka</div>
-                    <div class="coupon-list-desc">Uz bilo koju narudžbinu</div>
-                </div>
-                <button class="coupon-list-btn" onclick="applyCoupon('free_pancake')">Primeni</button>
             </div>
         </div>
 
-        <div class="section-label" style="margin-top: 24px;">Dodaj poene sa Wolt-a</div>
-        <div class="promo-banner" onclick="showClaimModal()">
-            <div class="promo-content">
-                <div class="promo-title">Dodaj poene!</div>
-                <div class="promo-subtitle">Sa Wolt narudžbina</div>
-                <button class="promo-btn">Dodaj →</button>
+        <!-- Tabs -->
+        <div class="klub-tabs">
+            <button class="klub-tab active" onclick="switchKlubTab('kuponi')">🎫 Kuponi</button>
+            <button class="klub-tab" onclick="switchKlubTab('poeni')">💰 Poeni</button>
+            <button class="klub-tab" onclick="switchKlubTab('kod')">🎁 Kod</button>
+        </div>
+
+        <!-- Tab Content -->
+        <div class="klub-content">
+            <!-- Kuponi Tab -->
+            <div class="klub-panel active" id="klub-kuponi">
+                <div class="section-label">Tvoji kuponi (<span id="kuponi-count">5</span>)</div>
+                <div class="klub-coupons-list">
+                    <div class="klub-coupon-item">
+                        <div class="klub-coupon-icon">🏷️</div>
+                        <div class="klub-coupon-info">
+                            <div class="klub-coupon-name">30% popust</div>
+                            <div class="klub-coupon-desc">Na sledeću narudžbinu</div>
+                        </div>
+                        <button class="klub-coupon-btn" onclick="useKlubCoupon('discount30')">Koristi</button>
+                    </div>
+                    <div class="klub-coupon-item">
+                        <div class="klub-coupon-icon">🛵</div>
+                        <div class="klub-coupon-info">
+                            <div class="klub-coupon-name">Besplatna dostava</div>
+                            <div class="klub-coupon-desc">Za dostavu</div>
+                        </div>
+                        <button class="klub-coupon-btn" onclick="useKlubCoupon('free_delivery')">Koristi</button>
+                    </div>
+                    <div class="klub-coupon-item">
+                        <div class="klub-coupon-icon">🍪</div>
+                        <div class="klub-coupon-info">
+                            <div class="klub-coupon-name">Gratis kolačić</div>
+                            <div class="klub-coupon-desc">Uz bilo koju narudžbinu</div>
+                        </div>
+                        <button class="klub-coupon-btn" onclick="useKlubCoupon('free_cookie')">Koristi</button>
+                    </div>
+                    <div class="klub-coupon-item">
+                        <div class="klub-coupon-icon">🍟</div>
+                        <div class="klub-coupon-info">
+                            <div class="klub-coupon-name">Gratis pomfrit</div>
+                            <div class="klub-coupon-desc">Uz bilo koju narudžbinu</div>
+                        </div>
+                        <button class="klub-coupon-btn" onclick="useKlubCoupon('free_fries')">Koristi</button>
+                    </div>
+                    <div class="klub-coupon-item">
+                        <div class="klub-coupon-icon">🥞</div>
+                        <div class="klub-coupon-info">
+                            <div class="klub-coupon-name">Gratis palačinka</div>
+                            <div class="klub-coupon-desc">Uz bilo koju narudžbinu</div>
+                        </div>
+                        <button class="klub-coupon-btn" onclick="useKlubCoupon('free_pancake')">Koristi</button>
+                    </div>
+                </div>
             </div>
-            <div class="promo-image">➕</div>
+
+            <!-- Poeni Tab -->
+            <div class="klub-panel" id="klub-poeni">
+                <div class="poeni-summary">
+                    <div class="poeni-big" id="poeni-display">0</div>
+                    <div class="poeni-label">poena</div>
+                </div>
+
+                <button class="add-wolt-btn" onclick="showClaimModal()">➕ Dodaj Wolt poene</button>
+
+                <div class="section-label">Dostupne nagrade</div>
+                <div class="reward-card">
+                    <div class="reward-icon">🥤</div>
+                    <div class="reward-info">
+                        <div class="reward-name">Besplatan napitak</div>
+                        <div class="reward-progress-bar">
+                            <div class="reward-progress-fill" id="reward-progress-1"></div>
+                        </div>
+                        <div class="reward-progress-text"><span id="reward-pts-1">0</span> / 500 poena</div>
+                    </div>
+                    <div class="reward-badge">500</div>
+                </div>
+                <div class="reward-card">
+                    <div class="reward-icon">🍔</div>
+                    <div class="reward-info">
+                        <div class="reward-name">Besplatan burger</div>
+                        <div class="reward-progress-bar">
+                            <div class="reward-progress-fill" id="reward-progress-2"></div>
+                        </div>
+                        <div class="reward-progress-text"><span id="reward-pts-2">0</span> / 1000 poena</div>
+                    </div>
+                    <div class="reward-badge">1000</div>
+                </div>
+                <div class="reward-card">
+                    <div class="reward-icon">🍽️</div>
+                    <div class="reward-info">
+                        <div class="reward-name">Besplatan obrok</div>
+                        <div class="reward-progress-bar">
+                            <div class="reward-progress-fill" id="reward-progress-3"></div>
+                        </div>
+                        <div class="reward-progress-text"><span id="reward-pts-3">0</span> / 2000 poena</div>
+                    </div>
+                    <div class="reward-badge">2000</div>
+                </div>
+
+                <div class="section-label">QR kod za restoran</div>
+                <div class="qr-card">
+                    <div class="qr-code" id="qr-code"></div>
+                    <div class="qr-text">Skeniraj u restoranu za skupljanje poena</div>
+                    <div class="qr-id" id="qr-customer-id">ID: CLN-000</div>
+                </div>
+            </div>
+
+            <!-- Kod Tab -->
+            <div class="klub-panel" id="klub-kod">
+                <div class="kod-section">
+                    <div class="kod-title">🎁 Unesi promo kod</div>
+                    <input type="text" class="kod-input" id="promo-code-input" placeholder="npr. COLLINA2024" maxlength="20">
+                    <button class="kod-submit-btn" onclick="redeemCode()">Aktiviraj kod</button>
+                    <div class="kod-result" id="kod-result"></div>
+                </div>
+
+                <div class="section-label">Gde mogu da nađem kod?</div>
+                <div class="kod-hints">
+                    <div class="kod-hint">📃 Na računu u restoranu</div>
+                    <div class="kod-hint">📱 Instagram @collina.rs</div>
+                    <div class="kod-hint">💬 SMS/WhatsApp promocije</div>
+                    <div class="kod-hint">👥 Od prijatelja (referral)</div>
+                </div>
+
+                <div class="section-label">Poslednje aktivirano</div>
+                <div class="kod-history" id="kod-history">
+                    <div class="kod-history-empty">Još nemaš aktiviranih kodova</div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -2950,7 +3314,7 @@
             </button>
             <button class="bottom-nav-btn" onclick="showScreen('coupons')" data-screen="coupons">
                 <span class="bottom-nav-icon">🎫</span>
-                <span class="bottom-nav-label">Kuponi</span>
+                <span class="bottom-nav-label">Klub</span>
             </button>
             <button class="bottom-nav-btn" onclick="showScreen('checkout')" data-screen="checkout">
                 <span class="bottom-nav-icon">🛒</span>
@@ -3426,7 +3790,7 @@
             }
             
             if (screen === 'coupons') {
-                updateCouponsScreen();
+                updateKlubScreen();
             }
             
             // Handle bottom nav and sticky cart visibility
@@ -3461,32 +3825,189 @@
             document.getElementById('checkout-avatar').textContent = name.charAt(0).toUpperCase();
         }
 
-        function updateCouponsScreen() {
-            const name = customer?.first_name || 'Gost';
-            document.getElementById('coupons-avatar').textContent = name.charAt(0).toUpperCase();
-            // Update coupons count
-            const available = customer?.coupons_count || 5;
-            const used = customer?.coupons_used || 0;
-            document.getElementById('coupons-available').textContent = available;
-            document.getElementById('coupons-used').textContent = used;
+        // KLUB FUNCTIONS
+        function switchKlubTab(tab) {
+            document.querySelectorAll('.klub-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.klub-panel').forEach(p => p.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById('klub-' + tab).classList.add('active');
         }
 
-        function applyCoupon(couponId) {
+        function updateKlubScreen() {
+            const pts = customer?.loyalty_points || 0;
+            const coupons = customer?.coupons_count || 5;
+            const level = Math.floor(pts / 500) + 1;
+            
+            // Header stats
+            document.getElementById('klub-points').textContent = pts;
+            document.getElementById('klub-coupons').textContent = coupons;
+            document.getElementById('klub-level').textContent = level;
+            document.getElementById('kuponi-count').textContent = coupons;
+            
+            // Poeni tab
+            document.getElementById('poeni-display').textContent = pts;
+            document.getElementById('reward-pts-1').textContent = pts;
+            document.getElementById('reward-pts-2').textContent = pts;
+            document.getElementById('reward-pts-3').textContent = pts;
+            document.getElementById('reward-progress-1').style.width = Math.min(pts / 500 * 100, 100) + '%';
+            document.getElementById('reward-progress-2').style.width = Math.min(pts / 1000 * 100, 100) + '%';
+            document.getElementById('reward-progress-3').style.width = Math.min(pts / 2000 * 100, 100) + '%';
+            
+            // QR Code - simple customer ID display
+            const customerId = customer?.id || 0;
+            document.getElementById('qr-customer-id').textContent = 'ID: CLN-' + customerId;
+            
+            // Generate simple QR-like visual
+            const qrEl = document.getElementById('qr-code');
+            qrEl.innerHTML = `
+                <svg viewBox="0 0 100 100" width="140" height="140" style="background: white; border-radius: 8px;">
+                    <rect x="10" y="10" width="25" height="25" fill="#333"/>
+                    <rect x="65" y="10" width="25" height="25" fill="#333"/>
+                    <rect x="10" y="65" width="25" height="25" fill="#333"/>
+                    <rect x="15" y="15" width="15" height="15" fill="white"/>
+                    <rect x="70" y="15" width="15" height="15" fill="white"/>
+                    <rect x="15" y="70" width="15" height="15" fill="white"/>
+                    <rect x="20" y="20" width="5" height="5" fill="#333"/>
+                    <rect x="75" y="20" width="5" height="5" fill="#333"/>
+                    <rect x="20" y="75" width="5" height="5" fill="#333"/>
+                    <rect x="40" y="10" width="5" height="5" fill="#333"/>
+                    <rect x="50" y="10" width="5" height="5" fill="#333"/>
+                    <rect x="40" y="20" width="5" height="5" fill="#333"/>
+                    <rect x="45" y="25" width="5" height="5" fill="#333"/>
+                    <rect x="55" y="20" width="5" height="5" fill="#333"/>
+                    <rect x="40" y="40" width="20" height="20" fill="#333"/>
+                    <rect x="45" y="45" width="10" height="10" fill="white"/>
+                    <rect x="48" y="48" width="4" height="4" fill="#333"/>
+                    <text x="50" y="95" text-anchor="middle" font-size="8" fill="#333">CLN-${customerId}</text>
+                </svg>
+            `;
+            
+            // Load code history
+            loadCodeHistory();
+        }
+
+        function useKlubCoupon(couponId) {
             if (isGuest()) {
                 showRegisterModal('rewards');
                 return;
             }
             
-            const btn = event.target;
-            btn.textContent = '✓ Primenjeno';
-            btn.classList.add('applied');
+            // Apply coupon in checkout
+            appliedCoupon = couponId;
             
-            // Store applied coupon
-            localStorage.setItem('collina_applied_coupon', couponId);
+            // Update UI
+            document.querySelectorAll('.checkout-coupon').forEach(c => c.classList.remove('selected'));
+            const checkoutCoupon = document.querySelector(`.checkout-coupon[data-coupon="${couponId}"]`);
+            if (checkoutCoupon) checkoutCoupon.classList.add('selected');
             
-            setTimeout(() => {
-                showScreen('checkout');
-            }, 500);
+            // Go to checkout
+            showScreen('checkout');
+            renderCheckout();
+        }
+
+        // Promo Codes
+        const promoCodes = {
+            'WELCOME50': { type: 'points', value: 50, desc: '50 bonus poena' },
+            'COLLINA2024': { type: 'points', value: 100, desc: '100 bonus poena' },
+            'BURGER20': { type: 'coupon', value: 'discount20', desc: '20% popust na burgere' },
+            'FREEDOSTAVA': { type: 'coupon', value: 'free_delivery', desc: 'Besplatna dostava' },
+            'BIRTHDAY': { type: 'coupon', value: 'free_burger', desc: 'Gratis burger' },
+            'FRIEND100': { type: 'points', value: 100, desc: '100 poena (referral)' },
+            'TESTCODE': { type: 'points', value: 25, desc: '25 test poena' }
+        };
+
+        function redeemCode() {
+            const input = document.getElementById('promo-code-input');
+            const result = document.getElementById('kod-result');
+            const code = input.value.trim().toUpperCase();
+            
+            if (!code) {
+                result.className = 'kod-result error';
+                result.textContent = 'Unesi kod';
+                result.style.display = 'block';
+                return;
+            }
+            
+            if (isGuest()) {
+                showRegisterModal('rewards');
+                return;
+            }
+            
+            // Check if code exists
+            const promo = promoCodes[code];
+            if (!promo) {
+                result.className = 'kod-result error';
+                result.textContent = 'Neispravan kod';
+                result.style.display = 'block';
+                return;
+            }
+            
+            // Check if already used
+            const usedCodes = JSON.parse(localStorage.getItem('collina_used_codes') || '[]');
+            if (usedCodes.includes(code)) {
+                result.className = 'kod-result error';
+                result.textContent = 'Ovaj kod je već iskorišćen';
+                result.style.display = 'block';
+                return;
+            }
+            
+            // Apply reward
+            if (promo.type === 'points') {
+                customer.loyalty_points = (customer.loyalty_points || 0) + promo.value;
+                // Update in Supabase
+                if (db && customer.id) {
+                    db.from('customers').update({ loyalty_points: customer.loyalty_points }).eq('id', customer.id);
+                }
+            }
+            
+            // Mark as used
+            usedCodes.push(code);
+            localStorage.setItem('collina_used_codes', JSON.stringify(usedCodes));
+            
+            // Save to history
+            const codeHistory = JSON.parse(localStorage.getItem('collina_code_history') || '[]');
+            codeHistory.unshift({
+                code: code,
+                reward: promo.desc,
+                date: new Date().toISOString()
+            });
+            localStorage.setItem('collina_code_history', JSON.stringify(codeHistory));
+            
+            // Show success
+            result.className = 'kod-result success';
+            result.textContent = '✓ ' + promo.desc + ' aktivirano!';
+            result.style.display = 'block';
+            
+            // Clear input
+            input.value = '';
+            
+            // Update displays
+            updateKlubScreen();
+            updateHomeScreen();
+        }
+
+        function loadCodeHistory() {
+            const historyEl = document.getElementById('kod-history');
+            const codeHistory = JSON.parse(localStorage.getItem('collina_code_history') || '[]');
+            
+            if (codeHistory.length === 0) {
+                historyEl.innerHTML = '<div class="kod-history-empty">Još nemaš aktiviranih kodova</div>';
+                return;
+            }
+            
+            historyEl.innerHTML = codeHistory.slice(0, 5).map(item => {
+                const date = new Date(item.date);
+                const dateStr = date.toLocaleDateString('sr-RS');
+                return `
+                    <div class="kod-history-item">
+                        <div>
+                            <div class="kod-history-code">✓ ${item.code}</div>
+                            <div class="kod-history-reward">${item.reward}</div>
+                        </div>
+                        <div class="kod-history-date">${dateStr}</div>
+                    </div>
+                `;
+            }).join('');
         }
 
         function updateHomeScreen() {
