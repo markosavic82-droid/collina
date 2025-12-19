@@ -1701,8 +1701,14 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 48px;
             position: relative;
+            overflow: hidden;
+        }
+
+        .promo-menu-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
 
         .promo-menu-badge {
@@ -1715,6 +1721,7 @@
             font-weight: 700;
             padding: 4px 10px;
             border-radius: 20px;
+            z-index: 1;
         }
 
         .promo-menu-content {
@@ -1951,6 +1958,7 @@
         .checkout-item-info { flex: 1; }
         .checkout-item-name { font-size: 14px; margin-bottom: 2px; }
         .checkout-item-price { font-size: 13px; color: var(--accent); }
+        .checkout-item-actions { display: flex; align-items: center; gap: 12px; }
         .checkout-item-controls { display: flex; align-items: center; gap: 8px; }
         .checkout-qty-btn {
             width: 28px;
@@ -1961,6 +1969,23 @@
             color: var(--text-primary);
             font-size: 16px;
             cursor: pointer;
+        }
+        .checkout-delete-btn {
+            width: 32px;
+            height: 32px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .checkout-delete-btn:hover {
+            background: rgba(239, 68, 68, 0.3);
         }
 
         .recommendations { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 16px; }
@@ -4209,7 +4234,7 @@
             container.innerHTML = promocije.map(promo => `
                 <div class="promo-menu-card">
                     <div class="promo-menu-image">
-                        ${promo.emoji}
+                        <img src="${FOOD_PHOTO}" alt="${promo.name}">
                         <span class="promo-menu-badge">${promo.badge}</span>
                     </div>
                     <div class="promo-menu-content">
@@ -4318,10 +4343,13 @@
                         <div class="checkout-item-name">${item.name}</div>
                         <div class="checkout-item-price">${item.price} RSD</div>
                     </div>
-                    <div class="checkout-item-controls">
-                        <button class="checkout-qty-btn" onclick="updateQty('${item.id}', -1)">−</button>
-                        <span>${item.qty}</span>
-                        <button class="checkout-qty-btn" onclick="updateQty('${item.id}', 1)">+</button>
+                    <div class="checkout-item-actions">
+                        <div class="checkout-item-controls">
+                            <button class="checkout-qty-btn" onclick="updateCartQty('${item.id}', -1)">−</button>
+                            <span>${item.qty}</span>
+                            <button class="checkout-qty-btn" onclick="updateCartQty('${item.id}', 1)">+</button>
+                        </div>
+                        <button class="checkout-delete-btn" onclick="removeFromCart('${item.id}')">🗑️</button>
                     </div>
                 </div>
             `).join('');
@@ -4335,6 +4363,19 @@
 
             updateCheckoutLocation();
             updateCheckoutSummary();
+        }
+
+        function updateCartQty(id, delta) {
+            cart[id] = (cart[id] || 0) + delta;
+            if (cart[id] <= 0) delete cart[id];
+            renderCheckout();
+            updateCartUI();
+        }
+
+        function removeFromCart(id) {
+            delete cart[id];
+            renderCheckout();
+            updateCartUI();
         }
 
         function toggleRecommendation(id) {
@@ -4746,8 +4787,7 @@
             sheetQty = 1;
             selectedToppings = [];
 
-            const emoji = item.category === 'Burgeri' ? '🍔' : item.category === 'Palačinke' ? '🥞' : '🥪';
-            document.getElementById('product-image-large').textContent = emoji;
+            document.getElementById('product-image-large').innerHTML = `<img src="${FOOD_PHOTO}" alt="${item.name}" style="width: 100%; height: 100%; object-fit: cover;">`;
             document.getElementById('product-sheet-name').textContent = item.name;
             document.getElementById('product-sheet-price').textContent = item.price + ' RSD';
             document.getElementById('product-sheet-desc').textContent = item.desc || '';
