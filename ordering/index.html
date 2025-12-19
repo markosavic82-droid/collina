@@ -746,6 +746,9 @@
             border-radius: 14px;
             padding: 16px 12px;
             text-align: center;
+            display: flex;
+            flex-direction: column;
+            min-height: 160px;
         }
 
         .coupon-icon {
@@ -758,12 +761,17 @@
             font-weight: 600;
             margin-bottom: 4px;
             line-height: 1.3;
+            min-height: 34px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .coupon-desc {
             font-size: 11px;
             color: var(--text-secondary);
             margin-bottom: 12px;
+            flex: 1;
         }
 
         .coupon-add-btn {
@@ -778,6 +786,7 @@
             cursor: pointer;
             font-family: inherit;
             transition: all 0.2s;
+            margin-top: auto;
         }
 
         .coupon-add-btn:hover {
@@ -2232,6 +2241,68 @@
             opacity: 0.9;
         }
 
+        /* Arrived Button */
+        .arrived-btn {
+            width: 100%;
+            padding: 20px;
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            border: none;
+            border-radius: 16px;
+            color: white;
+            cursor: pointer;
+            font-family: inherit;
+            margin: 16px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            animation: pulse-arrived 2s infinite;
+        }
+
+        @keyframes pulse-arrived {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
+            50% { transform: scale(1.02); box-shadow: 0 0 20px 10px rgba(245, 158, 11, 0); }
+        }
+
+        .arrived-btn-icon {
+            font-size: 32px;
+        }
+
+        .arrived-btn-text {
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .arrived-btn-desc {
+            font-size: 13px;
+            opacity: 0.9;
+        }
+
+        /* Arrived Confirmation */
+        .arrived-confirmation {
+            background: linear-gradient(135deg, var(--success), #5a9a6d);
+            border-radius: 16px;
+            padding: 24px;
+            margin: 16px 0;
+            text-align: center;
+        }
+
+        .arrived-confirmation-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+
+        .arrived-confirmation-text {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .arrived-confirmation-desc {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
         .tracking-items-list {
             background: var(--bg-card);
             border: 1px solid var(--border);
@@ -3078,31 +3149,31 @@
                 <div class="coupon-icon">🏷️</div>
                 <div class="coupon-name">30% popust</div>
                 <div class="coupon-desc">Prva narudžbina</div>
-                <button class="coupon-add-btn" onclick="addCouponToCart('discount30')">Dodaj</button>
+                <button class="coupon-add-btn" onclick="addCouponToCart('discount30')">Iskoristi</button>
             </div>
             <div class="coupon-card">
                 <div class="coupon-icon">🛵</div>
                 <div class="coupon-name">Besplatna dostava</div>
                 <div class="coupon-desc">1x dostava</div>
-                <button class="coupon-add-btn" onclick="addCouponToCart('free_delivery')">Dodaj</button>
+                <button class="coupon-add-btn" onclick="addCouponToCart('free_delivery')">Iskoristi</button>
             </div>
             <div class="coupon-card">
                 <div class="coupon-icon">🍪</div>
                 <div class="coupon-name">Gratis kolačić</div>
                 <div class="coupon-desc">Uz narudžbinu</div>
-                <button class="coupon-add-btn" onclick="addCouponToCart('free_cookie')">Dodaj</button>
+                <button class="coupon-add-btn" onclick="addCouponToCart('free_cookie')">Iskoristi</button>
             </div>
             <div class="coupon-card">
                 <div class="coupon-icon">🍟</div>
                 <div class="coupon-name">Gratis pomfrit</div>
                 <div class="coupon-desc">Uz narudžbinu</div>
-                <button class="coupon-add-btn" onclick="addCouponToCart('free_fries')">Dodaj</button>
+                <button class="coupon-add-btn" onclick="addCouponToCart('free_fries')">Iskoristi</button>
             </div>
             <div class="coupon-card">
                 <div class="coupon-icon">🥞</div>
                 <div class="coupon-name">Gratis palačinka</div>
                 <div class="coupon-desc">Uz narudžbinu</div>
-                <button class="coupon-add-btn" onclick="addCouponToCart('free_pancake')">Dodaj</button>
+                <button class="coupon-add-btn" onclick="addCouponToCart('free_pancake')">Iskoristi</button>
             </div>
         </div>
 
@@ -3467,6 +3538,20 @@
             <div class="tracking-ready-message" id="tracking-ready-message" style="display: none;">
                 <div class="ready-pickup-text" id="ready-pickup-text">Možeš preuzeti narudžbinu!</div>
                 <div class="ready-location" id="ready-location">📍 Collina Banovo Brdo</div>
+            </div>
+
+            <!-- Stigao sam button - shown for Drive-Thru/U lokalu when ready -->
+            <button class="arrived-btn" id="arrived-btn" style="display: none;" onclick="notifyArrived()">
+                <span class="arrived-btn-icon">🚗</span>
+                <span class="arrived-btn-text">Stigao sam!</span>
+                <span class="arrived-btn-desc">Obavesti restoran da si ispred</span>
+            </button>
+
+            <!-- Arrived confirmation message -->
+            <div class="arrived-confirmation" id="arrived-confirmation" style="display: none;">
+                <div class="arrived-confirmation-icon">✅</div>
+                <div class="arrived-confirmation-text">Obavešteni smo!</div>
+                <div class="arrived-confirmation-desc">Iznosimo narudžbinu za 1-2 minuta</div>
             </div>
 
             <div class="tracking-timer" id="tracking-timer">
@@ -4873,12 +4958,12 @@
                     }
                 }
 
+                // Show tracking (pass items before clearing cart)
+                showTracking(orderId, total, items.length, items);
+
                 // Clear cart after successful order
                 cart = {};
                 updateCartUI();
-
-                // Show tracking
-                showTracking(orderId, total, items.length);
             } catch(e) {
                 console.error(e);
                 alert('Greška pri slanju narudžbine');
@@ -4922,6 +5007,8 @@
             document.getElementById('tracking-ready-message').style.display = 'none';
             document.getElementById('tracking-timer').style.display = 'block';
             document.getElementById('timer-unit').textContent = 'minuta';
+            document.getElementById('arrived-btn').style.display = 'none';
+            document.getElementById('arrived-confirmation').style.display = 'none';
             
             // Show items list
             renderTrackingItems(orderItems);
@@ -4987,12 +5074,16 @@
                         document.getElementById('timer-value').textContent = '✓';
                         document.getElementById('timer-unit').textContent = 'spremno';
                         document.getElementById('tracking-progress').style.width = '100%';
+                        
+                        // Show "Stigao sam" button for Drive-Thru/U lokalu
+                        showArrivedButton();
+                        
                         updateActiveOrderBanner();
                         
                         // Add to history after a few seconds
                         setTimeout(() => {
                             completeOrder();
-                        }, 5000);
+                        }, 10000); // Give more time for pickup
                     } else {
                         document.getElementById('timer-value').textContent = mins;
                         document.getElementById('tracking-progress').style.width = activeOrder.progress + '%';
@@ -5018,6 +5109,58 @@
                     </div>
                 `).join('')}
             `;
+        }
+
+        async function notifyArrived() {
+            const arrivedBtn = document.getElementById('arrived-btn');
+            const arrivedConfirmation = document.getElementById('arrived-confirmation');
+            
+            // Hide button, show confirmation
+            arrivedBtn.style.display = 'none';
+            arrivedConfirmation.style.display = 'block';
+            
+            // Send notification to restaurant (save to database)
+            if (db && activeOrder) {
+                try {
+                    await db.from('website_orders')
+                        .update({ 
+                            order_status: 'customer_arrived',
+                            customer_arrived_at: new Date().toISOString()
+                        })
+                        .eq('id', activeOrder.id);
+                    
+                    console.log('Customer arrived notification sent for order:', activeOrder.id);
+                } catch(e) {
+                    console.error('Error notifying arrival:', e);
+                }
+            }
+            
+            // Update active order status
+            if (activeOrder) {
+                activeOrder.customerArrived = true;
+                localStorage.setItem('collina_active_order', JSON.stringify(activeOrder));
+            }
+        }
+
+        function showArrivedButton() {
+            // Show "Stigao sam" button only for Drive-Thru and U lokalu orders
+            const arrivedBtn = document.getElementById('arrived-btn');
+            const arrivedConfirmation = document.getElementById('arrived-confirmation');
+            
+            if (activeOrder && activeOrder.status === 'ready' && 
+                (activeOrder.type === 'drive_through' || activeOrder.type === 'eat_in')) {
+                
+                if (activeOrder.customerArrived) {
+                    arrivedBtn.style.display = 'none';
+                    arrivedConfirmation.style.display = 'block';
+                } else {
+                    arrivedBtn.style.display = 'flex';
+                    arrivedConfirmation.style.display = 'none';
+                }
+            } else {
+                arrivedBtn.style.display = 'none';
+                arrivedConfirmation.style.display = 'none';
+            }
         }
 
         function updateActiveOrderBanner() {
