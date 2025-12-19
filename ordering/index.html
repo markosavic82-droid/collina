@@ -4530,14 +4530,19 @@
                 return;
             }
 
-            const total = parseInt(document.getElementById('summary-total').textContent);
+            const total = parseInt(document.getElementById('summary-total').textContent.replace(/[^0-9]/g, ''));
             const orderId = 990000000 + Math.floor(Math.random() * 9999999);
             currentOrderId = orderId;
 
             const items = Object.entries(cart).map(([id, qty]) => {
-                const item = menuItems.find(i => i.id === id);
+                // Check menuItems first, then promocije
+                let item = menuItems.find(i => i.id === id);
+                if (!item) {
+                    item = promocije.find(p => p.id === id);
+                }
+                if (!item) return null;
                 return { id, name: item.name, price: item.price, qty, total: item.price * qty };
-            });
+            }).filter(item => item !== null);
 
             const order = {
                 id: orderId,
@@ -4569,6 +4574,10 @@
                         updatePointsDisplay();
                     }
                 }
+
+                // Clear cart after successful order
+                cart = {};
+                updateCartUI();
 
                 // Show tracking
                 showTracking(orderId, total, items.length);
@@ -4713,16 +4722,25 @@
                         .limit(20);
                     
                     if (data) {
-                        dbHistory = data.map(o => ({
-                            id: o.id,
-                            total: o.total_price,
-                            items: o.raw_items?.length || 0,
-                            rawItems: o.raw_items || [],
-                            itemsList: o.raw_items?.map(i => i.name).join(', ') || '',
-                            status: o.order_status === 'delivered' ? 'delivered' : 'completed',
-                            createdAt: o.created_at,
-                            type: o.instructions?.includes('Drive') ? 'drive_through' : o.instructions?.includes('lokal') ? 'eat_in' : 'delivery'
-                        }));
+                        dbHistory = data.map(o => {
+                            // Parse raw_items if it's a string
+                            let rawItems = o.raw_items;
+                            if (typeof rawItems === 'string') {
+                                try { rawItems = JSON.parse(rawItems); } catch(e) { rawItems = []; }
+                            }
+                            rawItems = Array.isArray(rawItems) ? rawItems : [];
+                            
+                            return {
+                                id: o.id,
+                                total: o.total_price,
+                                items: rawItems.length || 0,
+                                rawItems: rawItems,
+                                itemsList: rawItems.map(i => i.name).join(', ') || '',
+                                status: o.order_status === 'delivered' ? 'delivered' : 'completed',
+                                createdAt: o.created_at,
+                                type: o.instructions?.includes('Drive') ? 'drive_through' : o.instructions?.includes('lokal') ? 'eat_in' : 'delivery'
+                            };
+                        });
                     }
                 } catch(e) { console.error(e); }
             }
