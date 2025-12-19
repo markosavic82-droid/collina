@@ -2213,6 +2213,64 @@
         .tracking-detail-row:last-child { border-bottom: none; }
         .tracking-detail-row span:first-child { color: var(--text-secondary); }
 
+        .tracking-ready-message {
+            background: linear-gradient(135deg, var(--success), #5a9a6d);
+            border-radius: 16px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .ready-pickup-text {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .ready-location {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .tracking-items-list {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+
+        .tracking-items-list:empty {
+            display: none;
+        }
+
+        .tracking-item-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            font-size: 14px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .tracking-item-row:last-child {
+            border-bottom: none;
+        }
+
+        .tracking-item-name {
+            flex: 1;
+        }
+
+        .tracking-item-qty {
+            color: var(--accent);
+            font-weight: 600;
+            margin-right: 12px;
+        }
+
+        .tracking-item-price {
+            color: var(--text-secondary);
+        }
+
         .new-order-btn {
             width: 100%;
             padding: 16px;
@@ -2494,6 +2552,28 @@
             text-align: center;
         }
 
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .modal-close-btn {
+            width: 36px;
+            height: 36px;
+            border: none;
+            border-radius: 50%;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
         .modal-icon { font-size: 48px; margin-bottom: 16px; }
         .modal-title { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
         .modal-subtitle { color: var(--text-secondary); margin-bottom: 20px; font-size: 14px; }
@@ -2509,6 +2589,83 @@
             font-weight: 600;
             cursor: pointer;
             font-family: inherit;
+        }
+
+        /* Location Picker Modal */
+        .location-picker-modal {
+            text-align: left;
+        }
+
+        .location-picker-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .location-picker-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 16px;
+            background: var(--bg-secondary);
+            border: 2px solid var(--border);
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .location-picker-item:hover {
+            border-color: var(--accent);
+        }
+
+        .location-picker-item.selected {
+            border-color: var(--success);
+            background: rgba(125, 184, 143, 0.1);
+        }
+
+        .location-picker-icon {
+            font-size: 24px;
+        }
+
+        .location-picker-info {
+            flex: 1;
+        }
+
+        .location-picker-name {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .location-picker-address {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .location-picker-check {
+            width: 28px;
+            height: 28px;
+            background: var(--success);
+            border-radius: 50%;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .location-picker-item.selected .location-picker-check {
+            display: flex;
+        }
+
+        /* Address Editor Modal */
+        .address-editor-modal {
+            text-align: left;
+        }
+
+        .address-editor-modal .modal-title {
+            margin-bottom: 0;
         }
 
         .form-group { margin-bottom: 14px; text-align: left; }
@@ -2866,6 +3023,24 @@
             <div class="home-avatar" id="home-avatar" onclick="toggleMenu()">👤</div>
         </div>
 
+        <!-- Active Order Banner -->
+        <div class="active-order-banner" id="active-order-banner" onclick="showScreen('tracking')">
+            <div class="active-order-top">
+                <div class="active-order-status">
+                    <span class="active-order-status-icon" id="banner-status-icon">⏳</span>
+                    <span id="banner-status-text">Čekamo potvrdu</span>
+                </div>
+                <span class="active-order-id" id="banner-order-id">#000000</span>
+            </div>
+            <div class="active-order-progress">
+                <div class="active-order-progress-bar" id="banner-progress" style="width: 10%"></div>
+            </div>
+            <div class="active-order-bottom">
+                <span id="banner-time">Procena: ~25 min</span>
+                <span>Tap za detalje →</span>
+            </div>
+        </div>
+
         <!-- Home Location Card -->
         <div class="home-location-card" id="home-location-card">
             <div class="home-location-icon">📍</div>
@@ -3023,24 +3198,6 @@
                 <div class="home-name" id="menu-name">Gost</div>
             </div>
             <div class="home-avatar" id="menu-avatar" onclick="toggleMenu()">👤</div>
-        </div>
-
-        <!-- Active Order Banner -->
-        <div class="active-order-banner" id="active-order-banner" onclick="showScreen('tracking')">
-            <div class="active-order-top">
-                <div class="active-order-status">
-                    <span class="active-order-status-icon" id="banner-status-icon">⏳</span>
-                    <span id="banner-status-text">Čekamo potvrdu</span>
-                </div>
-                <span class="active-order-id" id="banner-order-id">#000000</span>
-            </div>
-            <div class="active-order-progress">
-                <div class="active-order-progress-bar" id="banner-progress" style="width: 10%"></div>
-            </div>
-            <div class="active-order-bottom">
-                <span id="banner-time">Procena: ~25 min</span>
-                <span>Tap za detalje →</span>
-            </div>
         </div>
 
         <!-- Category Tabs -->
@@ -3306,10 +3463,16 @@
             <div class="tracking-title" id="tracking-title">Čekamo potvrdu</div>
             <div class="tracking-subtitle" id="tracking-subtitle">Restoran pregleda narudžbinu...</div>
 
-            <div class="tracking-timer">
+            <!-- Ready message - shown when order is ready -->
+            <div class="tracking-ready-message" id="tracking-ready-message" style="display: none;">
+                <div class="ready-pickup-text" id="ready-pickup-text">Možeš preuzeti narudžbinu!</div>
+                <div class="ready-location" id="ready-location">📍 Collina Banovo Brdo</div>
+            </div>
+
+            <div class="tracking-timer" id="tracking-timer">
                 <div class="timer-label" id="timer-label">Procenjeno vreme</div>
                 <div class="timer-value" id="timer-value">--</div>
-                <div class="timer-unit">minuta</div>
+                <div class="timer-unit" id="timer-unit">minuta</div>
             </div>
 
             <div class="tracking-progress">
@@ -3321,6 +3484,9 @@
                 <div class="tracking-detail-row"><span>Stavke</span><span id="tracking-items">0</span></div>
                 <div class="tracking-detail-row"><span>Ukupno</span><span id="tracking-total">0 RSD</span></div>
             </div>
+
+            <!-- Items breakdown -->
+            <div class="tracking-items-list" id="tracking-items-list"></div>
 
             <button class="new-order-btn" onclick="newOrder()">Nova narudžbina</button>
         </div>
@@ -3424,6 +3590,65 @@
                     </button>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- LOCATION PICKER MODAL -->
+    <div id="location-picker-modal" class="modal-overlay">
+        <div class="modal location-picker-modal">
+            <div class="modal-header">
+                <div class="modal-title">Izaberi lokal</div>
+                <button class="modal-close-btn" onclick="closeLocationPicker()">✕</button>
+            </div>
+            <div class="location-picker-list">
+                <div class="location-picker-item" onclick="selectPickerLocation('banovo_brdo')">
+                    <div class="location-picker-icon">🏪</div>
+                    <div class="location-picker-info">
+                        <div class="location-picker-name">Collina Banovo Brdo</div>
+                        <div class="location-picker-address">Požeška 108a, Beograd</div>
+                    </div>
+                    <div class="location-picker-check" id="picker-check-banovo_brdo">✓</div>
+                </div>
+                <div class="location-picker-item" onclick="selectPickerLocation('vracar')">
+                    <div class="location-picker-icon">🏪</div>
+                    <div class="location-picker-info">
+                        <div class="location-picker-name">Collina Vračar</div>
+                        <div class="location-picker-address">Gospodara Vučića 170, Beograd</div>
+                    </div>
+                    <div class="location-picker-check" id="picker-check-vracar">✓</div>
+                </div>
+                <div class="location-picker-item" onclick="selectPickerLocation('novi_beograd')">
+                    <div class="location-picker-icon">🏪</div>
+                    <div class="location-picker-info">
+                        <div class="location-picker-name">Collina Novi Beograd</div>
+                        <div class="location-picker-address">Bul. Arsenija Čarnojevića 115, Beograd</div>
+                    </div>
+                    <div class="location-picker-check" id="picker-check-novi_beograd">✓</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADDRESS EDITOR MODAL -->
+    <div id="address-editor-modal" class="modal-overlay">
+        <div class="modal address-editor-modal">
+            <div class="modal-header">
+                <div class="modal-title">Adresa dostave</div>
+                <button class="modal-close-btn" onclick="closeAddressEditor()">✕</button>
+            </div>
+            <div class="form-group">
+                <label>Ulica i broj</label>
+                <input type="text" id="address-street" placeholder="npr. Požeška 108a">
+            </div>
+            <div class="form-group">
+                <label>Sprat / Stan / Interfon</label>
+                <input type="text" id="address-details" placeholder="npr. Sprat 3, Stan 12, Interfon 12">
+            </div>
+            <div class="form-group">
+                <label>Napomena za dostavljača</label>
+                <input type="text" id="address-note" placeholder="npr. Ulaz iz dvorišta">
+            </div>
+            <button class="modal-btn" onclick="saveAddress()">Sačuvaj adresu</button>
         </div>
     </div>
 
@@ -4419,21 +4644,94 @@
 
         function changeCheckoutLocation() {
             if (selectedOrderType === 'delivery') {
-                const newAddress = prompt('Unesi adresu dostave:', customer?.address || '');
-                if (newAddress) {
-                    customer.address = newAddress;
-                    updateCheckoutLocation();
-                }
+                openAddressEditor();
             } else {
-                // Show location picker
-                const locOptions = Object.entries(locations).map(([id, loc]) => `${id}: ${loc.name}`).join('\n');
-                const choice = prompt(`Izaberi lokal:\n\nbanovo_brdo: Collina Banovo Brdo\nvracar: Collina Vračar\nnovi_beograd: Collina Novi Beograd\n\nUnesi ID:`);
-                if (choice && locations[choice]) {
-                    localStorage.setItem('collina_location', choice);
-                    if (customer) customer.favorite_location = choice;
-                    updateCheckoutLocation();
+                openLocationPicker();
+            }
+        }
+
+        function openLocationPicker() {
+            // Update selection state
+            const currentLoc = customer?.favorite_location || localStorage.getItem('collina_location');
+            document.querySelectorAll('.location-picker-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            if (currentLoc) {
+                const item = document.querySelector(`.location-picker-item[onclick*="${currentLoc}"]`);
+                if (item) item.classList.add('selected');
+            }
+            document.getElementById('location-picker-modal').classList.add('show');
+        }
+
+        function closeLocationPicker() {
+            document.getElementById('location-picker-modal').classList.remove('show');
+        }
+
+        function selectPickerLocation(locId) {
+            // Update selection UI
+            document.querySelectorAll('.location-picker-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            event.currentTarget.classList.add('selected');
+
+            // Save selection
+            localStorage.setItem('collina_location', locId);
+            if (customer) customer.favorite_location = locId;
+
+            // Update displays
+            updateCheckoutLocation();
+            updateHomeLocation();
+
+            // Close modal after brief delay
+            setTimeout(() => {
+                closeLocationPicker();
+            }, 300);
+        }
+
+        function openAddressEditor() {
+            // Pre-fill with current address
+            const currentAddress = customer?.address || '';
+            const parts = currentAddress.split(', ');
+            
+            document.getElementById('address-street').value = parts[0] || '';
+            document.getElementById('address-details').value = parts.slice(1).join(', ') || '';
+            document.getElementById('address-note').value = '';
+            
+            document.getElementById('address-editor-modal').classList.add('show');
+        }
+
+        function closeAddressEditor() {
+            document.getElementById('address-editor-modal').classList.remove('show');
+        }
+
+        function saveAddress() {
+            const street = document.getElementById('address-street').value.trim();
+            const details = document.getElementById('address-details').value.trim();
+            const note = document.getElementById('address-note').value.trim();
+
+            if (!street) {
+                alert('Unesi ulicu i broj');
+                return;
+            }
+
+            // Combine address parts
+            let fullAddress = street;
+            if (details) fullAddress += ', ' + details;
+            
+            // Save
+            if (customer) {
+                customer.address = fullAddress;
+                // Update in Supabase if logged in
+                if (db && customer.id) {
+                    db.from('customers').update({ address: fullAddress }).eq('id', customer.id);
                 }
             }
+
+            // Update display
+            updateCheckoutLocation();
+
+            // Close modal
+            closeAddressEditor();
         }
 
         function toggleCheckoutCoupon(couponId) {
@@ -4587,7 +4885,17 @@
             }
         }
 
-        function showTracking(orderId, total, itemCount) {
+        function showTracking(orderId, total, itemCount, orderItems) {
+            // Get items if not passed
+            if (!orderItems) {
+                orderItems = Object.entries(cart).map(([id, qty]) => {
+                    let item = menuItems.find(i => i.id === id);
+                    if (!item) item = promocije.find(p => p.id === id);
+                    if (!item) return null;
+                    return { id, name: item.name, price: item.price, qty };
+                }).filter(i => i !== null);
+            }
+
             // Save active order
             activeOrder = {
                 id: orderId,
@@ -4599,15 +4907,24 @@
                 type: selectedOrderType,
                 total: total,
                 items: itemCount,
+                orderItems: orderItems,
                 createdAt: new Date().toISOString()
             };
             localStorage.setItem('collina_active_order', JSON.stringify(activeOrder));
             
             document.getElementById('tracking-order-id').textContent = 'Narudžbina #' + orderId;
-            document.getElementById('tracking-type').textContent = selectedOrderType === 'delivery' ? 'Dostava' : selectedOrderType === 'drive_through' ? 'Drive through' : 'U lokalu';
+            document.getElementById('tracking-type').textContent = selectedOrderType === 'delivery' ? 'Dostava' : selectedOrderType === 'drive_through' ? 'Drive-Thru' : 'U lokalu';
             document.getElementById('tracking-items').textContent = itemCount + ' stavki';
-            document.getElementById('tracking-total').textContent = total + ' RSD';
+            document.getElementById('tracking-total').textContent = total.toLocaleString() + ' RSD';
             document.getElementById('timer-value').textContent = '~25';
+            
+            // Reset ready state
+            document.getElementById('tracking-ready-message').style.display = 'none';
+            document.getElementById('tracking-timer').style.display = 'block';
+            document.getElementById('timer-unit').textContent = 'minuta';
+            
+            // Show items list
+            renderTrackingItems(orderItems);
             
             showScreen('tracking');
             updateActiveOrderBanner();
@@ -4653,8 +4970,22 @@
                         
                         document.getElementById('tracking-status-icon').textContent = '🎉';
                         document.getElementById('tracking-title').textContent = 'Spremno!';
-                        document.getElementById('tracking-subtitle').textContent = 'Tvoja narudžbina je gotova';
-                        document.getElementById('timer-value').textContent = '0';
+                        
+                        // Update subtitle and show ready message based on order type
+                        if (selectedOrderType === 'delivery') {
+                            document.getElementById('tracking-subtitle').textContent = 'Dostavljač je na putu!';
+                            document.getElementById('ready-pickup-text').textContent = 'Dostava je na putu!';
+                            document.getElementById('ready-location').textContent = '📍 ' + (customer?.address || 'Tvoja adresa');
+                        } else {
+                            document.getElementById('tracking-subtitle').textContent = 'Tvoja narudžbina je spremna za preuzimanje!';
+                            document.getElementById('ready-pickup-text').textContent = 'Možeš preuzeti narudžbinu!';
+                            const locId = customer?.favorite_location || localStorage.getItem('collina_location') || 'banovo_brdo';
+                            document.getElementById('ready-location').textContent = '📍 ' + (locations[locId]?.name || 'Collina');
+                        }
+                        
+                        document.getElementById('tracking-ready-message').style.display = 'block';
+                        document.getElementById('timer-value').textContent = '✓';
+                        document.getElementById('timer-unit').textContent = 'spremno';
                         document.getElementById('tracking-progress').style.width = '100%';
                         updateActiveOrderBanner();
                         
@@ -4668,6 +4999,25 @@
                     }
                 }, 3000); // Speed up for demo (3sec = 1min)
             }, 3000);
+        }
+
+        function renderTrackingItems(items) {
+            const container = document.getElementById('tracking-items-list');
+            if (!items || items.length === 0) {
+                container.innerHTML = '';
+                return;
+            }
+            
+            container.innerHTML = `
+                <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px; text-transform: uppercase;">Tvoje stavke</div>
+                ${items.map(item => `
+                    <div class="tracking-item-row">
+                        <span class="tracking-item-qty">${item.qty}x</span>
+                        <span class="tracking-item-name">${item.name}</span>
+                        <span class="tracking-item-price">${item.price} RSD</span>
+                    </div>
+                `).join('')}
+            `;
         }
 
         function updateActiveOrderBanner() {
