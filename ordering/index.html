@@ -824,8 +824,14 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 56px;
             position: relative;
+            overflow: hidden;
+        }
+
+        .featured-card-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
 
         .featured-card-badge {
@@ -1279,8 +1285,14 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 42px;
             position: relative;
+            overflow: hidden;
+        }
+
+        .favorite-card-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
 
         .favorite-card-orders {
@@ -2472,7 +2484,7 @@
         <div class="featured-scroll" id="featured-scroll">
             <div class="featured-card" onclick="openProductSheet('4043')">
                 <div class="featured-card-image">
-                    🍔
+                    <img src="https://restos.one/photos/Grand_collina_combo.jpg" alt="Food">
                     <div class="featured-card-badge">🔥 Hit</div>
                 </div>
                 <div class="featured-card-content">
@@ -2489,7 +2501,7 @@
             </div>
             <div class="featured-card" onclick="openProductSheet('6985146')">
                 <div class="featured-card-image">
-                    🥞
+                    <img src="https://restos.one/photos/Grand_collina_combo.jpg" alt="Food">
                     <div class="featured-card-badge">⭐ Novo</div>
                 </div>
                 <div class="featured-card-content">
@@ -2506,7 +2518,7 @@
             </div>
             <div class="featured-card" onclick="openProductSheet('6985169')">
                 <div class="featured-card-image">
-                    🍔
+                    <img src="https://restos.one/photos/Grand_collina_combo.jpg" alt="Food">
                     <div class="featured-card-badge">👑 Premium</div>
                 </div>
                 <div class="featured-card-content">
@@ -2523,7 +2535,7 @@
             </div>
             <div class="featured-card" onclick="openProductSheet('6001')">
                 <div class="featured-card-image">
-                    🍖
+                    <img src="https://restos.one/photos/Grand_collina_combo.jpg" alt="Food">
                 </div>
                 <div class="featured-card-content">
                     <div class="featured-card-name">Ćevapi 10kom + lepinja</div>
@@ -3203,11 +3215,10 @@
             document.getElementById('success-screen').classList.remove('show');
             
             // Update UI with new customer data
-            document.getElementById('greeting').textContent = `Ćao ${customer.first_name}, šta ćemo danas? 👋`;
-            document.getElementById('loyalty-bar').classList.add('show');
-            updatePointsDisplay();
             updateHomeScreen();
-            populateSettings();
+            
+            // Go to home screen
+            showScreen('home');
         }
 
         function showRegisterModal(reason) {
@@ -3385,16 +3396,12 @@
             renderMenu();
         }
 
+        const FOOD_PHOTO = 'https://restos.one/photos/Grand_collina_combo.jpg';
+
         // MENU
         function getEmoji(category) {
-            const emojis = {
-                'Burgeri': '🍔',
-                'Palačinke': '🥞',
-                'Kuvano': '🍲',
-                'Doručak': '🍳',
-                'Pekara': '🥐'
-            };
-            return emojis[category] || '🍽️';
+            // Return food image instead of emoji
+            return `<img src="${FOOD_PHOTO}" alt="Food" style="width: 100%; height: 100%; object-fit: cover; border-radius: inherit;">`;
         }
 
         function filterCategory(category) {
@@ -3671,8 +3678,14 @@
 
         function updateCheckoutSummary() {
             const itemsTotal = Object.entries(cart).reduce((sum, [id, qty]) => {
+                // Check menuItems first, then promocije
                 const item = menuItems.find(i => i.id === id);
-                return sum + (item ? item.price * qty : 0);
+                if (item) return sum + (item.price * qty);
+                
+                const promo = promocije.find(p => p.id === id);
+                if (promo) return sum + (promo.price * qty);
+                
+                return sum;
             }, 0);
 
             const recsTotal = addedRecommendations.reduce((sum, id) => {
@@ -3683,9 +3696,9 @@
             const deliveryFee = selectedOrderType === 'delivery' ? 200 : 0;
             const total = itemsTotal + recsTotal + deliveryFee;
 
-            document.getElementById('summary-items').textContent = (itemsTotal + recsTotal) + ' RSD';
+            document.getElementById('summary-items').textContent = itemsTotal.toLocaleString() + ' RSD';
             document.getElementById('summary-delivery').textContent = deliveryFee + ' RSD';
-            document.getElementById('summary-total').textContent = total + ' RSD';
+            document.getElementById('summary-total').textContent = total.toLocaleString() + ' RSD';
         }
 
         // SUBMIT ORDER
