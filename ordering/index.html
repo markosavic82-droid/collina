@@ -4150,6 +4150,21 @@
             novi_beograd: { name: 'Collina Novi Beograd', address: 'Bulevar Arsenija Čarnojevića 115, Beograd' }
         };
 
+        // Helper to find location by ID or name
+        function getLocationInfo(locId) {
+            if (!locId) return null;
+            // Direct match
+            if (locations[locId]) return locations[locId];
+            // Try to find by name (case insensitive)
+            const lowerLocId = locId.toLowerCase();
+            for (const [key, loc] of Object.entries(locations)) {
+                if (key.toLowerCase() === lowerLocId || loc.name.toLowerCase().includes(lowerLocId)) {
+                    return loc;
+                }
+            }
+            return null;
+        }
+
         let selectedLocation = null;
 
         // MENU DATA (loaded from Supabase)
@@ -4295,11 +4310,13 @@
                 // Load locations
                 const { data: locData } = await db.from('locations').select('*').eq('is_active', true);
                 if (locData && locData.length > 0) {
-                    locations = {};
+                    // Merge DB locations with defaults (keep defaults as fallback)
                     locData.forEach(loc => {
                         locations[loc.id] = { name: loc.name, address: loc.address };
                     });
                     console.log('Loaded locations from DB:', Object.keys(locations).length);
+                } else {
+                    console.log('Using default locations');
                 }
 
                 // Load settings
@@ -4466,6 +4483,8 @@
         }
 
         function selectPickerLocation(locId) {
+            console.log('Selecting location:', locId);
+            
             // Update UI checkmarks
             document.querySelectorAll('.location-picker-item').forEach(item => {
                 item.classList.remove('selected');
@@ -4491,26 +4510,26 @@
                 customer.favorite_location = locId;
             }
             
-            // Get location info
+            // Get location info - use direct lookup
             const loc = locations[locId];
+            console.log('Location info:', loc);
             
             // Update the home location card immediately
             if (loc) {
                 document.getElementById('home-location-name').textContent = loc.name;
                 document.getElementById('home-location-address').textContent = loc.address;
+                // Update profile view location
+                const viewLocEl = document.getElementById('view-location');
+                if (viewLocEl) viewLocEl.textContent = loc.name;
+            } else {
+                console.error('Location not found:', locId, 'Available:', Object.keys(locations));
             }
-            
-            // Update profile view location
-            document.getElementById('view-location').textContent = loc?.name || 'Nije izabrano';
             
             // Update checkout location too
             updateCheckoutLocation();
             
             // Close modal
             closeLocationPicker();
-            
-            // Show confirmation with proper name
-            showToast('success', 'Lokacija promenjena!', loc?.name || locId);
         }
 
         function updateHomeLocation() {
