@@ -4395,7 +4395,7 @@
         }
 
         function selectPickerLocation(locId) {
-            // Update UI
+            // Update UI checkmarks
             document.querySelectorAll('.location-picker-item').forEach(item => {
                 item.classList.remove('selected');
             });
@@ -4410,25 +4410,31 @@
                 if (check) check.style.display = 'flex';
             }
             
-            // Save selection
+            // Save selection to variable and localStorage
             selectedLocation = locId;
             localStorage.setItem('collina_location', locId);
             
             // Update customer in database if logged in
-            if (customer?.id && db) {
+            if (customer && customer.id && db) {
                 db.from('customers').update({ favorite_location: locId }).eq('id', customer.id);
                 customer.favorite_location = locId;
             }
             
-            // Update displays
-            updateHomeLocation();
+            // Update the home location card immediately
+            const loc = locations[locId];
+            if (loc) {
+                document.getElementById('home-location-name').textContent = loc.name;
+                document.getElementById('home-location-address').textContent = loc.address;
+            }
+            
+            // Update checkout location too
             updateCheckoutLocation();
             
             // Close modal
             closeLocationPicker();
             
-            // Show confirmation
-            showToast('success', 'Lokacija promenjena!', locations[locId]?.name || locId);
+            // Show confirmation with proper name
+            showToast('success', 'Lokacija promenjena!', loc?.name || locId);
         }
 
         function updateHomeLocation() {
