@@ -1540,11 +1540,18 @@
         /* Active Order Banner */
         .active-order-banner {
             display: none;
-            background: linear-gradient(135deg, var(--accent), var(--accent-dark));
-            border-radius: 12px;
-            padding: 14px 16px;
-            margin-bottom: 16px;
+            background: linear-gradient(135deg, var(--accent), var(--gradient-end));
+            border-radius: 18px;
+            padding: 18px 20px;
+            margin-bottom: 20px;
             cursor: pointer;
+            box-shadow: 0 8px 32px rgba(212, 131, 107, 0.4);
+            transition: all 0.3s ease;
+        }
+
+        .active-order-banner:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(212, 131, 107, 0.5);
         }
 
         .active-order-banner.show { display: block; }
@@ -1553,32 +1560,35 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 8px;
+            margin-bottom: 12px;
         }
 
         .active-order-status {
             display: flex;
             align-items: center;
-            gap: 8px;
-            font-weight: 600;
+            gap: 10px;
+            font-weight: 700;
+            font-family: var(--font-heading);
+            font-size: 15px;
         }
 
-        .active-order-status-icon { font-size: 18px; }
-        .active-order-id { font-size: 12px; opacity: 0.8; }
+        .active-order-status-icon { font-size: 20px; }
+        .active-order-id { font-size: 12px; opacity: 0.85; font-weight: 600; }
 
         .active-order-progress {
-            height: 6px;
-            background: rgba(255,255,255,0.3);
-            border-radius: 3px;
+            height: 8px;
+            background: rgba(255,255,255,0.25);
+            border-radius: 4px;
             overflow: hidden;
-            margin-bottom: 8px;
+            margin-bottom: 12px;
         }
 
         .active-order-progress-bar {
             height: 100%;
             background: white;
-            border-radius: 3px;
+            border-radius: 4px;
             transition: width 0.5s ease;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
         }
 
         .active-order-bottom {
@@ -1586,6 +1596,7 @@
             justify-content: space-between;
             font-size: 13px;
             opacity: 0.9;
+            font-weight: 500;
         }
 
         /* Section Labels */
@@ -2584,16 +2595,31 @@
             color: var(--text-secondary);
         }
 
-        .new-order-btn {
+        .tracking-close-btn {
             width: 100%;
             padding: 16px;
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 14px;
             color: var(--text-primary);
             font-size: 16px;
+            font-weight: 600;
             cursor: pointer;
             font-family: inherit;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+        }
+
+        .tracking-close-btn:hover {
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        .tracking-close-btn svg {
+            opacity: 0.7;
         }
 
         /* Side Menu */
@@ -2936,6 +2962,10 @@
             text-align: left;
         }
 
+        .location-picker-modal .modal-header {
+            margin-bottom: 24px;
+        }
+
         .location-picker-list {
             display: flex;
             flex-direction: column;
@@ -2945,26 +2975,35 @@
         .location-picker-item {
             display: flex;
             align-items: center;
-            gap: 14px;
-            padding: 16px;
-            background: var(--bg-secondary);
-            border: 2px solid var(--border);
-            border-radius: 14px;
+            gap: 16px;
+            padding: 18px;
+            background: rgba(0, 0, 0, 0.25);
+            border: 2px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.3s ease;
         }
 
         .location-picker-item:hover {
             border-color: var(--accent);
+            background: rgba(212, 131, 107, 0.1);
+            transform: translateY(-2px);
         }
 
         .location-picker-item.selected {
             border-color: var(--success);
-            background: rgba(125, 184, 143, 0.1);
+            background: rgba(143, 188, 148, 0.15);
         }
 
         .location-picker-icon {
-            font-size: 24px;
+            font-size: 28px;
+            width: 48px;
+            height: 48px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .location-picker-info {
@@ -2972,7 +3011,8 @@
         }
 
         .location-picker-name {
-            font-size: 15px;
+            font-family: var(--font-heading);
+            font-size: 16px;
             font-weight: 600;
             margin-bottom: 4px;
         }
@@ -2983,9 +3023,9 @@
         }
 
         .location-picker-check {
-            width: 28px;
-            height: 28px;
-            background: var(--success);
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--success), #7aa97f);
             border-radius: 50%;
             display: none;
             align-items: center;
@@ -2993,6 +3033,7 @@
             color: white;
             font-size: 14px;
             font-weight: bold;
+            box-shadow: 0 4px 12px rgba(143, 188, 148, 0.4);
         }
 
         .location-picker-item.selected .location-picker-check {
@@ -3842,7 +3883,13 @@
             <!-- Items breakdown -->
             <div class="tracking-items-list" id="tracking-items-list"></div>
 
-            <button class="new-order-btn" onclick="newOrder()">Nova narudžbina</button>
+            <button class="tracking-close-btn" onclick="closeTracking()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+                Zatvori
+            </button>
         </div>
     </div>
 
@@ -4315,13 +4362,73 @@
         }
 
         function showLocationPicker() {
-            // For now, open registration if guest, otherwise show a simple picker
+            // For now, open registration if guest, otherwise show location picker
             if (isGuest()) {
                 startRegistration();
             } else {
-                // TODO: Add location change modal for registered users
-                alert('Promeni lokaciju u podešavanjima profila');
+                openLocationPicker();
             }
+        }
+
+        function openLocationPicker() {
+            // Update selection state in picker
+            document.querySelectorAll('.location-picker-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            document.querySelectorAll('.location-picker-check').forEach(check => {
+                check.style.display = 'none';
+            });
+            
+            const currentLoc = customer?.favorite_location || selectedLocation || 'banovo_brdo';
+            const selectedItem = document.querySelector(`.location-picker-item[onclick*="${currentLoc}"]`);
+            if (selectedItem) {
+                selectedItem.classList.add('selected');
+                const check = selectedItem.querySelector('.location-picker-check');
+                if (check) check.style.display = 'flex';
+            }
+            
+            document.getElementById('location-picker-modal').classList.add('show');
+        }
+
+        function closeLocationPicker() {
+            document.getElementById('location-picker-modal').classList.remove('show');
+        }
+
+        function selectPickerLocation(locId) {
+            // Update UI
+            document.querySelectorAll('.location-picker-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            document.querySelectorAll('.location-picker-check').forEach(check => {
+                check.style.display = 'none';
+            });
+            
+            const selectedItem = document.querySelector(`.location-picker-item[onclick*="${locId}"]`);
+            if (selectedItem) {
+                selectedItem.classList.add('selected');
+                const check = selectedItem.querySelector('.location-picker-check');
+                if (check) check.style.display = 'flex';
+            }
+            
+            // Save selection
+            selectedLocation = locId;
+            localStorage.setItem('collina_location', locId);
+            
+            // Update customer in database if logged in
+            if (customer?.id && db) {
+                db.from('customers').update({ favorite_location: locId }).eq('id', customer.id);
+                customer.favorite_location = locId;
+            }
+            
+            // Update displays
+            updateHomeLocation();
+            updateCheckoutLocation();
+            
+            // Close modal
+            closeLocationPicker();
+            
+            // Show confirmation
+            showToast('success', 'Lokacija promenjena!', locations[locId]?.name || locId);
         }
 
         function updateHomeLocation() {
@@ -4840,6 +4947,11 @@
             renderMenu();
         }
 
+        function closeTracking() {
+            // Go back to home screen - the status bar will show there
+            showScreen('home');
+        }
+
         const FOOD_PHOTO = 'https://restos.one/photos/Grand_collina_combo.jpg';
 
         // MENU
@@ -5169,44 +5281,6 @@
             } else {
                 openLocationPicker();
             }
-        }
-
-        function openLocationPicker() {
-            // Update selection state
-            const currentLoc = customer?.favorite_location || localStorage.getItem('collina_location');
-            document.querySelectorAll('.location-picker-item').forEach(item => {
-                item.classList.remove('selected');
-            });
-            if (currentLoc) {
-                const item = document.querySelector(`.location-picker-item[onclick*="${currentLoc}"]`);
-                if (item) item.classList.add('selected');
-            }
-            document.getElementById('location-picker-modal').classList.add('show');
-        }
-
-        function closeLocationPicker() {
-            document.getElementById('location-picker-modal').classList.remove('show');
-        }
-
-        function selectPickerLocation(locId) {
-            // Update selection UI
-            document.querySelectorAll('.location-picker-item').forEach(item => {
-                item.classList.remove('selected');
-            });
-            event.currentTarget.classList.add('selected');
-
-            // Save selection
-            localStorage.setItem('collina_location', locId);
-            if (customer) customer.favorite_location = locId;
-
-            // Update displays
-            updateCheckoutLocation();
-            updateHomeLocation();
-
-            // Close modal after brief delay
-            setTimeout(() => {
-                closeLocationPicker();
-            }, 300);
         }
 
         function openAddressEditor() {
