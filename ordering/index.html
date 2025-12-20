@@ -11,36 +11,39 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         :root {
-            --bg-primary: #1a1412;
-            --bg-secondary: rgba(45, 35, 32, 0.6);
-            --bg-card: rgba(55, 42, 38, 0.4);
+            --bg-primary: #0a0807;
+            --bg-secondary: rgba(18, 14, 12, 0.9);
+            --bg-card: rgba(25, 20, 17, 0.7);
             --accent: #d4836b;
             --accent-light: #e8a08a;
             --accent-glow: rgba(212, 131, 107, 0.25);
             --accent-dark: #b86b55;
-            --text-primary: #fff8f5;
-            --text-secondary: #c4b0ab;
+            --text-primary: #f5f0eb;
+            --text-secondary: #9a8f88;
             --success: #8fbc94;
-            --border: rgba(255, 255, 255, 0.08);
+            --border: rgba(255, 255, 255, 0.06);
             --heart: #e07b7b;
             --gold: #d9b68a;
             --warning: #daa06d;
             --gradient-start: #d4836b;
             --gradient-end: #c9a87c;
-            --glass-bg: rgba(45, 35, 32, 0.5);
-            --glass-border: rgba(255, 255, 255, 0.1);
-            --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            --glass-bg: rgba(18, 14, 12, 0.8);
+            --glass-border: rgba(255, 255, 255, 0.06);
+            --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
             --font-heading: 'Poppins', sans-serif;
             --font-body: 'Inter', sans-serif;
+            /* Dark red card gradient */
+            --card-gradient: linear-gradient(145deg, #3d2528 0%, #2a1a1c 50%, #1f1415 100%);
+            --card-border: rgba(201, 123, 123, 0.2);
         }
 
         body {
             font-family: var(--font-body);
             background: var(--bg-primary);
             background-image: 
-                radial-gradient(ellipse at 0% 0%, rgba(212, 131, 107, 0.15) 0%, transparent 50%),
-                radial-gradient(ellipse at 100% 100%, rgba(201, 168, 124, 0.1) 0%, transparent 50%),
-                linear-gradient(135deg, #1a1412 0%, #231917 50%, #1a1412 100%);
+                radial-gradient(ellipse at 0% 0%, rgba(45, 30, 25, 0.3) 0%, transparent 50%),
+                radial-gradient(ellipse at 100% 100%, rgba(35, 25, 20, 0.2) 0%, transparent 50%),
+                linear-gradient(145deg, #0a0807 0%, #12100e 50%, #0a0807 100%);
             background-attachment: fixed;
             color: var(--text-primary);
             min-height: 100vh;
@@ -647,6 +650,184 @@
             padding: 16px 0 20px;
         }
 
+        /* Customer Card - Unified dark red gradient */
+        .customer-card {
+            background: linear-gradient(145deg, #3d2528 0%, #2a1a1c 50%, #1f1415 100%);
+            border: 1px solid rgba(201, 123, 123, 0.2);
+            border-radius: 24px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .customer-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .customer-greeting {
+            font-family: var(--font-heading);
+            font-size: 26px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .customer-avatar {
+            width: 52px;
+            height: 52px;
+            background: linear-gradient(135deg, var(--accent), var(--gradient-end));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: 700;
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 4px 16px rgba(212, 131, 107, 0.4);
+        }
+
+        .customer-location {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px 16px;
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 14px;
+            margin-bottom: 20px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .customer-location:hover {
+            background: rgba(0, 0, 0, 0.35);
+            border-color: rgba(212, 131, 107, 0.3);
+        }
+
+        .customer-location-icon {
+            font-size: 24px;
+        }
+
+        .customer-location-info {
+            flex: 1;
+        }
+
+        .customer-location-label {
+            font-size: 10px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+        }
+
+        .customer-location-name {
+            font-family: var(--font-heading);
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        .customer-location-arrow {
+            font-size: 24px;
+            color: var(--text-secondary);
+        }
+
+        .customer-stats {
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            padding: 16px 0 4px;
+        }
+
+        .customer-stat {
+            text-align: center;
+            flex: 1;
+        }
+
+        .customer-stat-value {
+            font-family: var(--font-heading);
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1;
+            margin-bottom: 6px;
+        }
+
+        .customer-stat-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .customer-stat-divider {
+            width: 1px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Level Progress Section */
+        .level-progress-section {
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 14px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+
+        .level-progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .level-progress-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .level-star {
+            font-size: 18px;
+        }
+
+        .level-name {
+            font-family: var(--font-heading);
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .level-progress-xp {
+            font-size: 13px;
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        .level-progress-bar-container {
+            height: 8px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+
+        .level-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), var(--gradient-end));
+            border-radius: 4px;
+            transition: width 0.5s ease;
+            box-shadow: 0 0 10px rgba(212, 131, 107, 0.4);
+        }
+
+        .level-progress-hint {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        /* Keep old classes for other screens */
         .home-greeting {
             font-size: 20px;
             font-weight: 600;
@@ -664,66 +845,12 @@
             cursor: pointer;
         }
 
-        /* Home Location Card */
+        /* Home Location Card - keep for fallback */
         .home-location-card {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            padding: 14px 16px;
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            margin-bottom: 20px;
+            display: none;
         }
 
-        .home-location-icon {
-            width: 44px;
-            height: 44px;
-            background: var(--bg-secondary);
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            flex-shrink: 0;
-        }
-
-        .home-location-info {
-            flex: 1;
-        }
-
-        .home-location-label {
-            font-size: 11px;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 2px;
-        }
-
-        .home-location-name {
-            font-size: 15px;
-            font-weight: 600;
-            margin-bottom: 2px;
-        }
-
-        .home-location-address {
-            font-size: 12px;
-            color: var(--text-secondary);
-        }
-
-        .home-location-change {
-            padding: 8px 14px;
-            background: var(--bg-secondary);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            color: var(--text-primary);
-            font-size: 12px;
-            font-weight: 500;
-            cursor: pointer;
-            font-family: inherit;
-        }
-
-        /* Stats Row */
+        /* Stats Row - keep for Klub screen */
         .stats-row {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -732,19 +859,18 @@
         }
 
         .stat-card {
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
+            background: var(--card-gradient);
+            border: 1px solid var(--card-border);
             border-radius: 20px;
             padding: 18px 14px;
             text-align: center;
             transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
         }
 
         .stat-card:hover {
             transform: translateY(-2px);
-            border-color: rgba(255, 255, 255, 0.15);
+            border-color: rgba(212, 131, 107, 0.4);
         }
 
         .stat-card.highlight {
@@ -808,10 +934,8 @@
         .coupon-card {
             flex-shrink: 0;
             width: 140px;
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
+            background: var(--card-gradient);
+            border: 1px solid var(--card-border);
             border-radius: 18px;
             padding: 18px 14px;
             text-align: center;
@@ -819,12 +943,13 @@
             flex-direction: column;
             min-height: 170px;
             transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
         }
 
         .coupon-card:hover {
             transform: translateY(-3px);
-            border-color: rgba(212, 131, 107, 0.25);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            border-color: rgba(212, 131, 107, 0.4);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
         }
 
         .coupon-icon {
@@ -867,7 +992,7 @@
             box-shadow: 0 4px 16px rgba(212, 131, 107, 0.3);
         }
 
-        .coupon-add-btn:hover {
+        .coupon-add-btn:hover:not(.used):not(.disabled) {
             transform: translateY(-1px);
             box-shadow: 0 6px 20px rgba(212, 131, 107, 0.4);
         }
@@ -875,6 +1000,31 @@
         .coupon-add-btn.added {
             background: linear-gradient(135deg, var(--success), #7aa97f);
             box-shadow: 0 4px 16px rgba(143, 188, 148, 0.3);
+        }
+
+        .coupon-add-btn.used {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-secondary);
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .coupon-add-btn.disabled {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-secondary);
+            cursor: not-allowed;
+            box-shadow: none;
+            opacity: 0.6;
+        }
+
+        .coupon-card.used {
+            opacity: 0.5;
+        }
+
+        .coupon-limit-hint {
+            font-size: 12px;
+            font-weight: 400;
+            color: var(--text-secondary);
         }
 
         /* Featured Scroll */
@@ -892,24 +1042,27 @@
         .featured-card {
             flex-shrink: 0;
             width: 280px;
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 16px;
+            background: var(--card-gradient);
+            border: 1px solid var(--card-border);
+            border-radius: 18px;
             overflow: hidden;
             cursor: pointer;
-            transition: transform 0.2s;
+            transition: all 0.3s ease;
             display: flex;
             flex-direction: column;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
         }
 
         .featured-card:hover {
-            transform: translateY(-2px);
+            transform: translateY(-3px);
+            border-color: rgba(212, 131, 107, 0.4);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
         }
 
         .featured-card-image {
             width: 100%;
             height: 140px;
-            background: var(--bg-secondary);
+            background: rgba(0, 0, 0, 0.25);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -927,22 +1080,25 @@
             position: absolute;
             top: 10px;
             left: 10px;
-            background: rgba(0,0,0,0.7);
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(8px);
             color: white;
             font-size: 11px;
             font-weight: 600;
-            padding: 5px 10px;
-            border-radius: 8px;
+            padding: 6px 12px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .featured-card-content {
-            padding: 14px;
+            padding: 16px;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 12px;
         }
 
         .featured-card-name {
+            font-family: var(--font-heading);
             font-size: 15px;
             font-weight: 600;
             line-height: 1.3;
@@ -959,52 +1115,60 @@
         }
 
         .featured-card-price {
-            font-size: 16px;
+            font-family: var(--font-heading);
+            font-size: 17px;
             font-weight: 700;
             color: var(--accent);
         }
 
         /* Home Action Buttons */
         .home-action-buttons {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
+            display: flex;
+            flex-direction: column;
             gap: 12px;
             margin-bottom: 24px;
         }
 
         .home-action-btn {
-            padding: 16px 12px;
+            padding: 18px 16px;
             border: none;
             border-radius: 14px;
-            font-size: 14px;
+            font-size: 15px;
             font-weight: 600;
             cursor: pointer;
             font-family: inherit;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
+            gap: 10px;
             transition: all 0.2s;
+        }
+
+        .home-action-btn.wolt-btn {
+            background: linear-gradient(135deg, #009de0, #0080c0);
+            color: white;
+            box-shadow: 0 4px 16px rgba(0, 157, 224, 0.3);
+        }
+
+        .home-action-btn.wolt-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 157, 224, 0.4);
         }
 
         .home-action-btn.order-btn {
             background: linear-gradient(135deg, var(--accent), var(--accent-dark));
             color: white;
+            box-shadow: 0 4px 16px rgba(212, 131, 107, 0.3);
         }
 
         .home-action-btn.order-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(201, 123, 123, 0.4);
+            box-shadow: 0 8px 24px rgba(212, 131, 107, 0.4);
         }
 
+        /* Remove old points-btn style */
         .home-action-btn.points-btn {
-            background: linear-gradient(135deg, var(--success), #5a9a6d);
-            color: white;
-        }
-
-        .home-action-btn.points-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(125, 184, 143, 0.4);
+            display: none;
         }
 
         /* Klub Screen */
@@ -1094,15 +1258,16 @@
             align-items: center;
             gap: 14px;
             padding: 16px;
-            background: var(--bg-card);
-            border: 1px solid var(--border);
+            background: var(--card-gradient);
+            border: 1px solid var(--card-border);
             border-radius: 14px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
         }
 
         .klub-coupon-icon {
             width: 48px;
             height: 48px;
-            background: var(--bg-secondary);
+            background: rgba(0, 0, 0, 0.25);
             border-radius: 12px;
             display: flex;
             align-items: center;
@@ -1454,10 +1619,10 @@
             bottom: 0;
             left: 0;
             right: 0;
-            background: rgba(26, 20, 18, 0.85);
+            background: rgba(10, 8, 7, 0.95);
             backdrop-filter: blur(30px);
             -webkit-backdrop-filter: blur(30px);
-            border-top: 1px solid var(--glass-border);
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
             display: flex;
             justify-content: center;
             padding: 10px 0 16px;
@@ -1624,10 +1789,8 @@
         .category-tab {
             flex-shrink: 0;
             padding: 12px 18px;
-            background: rgba(255, 255, 255, 0.04);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: var(--card-gradient);
+            border: 1px solid var(--card-border);
             border-radius: 24px;
             color: var(--text-secondary);
             font-size: 13px;
@@ -1647,8 +1810,7 @@
         }
 
         .category-tab:hover:not(.active) {
-            background: rgba(255, 255, 255, 0.08);
-            border-color: rgba(212, 131, 107, 0.3);
+            border-color: rgba(212, 131, 107, 0.4);
             color: var(--text-primary);
             transform: translateY(-1px);
         }
@@ -1674,22 +1836,25 @@
         }
 
         .favorite-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 14px;
+            background: var(--card-gradient);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
             overflow: hidden;
             cursor: pointer;
-            transition: transform 0.2s;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
         }
 
         .favorite-card:hover {
-            transform: translateY(-2px);
+            transform: translateY(-3px);
+            border-color: rgba(212, 131, 107, 0.4);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
         }
 
         .favorite-card-image {
             width: 100%;
             aspect-ratio: 16/10;
-            background: var(--bg-secondary);
+            background: rgba(0, 0, 0, 0.25);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -1808,21 +1973,19 @@
 
         /* Promocije Cards */
         .promo-menu-card {
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
+            background: var(--card-gradient);
+            border: 1px solid var(--card-border);
             border-radius: 20px;
             overflow: hidden;
             margin-bottom: 16px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
             transition: all 0.3s ease;
         }
 
         .promo-menu-card:hover {
             transform: translateY(-4px);
-            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.25);
-            border-color: rgba(212, 131, 107, 0.2);
+            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4);
+            border-color: rgba(212, 131, 107, 0.4);
         }
 
         .promo-menu-image {
@@ -1954,22 +2117,20 @@
             align-items: center;
             gap: 14px;
             padding: 14px;
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
+            background: var(--card-gradient);
             border-radius: 18px;
             margin-bottom: 12px;
-            border: 1px solid var(--glass-border);
-            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
+            border: 1px solid var(--card-border);
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
         }
 
         .menu-item:hover {
-            border-color: rgba(212, 131, 107, 0.3);
+            border-color: rgba(212, 131, 107, 0.4);
             transform: translateY(-2px);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
         }
 
-        .menu-item.favorite { border-color: rgba(224, 123, 123, 0.4); }
+        .menu-item.favorite { border-color: rgba(224, 123, 123, 0.5); }
 
         .item-image {
             position: relative;
@@ -2115,7 +2276,8 @@
             justify-content: space-between;
             align-items: center;
             padding: 12px;
-            background: var(--bg-card);
+            background: var(--card-gradient);
+            border: 1px solid var(--card-border);
             border-radius: 10px;
             margin-bottom: 8px;
         }
@@ -2130,7 +2292,7 @@
             height: 28px;
             border: none;
             border-radius: 6px;
-            background: var(--bg-secondary);
+            background: rgba(0, 0, 0, 0.3);
             color: var(--text-primary);
             font-size: 16px;
             cursor: pointer;
@@ -2157,22 +2319,24 @@
         .rec-item {
             flex-shrink: 0;
             padding: 10px 16px;
-            background: var(--bg-card);
-            border: 1px solid var(--border);
+            background: var(--card-gradient);
+            border: 1px solid var(--card-border);
             border-radius: 20px;
             font-size: 13px;
             cursor: pointer;
             white-space: nowrap;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            transition: all 0.2s ease;
         }
-        .rec-item:hover { border-color: var(--accent); }
+        .rec-item:hover { border-color: rgba(212, 131, 107, 0.4); transform: translateY(-1px); }
         .rec-item.added { background: var(--accent); border-color: var(--accent); color: white; }
 
         .comment-input {
             width: 100%;
             padding: 14px;
-            border: 1px solid var(--border);
+            border: 1px solid var(--card-border);
             border-radius: 10px;
-            background: var(--bg-card);
+            background: var(--card-gradient);
             color: var(--text-primary);
             font-size: 14px;
             font-family: inherit;
@@ -2186,16 +2350,17 @@
             align-items: center;
             gap: 12px;
             padding: 14px;
-            background: var(--bg-card);
-            border: 1px solid var(--border);
+            background: var(--card-gradient);
+            border: 1px solid var(--card-border);
             border-radius: 14px;
             margin-bottom: 20px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
         }
 
         .checkout-location-icon {
             width: 40px;
             height: 40px;
-            background: var(--bg-secondary);
+            background: rgba(0, 0, 0, 0.25);
             border-radius: 10px;
             display: flex;
             align-items: center;
@@ -2223,8 +2388,8 @@
 
         .checkout-location-change {
             padding: 8px 14px;
-            background: var(--bg-secondary);
-            border: 1px solid var(--border);
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px solid var(--card-border);
             border-radius: 8px;
             color: var(--text-primary);
             font-size: 12px;
@@ -2251,15 +2416,16 @@
             align-items: center;
             gap: 6px;
             padding: 10px 14px;
-            background: var(--bg-card);
-            border: 2px solid var(--border);
+            background: var(--card-gradient);
+            border: 2px solid var(--card-border);
             border-radius: 10px;
             cursor: pointer;
             transition: all 0.2s;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
         }
 
         .checkout-coupon:hover {
-            border-color: var(--accent);
+            border-color: rgba(212, 131, 107, 0.4);
         }
 
         .checkout-coupon.selected {
@@ -2282,14 +2448,16 @@
         }
 
         .checkout-summary {
-            background: var(--bg-card);
+            background: var(--card-gradient);
+            border: 1px solid var(--card-border);
             border-radius: 12px;
             padding: 16px;
             margin-bottom: 20px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
         }
 
         .summary-row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 14px; }
-        .summary-row.total { border-top: 1px solid var(--border); padding-top: 12px; margin-top: 8px; font-weight: 700; font-size: 18px; }
+        .summary-row.total { border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 12px; margin-top: 8px; font-weight: 700; font-size: 18px; }
         .summary-row.total span:last-child { color: var(--accent); }
         .summary-row.discount span:last-child { color: var(--success); }
         .summary-row.free-items { color: var(--success); font-size: 13px; }
@@ -2334,7 +2502,8 @@
         }
 
         .tracking-timer {
-            background: var(--bg-card);
+            background: var(--card-gradient);
+            border: 1px solid var(--card-border);
             border-radius: 16px;
             padding: 24px;
             margin-bottom: 24px;
@@ -2346,7 +2515,7 @@
 
         .tracking-progress {
             height: 8px;
-            background: var(--bg-secondary);
+            background: rgba(0, 0, 0, 0.3);
             border-radius: 4px;
             overflow: hidden;
             margin-bottom: 30px;
@@ -2360,7 +2529,8 @@
         }
 
         .tracking-details {
-            background: var(--bg-card);
+            background: var(--card-gradient);
+            border: 1px solid var(--card-border);
             border-radius: 12px;
             padding: 16px;
             text-align: left;
@@ -2644,18 +2814,19 @@
             right: -320px;
             width: 320px;
             height: 100%;
-            background: var(--bg-secondary);
+            background: linear-gradient(180deg, #3d2528 0%, #2a1a1c 50%, #1f1415 100%);
             z-index: 1001;
             transition: right 0.3s ease;
             display: flex;
             flex-direction: column;
+            border-left: 1px solid var(--card-border);
         }
 
         .menu-overlay.show .side-menu { right: 0; }
 
         .menu-header {
             padding: 20px;
-            border-bottom: 1px solid var(--border);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -2664,7 +2835,7 @@
         .menu-title { font-size: 18px; font-weight: 600; }
         .close-menu { background: none; border: none; color: var(--text-secondary); font-size: 28px; cursor: pointer; }
 
-        .menu-tabs { display: flex; border-bottom: 1px solid var(--border); }
+        .menu-tabs { display: flex; border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
         .menu-tab {
             flex: 1;
             padding: 14px 8px;
@@ -2916,8 +3087,8 @@
         .modal-overlay.show { display: flex; }
 
         .modal {
-            background: linear-gradient(145deg, #2d2320 0%, #1f1916 100%);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: var(--card-gradient);
+            border: 1px solid var(--card-border);
             border-radius: 24px;
             padding: 32px;
             max-width: 400px;
@@ -3115,22 +3286,23 @@
             left: 0;
             right: 0;
             max-height: 85vh;
-            background: var(--bg-secondary);
+            background: linear-gradient(180deg, #3d2528 0%, #2a1a1c 50%, #1f1415 100%);
             border-radius: 24px 24px 0 0;
             z-index: 3001;
             transform: translateY(100%);
             transition: transform 0.3s ease;
             overflow-y: auto;
+            border-top: 1px solid var(--card-border);
         }
 
         .product-sheet-overlay.show .product-sheet { transform: translateY(0); }
 
-        .product-sheet-handle { width: 40px; height: 4px; background: var(--border); border-radius: 2px; margin: 12px auto; }
+        .product-sheet-handle { width: 40px; height: 4px; background: rgba(255, 255, 255, 0.2); border-radius: 2px; margin: 12px auto; }
 
         .product-image-large {
             width: 100%;
             aspect-ratio: 16/9;
-            background: var(--bg-card);
+            background: rgba(0, 0, 0, 0.25);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -3429,10 +3601,48 @@
 
     <!-- HOME SCREEN -->
     <div class="screen active" id="screen-home">
-        <!-- Header with Avatar on Right -->
-        <div class="home-header">
-            <div class="home-greeting" id="home-greeting">Ćao, Gost</div>
-            <div class="home-avatar" id="home-avatar" onclick="toggleMenu()">👤</div>
+        <!-- Customer Info Card -->
+        <div class="customer-card">
+            <div class="customer-card-header">
+                <div class="customer-greeting" id="home-greeting">Ćao, Gost</div>
+                <div class="customer-avatar" id="home-avatar" onclick="toggleMenu()">G</div>
+            </div>
+            
+            <!-- Level Progress Bar -->
+            <div class="level-progress-section">
+                <div class="level-progress-header">
+                    <div class="level-progress-title">
+                        <span class="level-star" id="home-level-star">⭐</span>
+                        <span class="level-name" id="home-level-name">Nivo 1</span>
+                    </div>
+                    <div class="level-progress-xp" id="home-xp-text">0 / 500 XP</div>
+                </div>
+                <div class="level-progress-bar-container">
+                    <div class="level-progress-bar" id="home-level-progress" style="width: 0%"></div>
+                </div>
+                <div class="level-progress-hint" id="home-level-hint">Još 500 XP do nivoa 2</div>
+            </div>
+            
+            <div class="customer-location" onclick="openProfileWithLocation()">
+                <div class="customer-location-icon">📍</div>
+                <div class="customer-location-info">
+                    <div class="customer-location-label">TVOJ LOKAL</div>
+                    <div class="customer-location-name" id="home-location-name">Izaberi lokal</div>
+                </div>
+                <div class="customer-location-arrow">›</div>
+            </div>
+            
+            <div class="customer-stats">
+                <div class="customer-stat">
+                    <div class="customer-stat-value" id="home-points">0</div>
+                    <div class="customer-stat-label">poena</div>
+                </div>
+                <div class="customer-stat-divider"></div>
+                <div class="customer-stat">
+                    <div class="customer-stat-value" id="home-coupons">0</div>
+                    <div class="customer-stat-label">kupona</div>
+                </div>
+            </div>
         </div>
 
         <!-- Active Order Banner -->
@@ -3453,68 +3663,38 @@
             </div>
         </div>
 
-        <!-- Home Location Card -->
-        <div class="home-location-card" id="home-location-card">
-            <div class="home-location-icon">📍</div>
-            <div class="home-location-info">
-                <div class="home-location-label">Tvoj lokal</div>
-                <div class="home-location-name" id="home-location-name">Izaberi lokal</div>
-                <div class="home-location-address" id="home-location-address">-</div>
-            </div>
-            <button class="home-location-change" onclick="openProfileWithLocation()">Promeni</button>
-        </div>
-
-        <!-- Stats Row -->
-        <div class="stats-row">
-            <div class="stat-card highlight">
-                <div class="stat-icon">💰</div>
-                <div class="stat-value" id="home-points">50</div>
-                <div class="stat-label">poena</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon">🎫</div>
-                <div class="stat-value" id="home-coupons">5</div>
-                <div class="stat-label">kupona</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon">⭐</div>
-                <div class="stat-value" id="home-level">1</div>
-                <div class="stat-label">nivo</div>
-            </div>
-        </div>
-
         <!-- Coupons Section -->
-        <div class="home-section-title">Tvoji kuponi</div>
+        <div class="home-section-title">Tvoji kuponi <span class="coupon-limit-hint" id="coupon-limit-hint">(max 2 po narudžbini)</span></div>
         <div class="coupons-scroll" id="coupons-scroll">
-            <div class="coupon-card">
+            <div class="coupon-card" id="coupon-card-discount30">
                 <div class="coupon-icon">🏷️</div>
                 <div class="coupon-name">30% popust</div>
                 <div class="coupon-desc">Prva narudžbina</div>
-                <button class="coupon-add-btn" onclick="addCouponToCart('discount30')">Iskoristi</button>
+                <button class="coupon-add-btn" id="coupon-btn-discount30" onclick="addCouponToCart('discount30')">Iskoristi</button>
             </div>
-            <div class="coupon-card">
+            <div class="coupon-card" id="coupon-card-free_delivery">
                 <div class="coupon-icon">🛵</div>
                 <div class="coupon-name">Besplatna dostava</div>
                 <div class="coupon-desc">1x dostava</div>
-                <button class="coupon-add-btn" onclick="addCouponToCart('free_delivery')">Iskoristi</button>
+                <button class="coupon-add-btn" id="coupon-btn-free_delivery" onclick="addCouponToCart('free_delivery')">Iskoristi</button>
             </div>
-            <div class="coupon-card">
+            <div class="coupon-card" id="coupon-card-free_cookie">
                 <div class="coupon-icon">🍪</div>
                 <div class="coupon-name">Gratis kolačić</div>
                 <div class="coupon-desc">Uz narudžbinu</div>
-                <button class="coupon-add-btn" onclick="addCouponToCart('free_cookie')">Iskoristi</button>
+                <button class="coupon-add-btn" id="coupon-btn-free_cookie" onclick="addCouponToCart('free_cookie')">Iskoristi</button>
             </div>
-            <div class="coupon-card">
+            <div class="coupon-card" id="coupon-card-free_fries">
                 <div class="coupon-icon">🍟</div>
                 <div class="coupon-name">Gratis pomfrit</div>
                 <div class="coupon-desc">Uz narudžbinu</div>
-                <button class="coupon-add-btn" onclick="addCouponToCart('free_fries')">Iskoristi</button>
+                <button class="coupon-add-btn" id="coupon-btn-free_fries" onclick="addCouponToCart('free_fries')">Iskoristi</button>
             </div>
-            <div class="coupon-card">
+            <div class="coupon-card" id="coupon-card-free_pancake">
                 <div class="coupon-icon">🥞</div>
                 <div class="coupon-name">Gratis palačinka</div>
                 <div class="coupon-desc">Uz narudžbinu</div>
-                <button class="coupon-add-btn" onclick="addCouponToCart('free_pancake')">Iskoristi</button>
+                <button class="coupon-add-btn" id="coupon-btn-free_pancake" onclick="addCouponToCart('free_pancake')">Iskoristi</button>
             </div>
         </div>
 
@@ -3590,13 +3770,13 @@
             </div>
         </div>
 
-        <!-- Action Buttons Row -->
+        <!-- Action Buttons -->
         <div class="home-action-buttons">
-            <button class="home-action-btn points-btn" onclick="showClaimModal()">
-                ➕ Dodaj poene
+            <button class="home-action-btn wolt-btn" onclick="showClaimModal()">
+                ➕ Dodaj Wolt poene
             </button>
             <button class="home-action-btn order-btn" onclick="showScreen('menu')">
-                🍔 Naruči sada
+                🍔 Naruči klopu
             </button>
         </div>
     </div>
@@ -4181,6 +4361,8 @@
 
         // STATE
         let cart = {};
+        let selectedCoupons = []; // Track selected coupons (max 2)
+        const MAX_COUPONS = 2;
         let selectedOrderType = 'delivery';
         let selectedCategory = 'Promocije';
         let favorites = [];
@@ -4517,7 +4699,6 @@
             // Update the home location card immediately
             if (loc) {
                 document.getElementById('home-location-name').textContent = loc.name;
-                document.getElementById('home-location-address').textContent = loc.address;
                 // Update profile view location
                 const viewLocEl = document.getElementById('view-location');
                 if (viewLocEl) viewLocEl.textContent = loc.name;
@@ -4537,10 +4718,8 @@
             
             if (locId && locations[locId]) {
                 document.getElementById('home-location-name').textContent = locations[locId].name;
-                document.getElementById('home-location-address').textContent = locations[locId].address;
             } else {
                 document.getElementById('home-location-name').textContent = 'Izaberi lokal';
-                document.getElementById('home-location-address').textContent = 'Pritisni da izabereš';
             }
         }
 
@@ -4997,16 +5176,58 @@
             document.getElementById('checkout-greeting').textContent = `Ćao, ${name}`;
             document.getElementById('checkout-avatar').textContent = initial;
             
-            // Update stats
+            // Update stats - pts is spendable points
             document.getElementById('home-points').textContent = pts.toLocaleString();
             document.getElementById('home-coupons').textContent = coupons;
             
-            // Calculate level (1 level per 500 points)
-            const level = Math.floor(pts / 500) + 1;
-            document.getElementById('home-level').textContent = level;
+            // Calculate XP and level from lifetime_points (or use pts as fallback)
+            const xp = customer?.lifetime_points || pts;
+            updateLevelProgress(xp);
             
             // Update location
             updateHomeLocation();
+        }
+
+        // Level tiers
+        const LEVEL_TIERS = [
+            { level: 1, name: 'Gost', minXP: 0, maxXP: 500, star: '⭐' },
+            { level: 2, name: 'Redovan', minXP: 500, maxXP: 1500, star: '⭐⭐' },
+            { level: 3, name: 'Ljubitelj', minXP: 1500, maxXP: 4000, star: '⭐⭐⭐' },
+            { level: 4, name: 'VIP', minXP: 4000, maxXP: 10000, star: '👑' }
+        ];
+
+        function updateLevelProgress(xp) {
+            // Find current tier
+            let currentTier = LEVEL_TIERS[0];
+            for (const tier of LEVEL_TIERS) {
+                if (xp >= tier.minXP) {
+                    currentTier = tier;
+                }
+            }
+            
+            // Calculate progress within current tier
+            const nextTier = LEVEL_TIERS[currentTier.level] || currentTier;
+            const tierProgress = xp - currentTier.minXP;
+            const tierRange = nextTier.minXP - currentTier.minXP;
+            const progressPercent = tierRange > 0 ? Math.min((tierProgress / tierRange) * 100, 100) : 100;
+            const xpToNext = nextTier.minXP - xp;
+            
+            // Update UI
+            document.getElementById('home-level-star').textContent = currentTier.star;
+            document.getElementById('home-level-name').textContent = `Nivo ${currentTier.level}`;
+            document.getElementById('home-xp-text').textContent = `${xp} / ${nextTier.minXP} XP`;
+            document.getElementById('home-level-progress').style.width = `${progressPercent}%`;
+            
+            if (currentTier.level < 4) {
+                document.getElementById('home-level-hint').textContent = `Još ${xpToNext} XP do nivoa ${currentTier.level + 1}`;
+            } else {
+                document.getElementById('home-level-hint').textContent = `${currentTier.star} Maksimalni nivo dostignut!`;
+            }
+            
+            // Update Klub screen too
+            if (document.getElementById('klub-points')) {
+                document.getElementById('klub-points').textContent = xp;
+            }
         }
 
         function addCouponToCart(couponId) {
@@ -5015,15 +5236,77 @@
                 return;
             }
             
-            // Add coupon to cart (will be handled in checkout)
-            const btn = event.target;
-            btn.textContent = '✓ Dodato';
-            btn.classList.add('added');
+            const btn = document.getElementById(`coupon-btn-${couponId}`);
+            const card = document.getElementById(`coupon-card-${couponId}`);
             
-            setTimeout(() => {
-                btn.textContent = 'Dodaj';
-                btn.classList.remove('added');
-            }, 2000);
+            // Check if already selected
+            if (selectedCoupons.includes(couponId)) {
+                // Remove coupon
+                selectedCoupons = selectedCoupons.filter(c => c !== couponId);
+                btn.textContent = 'Iskoristi';
+                btn.classList.remove('used');
+                card.classList.remove('used');
+                updateCouponButtonStates();
+                updateCartUI();
+                showToast('info', 'Kupon uklonjen', 'Kupon je uklonjen iz korpe');
+                return;
+            }
+            
+            // Check limit
+            if (selectedCoupons.length >= MAX_COUPONS) {
+                showToast('warning', 'Limit dostignut', `Maksimalno ${MAX_COUPONS} kupona po narudžbini`);
+                return;
+            }
+            
+            // Add coupon
+            selectedCoupons.push(couponId);
+            btn.textContent = '✓ U korpi';
+            btn.classList.add('used');
+            card.classList.add('used');
+            
+            updateCouponButtonStates();
+            updateCartUI();
+            showToast('success', 'Kupon dodat!', 'Kupon je dodat u korpu');
+        }
+        
+        function updateCouponButtonStates() {
+            const allCouponIds = ['discount30', 'free_delivery', 'free_cookie', 'free_fries', 'free_pancake'];
+            
+            allCouponIds.forEach(couponId => {
+                const btn = document.getElementById(`coupon-btn-${couponId}`);
+                const card = document.getElementById(`coupon-card-${couponId}`);
+                if (!btn || !card) return;
+                
+                if (selectedCoupons.includes(couponId)) {
+                    // Already selected - show as used
+                    btn.textContent = '✓ U korpi';
+                    btn.classList.add('used');
+                    btn.classList.remove('disabled');
+                    card.classList.add('used');
+                } else if (selectedCoupons.length >= MAX_COUPONS) {
+                    // Limit reached - disable others
+                    btn.textContent = 'Iskoristi';
+                    btn.classList.remove('used');
+                    btn.classList.add('disabled');
+                    card.classList.remove('used');
+                } else {
+                    // Available
+                    btn.textContent = 'Iskoristi';
+                    btn.classList.remove('used', 'disabled');
+                    card.classList.remove('used');
+                }
+            });
+            
+            // Update hint
+            const hint = document.getElementById('coupon-limit-hint');
+            if (hint) {
+                hint.textContent = `(${selectedCoupons.length}/${MAX_COUPONS} izabrano)`;
+            }
+        }
+        
+        function resetCoupons() {
+            selectedCoupons = [];
+            updateCouponButtonStates();
         }
 
         function addPromoToCart(promoId) {
@@ -5043,6 +5326,7 @@
         function newOrder() {
             cart = {};
             addedRecommendations = [];
+            resetCoupons();
             showScreen('menu');
             updateCartUI();
             renderMenu();
@@ -5321,6 +5605,7 @@
             `).join('');
 
             updateCheckoutLocation();
+            syncCheckoutCoupons();
             updateCheckoutSummary();
         }
 
@@ -5433,19 +5718,38 @@
         function toggleCheckoutCoupon(couponId) {
             const couponEl = document.querySelector(`.checkout-coupon[data-coupon="${couponId}"]`);
             
-            if (appliedCoupon === couponId) {
+            if (selectedCoupons.includes(couponId)) {
                 // Deselect
-                appliedCoupon = null;
+                selectedCoupons = selectedCoupons.filter(c => c !== couponId);
                 couponEl.classList.remove('selected');
+                // Also update home coupon button
+                updateCouponButtonStates();
             } else {
-                // Deselect previous
-                document.querySelectorAll('.checkout-coupon').forEach(c => c.classList.remove('selected'));
+                // Check limit
+                if (selectedCoupons.length >= MAX_COUPONS) {
+                    showToast('warning', 'Limit dostignut', `Maksimalno ${MAX_COUPONS} kupona po narudžbini`);
+                    return;
+                }
                 // Select new
-                appliedCoupon = couponId;
+                selectedCoupons.push(couponId);
                 couponEl.classList.add('selected');
+                // Also update home coupon button
+                updateCouponButtonStates();
             }
             
             updateCheckoutSummary();
+        }
+        
+        function syncCheckoutCoupons() {
+            // Sync checkout coupon UI with selectedCoupons state
+            document.querySelectorAll('.checkout-coupon').forEach(el => {
+                const couponId = el.getAttribute('data-coupon');
+                if (selectedCoupons.includes(couponId)) {
+                    el.classList.add('selected');
+                } else {
+                    el.classList.remove('selected');
+                }
+            });
         }
 
         function updateCheckoutSummary() {
@@ -5469,18 +5773,20 @@
             let deliveryFee = selectedOrderType === 'delivery' ? 200 : 0;
             let freeItems = [];
 
-            // Apply coupon
-            if (appliedCoupon === 'discount30') {
-                discount = Math.round(subtotal * 0.3);
-            } else if (appliedCoupon === 'free_delivery') {
-                deliveryFee = 0;
-            } else if (appliedCoupon === 'free_cookie') {
-                freeItems.push('🍪 Kolačić');
-            } else if (appliedCoupon === 'free_fries') {
-                freeItems.push('🍟 Pomfrit');
-            } else if (appliedCoupon === 'free_pancake') {
-                freeItems.push('🥞 Palačinka');
-            }
+            // Apply all selected coupons
+            selectedCoupons.forEach(coupon => {
+                if (coupon === 'discount30') {
+                    discount = Math.round(subtotal * 0.3);
+                } else if (coupon === 'free_delivery') {
+                    deliveryFee = 0;
+                } else if (coupon === 'free_cookie') {
+                    freeItems.push('🍪 Kolačić');
+                } else if (coupon === 'free_fries') {
+                    freeItems.push('🍟 Pomfrit');
+                } else if (coupon === 'free_pancake') {
+                    freeItems.push('🥞 Palačinka');
+                }
+            });
 
             const total = subtotal - discount + deliveryFee;
 
@@ -5498,7 +5804,7 @@
 
             // Delivery row
             const deliveryEl = document.getElementById('summary-delivery');
-            if (appliedCoupon === 'free_delivery' && selectedOrderType === 'delivery') {
+            if (selectedCoupons.includes('free_delivery') && selectedOrderType === 'delivery') {
                 deliveryEl.innerHTML = '<span style="text-decoration: line-through; margin-right: 8px;">200 RSD</span> <span style="color: var(--success);">Besplatno!</span>';
             } else {
                 deliveryEl.textContent = deliveryFee + ' RSD';
