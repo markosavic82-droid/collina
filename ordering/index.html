@@ -4034,6 +4034,9 @@
                     console.log('Loaded settings from DB:', appSettings);
                 }
 
+                // Load promo codes
+                await loadPromoCodes();
+
             } catch(e) {
                 console.error('Error loading app data:', e);
                 loadFallbackData();
@@ -4428,17 +4431,42 @@
         }
 
         // Promo Codes
-        const promoCodes = {
-            'WELCOME50': { type: 'points', value: 50, desc: '50 bonus poena' },
-            'COLLINA2024': { type: 'points', value: 100, desc: '100 bonus poena' },
-            'BURGER20': { type: 'coupon', value: 'discount20', desc: '20% popust na burgere' },
-            'FREEDOSTAVA': { type: 'coupon', value: 'free_delivery', desc: 'Besplatna dostava' },
-            'BIRTHDAY': { type: 'coupon', value: 'free_burger', desc: 'Gratis burger' },
-            'FRIEND100': { type: 'points', value: 100, desc: '100 poena (referral)' },
-            'TESTCODE': { type: 'points', value: 25, desc: '25 test poena' }
-        };
+        let promoCodes = {};
 
-        function redeemCode() {
+        async function loadPromoCodes() {
+            if (!db) return;
+            try {
+                const { data } = await db.from('promo_codes').select('*').eq('is_active', true);
+                if (data && data.length > 0) {
+                    promoCodes = {};
+                    data.forEach(c => {
+                        promoCodes[c.code] = {
+                            id: c.id,
+                            type: c.reward_type,
+                            value: c.reward_value,
+                            desc: getPromoDesc(c.reward_type, c.reward_value),
+                            max_uses: c.max_uses,
+                            times_used: c.times_used
+                        };
+                    });
+                    console.log('Loaded promo codes:', Object.keys(promoCodes).length);
+                }
+            } catch(e) {
+                console.error('Error loading promo codes:', e);
+            }
+        }
+
+        function getPromoDesc(type, value) {
+            switch(type) {
+                case 'points': return '+' + value + ' poena';
+                case 'percent': return value + '% popust';
+                case 'fixed': return value + ' RSD popust';
+                case 'free_delivery': return 'Besplatna dostava';
+                default: return 'Bonus';
+            }
+        }
+
+        async function redeemCode() {
             const input = document.getElementById('promo-code-input');
             const result = document.getElementById('kod-result');
             const code = input.value.trim().toUpperCase();
@@ -4464,7 +4492,15 @@
                 return;
             }
             
-            // Check if already used
+            // Check if max uses reached
+            if (promo.max_uses && promo.times_used >= promo.max_uses) {
+                result.className = 'kod-result error';
+                result.textContent = 'Ovaj kod je istekao';
+                result.style.display = 'block';
+                return;
+            }
+            
+            // Check if already used by this user
             const usedCodes = JSON.parse(localStorage.getItem('collina_used_codes') || '[]');
             if (usedCodes.includes(code)) {
                 result.className = 'kod-result error';
@@ -4476,13 +4512,17 @@
             // Apply reward
             if (promo.type === 'points') {
                 customer.loyalty_points = (customer.loyalty_points || 0) + promo.value;
-                // Update in Supabase
                 if (db && customer.id) {
-                    db.from('customers').update({ loyalty_points: customer.loyalty_points }).eq('id', customer.id);
+                    await db.from('customers').update({ loyalty_points: customer.loyalty_points }).eq('id', customer.id);
                 }
             }
             
-            // Mark as used
+            // Update times_used in database
+            if (db && promo.id) {
+                await db.from('promo_codes').update({ times_used: (promo.times_used || 0) + 1 }).eq('id', promo.id);
+            }
+            
+            // Mark as used locally
             usedCodes.push(code);
             localStorage.setItem('collina_used_codes', JSON.stringify(usedCodes));
             
@@ -4506,6 +4546,9 @@
             // Update displays
             updateKlubScreen();
             updateHomeScreen();
+            
+            // Show toast
+            showToast('success', 'Kod aktiviran!', promo.desc);
         }
 
         function loadCodeHistory() {
