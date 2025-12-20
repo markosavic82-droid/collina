@@ -2835,34 +2835,65 @@
 
         /* Settings View */
         .settings-card {
-            background: var(--bg-card);
-            border-radius: 12px;
-            padding: 16px;
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 18px;
             margin-bottom: 16px;
         }
 
         .setting-row {
             display: flex;
             justify-content: space-between;
-            padding: 10px 0;
-            border-bottom: 1px solid var(--border);
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
             font-size: 14px;
         }
 
         .setting-row:last-child { border-bottom: none; }
         .setting-label { color: var(--text-secondary); }
-        .setting-value { text-align: right; max-width: 60%; }
+        .setting-value { text-align: right; max-width: 55%; }
+
+        .setting-row.location-setting {
+            cursor: pointer;
+            padding: 14px 0;
+            transition: all 0.2s ease;
+        }
+
+        .setting-row.location-setting:hover {
+            background: rgba(255, 255, 255, 0.03);
+            margin: 0 -18px;
+            padding: 14px 18px;
+            border-radius: 10px;
+        }
+
+        .setting-row.location-setting .setting-value {
+            color: var(--accent);
+            font-weight: 500;
+        }
+
+        .setting-arrow {
+            color: var(--text-secondary);
+            font-size: 18px;
+            margin-left: 8px;
+        }
 
         .edit-settings-btn {
             width: 100%;
             padding: 14px;
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
             color: var(--text-primary);
             font-size: 14px;
             cursor: pointer;
             font-family: inherit;
+            transition: all 0.2s ease;
+        }
+
+        .edit-settings-btn:hover {
+            background: rgba(255, 255, 255, 0.12);
         }
 
         /* Modals */
@@ -3430,7 +3461,7 @@
                 <div class="home-location-name" id="home-location-name">Izaberi lokal</div>
                 <div class="home-location-address" id="home-location-address">-</div>
             </div>
-            <button class="home-location-change" onclick="showLocationPicker()">Promeni</button>
+            <button class="home-location-change" onclick="openProfileWithLocation()">Promeni</button>
         </div>
 
         <!-- Stats Row -->
@@ -3978,6 +4009,11 @@
                         <div class="setting-row"><span class="setting-label">Telefon</span><span class="setting-value" id="view-phone">-</span></div>
                         <div class="setting-row"><span class="setting-label">Email</span><span class="setting-value" id="view-email">-</span></div>
                         <div class="setting-row"><span class="setting-label">Adresa</span><span class="setting-value" id="view-address">-</span></div>
+                        <div class="setting-row location-setting" onclick="openLocationPickerFromProfile()">
+                            <span class="setting-label">Omiljeni lokal</span>
+                            <span class="setting-value" id="view-location">-</span>
+                            <span class="setting-arrow">›</span>
+                        </div>
                     </div>
                     <button class="edit-settings-btn" onclick="showEditSettings()">✏️ Izmeni podatke</button>
                 </div>
@@ -4370,6 +4406,41 @@
             }
         }
 
+        function openProfileWithLocation() {
+            // If guest, start registration
+            if (isGuest()) {
+                startRegistration();
+                return;
+            }
+            // Open profile menu and switch to settings tab
+            document.getElementById('menu-overlay').classList.add('show');
+            switchTab('settings');
+            updateProfileView();
+        }
+
+        function openLocationPickerFromProfile() {
+            // Close profile menu first
+            document.getElementById('menu-overlay').classList.remove('show');
+            // Then open location picker
+            setTimeout(() => {
+                openLocationPicker();
+            }, 200);
+        }
+
+        function updateProfileView() {
+            // Update profile fields
+            document.getElementById('view-firstname').textContent = customer?.first_name || '-';
+            document.getElementById('view-lastname').textContent = customer?.last_name || '-';
+            document.getElementById('view-phone').textContent = customer?.phone || '-';
+            document.getElementById('view-email').textContent = customer?.email || '-';
+            document.getElementById('view-address').textContent = customer?.address || '-';
+            
+            // Update location
+            const locId = customer?.favorite_location || selectedLocation || localStorage.getItem('collina_location');
+            const loc = locations[locId];
+            document.getElementById('view-location').textContent = loc?.name || 'Nije izabrano';
+        }
+
         function openLocationPicker() {
             // Update selection state in picker
             document.querySelectorAll('.location-picker-item').forEach(item => {
@@ -4420,12 +4491,17 @@
                 customer.favorite_location = locId;
             }
             
-            // Update the home location card immediately
+            // Get location info
             const loc = locations[locId];
+            
+            // Update the home location card immediately
             if (loc) {
                 document.getElementById('home-location-name').textContent = loc.name;
                 document.getElementById('home-location-address').textContent = loc.address;
             }
+            
+            // Update profile view location
+            document.getElementById('view-location').textContent = loc?.name || 'Nije izabrano';
             
             // Update checkout location too
             updateCheckoutLocation();
