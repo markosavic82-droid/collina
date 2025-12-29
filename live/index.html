@@ -40,6 +40,43 @@
       gap: 10px;
     }
 
+    .date-selector {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .date-selector input[type="date"] {
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 8px;
+      color: #fff;
+      padding: 8px 12px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .date-selector input[type="date"]::-webkit-calendar-picker-indicator {
+      filter: invert(1);
+      cursor: pointer;
+    }
+
+    .date-btn {
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 6px;
+      color: #8B5CF6;
+      padding: 8px 12px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.2s;
+    }
+
+    .date-btn:hover {
+      background: #8B5CF6;
+      color: #fff;
+    }
+
     .status-dot {
       width: 10px;
       height: 10px;
@@ -233,6 +270,59 @@
     .order-time {
       font-size: 12px;
       color: #666;
+    }
+
+    /* Delivery Tracking Styles */
+    .delivery-info {
+      background: #1a1a2e;
+      border-radius: 8px;
+      padding: 10px 12px;
+      margin-top: 10px;
+      border: 1px solid #333;
+    }
+
+    .delivery-status-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .delivery-status-badge.pending { background: #374151; color: #9CA3AF; }
+    .delivery-status-badge.assigned { background: #1E3A5F; color: #93C5FD; }
+    .delivery-status-badge.started { background: #5B21B6; color: #DDD6FE; }
+    .delivery-status-badge.in_progress { background: #7C3AED; color: #EDE9FE; }
+    .delivery-status-badge.arrived { background: #B45309; color: #FDE68A; }
+    .delivery-status-badge.delivered { background: #065F46; color: #A7F3D0; }
+    .delivery-status-badge.failed { background: #7F1D1D; color: #FECACA; }
+
+    .delivery-courier {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: #ccc;
+    }
+
+    .delivery-courier .courier-icon {
+      font-size: 16px;
+    }
+
+    .delivery-courier .courier-name {
+      font-weight: 500;
+    }
+
+    .delivery-courier .track-link {
+      margin-left: auto;
+      color: #8B5CF6;
+      text-decoration: none;
+      font-size: 11px;
+    }
+
+    .delivery-courier .track-link:hover {
+      text-decoration: underline;
     }
 
     .empty-state {
@@ -519,6 +609,11 @@
 <body>
   <div class="header">
     <h1>🍔 Collina Orders</h1>
+    <div class="date-selector">
+      <button class="date-btn" onclick="changeDate(-1)">◀</button>
+      <input type="date" id="selectedDate" onchange="loadOrdersForDate()">
+      <button class="date-btn" onclick="changeDate(1)">▶</button>
+    </div>
     <div class="status">
       <div class="status-dot"></div>
       <span>Live</span>
@@ -671,14 +766,29 @@
     // ============================================
     // Fetch Orders
     // ============================================
+    let selectedDateValue = null;
+
     async function fetchOrders() {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      const dateInput = document.getElementById('selectedDate');
+      let startDate, endDate;
+      
+      if (dateInput && dateInput.value) {
+        // Use selected date
+        startDate = new Date(dateInput.value + 'T00:00:00');
+        endDate = new Date(dateInput.value + 'T23:59:59');
+      } else {
+        // Default to today
+        startDate = new Date();
+        startDate.setHours(0, 0, 0, 0);
+        endDate = new Date();
+        endDate.setHours(23, 59, 59, 999);
+      }
 
       const { data: orders, error } = await supabaseClient
         .from('emeni_orders')
         .select('*')
-        .gte('created_at', today.toISOString())
+        .gte('created_at', startDate.toISOString())
+        .lte('created_at', endDate.toISOString())
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -895,6 +1005,47 @@
           </div>
         </div>
 
+        <!-- Delivery Tracking -->
+        ${order.delivery_type === 'Delivery' ? `
+        <div class="detail-section">
+          <h3>🛵 Delivery Tracking</h3>
+          <div class="detail-grid">
+            <div class="detail-item">
+              <div class="detail-label">Delivery Status</div>
+              <div class="detail-value"><span class="delivery-status-badge ${order.delivery_status || 'pending'}">${order.delivery_status || 'pending'}</span></div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Tookan Job ID</div>
+              <div class="detail-value">${formatValue(order.tookan_job_id)}</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Courier</div>
+              <div class="detail-value">${order.is_wolt_drive ? '🚗 ' : '🛵 '}${formatValue(order.fleet_name)}</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Courier Phone</div>
+              <div class="detail-value">${formatValue(order.fleet_phone)}</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Started At</div>
+              <div class="detail-value">${formatDate(order.delivery_started_at)}</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Arrived At</div>
+              <div class="detail-value">${formatDate(order.delivery_arrived_at)}</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Completed At</div>
+              <div class="detail-value">${formatDate(order.delivery_completed_at)}</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Tracking Link</div>
+              <div class="detail-value">${order.tracking_link ? `<a href="${order.tracking_link}" target="_blank" style="color: #8B5CF6;">Open Tracking →</a>` : '-'}</div>
+            </div>
+          </div>
+        </div>
+        ` : ''}
+
         <!-- Timestamps -->
         <div class="detail-section">
           <h3>Timestamps</h3>
@@ -984,6 +1135,58 @@
 
       const moreItems = order.items.length > 3 ? `<div class="item" style="color: #666;">+ ${order.items.length - 3} more items...</div>` : '';
 
+      // Delivery tracking info
+      let deliveryHtml = '';
+      if (order.delivery_type === 'Delivery') {
+        const deliveryStatus = order.delivery_status || 'pending';
+        const statusLabels = {
+          pending: '⏳ Čeka se',
+          assigned: '👤 Dodeljeno',
+          started: '🛵 Kurir krenuo',
+          in_progress: '📍 U toku',
+          arrived: '🏠 Stigao',
+          delivered: '✅ Dostavljeno',
+          failed: '❌ Neuspešno'
+        };
+        
+        // Map job_status numbers to status names
+        const jobStatusMap = {
+          0: 'assigned',      // Assigned
+          1: 'started',       // Started  
+          2: 'delivered',     // Successful/Completed
+          3: 'failed',        // Failed
+          4: 'in_progress',   // In Progress
+          6: 'pending',       // Unassigned
+          7: 'pending',       // Accepted
+          8: 'pending',       // Decline
+          9: 'arrived'        // Arrived
+        };
+        
+        // Use job_status if delivery_status is not set
+        let displayStatus = deliveryStatus;
+        if (order.job_status !== undefined && !order.delivery_status) {
+          displayStatus = jobStatusMap[order.job_status] || 'pending';
+        }
+        
+        deliveryHtml = `
+          <div class="delivery-info">
+            <span class="delivery-status-badge ${displayStatus}">${statusLabels[displayStatus] || displayStatus}</span>
+            ${order.fleet_name ? `
+              <div class="delivery-courier">
+                <span class="courier-icon">${order.is_wolt_drive ? '🚗' : '🛵'}</span>
+                <span class="courier-name">${order.fleet_name}</span>
+                ${order.tracking_link ? `<a href="${order.tracking_link}" target="_blank" class="track-link" onclick="event.stopPropagation()">Prati →</a>` : ''}
+              </div>
+            ` : `
+              <div class="delivery-courier" style="color: #666;">
+                <span class="courier-icon">⏳</span>
+                <span class="courier-name">Čeka se kurir...</span>
+              </div>
+            `}
+          </div>
+        `;
+      }
+
       return `
         <div class="order-card ${statusClass}" onclick="openOrderDetail(${order.order_id})">
           <div class="order-location-tag">📍 ${locationName}</div>
@@ -1000,6 +1203,7 @@
             ${itemsHtml}
             ${moreItems}
           </div>
+          ${deliveryHtml}
           <div class="order-footer">
             <span class="order-total">${total.toFixed(0)} RSD</span>
             <span class="order-time">${time}</span>
@@ -1074,12 +1278,38 @@
     // ============================================
     // Initialize
     // ============================================
+    // Date Selector Functions
+    // ============================================
+    function initDateSelector() {
+      const dateInput = document.getElementById('selectedDate');
+      // Default to today
+      const today = new Date();
+      dateInput.value = today.toISOString().split('T')[0];
+    }
+
+    function changeDate(delta) {
+      const dateInput = document.getElementById('selectedDate');
+      const current = new Date(dateInput.value);
+      current.setDate(current.getDate() + delta);
+      dateInput.value = current.toISOString().split('T')[0];
+      loadOrdersForDate();
+    }
+
+    async function loadOrdersForDate() {
+      document.getElementById('lastUpdated').textContent = 'Loading...';
+      await loadOrders();
+    }
+
+    // ============================================
+    // Load Orders
+    // ============================================
     async function loadOrders() {
       const orders = await fetchOrders();
       renderOrders(orders);
     }
 
     async function init() {
+      initDateSelector();
       await fetchLocations();
       await loadOrders();
       setupRealtimeSubscription();
