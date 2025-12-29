@@ -361,7 +361,7 @@
     // ============================================
     // Initialize Supabase
     // ============================================
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     // Status groupings
     const STATUS_GROUPS = {
@@ -394,7 +394,7 @@
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
-      const { data: orders, error } = await supabase
+      const { data: orders, error } = await supabaseClient
         .from('emeni_orders')
         .select('*')
         .gte('created_at', today.toISOString())
@@ -407,7 +407,7 @@
 
       // Fetch items for all orders
       const orderIds = orders.map(o => o.order_id);
-      const { data: items } = await supabase
+      const { data: items } = await supabaseClient
         .from('emeni_order_items')
         .select('*')
         .in('order_id', orderIds);
@@ -513,7 +513,7 @@
     // Real-time Subscription
     // ============================================
     function setupRealtimeSubscription() {
-      supabase
+      supabaseClient
         .channel('orders-changes')
         .on('postgres_changes', 
           { event: '*', schema: 'public', table: 'emeni_orders' },
