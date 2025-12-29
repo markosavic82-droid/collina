@@ -82,10 +82,11 @@
     .stat-card.ready .value { color: #3b82f6; }
     .stat-card.delivery .value { color: #8b5cf6; }
     .stat-card.paid .value { color: #22c55e; }
+    .stat-card.canceled .value { color: #ef4444; }
 
     .columns {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(5, 1fr);
       gap: 20px;
     }
 
@@ -124,6 +125,7 @@
     .column.production .column-header { border-bottom-color: #f97316; }
     .column.ready .column-header { border-bottom-color: #3b82f6; }
     .column.paid .column-header { border-bottom-color: #22c55e; }
+    .column.canceled .column-header { border-bottom-color: #ef4444; }
 
     .order-card {
       background: #252525;
@@ -132,17 +134,20 @@
       margin-bottom: 12px;
       border-left: 4px solid #666;
       transition: transform 0.2s, box-shadow 0.2s;
+      cursor: pointer;
     }
 
     .order-card:hover {
       transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+      border-color: #8B5CF6;
     }
 
     .order-card.new { border-left-color: #f59e0b; }
     .order-card.production { border-left-color: #f97316; }
     .order-card.ready { border-left-color: #3b82f6; }
     .order-card.paid { border-left-color: #22c55e; }
+    .order-card.canceled { border-left-color: #ef4444; }
 
     .order-header {
       display: flex;
@@ -174,13 +179,8 @@
       margin-bottom: 10px;
     }
 
-    .order-meta .waiter {
-      color: #a78bfa;
-    }
-
-    .order-meta .table {
-      color: #60a5fa;
-    }
+    .order-meta .waiter { color: #a78bfa; }
+    .order-meta .table { color: #60a5fa; }
 
     .order-items {
       font-size: 13px;
@@ -224,26 +224,6 @@
       color: #666;
     }
 
-    .customer-info {
-      font-size: 12px;
-      color: #888;
-      margin-top: 8px;
-      padding-top: 8px;
-      border-top: 1px solid #333;
-    }
-
-    .customer-info .name { color: #fff; font-weight: 500; }
-    .customer-info .address { color: #666; margin-top: 4px; }
-
-    .note {
-      background: #3b2f00;
-      color: #fbbf24;
-      padding: 8px;
-      border-radius: 6px;
-      font-size: 12px;
-      margin-top: 8px;
-    }
-
     .empty-state {
       text-align: center;
       color: #555;
@@ -261,7 +241,245 @@
       font-size: 12px;
     }
 
-    @media (max-width: 1200px) {
+    /* Modal Styles */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal {
+      background: #1a1a1a;
+      border-radius: 16px;
+      max-width: 800px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      border: 1px solid #333;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 25px;
+      border-bottom: 1px solid #333;
+      position: sticky;
+      top: 0;
+      background: #1a1a1a;
+      z-index: 10;
+    }
+
+    .modal-header h2 {
+      font-size: 24px;
+      color: #8B5CF6;
+    }
+
+    .modal-close {
+      background: #333;
+      border: none;
+      color: #fff;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s;
+    }
+
+    .modal-close:hover {
+      background: #8B5CF6;
+    }
+
+    .modal-content {
+      padding: 25px;
+    }
+
+    .detail-section {
+      margin-bottom: 25px;
+    }
+
+    .detail-section h3 {
+      font-size: 14px;
+      color: #8B5CF6;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 15px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #333;
+    }
+
+    .detail-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    .detail-item {
+      background: #252525;
+      padding: 12px 15px;
+      border-radius: 8px;
+    }
+
+    .detail-item.full-width {
+      grid-column: span 2;
+    }
+
+    .detail-label {
+      font-size: 11px;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+
+    .detail-value {
+      font-size: 15px;
+      color: #fff;
+      word-break: break-word;
+    }
+
+    .detail-value.highlight {
+      color: #8B5CF6;
+      font-weight: 600;
+    }
+
+    .detail-value.success {
+      color: #22c55e;
+    }
+
+    .detail-value.warning {
+      color: #f59e0b;
+    }
+
+    .detail-value.error {
+      color: #ef4444;
+    }
+
+    .items-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .items-table th {
+      text-align: left;
+      padding: 10px 12px;
+      background: #252525;
+      font-size: 12px;
+      color: #888;
+      text-transform: uppercase;
+    }
+
+    .items-table td {
+      padding: 12px;
+      border-bottom: 1px solid #333;
+      font-size: 14px;
+    }
+
+    .items-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .items-table .item-name {
+      font-weight: 500;
+    }
+
+    .items-table .item-modifiers {
+      font-size: 12px;
+      color: #888;
+      margin-top: 4px;
+    }
+
+    .lifecycle-timeline {
+      position: relative;
+      padding-left: 30px;
+    }
+
+    .lifecycle-timeline::before {
+      content: '';
+      position: absolute;
+      left: 8px;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: #333;
+    }
+
+    .lifecycle-event {
+      position: relative;
+      margin-bottom: 15px;
+      padding: 10px 15px;
+      background: #252525;
+      border-radius: 8px;
+    }
+
+    .lifecycle-event::before {
+      content: '';
+      position: absolute;
+      left: -26px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #8B5CF6;
+      border: 2px solid #1a1a1a;
+    }
+
+    .lifecycle-event .event-type {
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 4px;
+    }
+
+    .lifecycle-event .event-status {
+      font-size: 13px;
+      color: #a78bfa;
+    }
+
+    .lifecycle-event .event-time {
+      font-size: 12px;
+      color: #666;
+      margin-top: 4px;
+    }
+
+    .raw-json {
+      background: #0a0a0a;
+      border: 1px solid #333;
+      border-radius: 8px;
+      padding: 15px;
+      font-family: 'Monaco', 'Consolas', monospace;
+      font-size: 12px;
+      color: #888;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    @media (max-width: 1400px) {
+      .columns {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    @media (max-width: 1000px) {
       .columns {
         grid-template-columns: repeat(2, 1fr);
       }
@@ -275,7 +493,14 @@
         flex-wrap: wrap;
       }
       .stat-card {
-        min-width: 45%;
+        min-width: 30%;
+        flex: 1 1 30%;
+      }
+      .detail-grid {
+        grid-template-columns: 1fr;
+      }
+      .detail-item.full-width {
+        grid-column: span 1;
       }
     }
   </style>
@@ -306,6 +531,10 @@
     <div class="stat-card paid">
       <h3>Paid Today</h3>
       <div class="value" id="statPaid">0</div>
+    </div>
+    <div class="stat-card canceled">
+      <h3>Canceled / Rejected</h3>
+      <div class="value" id="statCanceled">0</div>
     </div>
   </div>
 
@@ -349,11 +578,34 @@
         <div class="loading">Loading...</div>
       </div>
     </div>
+
+    <div class="column canceled">
+      <div class="column-header">
+        <h2>❌ Canceled / Rejected</h2>
+        <span class="count" id="countCanceled">0</span>
+      </div>
+      <div id="ordersCanceled" class="orders-list">
+        <div class="loading">Loading...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Order Detail Modal -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 id="modalTitle">Order Details</h2>
+        <button class="modal-close" onclick="closeModal()">×</button>
+      </div>
+      <div class="modal-content" id="modalContent">
+        <!-- Content loaded dynamically -->
+      </div>
+    </div>
   </div>
 
   <script>
     // ============================================
-    // CONFIGURATION - Update these values
+    // CONFIGURATION
     // ============================================
     const SUPABASE_URL = 'https://bbnbbbpofelbkyuffslj.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJibmJiYnBvZmVsYmt5dWZmc2xqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUwNTI0MzQsImV4cCI6MjA4MDYyODQzNH0.koW44soAB-bEfh8OzqjGBwdgov4Snscw1ITsg5OureU';
@@ -363,12 +615,16 @@
     // ============================================
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+    // Store all orders for quick access
+    let allOrders = [];
+
     // Status groupings
     const STATUS_GROUPS = {
-      new: [1, 3, 12, 13],        // New, Accepted, NewPreorder, Pending
-      production: [4],            // InProduction
-      ready: [5, 6, 7],           // Ready, Dispatched, Delivered
-      paid: []                    // is_paid = true (handled separately)
+      new: [1, 3, 12, 13],
+      production: [4],
+      ready: [5, 6, 7],
+      paid: [],
+      canceled: [8, 9, 11]  // Rejected, Canceled, Invalid
     };
 
     const STATUS_NAMES = {
@@ -405,61 +661,318 @@
         return [];
       }
 
-      // Fetch items for all orders
       const orderIds = orders.map(o => o.order_id);
       const { data: items } = await supabaseClient
         .from('emeni_order_items')
         .select('*')
         .in('order_id', orderIds);
 
-      // Attach items to orders
       orders.forEach(order => {
         order.items = items?.filter(i => i.order_id === order.order_id) || [];
       });
 
+      allOrders = orders;
       return orders;
     }
 
     // ============================================
-    // Render Functions
+    // Fetch Order Lifecycle
+    // ============================================
+    async function fetchOrderLifecycle(orderId) {
+      const { data, error } = await supabaseClient
+        .from('emeni_order_lifecycle')
+        .select('*')
+        .eq('order_id', orderId)
+        .order('timestamp', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching lifecycle:', error);
+        return [];
+      }
+      return data || [];
+    }
+
+    // ============================================
+    // Modal Functions
+    // ============================================
+    async function openOrderDetail(orderId) {
+      const order = allOrders.find(o => o.order_id === orderId);
+      if (!order) return;
+
+      const lifecycle = await fetchOrderLifecycle(orderId);
+      
+      document.getElementById('modalTitle').textContent = `Order #${order.order_no}`;
+      document.getElementById('modalContent').innerHTML = renderOrderDetail(order, lifecycle);
+      document.getElementById('modalOverlay').classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeModal() {
+      document.getElementById('modalOverlay').classList.remove('active');
+      document.body.style.overflow = '';
+    }
+
+    // Close modal on overlay click
+    document.getElementById('modalOverlay').addEventListener('click', (e) => {
+      if (e.target === document.getElementById('modalOverlay')) {
+        closeModal();
+      }
+    });
+
+    // Close modal on Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeModal();
+    });
+
+    // ============================================
+    // Render Order Detail
+    // ============================================
+    function renderOrderDetail(order, lifecycle) {
+      const total = order.items.reduce((sum, item) => sum + (parseFloat(item.price) * parseFloat(item.quantity)), 0);
+      const formatDate = (date) => date ? new Date(date).toLocaleString('sr-RS') : 'N/A';
+      const formatValue = (val) => val !== null && val !== undefined && val !== '' ? val : 'N/A';
+
+      // Items table
+      const itemsHtml = order.items.map(item => `
+        <tr>
+          <td>
+            <div class="item-name">${item.name}</div>
+            ${item.modifiers && item.modifiers.length > 0 ? `
+              <div class="item-modifiers">
+                ${item.modifiers.map(m => `+ ${m.name || m.value || 'Modifier'}`).join(', ')}
+              </div>
+            ` : ''}
+            ${item.note ? `<div class="item-modifiers">📝 ${item.note}</div>` : ''}
+          </td>
+          <td>${item.quantity}</td>
+          <td>${parseFloat(item.price).toFixed(0)} RSD</td>
+          <td>${(parseFloat(item.price) * parseFloat(item.quantity)).toFixed(0)} RSD</td>
+          <td>${item.reference_id || 'N/A'}</td>
+        </tr>
+      `).join('');
+
+      // Lifecycle timeline
+      const lifecycleHtml = lifecycle.map(event => `
+        <div class="lifecycle-event">
+          <div class="event-type">${event.event_type}</div>
+          ${event.status ? `<div class="event-status">Status: ${STATUS_NAMES[event.status] || event.status}</div>` : ''}
+          <div class="event-time">${formatDate(event.timestamp)}</div>
+        </div>
+      `).join('') || '<p style="color: #666;">No lifecycle events</p>';
+
+      return `
+        <!-- Order Info -->
+        <div class="detail-section">
+          <h3>Order Information</h3>
+          <div class="detail-grid">
+            <div class="detail-item">
+              <div class="detail-label">Order ID</div>
+              <div class="detail-value">${order.order_id}</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Order Number</div>
+              <div class="detail-value highlight">#${order.order_no}</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Provider</div>
+              <div class="detail-value">${formatValue(order.provider)}</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Company ID</div>
+              <div class="detail-value">${formatValue(order.company_id)}</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Status</div>
+              <div class="detail-value ${order.status === 5 ? 'success' : ''}">${STATUS_NAMES[order.status] || order.status} (${order.status})</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Delivery Type</div>
+              <div class="detail-value">${formatValue(order.delivery_type)}</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Is Paid</div>
+              <div class="detail-value ${order.is_paid ? 'success' : 'warning'}">${order.is_paid ? '✅ Yes' : '❌ No'}</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Is Invalid</div>
+              <div class="detail-value ${order.is_invalid ? 'error' : ''}">${order.is_invalid ? '⚠️ Yes' : 'No'}</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Payment Method</div>
+              <div class="detail-value">${formatValue(order.payment_method)}</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Total</div>
+              <div class="detail-value success" style="font-size: 20px; font-weight: bold;">${total.toFixed(0)} RSD</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Staff & Table -->
+        <div class="detail-section">
+          <h3>Staff & Table</h3>
+          <div class="detail-grid">
+            <div class="detail-item">
+              <div class="detail-label">Waiter ID</div>
+              <div class="detail-value">${formatValue(order.waiter_id)}</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Waiter Name</div>
+              <div class="detail-value">${formatValue(order.waiter_name)}</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Waiter Reference ID</div>
+              <div class="detail-value">${formatValue(order.waiter_reference_id)}</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Table ID</div>
+              <div class="detail-value">${formatValue(order.table_id)}</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Table Reference ID</div>
+              <div class="detail-value">${formatValue(order.table_reference_id)}</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Created By</div>
+              <div class="detail-value">${formatValue(order.created_by_name)} (ID: ${formatValue(order.created_by_user_id)})</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Customer Info -->
+        <div class="detail-section">
+          <h3>Customer Information</h3>
+          <div class="detail-grid">
+            <div class="detail-item">
+              <div class="detail-label">Customer ID</div>
+              <div class="detail-value">${formatValue(order.customer_id)}</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Customer Name</div>
+              <div class="detail-value">${formatValue(order.customer_name)}</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Phone</div>
+              <div class="detail-value">${formatValue(order.customer_phone)}</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Latitude</div>
+              <div class="detail-value">${formatValue(order.latitude)}</div>
+            </div>
+            <div class="detail-item full-width">
+              <div class="detail-label">Address</div>
+              <div class="detail-value">${formatValue(order.customer_address)}</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Longitude</div>
+              <div class="detail-value">${formatValue(order.longitude)}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Timestamps -->
+        <div class="detail-section">
+          <h3>Timestamps</h3>
+          <div class="detail-grid">
+            <div class="detail-item">
+              <div class="detail-label">Created At</div>
+              <div class="detail-value">${formatDate(order.created_at)}</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Modified At</div>
+              <div class="detail-value">${formatDate(order.modified_at)}</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Accepted At</div>
+              <div class="detail-value">${formatDate(order.accepted_at)}</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Due Date</div>
+              <div class="detail-value">${formatDate(order.due_date)}</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Received At</div>
+              <div class="detail-value">${formatDate(order.received_at)}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Notes -->
+        ${order.note ? `
+        <div class="detail-section">
+          <h3>Notes</h3>
+          <div class="detail-item full-width" style="background: #3b2f00; border: 1px solid #f59e0b;">
+            <div class="detail-value" style="color: #fbbf24;">${order.note}</div>
+          </div>
+        </div>
+        ` : ''}
+
+        <!-- Order Items -->
+        <div class="detail-section">
+          <h3>Order Items (${order.items.length})</h3>
+          <table class="items-table">
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>Qty</th>
+                <th>Price</th>
+                <th>Total</th>
+                <th>Ref ID</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${itemsHtml}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Lifecycle -->
+        <div class="detail-section">
+          <h3>Order Lifecycle</h3>
+          <div class="lifecycle-timeline">
+            ${lifecycleHtml}
+          </div>
+        </div>
+
+        <!-- Raw Payload -->
+        <div class="detail-section">
+          <h3>Raw Payload (JSON)</h3>
+          <pre class="raw-json">${JSON.stringify(order.raw_payload, null, 2) || 'No raw payload available'}</pre>
+        </div>
+      `;
+    }
+
+    // ============================================
+    // Render Order Card
     // ============================================
     function renderOrderCard(order, statusClass) {
       const total = order.items.reduce((sum, item) => sum + (parseFloat(item.price) * parseFloat(item.quantity)), 0);
       const time = new Date(order.created_at).toLocaleTimeString('sr-RS', { hour: '2-digit', minute: '2-digit' });
       
-      const itemsHtml = order.items.map(item => `
+      const itemsHtml = order.items.slice(0, 3).map(item => `
         <div class="item">
           <span><span class="quantity">${item.quantity}x</span> ${item.name}</span>
-          <span>${parseFloat(item.price).toFixed(0)} RSD</span>
+          <span>${parseFloat(item.price).toFixed(0)}</span>
         </div>
       `).join('');
 
-      const customerHtml = order.customer_name ? `
-        <div class="customer-info">
-          <div class="name">👤 ${order.customer_name}</div>
-          ${order.customer_address ? `<div class="address">📍 ${order.customer_address}</div>` : ''}
-          ${order.customer_phone ? `<div class="phone">📞 ${order.customer_phone}</div>` : ''}
-        </div>
-      ` : '';
-
-      const noteHtml = order.note ? `<div class="note">📝 ${order.note}</div>` : '';
+      const moreItems = order.items.length > 3 ? `<div class="item" style="color: #666;">+ ${order.items.length - 3} more items...</div>` : '';
 
       return `
-        <div class="order-card ${statusClass}">
+        <div class="order-card ${statusClass}" onclick="openOrderDetail(${order.order_id})">
           <div class="order-header">
             <span class="order-number">#${order.order_no}</span>
             <span class="order-provider ${order.provider}">${order.provider}</span>
           </div>
           <div class="order-meta">
             ${order.waiter_name ? `<span class="waiter">👨‍🍳 ${order.waiter_name}</span> • ` : ''}
-            ${order.table_reference_id ? `<span class="table">🪑 Table ${order.table_reference_id}</span> • ` : ''}
+            ${order.table_reference_id ? `<span class="table">🪑 ${order.table_reference_id}</span> • ` : ''}
             <span>${order.delivery_type || 'N/A'}</span>
           </div>
           <div class="order-items">
             ${itemsHtml}
+            ${moreItems}
           </div>
-          ${customerHtml}
-          ${noteHtml}
           <div class="order-footer">
             <span class="order-total">${total.toFixed(0)} RSD</span>
             <span class="order-time">${time}</span>
@@ -468,14 +981,16 @@
       `;
     }
 
+    // ============================================
+    // Render All Orders
+    // ============================================
     function renderOrders(orders) {
-      // Filter orders by status groups
       const newOrders = orders.filter(o => STATUS_GROUPS.new.includes(o.status) && !o.is_paid);
       const productionOrders = orders.filter(o => STATUS_GROUPS.production.includes(o.status) && !o.is_paid);
       const readyOrders = orders.filter(o => STATUS_GROUPS.ready.includes(o.status) && !o.is_paid);
       const paidOrders = orders.filter(o => o.is_paid);
+      const canceledOrders = orders.filter(o => STATUS_GROUPS.canceled.includes(o.status));
 
-      // Render columns
       document.getElementById('ordersNew').innerHTML = newOrders.length 
         ? newOrders.map(o => renderOrderCard(o, 'new')).join('')
         : '<div class="empty-state">No new orders</div>';
@@ -492,19 +1007,23 @@
         ? paidOrders.map(o => renderOrderCard(o, 'paid')).join('')
         : '<div class="empty-state">No completed orders</div>';
 
+      document.getElementById('ordersCanceled').innerHTML = canceledOrders.length
+        ? canceledOrders.map(o => renderOrderCard(o, 'canceled')).join('')
+        : '<div class="empty-state">No canceled orders</div>';
+
       // Update counts
       document.getElementById('countNew').textContent = newOrders.length;
       document.getElementById('countProduction').textContent = productionOrders.length;
       document.getElementById('countReady').textContent = readyOrders.length;
       document.getElementById('countPaid').textContent = paidOrders.length;
+      document.getElementById('countCanceled').textContent = canceledOrders.length;
 
-      // Update stats
       document.getElementById('statNew').textContent = newOrders.length;
       document.getElementById('statProduction').textContent = productionOrders.length;
       document.getElementById('statReady').textContent = readyOrders.length;
       document.getElementById('statPaid').textContent = paidOrders.length;
+      document.getElementById('statCanceled').textContent = canceledOrders.length;
 
-      // Update timestamp
       document.getElementById('lastUpdated').textContent = 
         `Updated: ${new Date().toLocaleTimeString('sr-RS')}`;
     }
@@ -519,7 +1038,7 @@
           { event: '*', schema: 'public', table: 'emeni_orders' },
           (payload) => {
             console.log('Order change:', payload);
-            loadOrders(); // Refresh all orders
+            loadOrders();
           }
         )
         .subscribe();
@@ -533,13 +1052,8 @@
       renderOrders(orders);
     }
 
-    // Initial load
     loadOrders();
-
-    // Setup real-time updates
     setupRealtimeSubscription();
-
-    // Fallback polling every 30 seconds
     setInterval(loadOrders, 30000);
   </script>
 </body>
