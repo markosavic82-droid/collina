@@ -149,6 +149,17 @@
     .order-card.paid { border-left-color: #22c55e; }
     .order-card.canceled { border-left-color: #ef4444; }
 
+    .order-location-tag {
+      background: linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 6px 10px;
+      border-radius: 6px;
+      margin-bottom: 10px;
+      display: inline-block;
+    }
+
     .order-header {
       display: flex;
       justify-content: space-between;
@@ -617,6 +628,20 @@
 
     // Store all orders for quick access
     let allOrders = [];
+    let locations = {};
+
+    // Fetch locations
+    async function fetchLocations() {
+      const { data, error } = await supabaseClient
+        .from('emeni_locations')
+        .select('*');
+      
+      if (!error && data) {
+        data.forEach(loc => {
+          locations[loc.company_id] = loc.location_name;
+        });
+      }
+    }
 
     // Status groupings
     const STATUS_GROUPS = {
@@ -778,8 +803,8 @@
               <div class="detail-value">${formatValue(order.provider)}</div>
             </div>
             <div class="detail-item">
-              <div class="detail-label">Company ID</div>
-              <div class="detail-value">${formatValue(order.company_id)}</div>
+              <div class="detail-label">Location</div>
+              <div class="detail-value highlight">${locations[order.company_id] || 'Unknown'} (ID: ${formatValue(order.company_id)})</div>
             </div>
             <div class="detail-item">
               <div class="detail-label">Status</div>
@@ -948,6 +973,7 @@
     function renderOrderCard(order, statusClass) {
       const total = order.items.reduce((sum, item) => sum + (parseFloat(item.price) * parseFloat(item.quantity)), 0);
       const time = new Date(order.created_at).toLocaleTimeString('sr-RS', { hour: '2-digit', minute: '2-digit' });
+      const locationName = locations[order.company_id] || `ID: ${order.company_id}`;
       
       const itemsHtml = order.items.slice(0, 3).map(item => `
         <div class="item">
@@ -960,6 +986,7 @@
 
       return `
         <div class="order-card ${statusClass}" onclick="openOrderDetail(${order.order_id})">
+          <div class="order-location-tag">📍 ${locationName}</div>
           <div class="order-header">
             <span class="order-number">#${order.order_no}</span>
             <span class="order-provider ${order.provider}">${order.provider}</span>
@@ -1052,9 +1079,14 @@
       renderOrders(orders);
     }
 
-    loadOrders();
-    setupRealtimeSubscription();
-    setInterval(loadOrders, 30000);
+    async function init() {
+      await fetchLocations();
+      await loadOrders();
+      setupRealtimeSubscription();
+      setInterval(loadOrders, 30000);
+    }
+
+    init();
   </script>
 </body>
 </html>
