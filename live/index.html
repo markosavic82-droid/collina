@@ -77,6 +77,89 @@
       color: #fff;
     }
 
+    .filters-row {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .filter-dropdown {
+      position: relative;
+    }
+
+    .filter-btn {
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 8px;
+      color: #fff;
+      padding: 8px 14px;
+      cursor: pointer;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+
+    .filter-btn:hover {
+      border-color: #8B5CF6;
+    }
+
+    .filter-count {
+      background: #8B5CF6;
+      color: #fff;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 11px;
+    }
+
+    .dropdown-menu {
+      display: none;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 8px;
+      min-width: 200px;
+      max-height: 300px;
+      overflow-y: auto;
+      z-index: 1000;
+      margin-top: 5px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    }
+
+    .dropdown-menu.show {
+      display: block;
+    }
+
+    .dropdown-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      cursor: pointer;
+      transition: background 0.2s;
+      font-size: 13px;
+    }
+
+    .dropdown-item:hover {
+      background: #252525;
+    }
+
+    .dropdown-item input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      accent-color: #8B5CF6;
+      cursor: pointer;
+    }
+
+    .dropdown-divider {
+      height: 1px;
+      background: #333;
+      margin: 5px 0;
+    }
+
     .status-dot {
       width: 10px;
       height: 10px;
@@ -609,11 +692,51 @@
 <body>
   <div class="header">
     <h1>🍔 Collina Orders</h1>
-    <div class="date-selector">
-      <button class="date-btn" onclick="changeDate(-1)">◀</button>
-      <input type="date" id="selectedDate" onchange="loadOrdersForDate()">
-      <button class="date-btn" onclick="changeDate(1)">▶</button>
+    <div class="filters-row">
+      <div class="date-selector">
+        <button class="date-btn" onclick="changeDate(-1)">◀</button>
+        <input type="date" id="selectedDate" onchange="loadOrdersForDate()">
+        <button class="date-btn" onclick="changeDate(1)">▶</button>
+      </div>
+      
+      <div class="filter-dropdown">
+        <button class="filter-btn" onclick="toggleDropdown('locationDropdown')">
+          📍 Lokacije <span class="filter-count" id="locationCount">Sve</span>
+        </button>
+        <div class="dropdown-menu" id="locationDropdown">
+          <label class="dropdown-item">
+            <input type="checkbox" value="all" checked onchange="toggleAllLocations(this)"> Sve lokacije
+          </label>
+          <div class="dropdown-divider"></div>
+          <div id="locationOptions"></div>
+        </div>
+      </div>
+      
+      <div class="filter-dropdown">
+        <button class="filter-btn" onclick="toggleDropdown('channelDropdown')">
+          📱 Kanal <span class="filter-count" id="channelCount">Svi</span>
+        </button>
+        <div class="dropdown-menu" id="channelDropdown">
+          <label class="dropdown-item">
+            <input type="checkbox" value="all" checked onchange="toggleAllChannels(this)"> Svi kanali
+          </label>
+          <div class="dropdown-divider"></div>
+          <label class="dropdown-item">
+            <input type="checkbox" value="wolt" checked onchange="updateChannelFilter()"> 🟦 Wolt
+          </label>
+          <label class="dropdown-item">
+            <input type="checkbox" value="gloriafood" checked onchange="updateChannelFilter()"> 🟨 GloriaFood
+          </label>
+          <label class="dropdown-item">
+            <input type="checkbox" value="ebar" checked onchange="updateChannelFilter()"> 🟩 eBar
+          </label>
+          <label class="dropdown-item">
+            <input type="checkbox" value="pult" checked onchange="updateChannelFilter()"> 🟪 Pult
+          </label>
+        </div>
+      </div>
     </div>
+    
     <div class="status">
       <div class="status-dot"></div>
       <span>Live</span>
@@ -724,6 +847,10 @@
     // Store all orders for quick access
     let allOrders = [];
     let locations = {};
+    
+    // Filter state
+    let selectedLocations = new Set(); // Empty = all
+    let selectedChannels = new Set(['wolt', 'gloriafood', 'ebar', 'pult']); // All by default
 
     // Fetch locations
     async function fetchLocations() {
@@ -735,7 +862,105 @@
         data.forEach(loc => {
           locations[loc.company_id] = loc.location_name;
         });
+        // Populate location filter dropdown
+        populateLocationFilter();
       }
+    }
+
+    // ============================================
+    // Filter Functions
+    // ============================================
+    function populateLocationFilter() {
+      const container = document.getElementById('locationOptions');
+      container.innerHTML = '';
+      
+      Object.entries(locations).forEach(([id, name]) => {
+        const label = document.createElement('label');
+        label.className = 'dropdown-item';
+        label.innerHTML = `
+          <input type="checkbox" value="${id}" checked onchange="updateLocationFilter()"> ${name}
+        `;
+        container.appendChild(label);
+      });
+    }
+
+    function toggleDropdown(id) {
+      // Close all other dropdowns
+      document.querySelectorAll('.dropdown-menu').forEach(menu => {
+        if (menu.id !== id) menu.classList.remove('show');
+      });
+      // Toggle this one
+      document.getElementById(id).classList.toggle('show');
+    }
+
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.filter-dropdown')) {
+        document.querySelectorAll('.dropdown-menu').forEach(menu => {
+          menu.classList.remove('show');
+        });
+      }
+    });
+
+    function toggleAllLocations(checkbox) {
+      const checkboxes = document.querySelectorAll('#locationOptions input[type="checkbox"]');
+      checkboxes.forEach(cb => cb.checked = checkbox.checked);
+      updateLocationFilter();
+    }
+
+    function toggleAllChannels(checkbox) {
+      const checkboxes = document.querySelectorAll('#channelDropdown input[type="checkbox"]:not([value="all"])');
+      checkboxes.forEach(cb => cb.checked = checkbox.checked);
+      updateChannelFilter();
+    }
+
+    function updateLocationFilter() {
+      const checkboxes = document.querySelectorAll('#locationOptions input[type="checkbox"]:checked');
+      selectedLocations = new Set(Array.from(checkboxes).map(cb => cb.value));
+      
+      // Update "all" checkbox state
+      const allCheckbox = document.querySelector('#locationDropdown input[value="all"]');
+      const totalLocations = document.querySelectorAll('#locationOptions input[type="checkbox"]').length;
+      allCheckbox.checked = selectedLocations.size === totalLocations;
+      
+      // Update count display
+      const countEl = document.getElementById('locationCount');
+      countEl.textContent = selectedLocations.size === totalLocations ? 'Sve' : selectedLocations.size;
+      
+      applyFilters();
+    }
+
+    function updateChannelFilter() {
+      const checkboxes = document.querySelectorAll('#channelDropdown input[type="checkbox"]:checked:not([value="all"])');
+      selectedChannels = new Set(Array.from(checkboxes).map(cb => cb.value));
+      
+      // Update "all" checkbox state
+      const allCheckbox = document.querySelector('#channelDropdown input[value="all"]');
+      allCheckbox.checked = selectedChannels.size === 4;
+      
+      // Update count display
+      const countEl = document.getElementById('channelCount');
+      countEl.textContent = selectedChannels.size === 4 ? 'Svi' : selectedChannels.size;
+      
+      applyFilters();
+    }
+
+    function applyFilters() {
+      const filteredOrders = allOrders.filter(order => {
+        // Location filter
+        const locationMatch = selectedLocations.size === 0 || 
+                             selectedLocations.size === Object.keys(locations).length ||
+                             selectedLocations.has(String(order.company_id));
+        
+        // Channel filter
+        const provider = (order.provider || '').toLowerCase();
+        const channelMatch = selectedChannels.has(provider) || 
+                            (provider === '' && selectedChannels.has('pult'));
+        
+        return locationMatch && channelMatch;
+      });
+      
+      renderOrders(filteredOrders);
     }
 
     // Status groupings
@@ -1305,7 +1530,8 @@
     // ============================================
     async function loadOrders() {
       const orders = await fetchOrders();
-      renderOrders(orders);
+      allOrders = orders; // Store for filtering
+      applyFilters(); // Apply current filters
     }
 
     async function init() {
