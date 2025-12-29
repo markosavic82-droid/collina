@@ -517,11 +517,11 @@
 
   <div class="stats-bar">
     <div class="stat-card new">
-      <h3>New / Accepted</h3>
+      <h3>New / Pending</h3>
       <div class="value" id="statNew">0</div>
     </div>
     <div class="stat-card production">
-      <h3>In Production</h3>
+      <h3>Accepted / In Production</h3>
       <div class="value" id="statProduction">0</div>
     </div>
     <div class="stat-card ready">
@@ -541,7 +541,7 @@
   <div class="columns">
     <div class="column new">
       <div class="column-header">
-        <h2>🆕 New / Accepted</h2>
+        <h2>🆕 New / Pending</h2>
         <span class="count" id="countNew">0</span>
       </div>
       <div id="ordersNew" class="orders-list">
@@ -551,7 +551,7 @@
 
     <div class="column production">
       <div class="column-header">
-        <h2>👨‍🍳 In Production</h2>
+        <h2>👨‍🍳 Accepted / Production</h2>
         <span class="count" id="countProduction">0</span>
       </div>
       <div id="ordersProduction" class="orders-list">
@@ -620,8 +620,8 @@
 
     // Status groupings
     const STATUS_GROUPS = {
-      new: [1, 3, 12, 13],
-      production: [4],
+      new: [1, 12, 13],
+      production: [3, 4],
       ready: [5, 6, 7],
       paid: [],
       canceled: [8, 9, 11]  // Rejected, Canceled, Invalid
