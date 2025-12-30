@@ -501,6 +501,39 @@
     .order-card.production { border-left-color: #f97316; }
     .order-card.ready { border-left-color: #3b82f6; }
     .order-card.paid { border-left-color: #22c55e; }
+
+    .stickers-container {
+      position: absolute;
+      top: -8px;
+      right: 10px;
+      display: flex;
+      gap: 6px;
+      z-index: 10;
+    }
+
+    .sticker {
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+
+    .sticker.delivered {
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+      color: #fff;
+    }
+
+    .sticker.paid {
+      background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+      color: #fff;
+    }
+
+    .order-card {
+      position: relative;
+    }
     .order-card.canceled { border-left-color: #ef4444; }
 
     .order-location-tag {
@@ -997,12 +1030,12 @@
     </button>
     <button class="status-tab" data-status="ready" onclick="setStatusFilter('ready')">
       <span class="tab-icon">✅</span>
-      <span class="tab-label">Spremno</span>
+      <span class="tab-label">Spremno / Dostava</span>
       <span class="tab-count" id="countReady">0</span>
     </button>
     <button class="status-tab" data-status="paid" onclick="setStatusFilter('paid')">
       <span class="tab-icon">💰</span>
-      <span class="tab-label">Plaćeno</span>
+      <span class="tab-label">Završeno</span>
       <span class="tab-count" id="countPaid">0</span>
     </button>
     <button class="status-tab" data-status="canceled" onclick="setStatusFilter('canceled')">
@@ -1072,7 +1105,7 @@
   <div class="columns" id="columnsView">
     <div class="column new">
       <div class="column-header">
-        <h2>🆕 New / Pending</h2>
+        <h2>🆕 Novo</h2>
         <span class="count" id="colCountNew">0</span>
       </div>
       <div id="ordersNew" class="orders-list">
@@ -1082,7 +1115,7 @@
 
     <div class="column production">
       <div class="column-header">
-        <h2>👨‍🍳 Accepted / Production</h2>
+        <h2>👨‍🍳 Priprema</h2>
         <span class="count" id="colCountProduction">0</span>
       </div>
       <div id="ordersProduction" class="orders-list">
@@ -1092,7 +1125,7 @@
 
     <div class="column ready">
       <div class="column-header">
-        <h2>✅ Ready / Delivery</h2>
+        <h2>✅ Spremno / Dostava</h2>
         <span class="count" id="colCountReady">0</span>
       </div>
       <div id="ordersReady" class="orders-list">
@@ -1102,7 +1135,7 @@
 
     <div class="column paid">
       <div class="column-header">
-        <h2>💰 Completed</h2>
+        <h2>💰 Završeno</h2>
         <span class="count" id="colCountPaid">0</span>
       </div>
       <div id="ordersPaid" class="orders-list">
@@ -1112,7 +1145,7 @@
 
     <div class="column canceled">
       <div class="column-header">
-        <h2>❌ Canceled / Rejected</h2>
+        <h2>❌ Otkazano</h2>
         <span class="count" id="colCountCanceled">0</span>
       </div>
       <div id="ordersCanceled" class="orders-list">
@@ -1740,8 +1773,8 @@
       const statusLabels = {
         new: 'Novo',
         production: 'Priprema',
-        ready: 'Spremno',
-        paid: 'Plaćeno',
+        ready: 'Spremno / Dostava',
+        paid: 'Završeno',
         canceled: 'Otkazano',
         other: 'Ostalo'
       };
@@ -1865,8 +1898,25 @@
         `;
       }
 
+      // Check if order is paid and/or delivered
+      const isPaidOrder = order.is_paid === true || order.is_paid === 'true';
+      const isDelivered = order.delivery_status === 'delivered';
+      
+      let stickersHtml = '';
+      if (isDelivered || isPaidOrder) {
+        stickersHtml = '<div class="stickers-container">';
+        if (isDelivered) {
+          stickersHtml += '<div class="sticker delivered">✅ Isporučeno</div>';
+        }
+        if (isPaidOrder) {
+          stickersHtml += '<div class="sticker paid">💰 Plaćeno</div>';
+        }
+        stickersHtml += '</div>';
+      }
+
       return `
         <div class="order-card ${statusClass}" onclick="openOrderDetail(${order.order_id})">
+          ${stickersHtml}
           <div class="order-location-tag">📍 ${locationName}</div>
           <div class="order-header">
             <span class="order-number">#${order.order_no}</span>
@@ -1928,23 +1978,23 @@
 
           document.getElementById('ordersNew').innerHTML = newOrders.length 
             ? newOrders.map(o => renderOrderCard(o, 'new')).join('')
-            : '<div class="empty-state">No new orders</div>';
+            : '<div class="empty-state">Nema novih porudžbina</div>';
 
           document.getElementById('ordersProduction').innerHTML = productionOrders.length
             ? productionOrders.map(o => renderOrderCard(o, 'production')).join('')
-            : '<div class="empty-state">No orders in production</div>';
+            : '<div class="empty-state">Nema porudžbina u pripremi</div>';
 
           document.getElementById('ordersReady').innerHTML = readyOrders.length
             ? readyOrders.map(o => renderOrderCard(o, 'ready')).join('')
-            : '<div class="empty-state">No ready orders</div>';
+            : '<div class="empty-state">Nema spremnih porudžbina</div>';
 
           document.getElementById('ordersPaid').innerHTML = paidOrders.length
             ? paidOrders.map(o => renderOrderCard(o, 'paid')).join('')
-            : '<div class="empty-state">No completed orders</div>';
+            : '<div class="empty-state">Nema završenih porudžbina</div>';
 
           document.getElementById('ordersCanceled').innerHTML = canceledOrders.length
             ? canceledOrders.map(o => renderOrderCard(o, 'canceled')).join('')
-            : '<div class="empty-state">No canceled orders</div>';
+            : '<div class="empty-state">Nema otkazanih porudžbina</div>';
 
           // Update column counts
           document.getElementById('colCountNew').textContent = newOrders.length;
