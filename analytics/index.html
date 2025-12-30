@@ -374,23 +374,34 @@ const CollinaDashboard = () => {
       'gloria': { name: 'Gloria', color: '#EC4899', icon: '🍽️' },
       'food truck': { name: 'Food Truck', color: '#22C55E', icon: '🚚' },
       'foodtruck': { name: 'Food Truck', color: '#22C55E', icon: '🚚' },
-      'other': { name: 'Other', color: '#6B7280', icon: '📦' },
     };
     
     const channelStats = {};
+    const unknownProviders = new Set();
+    
     validOrders.forEach(o => {
-      const provider = (o.provider || o.raw_payload?.provider || 'other').toLowerCase();
-      let channelKey = 'other';
+      const provider = (o.provider || o.raw_payload?.provider || '').toLowerCase().trim();
+      let channelKey = null;
+      
       for (const key of Object.keys(channelConfig)) {
         if (provider.includes(key)) {
           channelKey = key;
           break;
         }
       }
-      if (!channelStats[channelKey]) {
-        const config = channelConfig[channelKey] || channelConfig['other'];
-        channelStats[channelKey] = { 
-          key: channelKey, 
+      
+      // Track unknown providers for debugging
+      if (!channelKey && provider) {
+        unknownProviders.add(provider);
+      }
+      
+      // Use provider name directly if not in config, or 'Unknown' if empty
+      const finalKey = channelKey || provider || 'unknown';
+      const config = channelConfig[channelKey] || { name: provider || 'Unknown', color: '#6B7280', icon: '📦' };
+      
+      if (!channelStats[finalKey]) {
+        channelStats[finalKey] = { 
+          key: finalKey, 
           name: config.name, 
           color: config.color, 
           icon: config.icon,
@@ -398,9 +409,15 @@ const CollinaDashboard = () => {
           revenue: 0 
         };
       }
-      channelStats[channelKey].orders++;
-      channelStats[channelKey].revenue += getOrderTotal(o);
+      channelStats[finalKey].orders++;
+      channelStats[finalKey].revenue += getOrderTotal(o);
     });
+    
+    // Log unknown providers for debugging
+    if (unknownProviders.size > 0) {
+      console.log('Unknown providers found:', Array.from(unknownProviders));
+    }
+    
     setChannelData(Object.values(channelStats).sort((a, b) => b.revenue - a.revenue));
     
     // Fulfillment data (Delivery, Pickup, In-house)
@@ -408,38 +425,60 @@ const CollinaDashboard = () => {
       'delivery': { name: 'Delivery', color: '#3B82F6', icon: '🚚' },
       'pickup': { name: 'Pickup', color: '#F59E0B', icon: '🏃' },
       'inhouse': { name: 'In-house', color: '#22C55E', icon: '🍽️' },
-      'dine_in': { name: 'In-house', color: '#22C55E', icon: '🍽️' },
-      'takeaway': { name: 'Pickup', color: '#F59E0B', icon: '🏃' },
     };
     
     const fulfillmentStats = {};
+    
+    // Debug: track what we're classifying
+    const fulfillmentDebug = { delivery: [], pickup: [], inhouse: [] };
+    
     validOrders.forEach(o => {
-      // Try to determine fulfillment type from various fields
-      let fulfillType = (o.order_type || o.fulfillment_type || o.raw_payload?.orderType || o.raw_payload?.fulfillmentType || '').toLowerCase();
+      const provider = (o.provider || '').toLowerCase();
       
-      // If no explicit type, infer from provider
-      if (!fulfillType) {
-        const provider = (o.provider || '').toLowerCase();
-        if (provider === 'wolt' || provider === 'gloria') {
-          fulfillType = 'delivery';
+      // Check for explicit order type fields
+      let orderType = (o.order_type || o.fulfillment_type || o.type || '').toLowerCase();
+      if (!orderType && o.raw_payload) {
+        orderType = (o.raw_payload.orderType || o.raw_payload.fulfillmentType || o.raw_payload.type || o.raw_payload.deliveryType || '').toLowerCase();
+      }
+      
+      // Check for table reference (indicates in-house dining)
+      const hasTable = o.table_number || o.table_ref || o.raw_payload?.tableNumber || o.raw_payload?.table;
+      
+      // Check if it's marked as delivery
+      const isDelivery = o.is_delivery === true || o.raw_payload?.isDelivery === true || 
+                         orderType.includes('delivery') || orderType.includes('dostava');
+      
+      // Check if pickup
+      const isPickup = orderType.includes('pickup') || orderType.includes('takeaway') || 
+                       orderType.includes('take_away') || orderType.includes('preuzimanje');
+      
+      // Check if in-house
+      const isInhouse = orderType.includes('inhouse') || orderType.includes('in-house') || 
+                        orderType.includes('in_house') || orderType.includes('dine') ||
+                        orderType.includes('na licu mesta') || orderType.includes('u lokalu');
+      
+      let normalizedType;
+      
+      if (isDelivery) {
+        normalizedType = 'delivery';
+      } else if (isPickup) {
+        normalizedType = 'pickup';
+      } else if (isInhouse || hasTable) {
+        normalizedType = 'inhouse';
+      } else {
+        // Infer from provider if no explicit type
+        if (provider === 'wolt' || provider === 'gloria' || provider.includes('glovo')) {
+          normalizedType = 'delivery';
         } else if (provider === 'ebar') {
-          // eBar can be pickup or inhouse - check for table number
-          fulfillType = o.table_number || o.raw_payload?.tableNumber ? 'inhouse' : 'pickup';
+          // eBar defaults to in-house unless explicitly marked otherwise
+          normalizedType = 'inhouse';
         } else {
-          fulfillType = 'delivery'; // default
+          normalizedType = 'delivery'; // default fallback
         }
       }
       
-      // Normalize fulfillment type
-      let normalizedType = 'delivery';
-      if (fulfillType.includes('pickup') || fulfillType.includes('takeaway') || fulfillType.includes('take_away')) {
-        normalizedType = 'pickup';
-      } else if (fulfillType.includes('inhouse') || fulfillType.includes('dine') || fulfillType.includes('in_house') || fulfillType.includes('in-house')) {
-        normalizedType = 'inhouse';
-      }
-      
       if (!fulfillmentStats[normalizedType]) {
-        const config = fulfillmentConfig[normalizedType] || fulfillmentConfig['delivery'];
+        const config = fulfillmentConfig[normalizedType];
         fulfillmentStats[normalizedType] = { 
           key: normalizedType, 
           name: config.name, 
@@ -452,6 +491,7 @@ const CollinaDashboard = () => {
       fulfillmentStats[normalizedType].orders++;
       fulfillmentStats[normalizedType].revenue += getOrderTotal(o);
     });
+    
     setFulfillmentData(Object.values(fulfillmentStats).sort((a, b) => b.revenue - a.revenue));
   }
 
