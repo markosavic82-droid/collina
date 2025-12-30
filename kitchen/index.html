@@ -782,8 +782,16 @@
                 filteredOrders = allOrders.filter(o => o.company_id == selectedLocation);
             }
 
-            // Filter to only production orders (status 1, 3, 4)
+            // Filter to only production orders (status 3, 4)
             filteredOrders = filteredOrders.filter(o => PRODUCTION_STATUSES.includes(o.status));
+            
+            // Filter out eBar orders that are paid
+            filteredOrders = filteredOrders.filter(o => {
+                const isEbar = (o.provider || '').toLowerCase() === 'ebar';
+                const isPaid = o.is_paid === true || o.is_paid === 'true';
+                // Keep if NOT (eBar AND paid)
+                return !(isEbar && isPaid);
+            });
 
             // Sort by created_at (oldest first)
             filteredOrders.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
