@@ -48,6 +48,22 @@ function classifyItem(name) {
   return 'other';
 }
 
+// Helper function to get order total from various sources
+function getOrderTotal(o) {
+  let orderTotal = parseFloat(o.total) || 0;
+  if (orderTotal === 0) orderTotal = parseFloat(o.order_total) || 0;
+  if (orderTotal === 0) orderTotal = parseFloat(o.amount) || 0;
+  if (orderTotal === 0 && o.raw_payload) {
+    orderTotal = parseFloat(o.raw_payload.total) || parseFloat(o.raw_payload.orderTotal) || parseFloat(o.raw_payload.amount) || 0;
+  }
+  if (orderTotal === 0) {
+    let items = o.items || [];
+    if (items.length === 0 && o.raw_payload?.items) items = o.raw_payload.items;
+    orderTotal = items.reduce((s, item) => s + (parseFloat(item.price) || 0) * (parseFloat(item.quantity) || 1), 0);
+  }
+  return orderTotal;
+}
+
 const CollinaDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
@@ -62,6 +78,9 @@ const CollinaDashboard = () => {
     avgBasket: 0,
     profit: 0,
     marginPct: 0,
+    netMarginPct: 0,
+    woltFee: 0,
+    foodCost: 0,
     itemsPerOrder: 0,
     newCustomers: 0,
     returningCustomers: 0,
@@ -149,7 +168,7 @@ const CollinaDashboard = () => {
       trendStart.setHours(0, 0, 0, 0);
 
       const trendOrders = await supabaseFetch(
-        `${SUPABASE_URL}/rest/v1/emeni_orders?select=created_at,total,status&created_at=gte.${trendStart.toISOString()}&created_at=lte.${endDate.toISOString()}&status=neq.8&status=neq.9`
+        `${SUPABASE_URL}/rest/v1/emeni_orders?select=created_at,total,order_total,amount,raw_payload,items,status&created_at=gte.${trendStart.toISOString()}&created_at=lte.${endDate.toISOString()}&status=neq.8&status=neq.9`
       );
 
       if (trendOrders && Array.isArray(trendOrders)) {
@@ -166,43 +185,8 @@ const CollinaDashboard = () => {
     // Filter out canceled orders
     const validOrders = ordersArr.filter(o => ![8, 9, 11].includes(o.status));
     
-    // Debug: log first order structure
-    if (validOrders.length > 0) {
-      const sample = validOrders[0];
-      console.log('=== ORDER DEBUG ===');
-      console.log('All keys:', Object.keys(sample));
-      console.log('total field:', sample.total);
-      console.log('order_total field:', sample.order_total);
-      console.log('amount field:', sample.amount);
-      console.log('price field:', sample.price);
-      console.log('raw_payload keys:', sample.raw_payload ? Object.keys(sample.raw_payload) : 'none');
-      if (sample.raw_payload) {
-        console.log('raw_payload.total:', sample.raw_payload.total);
-        console.log('raw_payload.orderTotal:', sample.raw_payload.orderTotal);
-        console.log('raw_payload.amount:', sample.raw_payload.amount);
-      }
-      console.log('Full sample order:', JSON.stringify(sample, null, 2));
-    }
-    
-    // Basic stats - check multiple sources for total
-    const totalRevenue = validOrders.reduce((sum, o) => {
-      let orderTotal = parseFloat(o.total) || 0;
-      // Try order_total
-      if (orderTotal === 0) orderTotal = parseFloat(o.order_total) || 0;
-      // Try amount
-      if (orderTotal === 0) orderTotal = parseFloat(o.amount) || 0;
-      // If total is 0, try raw_payload
-      if (orderTotal === 0 && o.raw_payload) {
-        orderTotal = parseFloat(o.raw_payload.total) || parseFloat(o.raw_payload.orderTotal) || parseFloat(o.raw_payload.amount) || 0;
-      }
-      // If still 0, calculate from items
-      if (orderTotal === 0) {
-        let items = o.items || [];
-        if (items.length === 0 && o.raw_payload?.items) items = o.raw_payload.items;
-        orderTotal = items.reduce((s, item) => s + (parseFloat(item.price) || 0) * (parseFloat(item.quantity) || 1), 0);
-      }
-      return sum + orderTotal;
-    }, 0);
+    // Basic stats - use helper function for order totals
+    const totalRevenue = validOrders.reduce((sum, o) => sum + getOrderTotal(o), 0);
     
     const totalOrders = validOrders.length;
     const avgBasket = totalOrders > 0 ? totalRevenue / totalOrders : 0;
@@ -249,9 +233,11 @@ const CollinaDashboard = () => {
     });
     
     const grossProfit = totalRevenue - totalCost;
-    const netRevenue = totalRevenue * (1 - WOLT_FEE);
+    const woltFee = totalRevenue * WOLT_FEE;
+    const netRevenue = totalRevenue - woltFee;
     const netProfit = netRevenue - totalCost;
     const marginPct = totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0;
+    const netMarginPct = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
 
     // Customer analysis
     const customers = new Set();
@@ -297,6 +283,9 @@ const CollinaDashboard = () => {
       avgBasket,
       profit: netProfit,
       marginPct,
+      netMarginPct,
+      woltFee,
+      foodCost: totalCost,
       itemsPerOrder: totalOrders > 0 ? totalItems / totalOrders : 0,
       newCustomers,
       returningCustomers,
@@ -310,7 +299,7 @@ const CollinaDashboard = () => {
     validOrders.forEach(o => {
       const hour = new Date(o.created_at).getHours();
       hourlyMap[hour].orders++;
-      hourlyMap[hour].revenue += parseFloat(o.total) || 0;
+      hourlyMap[hour].revenue += getOrderTotal(o);
     });
     setHourlyData(Object.values(hourlyMap).filter(h => h.orders > 0));
 
@@ -321,7 +310,7 @@ const CollinaDashboard = () => {
       if (!locStats[locName]) {
         locStats[locName] = { name: locName, revenue: 0, orders: 0, color: locationColors[locName] || '#888' };
       }
-      locStats[locName].revenue += parseFloat(o.total) || 0;
+      locStats[locName].revenue += getOrderTotal(o);
       locStats[locName].orders++;
     });
     setLocationData(Object.values(locStats).sort((a, b) => b.revenue - a.revenue));
@@ -374,7 +363,7 @@ const CollinaDashboard = () => {
       if (!dailyMap[date]) {
         dailyMap[date] = { date, revenue: 0, orders: 0 };
       }
-      dailyMap[date].revenue += parseFloat(o.total) || 0;
+      dailyMap[date].revenue += getOrderTotal(o);
       dailyMap[date].orders++;
     });
     
@@ -574,15 +563,20 @@ const CollinaDashboard = () => {
             {revenueTrend !== 0 && <TrendIndicator value={revenueTrend} suffix="vs yesterday" />}
           </div>
 
-          {/* Net Revenue (after Wolt fee) */}
+          {/* Net Profit (after Wolt fee AND food cost) */}
           <div>
             <p style={{ color: colors.textMuted, fontSize: '11px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>
-              NET REVENUE
+              NET PROFIT
             </p>
             <p className="kpi-value" style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 'clamp(28px, 5vw, 42px)', fontWeight: 700, color: colors.success, marginBottom: '4px' }}>
-              {(stats.revenue * (1 - WOLT_FEE)).toLocaleString('en-US', { maximumFractionDigits: 0 })}
+              {stats.profit.toLocaleString('en-US', { maximumFractionDigits: 0 })}
             </p>
-            <p style={{ color: colors.textSecondary, fontSize: '13px', marginBottom: '8px' }}>RSD (after 11.8% Wolt)</p>
+            <p style={{ color: colors.textSecondary, fontSize: '12px', marginBottom: '4px' }}>
+              RSD ({stats.netMarginPct.toFixed(1)}% net margin)
+            </p>
+            <p style={{ color: colors.textMuted, fontSize: '11px' }}>
+              −{(stats.woltFee/1000).toFixed(0)}K Wolt · −{(stats.foodCost/1000).toFixed(0)}K COGS
+            </p>
           </div>
 
           {/* Orders */}
@@ -624,7 +618,7 @@ const CollinaDashboard = () => {
             { icon: '👤', label: 'NEW CUST', value: stats.newCustomers.toString(), subtext: `${stats.orders > 0 ? ((stats.newCustomers / (stats.newCustomers + stats.returningCustomers)) * 100).toFixed(1) : 0}%` },
             { icon: '🔄', label: 'RETURNING', value: stats.returningCustomers.toString(), subtext: `${stats.orders > 0 ? ((stats.returningCustomers / (stats.newCustomers + stats.returningCustomers)) * 100).toFixed(1) : 0}%` },
             { icon: '🚚', label: 'DELIVERY', value: stats.avgDeliveryTime > 0 ? stats.avgDeliveryTime.toFixed(0) : 'N/A', unit: stats.avgDeliveryTime > 0 ? 'min' : '' },
-            { icon: '💰', label: 'MARGIN', value: `${stats.marginPct.toFixed(1)}%`, subtext: `${(stats.profit / 1000).toFixed(0)}K` },
+            { icon: '💰', label: 'NET MARGIN', value: `${stats.netMarginPct.toFixed(1)}%`, subtext: `${(stats.profit / 1000).toFixed(0)}K profit` },
           ].map((kpi, i) => (
             <div key={i} style={{
               background: colors.card,
