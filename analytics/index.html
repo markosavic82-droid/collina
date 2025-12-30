@@ -31,20 +31,28 @@ async function supabaseFetch(endpoint) {
   return res.json();
 }
 
-// Category classification (same as kitchen monitor)
-const BURGER_KEYWORDS = ['burger', 'smash', 'collina', 'chicken', 'wrap', 'big ', 'double', 'bacon', 'cheese', 'chily', 'royal', 'original', 'dog', 'nuggets', 'sendvic', 'club'];
-const PANCAKE_KEYWORDS = ['palačink', 'palacink', 'nutella', 'eurokrem', 'plazma', 'krem', 'američka', 'americka', 'dubai', 'beli', 'cokolada'];
-const MEAL_KEYWORDS = ['porcija', 'musaka', 'kupus', 'cufte', 'pilav', 'grasak', 'boranija', 'prebranac', 'supa', 'gulas', 'paprika', 'muckalica', 'girice'];
-const SIDES_KEYWORDS = ['pomfrit', 'salata', 'pire', 'onion', 'cvekla'];
-const BAKERY_KEYWORDS = ['kiflice', 'kiflica', 'pita', 'mekika', 'stapici', 'integralne'];
+// Category classification - updated categories
+const BURGER_KEYWORDS = ['burger', 'smash', 'collina', 'chicken', 'wrap', 'big ', 'double', 'bacon', 'cheese', 'chily', 'royal', 'original', 'dog', 'nuggets', 'sendvic', 'club', 'combo', 'akcija', 'triple', 'patty', 'pita chicken', 'cezar', 'humus'];
+const PANCAKE_KEYWORDS = ['palačink', 'palacink', 'nutella', 'nutela', 'eurokrem', 'plazma', 'krem', 'američka', 'americka', 'dubai', 'beli', 'cokolada', 'bananica'];
+const COOKED_KEYWORDS = ['porcija', 'musaka', 'kupus', 'cufte', 'pilav', 'grasak', 'boranija', 'prebranac', 'supa', 'gulas', 'paprika', 'muckalica', 'girice', 'svadbarski', 'punjena'];
+const SIDES_KEYWORDS = ['pomfrit', 'salata', 'pire', 'onion', 'cvekla', 'krompir salata', 'kupus salata', 'dodatak', 'dod.'];
+const BAKERY_KEYWORDS = ['kiflice', 'kiflica', 'pita sir', 'pita meso', 'pita pecurke', 'mekika', 'stapici', 'integralne', 'djevrek', 'pecivo'];
+const DRINKS_KEYWORDS = ['pepsi', 'coca', 'cola', 'fanta', 'sprite', 'sok', 'juice', 'voda', 'water', 'pivo', 'beer', 'kafa', 'coffee', 'čaj', 'caj', 'tea', 'limonada', 'cedjeni', 'smoothie', 'milkshake', '0.25', '0.33', '0.5l', 'flasica', 'limunana', 'heineken', 'espreso', 'cappucino', 'macchiato', 'nes kafa', 'domaci ice'];
 
 function classifyItem(name) {
   const n = (name || '').toLowerCase();
+  // Burgers and combos first (highest priority - includes drinks in combo name)
   for (const kw of BURGER_KEYWORDS) if (n.includes(kw)) return 'burger';
+  // Pancakes
   for (const kw of PANCAKE_KEYWORDS) if (n.includes(kw)) return 'pancake';
-  for (const kw of MEAL_KEYWORDS) if (n.includes(kw)) return 'meal';
-  for (const kw of SIDES_KEYWORDS) if (n.includes(kw)) return 'sides';
+  // Cooked meals
+  for (const kw of COOKED_KEYWORDS) if (n.includes(kw)) return 'cooked';
+  // Bakery (before sides to catch pita items)
   for (const kw of BAKERY_KEYWORDS) if (n.includes(kw)) return 'bakery';
+  // Sides
+  for (const kw of SIDES_KEYWORDS) if (n.includes(kw)) return 'sides';
+  // Drinks
+  for (const kw of DRINKS_KEYWORDS) if (n.includes(kw)) return 'drinks';
   return 'other';
 }
 
@@ -194,8 +202,8 @@ const CollinaDashboard = () => {
     // Items per order
     let totalItems = 0;
     const productCounts = {};
-    const categoryCounts = { burger: 0, pancake: 0, meal: 0, sides: 0, bakery: 0, other: 0 };
-    const categoryRevenue = { burger: 0, pancake: 0, meal: 0, sides: 0, bakery: 0, other: 0 };
+    const categoryCounts = { burger: 0, pancake: 0, cooked: 0, sides: 0, bakery: 0, drinks: 0, other: 0 };
+    const categoryRevenue = { burger: 0, pancake: 0, cooked: 0, sides: 0, bakery: 0, drinks: 0, other: 0 };
 
     validOrders.forEach(order => {
       let items = order.items || [];
@@ -315,13 +323,26 @@ const CollinaDashboard = () => {
     });
     setLocationData(Object.values(locStats).sort((a, b) => b.revenue - a.revenue));
 
-    // Category data
+    // Category data with proper labels
+    const categoryLabels = {
+      burger: { name: 'Burgers & Combos', icon: '🍔', color: '#8B5CF6' },
+      pancake: { name: 'Pancakes', icon: '🥞', color: '#F59E0B' },
+      cooked: { name: 'Cooked Meals', icon: '🍲', color: '#22C55E' },
+      bakery: { name: 'Bakery', icon: '🥐', color: '#EC4899' },
+      sides: { name: 'Sides', icon: '🍟', color: '#06B6D4' },
+      drinks: { name: 'Drinks', icon: '🥤', color: '#3B82F6' },
+      other: { name: 'Other', icon: '📦', color: '#6B7280' },
+    };
+    
     const catData = Object.entries(categoryRevenue)
       .filter(([_, rev]) => rev > 0)
       .map(([cat, rev]) => ({
-        name: cat.charAt(0).toUpperCase() + cat.slice(1),
+        key: cat,
+        name: categoryLabels[cat]?.name || cat,
+        icon: categoryLabels[cat]?.icon || '📦',
+        color: categoryLabels[cat]?.color || '#6B7280',
         revenue: rev,
-        count: categoryCounts[cat],
+        count: Math.round(categoryCounts[cat]),
         mix: totalRevenue > 0 ? (rev / totalRevenue * 100) : 0,
       }))
       .sort((a, b) => b.revenue - a.revenue);
@@ -780,28 +801,47 @@ const CollinaDashboard = () => {
                 Category Mix
               </h2>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {categoryData.map((cat, i) => (
-                <div key={i} style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  padding: '12px',
-                  background: colors.elevated,
-                  borderRadius: '10px',
-                }}>
-                  <div>
-                    <p style={{ fontWeight: 600, marginBottom: '2px' }}>{cat.name}</p>
-                    <p style={{ color: colors.textMuted, fontSize: '12px' }}>{cat.count} items</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {categoryData.map((cat, i) => {
+                const maxRevenue = Math.max(...categoryData.map(c => c.revenue));
+                const barPct = maxRevenue > 0 ? (cat.revenue / maxRevenue) * 100 : 0;
+                return (
+                  <div key={i} style={{
+                    background: colors.elevated,
+                    borderRadius: '10px',
+                    padding: '12px',
+                    borderLeft: `4px solid ${cat.color}`,
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '18px' }}>{cat.icon}</span>
+                        <span style={{ fontWeight: 600 }}>{cat.name}</span>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '16px' }}>
+                          {(cat.revenue / 1000).toFixed(1)}K
+                        </span>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <div style={{ flex: 1, height: '8px', background: colors.bg, borderRadius: '4px', overflow: 'hidden' }}>
+                        <div style={{
+                          width: `${barPct}%`,
+                          height: '100%',
+                          background: cat.color,
+                          borderRadius: '4px',
+                        }} />
+                      </div>
+                      <span style={{ color: colors.textSecondary, fontSize: '12px', minWidth: '45px', textAlign: 'right' }}>
+                        {cat.mix.toFixed(1)}%
+                      </span>
+                    </div>
+                    <div style={{ color: colors.textMuted, fontSize: '11px', marginTop: '4px' }}>
+                      {cat.count} items
+                    </div>
                   </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700 }}>
-                      {(cat.revenue / 1000).toFixed(1)}K
-                    </p>
-                    <p style={{ color: colors.textSecondary, fontSize: '12px' }}>{cat.mix.toFixed(1)}%</p>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
