@@ -4,27 +4,18 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Collina Daily Report</title>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/prop-types@15.8.1/prop-types.min.js"></script>
+  <script src="https://unpkg.com/recharts@2.12.7/umd/Recharts.js"></script>
   <style>* { margin: 0; padding: 0; box-sizing: border-box; }</style>
 </head>
 <body>
   <div id="root"></div>
-  
-  <!-- Load React first -->
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  
-  <!-- PropTypes required by Recharts -->
-  <script src="https://unpkg.com/prop-types@15.8.1/prop-types.min.js"></script>
-  
-  <!-- Recharts -->
-  <script src="https://unpkg.com/recharts@2.5.0/umd/Recharts.min.js"></script>
-  
-  <!-- Babel for JSX -->
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  
   <script type="text/babel">
     const { useState, useEffect } = React;
-    const { BarChart, Bar, LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, ComposedChart, PieChart, Pie } = window.Recharts;
+    const { BarChart, Bar, LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, ComposedChart, PieChart, Pie } = Recharts;
 
 // Supabase config
 const SUPABASE_URL = 'https://bbnbbbpofelbkyuffslj.supabase.co';
