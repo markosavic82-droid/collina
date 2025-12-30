@@ -82,7 +82,6 @@
         .overview-card.burgers { background: #808BC5; }
         .overview-card.pancakes { background: #ED773C; }
         .overview-card.urgent { background: #C63F3E; }
-        .overview-card.orders { background: #4a9e8e; }
 
         .eta-card {
             padding: 12px;
@@ -126,30 +125,6 @@
             display: flex;
             align-items: center;
             justify-content: center;
-        }
-
-        .status-indicator {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            padding: 8px;
-            background: #2a2a28;
-            border-radius: 4px;
-            font-size: 0.75rem;
-        }
-
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #22c55e;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
         }
 
         /* Orders Grid - Column-first flow */
@@ -382,21 +357,8 @@
             <div class="time-display" id="currentTime">00:00</div>
             
             <select class="location-select" id="locationSelect">
-                <option value="">Sve lokacije</option>
+                <!-- Locations will be loaded dynamically -->
             </select>
-
-            <div class="status-indicator">
-                <div class="status-dot"></div>
-                <span>Live</span>
-            </div>
-            
-            <div class="overview-card orders">
-                <div class="icon">📋</div>
-                <div class="info">
-                    <div class="count" id="orderCount">0</div>
-                    <div class="label">Porudžbina</div>
-                </div>
-            </div>
 
             <div class="overview-card burgers">
                 <div class="icon">🍔</div>
@@ -416,7 +378,7 @@
                 <div class="icon">⚠️</div>
                 <div class="info">
                     <div class="count" id="urgentCount">0</div>
-                    <div class="label">Preko 15'</div>
+                    <div class="label">Preko 20'</div>
                 </div>
             </div>
 
@@ -458,8 +420,9 @@
         let locations = {};
         let selectedLocation = '';
 
-        // Status groups - orders in production (not yet ready)
-        const PRODUCTION_STATUSES = [1, 3, 4]; // New, Accepted, In Production
+        // Status groups - orders actively being prepared (not waiting for acceptance)
+        // Status 3 = Accepted, Status 4 = In Production
+        const PRODUCTION_STATUSES = [3, 4];
 
         // Keywords to identify item types
         const BURGER_KEYWORDS = ['burger', 'smash', 'collina', 'chicken', 'wrap', 'big ', 'double'];
@@ -481,18 +444,22 @@
         // ============================================
         async function loadLocations() {
             try {
-                const url = `${SUPABASE_URL}/rest/v1/emeni_locations?select=company_id,name&order=name`;
+                const url = `${SUPABASE_URL}/rest/v1/emeni_locations?select=company_id,location_name&order=location_name`;
                 const data = await supabaseFetch(url);
                 
-                if (data && Array.isArray(data)) {
+                if (data && Array.isArray(data) && data.length > 0) {
                     const select = document.getElementById('locationSelect');
-                    data.forEach(loc => {
-                        locations[loc.company_id] = loc.name;
+                    data.forEach((loc, index) => {
+                        locations[loc.company_id] = loc.location_name;
                         const option = document.createElement('option');
                         option.value = loc.company_id;
-                        option.textContent = loc.name;
+                        option.textContent = loc.location_name;
                         select.appendChild(option);
                     });
+                    
+                    // Select first location by default
+                    selectedLocation = data[0].company_id;
+                    select.value = selectedLocation;
                 }
             } catch (err) {
                 console.error('Error loading locations:', err);
@@ -546,14 +513,25 @@
         // Render Order Card
         // ============================================
         function renderOrderCard(order) {
-            const items = order.items || [];
+            // Get items from items array or raw_payload
+            let items = order.items || [];
+            if (items.length === 0 && order.raw_payload?.items) {
+                items = order.raw_payload.items;
+            }
+            if (items.length === 0 && order.raw_payload?.invalidOrderDetails?.items) {
+                items = order.raw_payload.invalidOrderDetails.items;
+            }
+            
             const orderType = classifyOrder(items);
             const waitMinutes = getWaitMinutes(order.created_at);
-            const isUrgent = waitMinutes >= 15;
+            const isUrgent = waitMinutes >= 20;
             const time = new Date(order.created_at).toLocaleTimeString('sr-RS', { hour: '2-digit', minute: '2-digit' });
             
+            // Calculate total
+            const total = items.reduce((sum, item) => sum + (parseFloat(item.price) * parseFloat(item.quantity)), 0);
+            
             const itemsHtml = items.map(item => {
-                const itemType = classifyItem(item.name);
+                const itemType = classifyItem(item.name || '');
                 const icon = itemType === 'burger' ? '🍔' : itemType === 'pancake' ? '🥞' : '🍽️';
                 
                 let modsHtml = '';
@@ -574,7 +552,7 @@
                         <div class="item-main">
                             <span class="item-icon">${icon}</span>
                             <span class="item-qty">${item.quantity}×</span>
-                            <span class="item-name">${item.name}</span>
+                            <span class="item-name">${item.name || 'Item'}</span>
                         </div>
                         ${modsHtml}
                         ${commentHtml}
@@ -603,7 +581,7 @@
                         <span class="order-wait">${waitMinutes}'</span>
                     </div>
                     <div class="order-content">
-                        ${itemsHtml}
+                        ${itemsHtml || `<div class="order-item other-item"><div class="item-main"><span class="item-name">${total.toFixed(0)} RSD</span></div></div>`}
                         ${orderNoteHtml}
                     </div>
                     <div class="order-footer">
@@ -623,20 +601,27 @@
             let urgentCount = 0;
 
             orders.forEach(order => {
-                const items = order.items || [];
+                // Get items from items array or raw_payload
+                let items = order.items || [];
+                if (items.length === 0 && order.raw_payload?.items) {
+                    items = order.raw_payload.items;
+                }
+                if (items.length === 0 && order.raw_payload?.invalidOrderDetails?.items) {
+                    items = order.raw_payload.invalidOrderDetails.items;
+                }
+                
                 const waitMinutes = getWaitMinutes(order.created_at);
                 
-                if (waitMinutes >= 15) urgentCount++;
+                if (waitMinutes >= 20) urgentCount++;
                 
                 items.forEach(item => {
-                    const type = classifyItem(item.name);
+                    const type = classifyItem(item.name || '');
                     const qty = parseInt(item.quantity) || 1;
                     if (type === 'burger') burgerCount += qty;
                     if (type === 'pancake') pancakeCount += qty;
                 });
             });
 
-            document.getElementById('orderCount').textContent = orders.length;
             document.getElementById('burgerCount').textContent = burgerCount;
             document.getElementById('pancakeCount').textContent = pancakeCount;
             document.getElementById('urgentCount').textContent = urgentCount;
@@ -694,8 +679,8 @@
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
 
-                // Build URL with proper encoding
-                const url = `${SUPABASE_URL}/rest/v1/emeni_orders?select=*&created_at=gte.${encodeURIComponent(today.toISOString())}&or=(status.eq.1,status.eq.3,status.eq.4)&order=created_at.asc`;
+                // Build URL - only get orders with status 3 (Accepted) or 4 (In Production)
+                const url = `${SUPABASE_URL}/rest/v1/emeni_orders?select=*&created_at=gte.${encodeURIComponent(today.toISOString())}&or=(status.eq.3,status.eq.4)&order=created_at.asc`;
                 
                 const data = await supabaseFetch(url);
 
