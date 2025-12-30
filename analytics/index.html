@@ -166,8 +166,44 @@ const CollinaDashboard = () => {
     // Filter out canceled orders
     const validOrders = ordersArr.filter(o => ![8, 9, 11].includes(o.status));
     
-    // Basic stats
-    const totalRevenue = validOrders.reduce((sum, o) => sum + (parseFloat(o.total) || 0), 0);
+    // Debug: log first order structure
+    if (validOrders.length > 0) {
+      const sample = validOrders[0];
+      console.log('=== ORDER DEBUG ===');
+      console.log('All keys:', Object.keys(sample));
+      console.log('total field:', sample.total);
+      console.log('order_total field:', sample.order_total);
+      console.log('amount field:', sample.amount);
+      console.log('price field:', sample.price);
+      console.log('raw_payload keys:', sample.raw_payload ? Object.keys(sample.raw_payload) : 'none');
+      if (sample.raw_payload) {
+        console.log('raw_payload.total:', sample.raw_payload.total);
+        console.log('raw_payload.orderTotal:', sample.raw_payload.orderTotal);
+        console.log('raw_payload.amount:', sample.raw_payload.amount);
+      }
+      console.log('Full sample order:', JSON.stringify(sample, null, 2));
+    }
+    
+    // Basic stats - check multiple sources for total
+    const totalRevenue = validOrders.reduce((sum, o) => {
+      let orderTotal = parseFloat(o.total) || 0;
+      // Try order_total
+      if (orderTotal === 0) orderTotal = parseFloat(o.order_total) || 0;
+      // Try amount
+      if (orderTotal === 0) orderTotal = parseFloat(o.amount) || 0;
+      // If total is 0, try raw_payload
+      if (orderTotal === 0 && o.raw_payload) {
+        orderTotal = parseFloat(o.raw_payload.total) || parseFloat(o.raw_payload.orderTotal) || parseFloat(o.raw_payload.amount) || 0;
+      }
+      // If still 0, calculate from items
+      if (orderTotal === 0) {
+        let items = o.items || [];
+        if (items.length === 0 && o.raw_payload?.items) items = o.raw_payload.items;
+        orderTotal = items.reduce((s, item) => s + (parseFloat(item.price) || 0) * (parseFloat(item.quantity) || 1), 0);
+      }
+      return sum + orderTotal;
+    }, 0);
+    
     const totalOrders = validOrders.length;
     const avgBasket = totalOrders > 0 ? totalRevenue / totalOrders : 0;
 
