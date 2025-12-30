@@ -1,1 +1,849 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Collina Daily Report</title>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/recharts@2.12.7/umd/Recharts.js"></script>
+  <style>* { margin: 0; padding: 0; box-sizing: border-box; }</style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+    const { BarChart, Bar, LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, ComposedChart, PieChart, Pie } = Recharts;
 
+// Supabase config
+const SUPABASE_URL = 'https://bbnbbbpofelbkyuffslj.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJibmJiYnBvZmVsYmt5dWZmc2xqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUwNTI0MzQsImV4cCI6MjA4MDYyODQzNH0.koW44soAB-bEfh8OzqjGBwdgov4Snscw1ITsg5OureU';
+
+async function supabaseFetch(endpoint) {
+  const res = await fetch(endpoint, {
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`
+    }
+  });
+  return res.json();
+}
+
+// Category classification (same as kitchen monitor)
+const BURGER_KEYWORDS = ['burger', 'smash', 'collina', 'chicken', 'wrap', 'big ', 'double', 'bacon', 'cheese', 'chily', 'royal', 'original', 'dog', 'nuggets', 'sendvic', 'club'];
+const PANCAKE_KEYWORDS = ['palačink', 'palacink', 'nutella', 'eurokrem', 'plazma', 'krem', 'američka', 'americka', 'dubai', 'beli', 'cokolada'];
+const MEAL_KEYWORDS = ['porcija', 'musaka', 'kupus', 'cufte', 'pilav', 'grasak', 'boranija', 'prebranac', 'supa', 'gulas', 'paprika', 'muckalica', 'girice'];
+const SIDES_KEYWORDS = ['pomfrit', 'salata', 'pire', 'onion', 'cvekla'];
+const BAKERY_KEYWORDS = ['kiflice', 'kiflica', 'pita', 'mekika', 'stapici', 'integralne'];
+
+function classifyItem(name) {
+  const n = (name || '').toLowerCase();
+  for (const kw of BURGER_KEYWORDS) if (n.includes(kw)) return 'burger';
+  for (const kw of PANCAKE_KEYWORDS) if (n.includes(kw)) return 'pancake';
+  for (const kw of MEAL_KEYWORDS) if (n.includes(kw)) return 'meal';
+  for (const kw of SIDES_KEYWORDS) if (n.includes(kw)) return 'sides';
+  for (const kw of BAKERY_KEYWORDS) if (n.includes(kw)) return 'bakery';
+  return 'other';
+}
+
+const CollinaDashboard = () => {
+  const [loading, setLoading] = useState(true);
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [orders, setOrders] = useState([]);
+  const [locations, setLocations] = useState({});
+  const [margins, setMargins] = useState({});
+  
+  // Aggregated data
+  const [stats, setStats] = useState({
+    revenue: 0,
+    orders: 0,
+    avgBasket: 0,
+    profit: 0,
+    marginPct: 0,
+    itemsPerOrder: 0,
+    newCustomers: 0,
+    returningCustomers: 0,
+    avgDeliveryTime: 0,
+    avgPrepTime: 0,
+  });
+  const [hourlyData, setHourlyData] = useState([]);
+  const [locationData, setLocationData] = useState([]);
+  const [categoryData, setCategoryData] = useState([]);
+  const [topProducts, setTopProducts] = useState([]);
+  const [trendData, setTrendData] = useState([]);
+
+  // Color palette
+  const colors = {
+    bg: '#0D0B14',
+    card: '#1A1F2E',
+    elevated: '#252232',
+    border: 'rgba(255, 255, 255, 0.05)',
+    borderSubtle: '#2A2735',
+    purple: '#8B5CF6',
+    purpleLight: '#A78BFA',
+    success: '#22C55E',
+    error: '#EF4444',
+    warning: '#F59E0B',
+    info: '#3B82F6',
+    textPrimary: '#FFFFFF',
+    textSecondary: '#9CA3AF',
+    textMuted: '#6B7280',
+    cyan: '#06B6D4',
+  };
+
+  const locationColors = {
+    'Collina Vračar': '#8B5CF6',
+    'Collina NBG': '#22C55E',
+    'Collina B.Brdo': '#F59E0B',
+    'Kuhinjica B.Brdo': '#818CF8',
+    'Pekarica B.Brdo': '#EC4899',
+  };
+
+  const WOLT_FEE = 0.118; // 11.8%
+  const DEFAULT_MARGIN = 0.75; // 75% default margin if not found in table
+
+  // Load data on mount and date change
+  useEffect(() => {
+    loadData();
+  }, [selectedDate]);
+
+  async function loadData() {
+    setLoading(true);
+    try {
+      // Load locations
+      const locData = await supabaseFetch(`${SUPABASE_URL}/rest/v1/emeni_locations?select=company_id,location_name`);
+      const locMap = {};
+      if (locData && Array.isArray(locData)) {
+        locData.forEach(l => locMap[l.company_id] = l.location_name);
+      }
+      setLocations(locMap);
+
+      // Load margins
+      const marginData = await supabaseFetch(`${SUPABASE_URL}/rest/v1/product_margins?select=product_name,margin_pct,cost_per_unit`);
+      const marginMap = {};
+      if (marginData && Array.isArray(marginData)) {
+        marginData.forEach(m => marginMap[m.product_name.toLowerCase()] = m);
+      }
+      setMargins(marginMap);
+
+      // Load orders for selected date
+      const startDate = new Date(selectedDate);
+      startDate.setHours(0, 0, 0, 0);
+      const endDate = new Date(selectedDate);
+      endDate.setHours(23, 59, 59, 999);
+
+      const ordersData = await supabaseFetch(
+        `${SUPABASE_URL}/rest/v1/emeni_orders?select=*&created_at=gte.${startDate.toISOString()}&created_at=lte.${endDate.toISOString()}&order=created_at.asc`
+      );
+
+      if (ordersData && Array.isArray(ordersData)) {
+        setOrders(ordersData);
+        processOrders(ordersData, locMap, marginMap);
+      }
+
+      // Load 14-day trend
+      const trendStart = new Date(selectedDate);
+      trendStart.setDate(trendStart.getDate() - 13);
+      trendStart.setHours(0, 0, 0, 0);
+
+      const trendOrders = await supabaseFetch(
+        `${SUPABASE_URL}/rest/v1/emeni_orders?select=created_at,total,status&created_at=gte.${trendStart.toISOString()}&created_at=lte.${endDate.toISOString()}&status=neq.8&status=neq.9`
+      );
+
+      if (trendOrders && Array.isArray(trendOrders)) {
+        processTrend(trendOrders);
+      }
+
+    } catch (err) {
+      console.error('Error loading data:', err);
+    }
+    setLoading(false);
+  }
+
+  function processOrders(ordersArr, locMap, marginMap) {
+    // Filter out canceled orders
+    const validOrders = ordersArr.filter(o => ![8, 9, 11].includes(o.status));
+    
+    // Basic stats
+    const totalRevenue = validOrders.reduce((sum, o) => sum + (parseFloat(o.total) || 0), 0);
+    const totalOrders = validOrders.length;
+    const avgBasket = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+
+    // Items per order
+    let totalItems = 0;
+    const productCounts = {};
+    const categoryCounts = { burger: 0, pancake: 0, meal: 0, sides: 0, bakery: 0, other: 0 };
+    const categoryRevenue = { burger: 0, pancake: 0, meal: 0, sides: 0, bakery: 0, other: 0 };
+
+    validOrders.forEach(order => {
+      let items = order.items || [];
+      if (items.length === 0 && order.raw_payload?.items) items = order.raw_payload.items;
+      
+      items.forEach(item => {
+        const qty = parseFloat(item.quantity) || 1;
+        const price = parseFloat(item.price) || 0;
+        totalItems += qty;
+        
+        const name = item.name || '';
+        const category = classifyItem(name);
+        categoryCounts[category] += qty;
+        categoryRevenue[category] += price * qty;
+        
+        // Track products
+        if (!productCounts[name]) {
+          productCounts[name] = { name, qty: 0, revenue: 0, category };
+        }
+        productCounts[name].qty += qty;
+        productCounts[name].revenue += price * qty;
+      });
+    });
+
+    // Calculate profit using margins
+    let totalCost = 0;
+    Object.values(productCounts).forEach(prod => {
+      const marginInfo = findMargin(prod.name, marginMap);
+      if (marginInfo) {
+        totalCost += (marginInfo.cost_per_unit || 0) * prod.qty;
+      } else {
+        // Default: assume 25% cost
+        totalCost += prod.revenue * (1 - DEFAULT_MARGIN);
+      }
+    });
+    
+    const grossProfit = totalRevenue - totalCost;
+    const netRevenue = totalRevenue * (1 - WOLT_FEE);
+    const netProfit = netRevenue - totalCost;
+    const marginPct = totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0;
+
+    // Customer analysis
+    const customers = new Set();
+    const customerOrders = {};
+    validOrders.forEach(o => {
+      const custId = o.customer_phone || o.customer_name || o.order_id;
+      customers.add(custId);
+      customerOrders[custId] = (customerOrders[custId] || 0) + 1;
+    });
+    
+    const newCustomers = Object.values(customerOrders).filter(c => c === 1).length;
+    const returningCustomers = customers.size - newCustomers;
+
+    // Delivery time (from Tookan data if available)
+    let deliveryTimes = [];
+    let prepTimes = [];
+    validOrders.forEach(o => {
+      if (o.delivery_completed_at && o.created_at) {
+        const created = new Date(o.created_at);
+        const completed = new Date(o.delivery_completed_at);
+        const mins = (completed - created) / 60000;
+        if (mins > 0 && mins < 180) deliveryTimes.push(mins);
+      }
+      // Prep time: from accepted to ready (status timestamps if available)
+      if (o.raw_payload?.acceptedAt && o.raw_payload?.readyAt) {
+        const accepted = new Date(o.raw_payload.acceptedAt);
+        const ready = new Date(o.raw_payload.readyAt);
+        const mins = (ready - accepted) / 60000;
+        if (mins > 0 && mins < 60) prepTimes.push(mins);
+      }
+    });
+
+    const avgDeliveryTime = deliveryTimes.length > 0 
+      ? deliveryTimes.reduce((a, b) => a + b, 0) / deliveryTimes.length 
+      : 0;
+    const avgPrepTime = prepTimes.length > 0 
+      ? prepTimes.reduce((a, b) => a + b, 0) / prepTimes.length 
+      : 0;
+
+    setStats({
+      revenue: totalRevenue,
+      orders: totalOrders,
+      avgBasket,
+      profit: netProfit,
+      marginPct,
+      itemsPerOrder: totalOrders > 0 ? totalItems / totalOrders : 0,
+      newCustomers,
+      returningCustomers,
+      avgDeliveryTime,
+      avgPrepTime,
+    });
+
+    // Hourly data
+    const hourlyMap = {};
+    for (let h = 0; h < 24; h++) hourlyMap[h] = { hour: `${h}h`, orders: 0, revenue: 0 };
+    validOrders.forEach(o => {
+      const hour = new Date(o.created_at).getHours();
+      hourlyMap[hour].orders++;
+      hourlyMap[hour].revenue += parseFloat(o.total) || 0;
+    });
+    setHourlyData(Object.values(hourlyMap).filter(h => h.orders > 0));
+
+    // Location data
+    const locStats = {};
+    validOrders.forEach(o => {
+      const locName = locMap[o.company_id] || 'Unknown';
+      if (!locStats[locName]) {
+        locStats[locName] = { name: locName, revenue: 0, orders: 0, color: locationColors[locName] || '#888' };
+      }
+      locStats[locName].revenue += parseFloat(o.total) || 0;
+      locStats[locName].orders++;
+    });
+    setLocationData(Object.values(locStats).sort((a, b) => b.revenue - a.revenue));
+
+    // Category data
+    const catData = Object.entries(categoryRevenue)
+      .filter(([_, rev]) => rev > 0)
+      .map(([cat, rev]) => ({
+        name: cat.charAt(0).toUpperCase() + cat.slice(1),
+        revenue: rev,
+        count: categoryCounts[cat],
+        mix: totalRevenue > 0 ? (rev / totalRevenue * 100) : 0,
+      }))
+      .sort((a, b) => b.revenue - a.revenue);
+    setCategoryData(catData);
+
+    // Top products
+    const topProds = Object.values(productCounts)
+      .sort((a, b) => b.revenue - a.revenue)
+      .slice(0, 10)
+      .map((p, i) => {
+        const marginInfo = findMargin(p.name, marginMap);
+        return {
+          rank: i + 1,
+          name: p.name,
+          qty: Math.round(p.qty),
+          revenue: p.revenue,
+          margin: marginInfo?.margin_pct || (DEFAULT_MARGIN * 100),
+          category: p.category,
+        };
+      });
+    setTopProducts(topProds);
+  }
+
+  function findMargin(productName, marginMap) {
+    const name = (productName || '').toLowerCase();
+    // Try exact match
+    if (marginMap[name]) return marginMap[name];
+    // Try partial match
+    for (const [key, val] of Object.entries(marginMap)) {
+      if (name.includes(key) || key.includes(name)) return val;
+    }
+    return null;
+  }
+
+  function processTrend(ordersArr) {
+    const dailyMap = {};
+    ordersArr.forEach(o => {
+      const date = o.created_at.split('T')[0];
+      if (!dailyMap[date]) {
+        dailyMap[date] = { date, revenue: 0, orders: 0 };
+      }
+      dailyMap[date].revenue += parseFloat(o.total) || 0;
+      dailyMap[date].orders++;
+    });
+    
+    const trend = Object.values(dailyMap)
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .map(d => ({
+        ...d,
+        dateLabel: new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      }));
+    setTrendData(trend);
+  }
+
+  // Helper components
+  const IconBox = ({ children, color = colors.purpleLight }) => (
+    <div style={{
+      width: '48px',
+      height: '48px',
+      borderRadius: '14px',
+      background: `${color}20`,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontSize: '22px',
+      flexShrink: 0,
+    }}>
+      {children}
+    </div>
+  );
+
+  const TrendIndicator = ({ value, suffix = '' }) => {
+    const isPositive = value >= 0;
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <span style={{
+          width: '8px',
+          height: '8px',
+          borderRadius: '50%',
+          backgroundColor: isPositive ? colors.success : colors.error,
+        }} />
+        <span style={{ 
+          color: isPositive ? colors.success : colors.error, 
+          fontSize: '13px', 
+          fontWeight: 500,
+        }}>
+          {isPositive ? '+' : ''}{value.toFixed(1)}%
+        </span>
+        {suffix && <span style={{ color: colors.textMuted, fontSize: '12px' }}>{suffix}</span>}
+      </div>
+    );
+  };
+
+  const DemoBadge = () => (
+    <span style={{
+      background: 'rgba(251, 191, 36, 0.15)',
+      color: '#FBBF24',
+      padding: '2px 6px',
+      borderRadius: '4px',
+      fontSize: '9px',
+      fontWeight: 700,
+      marginLeft: '6px',
+    }}>
+      DEMO
+    </span>
+  );
+
+  const CustomTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+      return (
+        <div style={{
+          background: colors.card,
+          border: `1px solid ${colors.borderSubtle}`,
+          borderRadius: '12px',
+          padding: '12px 16px',
+          boxShadow: '0 10px 40px rgba(0,0,0,0.3)',
+        }}>
+          <p style={{ color: colors.textSecondary, fontSize: '12px', marginBottom: '8px' }}>{label}</p>
+          {payload.map((entry, index) => (
+            <p key={index} style={{ color: entry.color || colors.purple, fontSize: '14px', fontWeight: 600 }}>
+              {entry.name}: {typeof entry.value === 'number' && entry.value > 1000 
+                ? `${(entry.value / 1000).toFixed(0)}K` 
+                : entry.value}
+            </p>
+          ))}
+        </div>
+      );
+    }
+    return null;
+  };
+
+  const formatDate = (dateStr) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+  };
+
+  if (loading) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        backgroundColor: colors.bg,
+        color: colors.textPrimary,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontFamily: "'Inter', sans-serif",
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '48px', marginBottom: '16px' }}>📊</div>
+          <p>Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Calculate comparison values (vs yesterday - simplified)
+  const yesterdayRevenue = trendData.length > 1 ? trendData[trendData.length - 2]?.revenue || 0 : 0;
+  const revenueTrend = yesterdayRevenue > 0 ? ((stats.revenue - yesterdayRevenue) / yesterdayRevenue) * 100 : 0;
+
+  return (
+    <div style={{
+      minHeight: '100vh',
+      backgroundColor: colors.bg,
+      color: colors.textPrimary,
+      padding: 'clamp(12px, 3vw, 32px)',
+      fontFamily: "'Inter', sans-serif",
+    }}>
+      <style>
+        {`
+          @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap');
+          
+          @media (max-width: 768px) {
+            .kpi-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 12px !important; }
+            .kpi-value { font-size: 26px !important; }
+            .two-col-grid { grid-template-columns: 1fr !important; }
+            .three-col-grid { grid-template-columns: 1fr !important; }
+            .six-col-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }
+          }
+        `}
+      </style>
+      
+      <div style={{ maxWidth: '1600px', margin: '0 auto' }}>
+        
+        {/* Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
+          <div>
+            <h1 style={{
+              fontFamily: "'Space Grotesk', sans-serif",
+              fontSize: 'clamp(24px, 5vw, 42px)',
+              fontWeight: 700,
+              background: 'linear-gradient(to right, #A78BFA, #818CF8, #6366F1)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              marginBottom: '4px',
+            }}>
+              Collina Daily Report
+            </h1>
+            <p style={{ color: colors.textSecondary, fontSize: '14px' }}>
+              {formatDate(selectedDate)}
+            </p>
+          </div>
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              style={{
+                background: colors.card,
+                border: `1px solid ${colors.border}`,
+                borderRadius: '10px',
+                padding: '10px 16px',
+                color: colors.textPrimary,
+                fontSize: '14px',
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Main KPIs */}
+        <div className="kpi-grid" style={{
+          background: colors.card,
+          borderRadius: '16px',
+          border: `1px solid ${colors.border}`,
+          padding: 'clamp(16px, 4vw, 32px)',
+          marginBottom: '24px',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(4, 1fr)',
+          gap: 'clamp(16px, 3vw, 32px)',
+        }}>
+          {/* Revenue */}
+          <div>
+            <p style={{ color: colors.textMuted, fontSize: '11px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>
+              REVENUE
+            </p>
+            <p className="kpi-value" style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 'clamp(28px, 5vw, 42px)', fontWeight: 700, marginBottom: '4px' }}>
+              {stats.revenue.toLocaleString('en-US', { maximumFractionDigits: 0 })}
+            </p>
+            <p style={{ color: colors.textSecondary, fontSize: '13px', marginBottom: '8px' }}>RSD</p>
+            {revenueTrend !== 0 && <TrendIndicator value={revenueTrend} suffix="vs yesterday" />}
+          </div>
+
+          {/* Net Revenue (after Wolt fee) */}
+          <div>
+            <p style={{ color: colors.textMuted, fontSize: '11px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>
+              NET REVENUE
+            </p>
+            <p className="kpi-value" style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 'clamp(28px, 5vw, 42px)', fontWeight: 700, color: colors.success, marginBottom: '4px' }}>
+              {(stats.revenue * (1 - WOLT_FEE)).toLocaleString('en-US', { maximumFractionDigits: 0 })}
+            </p>
+            <p style={{ color: colors.textSecondary, fontSize: '13px', marginBottom: '8px' }}>RSD (after 11.8% Wolt)</p>
+          </div>
+
+          {/* Orders */}
+          <div>
+            <p style={{ color: colors.textMuted, fontSize: '11px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>
+              ORDERS
+            </p>
+            <p className="kpi-value" style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 'clamp(28px, 5vw, 42px)', fontWeight: 700, marginBottom: '4px' }}>
+              {stats.orders}
+            </p>
+            <p style={{ color: colors.textSecondary, fontSize: '13px', marginBottom: '8px' }}>transactions</p>
+          </div>
+
+          {/* Rating (Demo) */}
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+              <p style={{ color: colors.textMuted, fontSize: '11px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                AVG RATING
+              </p>
+              <DemoBadge />
+            </div>
+            <p className="kpi-value" style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 'clamp(28px, 5vw, 42px)', fontWeight: 700, marginBottom: '4px' }}>
+              9.1
+            </p>
+            <p style={{ color: colors.textSecondary, fontSize: '14px', marginBottom: '8px' }}>out of 10</p>
+          </div>
+        </div>
+
+        {/* Second row KPIs */}
+        <div className="six-col-grid" style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(6, 1fr)',
+          gap: '12px',
+          marginBottom: '24px',
+        }}>
+          {[
+            { icon: '🛒', label: 'AVG BASKET', value: stats.avgBasket.toLocaleString('en-US', { maximumFractionDigits: 0 }), unit: 'RSD' },
+            { icon: '📦', label: 'ITEMS/ORDER', value: stats.itemsPerOrder.toFixed(2) },
+            { icon: '👤', label: 'NEW CUST', value: stats.newCustomers.toString(), subtext: `${stats.orders > 0 ? ((stats.newCustomers / (stats.newCustomers + stats.returningCustomers)) * 100).toFixed(1) : 0}%` },
+            { icon: '🔄', label: 'RETURNING', value: stats.returningCustomers.toString(), subtext: `${stats.orders > 0 ? ((stats.returningCustomers / (stats.newCustomers + stats.returningCustomers)) * 100).toFixed(1) : 0}%` },
+            { icon: '🚚', label: 'DELIVERY', value: stats.avgDeliveryTime > 0 ? stats.avgDeliveryTime.toFixed(0) : 'N/A', unit: stats.avgDeliveryTime > 0 ? 'min' : '' },
+            { icon: '💰', label: 'MARGIN', value: `${stats.marginPct.toFixed(1)}%`, subtext: `${(stats.profit / 1000).toFixed(0)}K` },
+          ].map((kpi, i) => (
+            <div key={i} style={{
+              background: colors.card,
+              borderRadius: '12px',
+              border: `1px solid ${colors.border}`,
+              padding: 'clamp(12px, 2vw, 20px)',
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                <IconBox>{kpi.icon}</IconBox>
+              </div>
+              <p style={{ color: colors.textMuted, fontSize: '9px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px' }}>
+                {kpi.label}
+              </p>
+              <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '28px', fontWeight: 700 }}>
+                {kpi.value}
+                {kpi.unit && <span style={{ fontSize: '14px', color: colors.textSecondary, marginLeft: '4px' }}>{kpi.unit}</span>}
+              </p>
+              {kpi.subtext && <p style={{ color: colors.textSecondary, fontSize: '12px' }}>{kpi.subtext}</p>}
+            </div>
+          ))}
+        </div>
+
+        {/* Charts Row */}
+        <div className="two-col-grid" style={{
+          display: 'grid',
+          gridTemplateColumns: '2fr 1fr',
+          gap: '24px',
+          marginBottom: '24px',
+        }}>
+          {/* 14-Day Trend */}
+          <div style={{
+            background: colors.card,
+            borderRadius: '16px',
+            border: `1px solid ${colors.border}`,
+            padding: 'clamp(16px, 3vw, 24px)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+              <IconBox color="#F472B6">📈</IconBox>
+              <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '18px', fontWeight: 600 }}>
+                14-Day Revenue Trend
+              </h2>
+            </div>
+            <div style={{ height: '250px' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={trendData}>
+                  <defs>
+                    <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor={colors.purple} stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor={colors.purple} stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke={colors.borderSubtle} />
+                  <XAxis dataKey="dateLabel" stroke={colors.textMuted} fontSize={11} />
+                  <YAxis stroke={colors.textMuted} fontSize={11} tickFormatter={v => `${(v/1000).toFixed(0)}K`} />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Area type="monotone" dataKey="revenue" stroke={colors.purple} fill="url(#colorRevenue)" strokeWidth={2} name="Revenue" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Hourly Orders */}
+          <div style={{
+            background: colors.card,
+            borderRadius: '16px',
+            border: `1px solid ${colors.border}`,
+            padding: 'clamp(16px, 3vw, 24px)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+              <IconBox color={colors.info}>⏰</IconBox>
+              <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '18px', fontWeight: 600 }}>
+                Orders by Hour
+              </h2>
+            </div>
+            <div style={{ height: '250px' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={hourlyData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={colors.borderSubtle} />
+                  <XAxis dataKey="hour" stroke={colors.textMuted} fontSize={11} />
+                  <YAxis stroke={colors.textMuted} fontSize={11} />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Bar dataKey="orders" fill={colors.purple} radius={[4, 4, 0, 0]} name="Orders" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+
+        {/* Location Performance */}
+        <div style={{
+          background: colors.card,
+          borderRadius: '16px',
+          border: `1px solid ${colors.border}`,
+          padding: 'clamp(16px, 3vw, 24px)',
+          marginBottom: '24px',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+            <IconBox color={colors.success}>📍</IconBox>
+            <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '18px', fontWeight: 600 }}>
+              Location Performance
+            </h2>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {locationData.map((loc, i) => {
+              const maxRevenue = Math.max(...locationData.map(l => l.revenue));
+              const pct = maxRevenue > 0 ? (loc.revenue / maxRevenue) * 100 : 0;
+              return (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                  <div style={{ width: '140px', fontWeight: 500, fontSize: '14px' }}>{loc.name}</div>
+                  <div style={{ flex: 1, height: '24px', background: colors.elevated, borderRadius: '6px', overflow: 'hidden' }}>
+                    <div style={{
+                      width: `${pct}%`,
+                      height: '100%',
+                      background: `linear-gradient(90deg, ${loc.color || colors.purple}, ${loc.color || colors.purple}99)`,
+                      borderRadius: '6px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'flex-end',
+                      paddingRight: '8px',
+                    }}>
+                      {pct > 20 && (
+                        <span style={{ fontSize: '11px', fontWeight: 600, color: 'white' }}>
+                          {(loc.revenue / 1000).toFixed(0)}K
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div style={{ width: '100px', textAlign: 'right' }}>
+                    <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '16px' }}>
+                      {(loc.revenue / 1000).toFixed(0)}K
+                    </span>
+                    <span style={{ color: colors.textMuted, fontSize: '12px', marginLeft: '8px' }}>
+                      {loc.orders} ord
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Category & Top Products */}
+        <div className="two-col-grid" style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 2fr',
+          gap: '24px',
+          marginBottom: '24px',
+        }}>
+          {/* Category Mix */}
+          <div style={{
+            background: colors.card,
+            borderRadius: '16px',
+            border: `1px solid ${colors.border}`,
+            padding: 'clamp(16px, 3vw, 24px)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+              <IconBox color={colors.warning}>🍽️</IconBox>
+              <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '18px', fontWeight: 600 }}>
+                Category Mix
+              </h2>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {categoryData.map((cat, i) => (
+                <div key={i} style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: '12px',
+                  background: colors.elevated,
+                  borderRadius: '10px',
+                }}>
+                  <div>
+                    <p style={{ fontWeight: 600, marginBottom: '2px' }}>{cat.name}</p>
+                    <p style={{ color: colors.textMuted, fontSize: '12px' }}>{cat.count} items</p>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700 }}>
+                      {(cat.revenue / 1000).toFixed(1)}K
+                    </p>
+                    <p style={{ color: colors.textSecondary, fontSize: '12px' }}>{cat.mix.toFixed(1)}%</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Top Products */}
+          <div style={{
+            background: colors.card,
+            borderRadius: '16px',
+            border: `1px solid ${colors.border}`,
+            padding: 'clamp(16px, 3vw, 24px)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+              <IconBox color={colors.purple}>🏆</IconBox>
+              <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '18px', fontWeight: 600 }}>
+                Top Products
+              </h2>
+            </div>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ borderBottom: `1px solid ${colors.borderSubtle}` }}>
+                    <th style={{ textAlign: 'left', padding: '10px', color: colors.textMuted, fontSize: '11px', fontWeight: 500 }}>#</th>
+                    <th style={{ textAlign: 'left', padding: '10px', color: colors.textMuted, fontSize: '11px', fontWeight: 500 }}>PRODUCT</th>
+                    <th style={{ textAlign: 'right', padding: '10px', color: colors.textMuted, fontSize: '11px', fontWeight: 500 }}>QTY</th>
+                    <th style={{ textAlign: 'right', padding: '10px', color: colors.textMuted, fontSize: '11px', fontWeight: 500 }}>REVENUE</th>
+                    <th style={{ textAlign: 'right', padding: '10px', color: colors.textMuted, fontSize: '11px', fontWeight: 500 }}>MARGIN</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {topProducts.map((prod, i) => (
+                    <tr key={i} style={{ borderBottom: `1px solid ${colors.borderSubtle}` }}>
+                      <td style={{ padding: '12px 10px', fontWeight: 600, color: colors.purple }}>{prod.rank}</td>
+                      <td style={{ padding: '12px 10px', maxWidth: '250px' }}>
+                        <p style={{ fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {prod.name}
+                        </p>
+                      </td>
+                      <td style={{ padding: '12px 10px', textAlign: 'right', fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600 }}>
+                        {prod.qty}
+                      </td>
+                      <td style={{ padding: '12px 10px', textAlign: 'right', fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600 }}>
+                        {(prod.revenue / 1000).toFixed(1)}K
+                      </td>
+                      <td style={{ padding: '12px 10px', textAlign: 'right' }}>
+                        <span style={{
+                          background: prod.margin >= 75 ? 'rgba(34, 197, 94, 0.15)' : prod.margin >= 65 ? 'rgba(245, 158, 11, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                          color: prod.margin >= 75 ? colors.success : prod.margin >= 65 ? colors.warning : colors.error,
+                          padding: '4px 8px',
+                          borderRadius: '6px',
+                          fontSize: '12px',
+                          fontWeight: 600,
+                        }}>
+                          {prod.margin.toFixed(1)}%
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div style={{ textAlign: 'center', padding: '16px', color: colors.textMuted, fontSize: '12px' }}>
+          Generated: {new Date().toLocaleString()} | {stats.orders} orders | Wolt Fee: {(WOLT_FEE * 100).toFixed(1)}% | Live Data
+        </div>
+
+      </div>
+    </div>
+  );
+};
+
+ReactDOM.createRoot(document.getElementById("root")).render(<CollinaDashboard />);
+  </script>
+</body>
+</html>
