@@ -114,6 +114,79 @@
         }
         .eta-card .eta-subtitle { font-size: 0.6rem; opacity: 0.5; }
 
+        /* Items Summary */
+        .items-summary {
+            background: #2a2a28;
+            border-radius: 4px;
+            border: 2px solid #3a3a38;
+            overflow: hidden;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 100px;
+        }
+
+        .items-summary-header {
+            background: #3a3a38;
+            padding: 8px 12px;
+            font-weight: 700;
+            font-size: 0.8rem;
+            color: #EAE4DA;
+        }
+
+        .items-summary-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 6px;
+        }
+
+        .items-summary-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 8px;
+            border-radius: 3px;
+            margin-bottom: 3px;
+            font-size: 0.75rem;
+        }
+
+        .items-summary-item.burger {
+            background: rgba(128, 139, 197, 0.2);
+            border-left: 3px solid #808BC5;
+        }
+
+        .items-summary-item.pancake {
+            background: rgba(237, 119, 60, 0.2);
+            border-left: 3px solid #ED773C;
+        }
+
+        .items-summary-item.other {
+            background: rgba(136, 136, 136, 0.15);
+            border-left: 3px solid #666;
+        }
+
+        .items-summary-qty {
+            font-weight: 700;
+            color: #9ED6DF;
+            min-width: 28px;
+            font-size: 0.85rem;
+        }
+
+        .items-summary-name {
+            flex: 1;
+            color: #EAE4DA;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .items-summary-empty {
+            color: #666;
+            text-align: center;
+            padding: 16px;
+            font-size: 0.75rem;
+        }
+
         .time-display {
             background: #EAE4DA;
             color: #1D1D1B;
@@ -144,7 +217,7 @@
             overflow: hidden;
             display: flex;
             flex-direction: column;
-            width: 220px;
+            width: 240px;
             background: #2a2a28;
             border: 2px solid #3a3a38;
             transition: transform 0.3s, opacity 0.3s;
@@ -288,6 +361,8 @@
         .item-name {
             flex: 1;
             font-weight: 500;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
         }
 
         .item-mods {
@@ -393,6 +468,14 @@
                 <div class="eta-label">Nova narudžbina</div>
                 <div class="eta-time" id="pancakeEta">~0 min</div>
                 <div class="eta-subtitle">reci kuriru</div>
+            </div>
+
+            <!-- Items to prepare summary -->
+            <div class="items-summary">
+                <div class="items-summary-header">📋 Za pripremu</div>
+                <div class="items-summary-list" id="itemsSummaryList">
+                    <!-- Items will be loaded dynamically -->
+                </div>
             </div>
         </div>
     </div>
@@ -536,7 +619,13 @@
                 
                 let modsHtml = '';
                 if (item.modifiers && item.modifiers.length > 0) {
-                    const modNames = item.modifiers.map(m => m.name || m.value || m).filter(Boolean);
+                    const modNames = item.modifiers.map(m => {
+                        if (typeof m === 'string') return m;
+                        if (m.name) return m.name;
+                        if (m.value) return m.value;
+                        if (m.modifierName) return m.modifierName;
+                        return null;
+                    }).filter(Boolean);
                     if (modNames.length > 0) {
                         modsHtml = `<div class="item-mods">+ ${modNames.join(', ')}</div>`;
                     }
@@ -599,6 +688,9 @@
             let burgerCount = 0;
             let pancakeCount = 0;
             let urgentCount = 0;
+            
+            // Track all items for summary
+            const itemsMap = {};
 
             orders.forEach(order => {
                 // Get items from items array or raw_payload
@@ -615,10 +707,19 @@
                 if (waitMinutes >= 20) urgentCount++;
                 
                 items.forEach(item => {
-                    const type = classifyItem(item.name || '');
-                    const qty = parseInt(item.quantity) || 1;
+                    const name = item.name || 'Unknown';
+                    const type = classifyItem(name);
+                    const qty = parseFloat(item.quantity) || 1;
+                    
                     if (type === 'burger') burgerCount += qty;
                     if (type === 'pancake') pancakeCount += qty;
+                    
+                    // Aggregate items for summary
+                    const key = name.trim();
+                    if (!itemsMap[key]) {
+                        itemsMap[key] = { name: key, qty: 0, type: type };
+                    }
+                    itemsMap[key].qty += qty;
                 });
             });
 
@@ -637,6 +738,36 @@
             
             document.getElementById('burgerEta').textContent = `~${burgerETA || 5} min`;
             document.getElementById('pancakeEta').textContent = `~${pancakeETA || 4} min`;
+            
+            // Render items summary
+            renderItemsSummary(itemsMap);
+        }
+        
+        // ============================================
+        // Render Items Summary
+        // ============================================
+        function renderItemsSummary(itemsMap) {
+            const list = document.getElementById('itemsSummaryList');
+            
+            // Convert to array and sort by quantity (descending)
+            const itemsArray = Object.values(itemsMap)
+                .sort((a, b) => b.qty - a.qty);
+            
+            if (itemsArray.length === 0) {
+                list.innerHTML = '<div class="items-summary-empty">Nema stavki</div>';
+                return;
+            }
+            
+            list.innerHTML = itemsArray.map(item => {
+                // Format quantity - show decimal only if needed
+                const qtyDisplay = Number.isInteger(item.qty) ? item.qty : item.qty.toFixed(2);
+                return `
+                    <div class="items-summary-item ${item.type}">
+                        <span class="items-summary-qty">${qtyDisplay}×</span>
+                        <span class="items-summary-name" title="${item.name}">${item.name}</span>
+                    </div>
+                `;
+            }).join('');
         }
 
         // ============================================
@@ -676,11 +807,12 @@
         // ============================================
         async function loadOrders() {
             try {
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
+                // Only show orders from last 2 hours
+                const twoHoursAgo = new Date();
+                twoHoursAgo.setHours(twoHoursAgo.getHours() - 2);
 
-                // Build URL - only get orders with status 3 (Accepted) or 4 (In Production)
-                const url = `${SUPABASE_URL}/rest/v1/emeni_orders?select=*&created_at=gte.${encodeURIComponent(today.toISOString())}&or=(status.eq.3,status.eq.4)&order=created_at.asc`;
+                // Build URL - only get orders with status 3 (Accepted) or 4 (In Production) from last 2 hours
+                const url = `${SUPABASE_URL}/rest/v1/emeni_orders?select=*&created_at=gte.${encodeURIComponent(twoHoursAgo.toISOString())}&or=(status.eq.3,status.eq.4)&order=created_at.asc`;
                 
                 const data = await supabaseFetch(url);
 
