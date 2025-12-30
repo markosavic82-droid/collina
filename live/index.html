@@ -1453,12 +1453,22 @@
     // Render Order Detail
     // ============================================
     function renderOrderDetail(order, lifecycle) {
-      const total = order.items.reduce((sum, item) => sum + (parseFloat(item.price) * parseFloat(item.quantity)), 0);
+      // Get items from regular items or invalidOrderDetails
+      let items = order.items || [];
+      let total = 0;
+      
+      if (items.length === 0 && order.raw_payload?.invalidOrderDetails?.items) {
+        items = order.raw_payload.invalidOrderDetails.items;
+        total = order.raw_payload.invalidOrderDetails.total || 0;
+      } else {
+        total = items.reduce((sum, item) => sum + (parseFloat(item.price) * parseFloat(item.quantity)), 0);
+      }
+      
       const formatDate = (date) => date ? new Date(date).toLocaleString('sr-RS') : 'N/A';
       const formatValue = (val) => val !== null && val !== undefined && val !== '' ? val : 'N/A';
 
       // Items table
-      const itemsHtml = order.items.map(item => `
+      const itemsHtml = items.map(item => `
         <tr>
           <td>
             <div class="item-name">${item.name}</div>
@@ -1472,9 +1482,9 @@
           <td>${item.quantity}</td>
           <td>${parseFloat(item.price).toFixed(0)} RSD</td>
           <td>${(parseFloat(item.price) * parseFloat(item.quantity)).toFixed(0)} RSD</td>
-          <td>${item.reference_id || 'N/A'}</td>
+          <td>${item.reference_id || item.posID || 'N/A'}</td>
         </tr>
-      `).join('');
+      `).join('') || '<tr><td colspan="5" style="text-align:center;color:#666;">Nema stavki</td></tr>';
 
       // Lifecycle timeline
       const lifecycleHtml = lifecycle.map(event => `
@@ -1712,7 +1722,17 @@
     // Render Table Row
     // ============================================
     function renderTableRow(order) {
-      const total = order.items.reduce((sum, item) => sum + (parseFloat(item.price) * parseFloat(item.quantity)), 0);
+      // Get items from regular items or invalidOrderDetails
+      let items = order.items || [];
+      let total = 0;
+      
+      if (items.length === 0 && order.raw_payload?.invalidOrderDetails?.items) {
+        items = order.raw_payload.invalidOrderDetails.items;
+        total = order.raw_payload.invalidOrderDetails.total || 0;
+      } else {
+        total = items.reduce((sum, item) => sum + (parseFloat(item.price) * parseFloat(item.quantity)), 0);
+      }
+      
       const time = new Date(order.created_at).toLocaleTimeString('sr-RS', { hour: '2-digit', minute: '2-digit' });
       const locationName = locations[order.company_id] || `ID: ${order.company_id}`;
       const statusGroup = getStatusGroup(order);
@@ -1736,7 +1756,7 @@
         failed: 'Neuspešno'
       };
       
-      const itemsSummary = order.items.map(i => `${i.quantity}x ${i.name}`).join(', ');
+      const itemsSummary = items.map(i => `${i.quantity}x ${i.name}`).join(', ') || 'Nema stavki';
       const provider = (order.provider || 'pult').toLowerCase();
       const deliveryStatus = order.delivery_status || 'pending';
       
@@ -1769,18 +1789,29 @@
     // Render Order Card
     // ============================================
     function renderOrderCard(order, statusClass) {
-      const total = order.items.reduce((sum, item) => sum + (parseFloat(item.price) * parseFloat(item.quantity)), 0);
+      // Get items from regular items or invalidOrderDetails
+      let items = order.items || [];
+      let total = 0;
+      
+      if (items.length === 0 && order.raw_payload?.invalidOrderDetails?.items) {
+        // Use items from invalidOrderDetails (for invalid Wolt orders)
+        items = order.raw_payload.invalidOrderDetails.items;
+        total = order.raw_payload.invalidOrderDetails.total || 0;
+      } else {
+        total = items.reduce((sum, item) => sum + (parseFloat(item.price) * parseFloat(item.quantity)), 0);
+      }
+      
       const time = new Date(order.created_at).toLocaleTimeString('sr-RS', { hour: '2-digit', minute: '2-digit' });
       const locationName = locations[order.company_id] || `ID: ${order.company_id}`;
       
-      const itemsHtml = order.items.slice(0, 3).map(item => `
+      const itemsHtml = items.slice(0, 3).map(item => `
         <div class="item">
           <span><span class="quantity">${item.quantity}x</span> ${item.name}</span>
           <span>${parseFloat(item.price).toFixed(0)}</span>
         </div>
       `).join('');
 
-      const moreItems = order.items.length > 3 ? `<div class="item" style="color: #666;">+ ${order.items.length - 3} more items...</div>` : '';
+      const moreItems = items.length > 3 ? `<div class="item" style="color: #666;">+ ${items.length - 3} more items...</div>` : '';
 
       // Delivery tracking info
       let deliveryHtml = '';
