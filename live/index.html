@@ -250,6 +250,150 @@
       font-size: 16px;
     }
 
+    /* View Toggle */
+    .view-toggle {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 15px;
+    }
+
+    .view-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 8px;
+      color: #888;
+      cursor: pointer;
+      font-size: 13px;
+      transition: all 0.2s;
+    }
+
+    .view-btn:hover {
+      border-color: #555;
+      color: #fff;
+    }
+
+    .view-btn.active {
+      background: #8B5CF6;
+      border-color: #8B5CF6;
+      color: #fff;
+    }
+
+    /* Table View */
+    .orders-table-container {
+      background: #1a1a1a;
+      border-radius: 12px;
+      border: 1px solid #333;
+      overflow: hidden;
+    }
+
+    .orders-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .orders-table th {
+      background: #252525;
+      padding: 12px 15px;
+      text-align: left;
+      font-weight: 600;
+      color: #888;
+      border-bottom: 1px solid #333;
+      white-space: nowrap;
+    }
+
+    .orders-table td {
+      padding: 12px 15px;
+      border-bottom: 1px solid #2a2a2a;
+      vertical-align: middle;
+    }
+
+    .orders-table tr:hover {
+      background: #252525;
+      cursor: pointer;
+    }
+
+    .orders-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .table-location {
+      display: inline-block;
+      background: #8B5CF6;
+      color: #fff;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+    }
+
+    .table-provider {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .table-provider.wolt { background: #00b4d8; color: #000; }
+    .table-provider.gloriafood { background: #f59e0b; color: #000; }
+    .table-provider.ebar { background: #22c55e; color: #000; }
+    .table-provider.pult { background: #8B5CF6; color: #fff; }
+
+    .table-status {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .table-status.new { background: #f59e0b20; color: #f59e0b; }
+    .table-status.production { background: #f9731620; color: #f97316; }
+    .table-status.ready { background: #3b82f620; color: #3b82f6; }
+    .table-status.paid { background: #22c55e20; color: #22c55e; }
+    .table-status.canceled { background: #ef444420; color: #ef4444; }
+
+    .table-delivery {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .table-delivery-status {
+      padding: 3px 8px;
+      border-radius: 10px;
+      font-size: 10px;
+      font-weight: 500;
+    }
+
+    .table-delivery-status.delivered { background: #065F46; color: #A7F3D0; }
+    .table-delivery-status.pending { background: #374151; color: #9CA3AF; }
+    .table-delivery-status.started { background: #5B21B6; color: #DDD6FE; }
+
+    .table-items {
+      max-width: 250px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: #aaa;
+      font-size: 12px;
+    }
+
+    .table-total {
+      font-weight: 600;
+      color: #22c55e;
+    }
+
+    .table-empty {
+      text-align: center;
+      padding: 40px;
+      color: #666;
+    }
+
     .status-dot {
       width: 10px;
       height: 10px;
@@ -868,6 +1012,16 @@
     </button>
   </div>
 
+  <!-- View Toggle -->
+  <div class="view-toggle">
+    <button class="view-btn active" data-view="cards" onclick="setViewMode('cards')">
+      <span>🃏</span> Kartice
+    </button>
+    <button class="view-btn" data-view="table" onclick="setViewMode('table')">
+      <span>📋</span> Tabela
+    </button>
+  </div>
+
   <!-- Stats bar hidden, counts now in tabs -->
   <div class="stats-bar" style="display: none;">
     <div class="stat-card new">
@@ -894,6 +1048,26 @@
 
   <!-- Grid view for filtered status -->
   <div class="orders-grid" id="ordersGrid" style="display: none;"></div>
+
+  <!-- Table view -->
+  <div class="orders-table-container" id="ordersTableContainer" style="display: none;">
+    <table class="orders-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Lokacija</th>
+          <th>Kanal</th>
+          <th>Tip</th>
+          <th>Stavke</th>
+          <th>Ukupno</th>
+          <th>Status</th>
+          <th>Dostava</th>
+          <th>Vreme</th>
+        </tr>
+      </thead>
+      <tbody id="ordersTableBody"></tbody>
+    </table>
+  </div>
 
   <div class="columns" id="columnsView">
     <div class="column new">
@@ -980,6 +1154,7 @@
     let selectedLocations = new Set(); // Empty = all
     let selectedChannels = new Set(['wolt', 'gloriafood', 'ebar', 'pult']); // All by default
     let selectedStatus = 'all'; // Status filter: 'all', 'new', 'production', 'ready', 'paid', 'canceled'
+    let viewMode = 'cards'; // 'cards' or 'table'
 
     // Fetch locations
     async function fetchLocations() {
@@ -1080,6 +1255,17 @@
       // Update active tab
       document.querySelectorAll('.status-tab').forEach(tab => {
         tab.classList.toggle('active', tab.dataset.status === status);
+      });
+      
+      applyFilters();
+    }
+
+    function setViewMode(mode) {
+      viewMode = mode;
+      
+      // Update active button
+      document.querySelectorAll('.view-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.view === mode);
       });
       
       applyFilters();
@@ -1523,6 +1709,63 @@
     }
 
     // ============================================
+    // Render Table Row
+    // ============================================
+    function renderTableRow(order) {
+      const total = order.items.reduce((sum, item) => sum + (parseFloat(item.price) * parseFloat(item.quantity)), 0);
+      const time = new Date(order.created_at).toLocaleTimeString('sr-RS', { hour: '2-digit', minute: '2-digit' });
+      const locationName = locations[order.company_id] || `ID: ${order.company_id}`;
+      const statusGroup = getStatusGroup(order);
+      
+      const statusLabels = {
+        new: 'Novo',
+        production: 'Priprema',
+        ready: 'Spremno',
+        paid: 'Plaćeno',
+        canceled: 'Otkazano',
+        other: 'Ostalo'
+      };
+      
+      const deliveryLabels = {
+        pending: 'Čeka se',
+        assigned: 'Dodeljeno',
+        started: 'Krenuo',
+        in_progress: 'U toku',
+        arrived: 'Stigao',
+        delivered: 'Dostavljeno',
+        failed: 'Neuspešno'
+      };
+      
+      const itemsSummary = order.items.map(i => `${i.quantity}x ${i.name}`).join(', ');
+      const provider = (order.provider || 'pult').toLowerCase();
+      const deliveryStatus = order.delivery_status || 'pending';
+      
+      let deliveryHtml = '-';
+      if (order.delivery_type === 'Delivery') {
+        deliveryHtml = `
+          <div class="table-delivery">
+            <span class="table-delivery-status ${deliveryStatus}">${deliveryLabels[deliveryStatus] || deliveryStatus}</span>
+            ${order.fleet_name ? `<span style="color:#888;font-size:11px;">${order.fleet_name}</span>` : ''}
+          </div>
+        `;
+      }
+      
+      return `
+        <tr onclick="openOrderDetail(${order.order_id})">
+          <td><strong>#${order.order_no}</strong></td>
+          <td><span class="table-location">${locationName}</span></td>
+          <td><span class="table-provider ${provider}">${provider}</span></td>
+          <td>${order.delivery_type || 'N/A'}</td>
+          <td><div class="table-items" title="${itemsSummary}">${itemsSummary}</div></td>
+          <td class="table-total">${total.toFixed(0)} RSD</td>
+          <td><span class="table-status ${statusGroup}">${statusLabels[statusGroup]}</span></td>
+          <td>${deliveryHtml}</td>
+          <td>${time}</td>
+        </tr>
+      `;
+    }
+
+    // ============================================
     // Render Order Card
     // ============================================
     function renderOrderCard(order, statusClass) {
@@ -1622,54 +1865,71 @@
     function renderOrders(orders) {
       const columnsView = document.getElementById('columnsView');
       const gridView = document.getElementById('ordersGrid');
+      const tableContainer = document.getElementById('ordersTableContainer');
+      const tableBody = document.getElementById('ordersTableBody');
       
-      if (selectedStatus === 'all') {
-        // Show columns view
-        columnsView.style.display = 'grid';
-        gridView.style.display = 'none';
-        
-        const isPaid = (o) => o.is_paid === true || o.is_paid === 'true';
-        const newOrders = orders.filter(o => STATUS_GROUPS.new.includes(o.status) && !isPaid(o));
-        const productionOrders = orders.filter(o => STATUS_GROUPS.production.includes(o.status) && !isPaid(o));
-        const readyOrders = orders.filter(o => STATUS_GROUPS.ready.includes(o.status) && !isPaid(o));
-        const paidOrders = orders.filter(o => isPaid(o));
-        const canceledOrders = orders.filter(o => STATUS_GROUPS.canceled.includes(o.status));
-
-        document.getElementById('ordersNew').innerHTML = newOrders.length 
-          ? newOrders.map(o => renderOrderCard(o, 'new')).join('')
-          : '<div class="empty-state">No new orders</div>';
-
-        document.getElementById('ordersProduction').innerHTML = productionOrders.length
-          ? productionOrders.map(o => renderOrderCard(o, 'production')).join('')
-          : '<div class="empty-state">No orders in production</div>';
-
-        document.getElementById('ordersReady').innerHTML = readyOrders.length
-          ? readyOrders.map(o => renderOrderCard(o, 'ready')).join('')
-          : '<div class="empty-state">No ready orders</div>';
-
-        document.getElementById('ordersPaid').innerHTML = paidOrders.length
-          ? paidOrders.map(o => renderOrderCard(o, 'paid')).join('')
-          : '<div class="empty-state">No completed orders</div>';
-
-        document.getElementById('ordersCanceled').innerHTML = canceledOrders.length
-          ? canceledOrders.map(o => renderOrderCard(o, 'canceled')).join('')
-          : '<div class="empty-state">No canceled orders</div>';
-
-        // Update column counts
-        document.getElementById('colCountNew').textContent = newOrders.length;
-        document.getElementById('colCountProduction').textContent = productionOrders.length;
-        document.getElementById('colCountReady').textContent = readyOrders.length;
-        document.getElementById('colCountPaid').textContent = paidOrders.length;
-        document.getElementById('colCountCanceled').textContent = canceledOrders.length;
-      } else {
-        // Show grid view
-        columnsView.style.display = 'none';
-        gridView.style.display = 'grid';
+      // Hide all views first
+      columnsView.style.display = 'none';
+      gridView.style.display = 'none';
+      tableContainer.style.display = 'none';
+      
+      if (viewMode === 'table') {
+        // TABLE VIEW
+        tableContainer.style.display = 'block';
         
         if (orders.length === 0) {
-          gridView.innerHTML = '<div class="orders-grid-empty">Nema porudžbina u ovoj kategoriji</div>';
+          tableBody.innerHTML = '<tr><td colspan="9" class="table-empty">Nema porudžbina</td></tr>';
         } else {
-          gridView.innerHTML = orders.map(o => renderOrderCard(o, selectedStatus)).join('');
+          tableBody.innerHTML = orders.map(o => renderTableRow(o)).join('');
+        }
+      } else {
+        // CARDS VIEW
+        if (selectedStatus === 'all') {
+          // Show columns view
+          columnsView.style.display = 'grid';
+          
+          const isPaid = (o) => o.is_paid === true || o.is_paid === 'true';
+          const newOrders = orders.filter(o => STATUS_GROUPS.new.includes(o.status) && !isPaid(o));
+          const productionOrders = orders.filter(o => STATUS_GROUPS.production.includes(o.status) && !isPaid(o));
+          const readyOrders = orders.filter(o => STATUS_GROUPS.ready.includes(o.status) && !isPaid(o));
+          const paidOrders = orders.filter(o => isPaid(o));
+          const canceledOrders = orders.filter(o => STATUS_GROUPS.canceled.includes(o.status));
+
+          document.getElementById('ordersNew').innerHTML = newOrders.length 
+            ? newOrders.map(o => renderOrderCard(o, 'new')).join('')
+            : '<div class="empty-state">No new orders</div>';
+
+          document.getElementById('ordersProduction').innerHTML = productionOrders.length
+            ? productionOrders.map(o => renderOrderCard(o, 'production')).join('')
+            : '<div class="empty-state">No orders in production</div>';
+
+          document.getElementById('ordersReady').innerHTML = readyOrders.length
+            ? readyOrders.map(o => renderOrderCard(o, 'ready')).join('')
+            : '<div class="empty-state">No ready orders</div>';
+
+          document.getElementById('ordersPaid').innerHTML = paidOrders.length
+            ? paidOrders.map(o => renderOrderCard(o, 'paid')).join('')
+            : '<div class="empty-state">No completed orders</div>';
+
+          document.getElementById('ordersCanceled').innerHTML = canceledOrders.length
+            ? canceledOrders.map(o => renderOrderCard(o, 'canceled')).join('')
+            : '<div class="empty-state">No canceled orders</div>';
+
+          // Update column counts
+          document.getElementById('colCountNew').textContent = newOrders.length;
+          document.getElementById('colCountProduction').textContent = productionOrders.length;
+          document.getElementById('colCountReady').textContent = readyOrders.length;
+          document.getElementById('colCountPaid').textContent = paidOrders.length;
+          document.getElementById('colCountCanceled').textContent = canceledOrders.length;
+        } else {
+          // Show grid view for single status
+          gridView.style.display = 'grid';
+          
+          if (orders.length === 0) {
+            gridView.innerHTML = '<div class="orders-grid-empty">Nema porudžbina u ovoj kategoriji</div>';
+          } else {
+            gridView.innerHTML = orders.map(o => renderOrderCard(o, selectedStatus)).join('');
+          }
         }
       }
 
