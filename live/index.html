@@ -160,6 +160,96 @@
       margin: 5px 0;
     }
 
+    /* Status Filter Tabs */
+    .status-tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      padding: 10px 0;
+      overflow-x: auto;
+    }
+
+    .status-tab {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 20px;
+      background: #1a1a1a;
+      border: 2px solid #333;
+      border-radius: 12px;
+      color: #888;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .status-tab:hover {
+      border-color: #555;
+      color: #fff;
+    }
+
+    .status-tab.active {
+      border-color: #8B5CF6;
+      background: linear-gradient(135deg, #1a1a2e 0%, #252540 100%);
+      color: #fff;
+    }
+
+    .status-tab .tab-icon {
+      font-size: 18px;
+    }
+
+    .status-tab .tab-label {
+      font-weight: 500;
+      font-size: 14px;
+    }
+
+    .status-tab .tab-count {
+      background: #333;
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .status-tab.active .tab-count {
+      background: #8B5CF6;
+    }
+
+    .status-tab[data-status="new"].active { border-color: #f59e0b; }
+    .status-tab[data-status="new"].active .tab-count { background: #f59e0b; }
+    
+    .status-tab[data-status="production"].active { border-color: #f97316; }
+    .status-tab[data-status="production"].active .tab-count { background: #f97316; }
+    
+    .status-tab[data-status="ready"].active { border-color: #3b82f6; }
+    .status-tab[data-status="ready"].active .tab-count { background: #3b82f6; }
+    
+    .status-tab[data-status="paid"].active { border-color: #22c55e; }
+    .status-tab[data-status="paid"].active .tab-count { background: #22c55e; }
+    
+    .status-tab[data-status="canceled"].active { border-color: #ef4444; }
+    .status-tab[data-status="canceled"].active .tab-count { background: #ef4444; }
+
+    /* Grid view for filtered orders */
+    .orders-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 15px;
+      padding: 10px 0;
+    }
+
+    .orders-grid .order-card {
+      margin: 0;
+    }
+
+    .orders-grid-empty {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 60px 20px;
+      color: #666;
+      font-size: 16px;
+    }
+
     .status-dot {
       width: 10px;
       height: 10px;
@@ -744,7 +834,42 @@
     </div>
   </div>
 
-  <div class="stats-bar">
+  <!-- Status Filter Tabs -->
+  <div class="status-tabs">
+    <button class="status-tab active" data-status="all" onclick="setStatusFilter('all')">
+      <span class="tab-icon">📋</span>
+      <span class="tab-label">Sve</span>
+      <span class="tab-count" id="countAll">0</span>
+    </button>
+    <button class="status-tab" data-status="new" onclick="setStatusFilter('new')">
+      <span class="tab-icon">🆕</span>
+      <span class="tab-label">Novo</span>
+      <span class="tab-count" id="countNew">0</span>
+    </button>
+    <button class="status-tab" data-status="production" onclick="setStatusFilter('production')">
+      <span class="tab-icon">👨‍🍳</span>
+      <span class="tab-label">Priprema</span>
+      <span class="tab-count" id="countProduction">0</span>
+    </button>
+    <button class="status-tab" data-status="ready" onclick="setStatusFilter('ready')">
+      <span class="tab-icon">✅</span>
+      <span class="tab-label">Spremno</span>
+      <span class="tab-count" id="countReady">0</span>
+    </button>
+    <button class="status-tab" data-status="paid" onclick="setStatusFilter('paid')">
+      <span class="tab-icon">💰</span>
+      <span class="tab-label">Plaćeno</span>
+      <span class="tab-count" id="countPaid">0</span>
+    </button>
+    <button class="status-tab" data-status="canceled" onclick="setStatusFilter('canceled')">
+      <span class="tab-icon">❌</span>
+      <span class="tab-label">Otkazano</span>
+      <span class="tab-count" id="countCanceled">0</span>
+    </button>
+  </div>
+
+  <!-- Stats bar hidden, counts now in tabs -->
+  <div class="stats-bar" style="display: none;">
     <div class="stat-card new">
       <h3>New / Pending</h3>
       <div class="value" id="statNew">0</div>
@@ -767,11 +892,14 @@
     </div>
   </div>
 
-  <div class="columns">
+  <!-- Grid view for filtered status -->
+  <div class="orders-grid" id="ordersGrid" style="display: none;"></div>
+
+  <div class="columns" id="columnsView">
     <div class="column new">
       <div class="column-header">
         <h2>🆕 New / Pending</h2>
-        <span class="count" id="countNew">0</span>
+        <span class="count" id="colCountNew">0</span>
       </div>
       <div id="ordersNew" class="orders-list">
         <div class="loading">Loading...</div>
@@ -781,7 +909,7 @@
     <div class="column production">
       <div class="column-header">
         <h2>👨‍🍳 Accepted / Production</h2>
-        <span class="count" id="countProduction">0</span>
+        <span class="count" id="colCountProduction">0</span>
       </div>
       <div id="ordersProduction" class="orders-list">
         <div class="loading">Loading...</div>
@@ -791,7 +919,7 @@
     <div class="column ready">
       <div class="column-header">
         <h2>✅ Ready / Delivery</h2>
-        <span class="count" id="countReady">0</span>
+        <span class="count" id="colCountReady">0</span>
       </div>
       <div id="ordersReady" class="orders-list">
         <div class="loading">Loading...</div>
@@ -801,7 +929,7 @@
     <div class="column paid">
       <div class="column-header">
         <h2>💰 Completed</h2>
-        <span class="count" id="countPaid">0</span>
+        <span class="count" id="colCountPaid">0</span>
       </div>
       <div id="ordersPaid" class="orders-list">
         <div class="loading">Loading...</div>
@@ -811,7 +939,7 @@
     <div class="column canceled">
       <div class="column-header">
         <h2>❌ Canceled / Rejected</h2>
-        <span class="count" id="countCanceled">0</span>
+        <span class="count" id="colCountCanceled">0</span>
       </div>
       <div id="ordersCanceled" class="orders-list">
         <div class="loading">Loading...</div>
@@ -851,6 +979,7 @@
     // Filter state
     let selectedLocations = new Set(); // Empty = all
     let selectedChannels = new Set(['wolt', 'gloriafood', 'ebar', 'pult']); // All by default
+    let selectedStatus = 'all'; // Status filter: 'all', 'new', 'production', 'ready', 'paid', 'canceled'
 
     // Fetch locations
     async function fetchLocations() {
@@ -945,8 +1074,49 @@
       applyFilters();
     }
 
+    function setStatusFilter(status) {
+      selectedStatus = status;
+      
+      // Update active tab
+      document.querySelectorAll('.status-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.status === status);
+      });
+      
+      applyFilters();
+    }
+
+    function getStatusGroup(order) {
+      const status = order.status;
+      // Check paid first - paid orders should go to paid regardless of status
+      if (order.is_paid === true || order.is_paid === 'true') return 'paid';
+      if (STATUS_GROUPS.canceled.includes(status)) return 'canceled';
+      if (STATUS_GROUPS.new.includes(status)) return 'new';
+      if (STATUS_GROUPS.production.includes(status)) return 'production';
+      if (STATUS_GROUPS.ready.includes(status)) return 'ready';
+      return 'other';
+    }
+
+    function updateStatusCounts(orders) {
+      const counts = { all: 0, new: 0, production: 0, ready: 0, paid: 0, canceled: 0 };
+      
+      orders.forEach(order => {
+        counts.all++;
+        const group = getStatusGroup(order);
+        if (counts[group] !== undefined) counts[group]++;
+      });
+      
+      // Update tab counts
+      document.getElementById('countAll').textContent = counts.all;
+      document.getElementById('countNew').textContent = counts.new;
+      document.getElementById('countProduction').textContent = counts.production;
+      document.getElementById('countReady').textContent = counts.ready;
+      document.getElementById('countPaid').textContent = counts.paid;
+      document.getElementById('countCanceled').textContent = counts.canceled;
+    }
+
     function applyFilters() {
-      const filteredOrders = allOrders.filter(order => {
+      // First apply location and channel filters
+      const baseFiltered = allOrders.filter(order => {
         // Location filter
         const locationMatch = selectedLocations.size === 0 || 
                              selectedLocations.size === Object.keys(locations).length ||
@@ -958,6 +1128,15 @@
                             (provider === '' && selectedChannels.has('pult'));
         
         return locationMatch && channelMatch;
+      });
+      
+      // Update counts based on location/channel filtered orders
+      updateStatusCounts(baseFiltered);
+      
+      // Then apply status filter
+      const filteredOrders = baseFiltered.filter(order => {
+        if (selectedStatus === 'all') return true;
+        return getStatusGroup(order) === selectedStatus;
       });
       
       renderOrders(filteredOrders);
@@ -1441,44 +1620,64 @@
     // Render All Orders
     // ============================================
     function renderOrders(orders) {
-      const newOrders = orders.filter(o => STATUS_GROUPS.new.includes(o.status) && !o.is_paid);
-      const productionOrders = orders.filter(o => STATUS_GROUPS.production.includes(o.status) && !o.is_paid);
-      const readyOrders = orders.filter(o => STATUS_GROUPS.ready.includes(o.status) && !o.is_paid);
-      const paidOrders = orders.filter(o => o.is_paid);
-      const canceledOrders = orders.filter(o => STATUS_GROUPS.canceled.includes(o.status));
+      const columnsView = document.getElementById('columnsView');
+      const gridView = document.getElementById('ordersGrid');
+      
+      if (selectedStatus === 'all') {
+        // Show columns view
+        columnsView.style.display = 'grid';
+        gridView.style.display = 'none';
+        
+        const isPaid = (o) => o.is_paid === true || o.is_paid === 'true';
+        const newOrders = orders.filter(o => STATUS_GROUPS.new.includes(o.status) && !isPaid(o));
+        const productionOrders = orders.filter(o => STATUS_GROUPS.production.includes(o.status) && !isPaid(o));
+        const readyOrders = orders.filter(o => STATUS_GROUPS.ready.includes(o.status) && !isPaid(o));
+        const paidOrders = orders.filter(o => isPaid(o));
+        const canceledOrders = orders.filter(o => STATUS_GROUPS.canceled.includes(o.status));
 
-      document.getElementById('ordersNew').innerHTML = newOrders.length 
-        ? newOrders.map(o => renderOrderCard(o, 'new')).join('')
-        : '<div class="empty-state">No new orders</div>';
+        document.getElementById('ordersNew').innerHTML = newOrders.length 
+          ? newOrders.map(o => renderOrderCard(o, 'new')).join('')
+          : '<div class="empty-state">No new orders</div>';
 
-      document.getElementById('ordersProduction').innerHTML = productionOrders.length
-        ? productionOrders.map(o => renderOrderCard(o, 'production')).join('')
-        : '<div class="empty-state">No orders in production</div>';
+        document.getElementById('ordersProduction').innerHTML = productionOrders.length
+          ? productionOrders.map(o => renderOrderCard(o, 'production')).join('')
+          : '<div class="empty-state">No orders in production</div>';
 
-      document.getElementById('ordersReady').innerHTML = readyOrders.length
-        ? readyOrders.map(o => renderOrderCard(o, 'ready')).join('')
-        : '<div class="empty-state">No ready orders</div>';
+        document.getElementById('ordersReady').innerHTML = readyOrders.length
+          ? readyOrders.map(o => renderOrderCard(o, 'ready')).join('')
+          : '<div class="empty-state">No ready orders</div>';
 
-      document.getElementById('ordersPaid').innerHTML = paidOrders.length
-        ? paidOrders.map(o => renderOrderCard(o, 'paid')).join('')
-        : '<div class="empty-state">No completed orders</div>';
+        document.getElementById('ordersPaid').innerHTML = paidOrders.length
+          ? paidOrders.map(o => renderOrderCard(o, 'paid')).join('')
+          : '<div class="empty-state">No completed orders</div>';
 
-      document.getElementById('ordersCanceled').innerHTML = canceledOrders.length
-        ? canceledOrders.map(o => renderOrderCard(o, 'canceled')).join('')
-        : '<div class="empty-state">No canceled orders</div>';
+        document.getElementById('ordersCanceled').innerHTML = canceledOrders.length
+          ? canceledOrders.map(o => renderOrderCard(o, 'canceled')).join('')
+          : '<div class="empty-state">No canceled orders</div>';
 
-      // Update counts
-      document.getElementById('countNew').textContent = newOrders.length;
-      document.getElementById('countProduction').textContent = productionOrders.length;
-      document.getElementById('countReady').textContent = readyOrders.length;
-      document.getElementById('countPaid').textContent = paidOrders.length;
-      document.getElementById('countCanceled').textContent = canceledOrders.length;
+        // Update column counts
+        document.getElementById('colCountNew').textContent = newOrders.length;
+        document.getElementById('colCountProduction').textContent = productionOrders.length;
+        document.getElementById('colCountReady').textContent = readyOrders.length;
+        document.getElementById('colCountPaid').textContent = paidOrders.length;
+        document.getElementById('colCountCanceled').textContent = canceledOrders.length;
+      } else {
+        // Show grid view
+        columnsView.style.display = 'none';
+        gridView.style.display = 'grid';
+        
+        if (orders.length === 0) {
+          gridView.innerHTML = '<div class="orders-grid-empty">Nema porudžbina u ovoj kategoriji</div>';
+        } else {
+          gridView.innerHTML = orders.map(o => renderOrderCard(o, selectedStatus)).join('');
+        }
+      }
 
-      document.getElementById('statNew').textContent = newOrders.length;
-      document.getElementById('statProduction').textContent = productionOrders.length;
-      document.getElementById('statReady').textContent = readyOrders.length;
-      document.getElementById('statPaid').textContent = paidOrders.length;
-      document.getElementById('statCanceled').textContent = canceledOrders.length;
+      document.getElementById('statNew').textContent = document.getElementById('countNew').textContent;
+      document.getElementById('statProduction').textContent = document.getElementById('countProduction').textContent;
+      document.getElementById('statReady').textContent = document.getElementById('countReady').textContent;
+      document.getElementById('statPaid').textContent = document.getElementById('countPaid').textContent;
+      document.getElementById('statCanceled').textContent = document.getElementById('countCanceled').textContent;
 
       document.getElementById('lastUpdated').textContent = 
         `Updated: ${new Date().toLocaleTimeString('sr-RS')}`;
