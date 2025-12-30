@@ -1,1 +1,761 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Collina Kitchen Monitor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
+        html, body {
+            font-family: 'Inter', sans-serif;
+            background: #1D1D1B;
+            color: #EAE4DA;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .main-container {
+            display: flex;
+            height: 100vh;
+            padding: 12px;
+            gap: 12px;
+        }
+
+        /* Right Sidebar */
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 200px;
+            flex-shrink: 0;
+        }
+
+        .location-select {
+            background: #2a2a28;
+            border: 2px solid #3a3a38;
+            border-radius: 4px;
+            padding: 12px;
+            color: #EAE4DA;
+            font-size: 0.9rem;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .location-select:focus {
+            outline: none;
+            border-color: #808BC5;
+        }
+
+        .overview-card {
+            padding: 14px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: white;
+        }
+
+        .overview-card .icon { font-size: 1.6rem; }
+        .overview-card .count { 
+            font-family: 'Montserrat', sans-serif;
+            font-size: 1.8rem; 
+            font-weight: 800; 
+            line-height: 1; 
+        }
+        .overview-card .label { 
+            font-size: 0.7rem; 
+            opacity: 0.9; 
+            text-transform: uppercase; 
+            letter-spacing: 0.5px;
+            font-weight: 500;
+        }
+
+        .overview-card.burgers { background: #808BC5; }
+        .overview-card.pancakes { background: #ED773C; }
+        .overview-card.urgent { background: #C63F3E; }
+        .overview-card.orders { background: #4a9e8e; }
+
+        .eta-card {
+            padding: 12px;
+            border-radius: 4px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            border: 3px solid;
+            background: #2a2a28;
+            text-align: center;
+        }
+
+        .eta-card.burger-eta { border-color: #808BC5; }
+        .eta-card.burger-eta .eta-time { color: #9ED6DF; }
+        .eta-card.pancake-eta { border-color: #ED773C; }
+        .eta-card.pancake-eta .eta-time { color: #ED773C; }
+        .eta-card .icon { font-size: 1.4rem; }
+        .eta-card .eta-label { 
+            font-size: 0.65rem; 
+            opacity: 0.6; 
+            text-transform: uppercase; 
+            letter-spacing: 0.5px; 
+        }
+        .eta-card .eta-time { 
+            font-family: 'Montserrat', sans-serif;
+            font-size: 1.6rem; 
+            font-weight: 700; 
+            line-height: 1; 
+        }
+        .eta-card .eta-subtitle { font-size: 0.6rem; opacity: 0.5; }
+
+        .time-display {
+            background: #EAE4DA;
+            color: #1D1D1B;
+            padding: 16px;
+            border-radius: 4px;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 2.4rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 8px;
+            background: #2a2a28;
+            border-radius: 4px;
+            font-size: 0.75rem;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #22c55e;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Orders Grid - Column-first flow */
+        .orders-grid {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-content: flex-start;
+            overflow: hidden;
+            height: 100%;
+        }
+
+        .order-card {
+            border-radius: 4px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            width: 220px;
+            background: #2a2a28;
+            border: 2px solid #3a3a38;
+            transition: transform 0.3s, opacity 0.3s;
+        }
+
+        .order-card.new-order {
+            animation: slideIn 0.4s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Burger orders - Lavender/Sky accent */
+        .order-card.burger {
+            border-left: 8px solid #808BC5;
+        }
+        .order-card.burger .order-header {
+            background: #2a2a28;
+            border-bottom: 2px solid #3a3a38;
+        }
+        .order-card.burger .order-time {
+            color: #9ED6DF;
+            font-weight: 700;
+        }
+
+        /* Pancake orders - Tangerine accent */
+        .order-card.pancake {
+            border-left: 8px solid #ED773C;
+        }
+        .order-card.pancake .order-header {
+            background: #2a2a28;
+            border-bottom: 2px solid #3a3a38;
+        }
+        .order-card.pancake .order-time {
+            color: #ED773C;
+            font-weight: 700;
+        }
+
+        /* Mixed orders - Split border (burger blue top, pancake orange bottom) */
+        .order-card.mixed {
+            border-left: 8px solid;
+            border-image: linear-gradient(to bottom, #808BC5 50%, #ED773C 50%) 1;
+        }
+        .order-card.mixed .order-header {
+            background: #2a2a28;
+            border-bottom: 2px solid #3a3a38;
+        }
+        .order-card.mixed .order-time {
+            color: #4a9e8e;
+            font-weight: 700;
+        }
+
+        /* Other orders (cooked meals, etc) */
+        .order-card.other {
+            border-left: 8px solid #888;
+        }
+        .order-card.other .order-time {
+            color: #888;
+            font-weight: 700;
+        }
+
+        .order-header {
+            padding: 8px 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .order-time {
+            font-weight: 700;
+        }
+
+        .order-wait {
+            padding: 2px 8px;
+            border-radius: 2px;
+            background: #3a3a38;
+            font-size: 1rem;
+            color: #888;
+            font-weight: 600;
+        }
+
+        .order-card.urgent .order-wait {
+            background: #C63F3E;
+            color: #fff;
+        }
+
+        .order-content {
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .order-item {
+            padding: 6px 8px;
+            border-radius: 2px;
+            font-size: 0.9rem;
+            background: #333331;
+        }
+
+        .order-item.burger-item {
+            border-left: 4px solid #808BC5;
+            background: rgba(128, 139, 197, 0.15);
+        }
+        
+        .order-item.pancake-item {
+            border-left: 4px solid #ED773C;
+            background: rgba(237, 119, 60, 0.15);
+        }
+
+        .order-item.other-item {
+            border-left: 4px solid #888;
+            background: rgba(136, 136, 136, 0.15);
+        }
+
+        .item-main {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .item-icon { font-size: 1rem; }
+        
+        .item-qty {
+            font-weight: 700;
+            color: #9ED6DF;
+            min-width: 24px;
+        }
+        
+        .item-name {
+            flex: 1;
+            font-weight: 500;
+        }
+
+        .item-mods {
+            font-size: 0.75rem;
+            color: #888;
+            padding-left: 32px;
+            margin-top: 2px;
+        }
+
+        .item-comment {
+            font-size: 0.75rem;
+            color: #C63F3E;
+            padding-left: 32px;
+            margin-top: 2px;
+            font-style: italic;
+        }
+
+        .order-footer {
+            padding: 8px 12px;
+            background: #252523;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85rem;
+        }
+
+        .order-number {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 700;
+            color: #EAE4DA;
+        }
+
+        .order-table {
+            color: #888;
+            font-size: 0.8rem;
+        }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #666;
+            font-size: 1.2rem;
+            gap: 12px;
+        }
+
+        .empty-state .icon {
+            font-size: 4rem;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <!-- Orders Grid -->
+        <div class="orders-grid" id="ordersGrid">
+            <div class="empty-state">
+                <div class="icon">👨‍🍳</div>
+                <div>Učitavanje...</div>
+            </div>
+        </div>
+
+        <!-- Right Sidebar -->
+        <div class="sidebar">
+            <div class="time-display" id="currentTime">00:00</div>
+            
+            <select class="location-select" id="locationSelect">
+                <option value="">Sve lokacije</option>
+            </select>
+
+            <div class="status-indicator">
+                <div class="status-dot"></div>
+                <span>Live</span>
+            </div>
+            
+            <div class="overview-card orders">
+                <div class="icon">📋</div>
+                <div class="info">
+                    <div class="count" id="orderCount">0</div>
+                    <div class="label">Porudžbina</div>
+                </div>
+            </div>
+
+            <div class="overview-card burgers">
+                <div class="icon">🍔</div>
+                <div class="info">
+                    <div class="count" id="burgerCount">0</div>
+                    <div class="label">Burgera</div>
+                </div>
+            </div>
+            <div class="overview-card pancakes">
+                <div class="icon">🥞</div>
+                <div class="info">
+                    <div class="count" id="pancakeCount">0</div>
+                    <div class="label">Palačinki</div>
+                </div>
+            </div>
+            <div class="overview-card urgent">
+                <div class="icon">⚠️</div>
+                <div class="info">
+                    <div class="count" id="urgentCount">0</div>
+                    <div class="label">Preko 15'</div>
+                </div>
+            </div>
+
+            <div class="eta-card burger-eta">
+                <div class="icon">🍔</div>
+                <div class="eta-label">Nova narudžbina</div>
+                <div class="eta-time" id="burgerEta">~0 min</div>
+                <div class="eta-subtitle">reci kuriru</div>
+            </div>
+            <div class="eta-card pancake-eta">
+                <div class="icon">🥞</div>
+                <div class="eta-label">Nova narudžbina</div>
+                <div class="eta-time" id="pancakeEta">~0 min</div>
+                <div class="eta-subtitle">reci kuriru</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Supabase config
+        const SUPABASE_URL = 'https://qhfqxlupxpypjpnbilht.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFoZnF4bHVweHB5cGpwbmJpbGh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ4ODU5MTUsImV4cCI6MjA1MDQ2MTkxNX0.qraz0xPFBWjYVKnpcvGp7lmLXqVLvLpiiYtMBMrYYmE';
+
+        async function supabaseFetch(endpoint) {
+            const res = await fetch(endpoint, {
+                headers: {
+                    'apikey': SUPABASE_KEY,
+                    'Authorization': `Bearer ${SUPABASE_KEY}`
+                }
+            });
+            if (!res.ok) {
+                throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+            }
+            return res.json();
+        }
+
+        // State
+        let allOrders = [];
+        let locations = {};
+        let selectedLocation = '';
+
+        // Status groups - orders in production (not yet ready)
+        const PRODUCTION_STATUSES = [1, 3, 4]; // New, Accepted, In Production
+
+        // Keywords to identify item types
+        const BURGER_KEYWORDS = ['burger', 'smash', 'collina', 'chicken', 'wrap', 'big ', 'double'];
+        const PANCAKE_KEYWORDS = ['palačink', 'palacink', 'nutella', 'eurokrem', 'plazma', 'krem', 'američka', 'americka'];
+
+        // ============================================
+        // Time & Clock
+        // ============================================
+        function updateTime() {
+            const now = new Date();
+            document.getElementById('currentTime').textContent = 
+                now.toLocaleTimeString('sr-RS', { hour: '2-digit', minute: '2-digit' });
+        }
+        setInterval(updateTime, 1000);
+        updateTime();
+
+        // ============================================
+        // Load Locations
+        // ============================================
+        async function loadLocations() {
+            try {
+                const url = `${SUPABASE_URL}/rest/v1/emeni_locations?select=company_id,name&order=name`;
+                const data = await supabaseFetch(url);
+                
+                if (data && Array.isArray(data)) {
+                    const select = document.getElementById('locationSelect');
+                    data.forEach(loc => {
+                        locations[loc.company_id] = loc.name;
+                        const option = document.createElement('option');
+                        option.value = loc.company_id;
+                        option.textContent = loc.name;
+                        select.appendChild(option);
+                    });
+                }
+            } catch (err) {
+                console.error('Error loading locations:', err);
+            }
+        }
+
+        // ============================================
+        // Classify Item Type
+        // ============================================
+        function classifyItem(itemName) {
+            const name = itemName.toLowerCase();
+            
+            for (const kw of BURGER_KEYWORDS) {
+                if (name.includes(kw)) return 'burger';
+            }
+            for (const kw of PANCAKE_KEYWORDS) {
+                if (name.includes(kw)) return 'pancake';
+            }
+            return 'other';
+        }
+
+        // ============================================
+        // Classify Order Type
+        // ============================================
+        function classifyOrder(items) {
+            let hasBurger = false;
+            let hasPancake = false;
+            
+            for (const item of items) {
+                const type = classifyItem(item.name);
+                if (type === 'burger') hasBurger = true;
+                if (type === 'pancake') hasPancake = true;
+            }
+            
+            if (hasBurger && hasPancake) return 'mixed';
+            if (hasBurger) return 'burger';
+            if (hasPancake) return 'pancake';
+            return 'other';
+        }
+
+        // ============================================
+        // Calculate Wait Time
+        // ============================================
+        function getWaitMinutes(createdAt) {
+            const created = new Date(createdAt);
+            const now = new Date();
+            return Math.floor((now - created) / 60000);
+        }
+
+        // ============================================
+        // Render Order Card
+        // ============================================
+        function renderOrderCard(order) {
+            const items = order.items || [];
+            const orderType = classifyOrder(items);
+            const waitMinutes = getWaitMinutes(order.created_at);
+            const isUrgent = waitMinutes >= 15;
+            const time = new Date(order.created_at).toLocaleTimeString('sr-RS', { hour: '2-digit', minute: '2-digit' });
+            
+            const itemsHtml = items.map(item => {
+                const itemType = classifyItem(item.name);
+                const icon = itemType === 'burger' ? '🍔' : itemType === 'pancake' ? '🥞' : '🍽️';
+                
+                let modsHtml = '';
+                if (item.modifiers && item.modifiers.length > 0) {
+                    const modNames = item.modifiers.map(m => m.name || m.value || m).filter(Boolean);
+                    if (modNames.length > 0) {
+                        modsHtml = `<div class="item-mods">+ ${modNames.join(', ')}</div>`;
+                    }
+                }
+                
+                let commentHtml = '';
+                if (item.note) {
+                    commentHtml = `<div class="item-comment">${item.note}</div>`;
+                }
+                
+                return `
+                    <div class="order-item ${itemType}-item">
+                        <div class="item-main">
+                            <span class="item-icon">${icon}</span>
+                            <span class="item-qty">${item.quantity}×</span>
+                            <span class="item-name">${item.name}</span>
+                        </div>
+                        ${modsHtml}
+                        ${commentHtml}
+                    </div>
+                `;
+            }).join('');
+
+            // Order note
+            let orderNoteHtml = '';
+            if (order.raw_payload?.note) {
+                orderNoteHtml = `
+                    <div class="order-item other-item">
+                        <div class="item-comment" style="padding-left: 8px;">📝 ${order.raw_payload.note}</div>
+                    </div>
+                `;
+            }
+
+            const provider = order.provider || '';
+            const tableRef = order.table_reference_id || provider;
+            const locationName = locations[order.company_id] || '';
+
+            return `
+                <div class="order-card ${orderType} ${isUrgent ? 'urgent' : ''}" data-order-id="${order.order_id}">
+                    <div class="order-header">
+                        <span class="order-time">${time}</span>
+                        <span class="order-wait">${waitMinutes}'</span>
+                    </div>
+                    <div class="order-content">
+                        ${itemsHtml}
+                        ${orderNoteHtml}
+                    </div>
+                    <div class="order-footer">
+                        <span class="order-number">#${order.order_no}</span>
+                        <span class="order-table">${tableRef}</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        // ============================================
+        // Update Stats
+        // ============================================
+        function updateStats(orders) {
+            let burgerCount = 0;
+            let pancakeCount = 0;
+            let urgentCount = 0;
+
+            orders.forEach(order => {
+                const items = order.items || [];
+                const waitMinutes = getWaitMinutes(order.created_at);
+                
+                if (waitMinutes >= 15) urgentCount++;
+                
+                items.forEach(item => {
+                    const type = classifyItem(item.name);
+                    const qty = parseInt(item.quantity) || 1;
+                    if (type === 'burger') burgerCount += qty;
+                    if (type === 'pancake') pancakeCount += qty;
+                });
+            });
+
+            document.getElementById('orderCount').textContent = orders.length;
+            document.getElementById('burgerCount').textContent = burgerCount;
+            document.getElementById('pancakeCount').textContent = pancakeCount;
+            document.getElementById('urgentCount').textContent = urgentCount;
+
+            // Calculate ETAs
+            const avgBurgerPrepTime = 5;
+            const avgPancakePrepTime = 4;
+            const burgerStations = 2;
+            const pancakeStations = 1;
+            
+            const burgerETA = Math.ceil((burgerCount / burgerStations) * avgBurgerPrepTime) + avgBurgerPrepTime;
+            const pancakeETA = Math.ceil((pancakeCount / pancakeStations) * avgPancakePrepTime) + avgPancakePrepTime;
+            
+            document.getElementById('burgerEta').textContent = `~${burgerETA || 5} min`;
+            document.getElementById('pancakeEta').textContent = `~${pancakeETA || 4} min`;
+        }
+
+        // ============================================
+        // Render Orders
+        // ============================================
+        function renderOrders() {
+            const grid = document.getElementById('ordersGrid');
+            
+            // Filter orders by location if selected
+            let filteredOrders = allOrders;
+            if (selectedLocation) {
+                filteredOrders = allOrders.filter(o => o.company_id == selectedLocation);
+            }
+
+            // Filter to only production orders (status 1, 3, 4)
+            filteredOrders = filteredOrders.filter(o => PRODUCTION_STATUSES.includes(o.status));
+
+            // Sort by created_at (oldest first)
+            filteredOrders.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+
+            if (filteredOrders.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">✅</div>
+                        <div>Nema porudžbina u pripremi</div>
+                    </div>
+                `;
+            } else {
+                grid.innerHTML = filteredOrders.map(o => renderOrderCard(o)).join('');
+            }
+
+            updateStats(filteredOrders);
+        }
+
+        // ============================================
+        // Load Orders
+        // ============================================
+        async function loadOrders() {
+            try {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+
+                // Build URL with proper encoding
+                const url = `${SUPABASE_URL}/rest/v1/emeni_orders?select=*&created_at=gte.${encodeURIComponent(today.toISOString())}&or=(status.eq.1,status.eq.3,status.eq.4)&order=created_at.asc`;
+                
+                const data = await supabaseFetch(url);
+
+                if (data && Array.isArray(data)) {
+                    allOrders = data;
+                    renderOrders();
+                } else {
+                    console.error('Error loading orders:', data);
+                }
+            } catch (err) {
+                console.error('Error loading orders:', err);
+            }
+        }
+
+        // ============================================
+        // Poll for Updates (every 5 seconds)
+        // ============================================
+        function startPolling() {
+            setInterval(async () => {
+                await loadOrders();
+            }, 5000);
+        }
+
+        // ============================================
+        // New Order Sound
+        // ============================================
+        function playNewOrderSound() {
+            try {
+                const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdH2Ch4WBfXl5fYKHiYmGgoB+gIWKi4mGgn99fYGGioqHg398e32ChoqLiYWBfXt8gIaKjIqGgX17fH+EiYyLiIR/fHt9gYaKjIqGgX17fH+EiIuLiIR/fHt9gYaKjIqGgX17fH+EiIuKh4N/fHt9gYaJi4qGgn58fH+EiIqJhoJ+fHx+goaJioeEgH58fX+DhoiHhYJ/fX1+gYSGhoWCgH5+foGDhYWEgn+Afn6AgYOEhIKAf35+f4GCg4OCgYB/fn5/gIGCgoGAf39+fn9/gIGBgIB/f35+fn9/gICAgIB/f39+fn5/f4CAgICAf39/fn5+f3+AgICAgH9/f35+fn9/gICAf39/f39+fn5/f4CAgH9/f39/fn5+f39/f39/f39/f35+fn9/f39/f39/f39+fn5/f39/f39/f39/f35+fn9/f39/f39/f39/f35+fn9/f39/f39/f39/f35+fn9/f39/f39/f39/f39/fn5+f39/f39/f39/f39/f39+fn5/f39/f39/f39/f39/f35+fn9/f39/f39/f39/f39/f35+fn9/f39/f39/f39/f39/f35+fn5/f39/f39/f39/f39/f39+fn5+f39/f39/f39/f39/f39/fn5+fn9/f39/f39/f39/f39/f39+fn5+f39/f39/f39/f39/f39/f35+fn5/f39/f39/f39/f39/f39/f35+fn5/f39/f39/f39/f39/f39/f35+fn5/f39/f39/f39/');
+                audio.play();
+            } catch (e) {
+                console.log('Could not play sound');
+            }
+        }
+
+        // ============================================
+        // Location Filter
+        // ============================================
+        document.getElementById('locationSelect').addEventListener('change', (e) => {
+            selectedLocation = e.target.value;
+            renderOrders();
+        });
+
+        // ============================================
+        // Update wait times every minute
+        // ============================================
+        setInterval(() => {
+            renderOrders();
+        }, 60000);
+
+        // ============================================
+        // Initialize
+        // ============================================
+        async function init() {
+            await loadLocations();
+            await loadOrders();
+            startPolling();
+        }
+
+        init();
+    </script>
+</body>
+</html>
