@@ -100,6 +100,8 @@ const CollinaDashboard = () => {
   const [categoryData, setCategoryData] = useState([]);
   const [topProducts, setTopProducts] = useState([]);
   const [trendData, setTrendData] = useState([]);
+  const [channelData, setChannelData] = useState([]);
+  const [fulfillmentData, setFulfillmentData] = useState([]);
 
   // Color palette
   const colors = {
@@ -364,6 +366,93 @@ const CollinaDashboard = () => {
         };
       });
     setTopProducts(topProds);
+    
+    // Channel data (Wolt, eBar, Gloria, Food Truck)
+    const channelConfig = {
+      'wolt': { name: 'Wolt', color: '#06B6D4', icon: '🛵' },
+      'ebar': { name: 'eBar', color: '#F59E0B', icon: '📱' },
+      'gloria': { name: 'Gloria', color: '#EC4899', icon: '🍽️' },
+      'food truck': { name: 'Food Truck', color: '#22C55E', icon: '🚚' },
+      'foodtruck': { name: 'Food Truck', color: '#22C55E', icon: '🚚' },
+      'other': { name: 'Other', color: '#6B7280', icon: '📦' },
+    };
+    
+    const channelStats = {};
+    validOrders.forEach(o => {
+      const provider = (o.provider || o.raw_payload?.provider || 'other').toLowerCase();
+      let channelKey = 'other';
+      for (const key of Object.keys(channelConfig)) {
+        if (provider.includes(key)) {
+          channelKey = key;
+          break;
+        }
+      }
+      if (!channelStats[channelKey]) {
+        const config = channelConfig[channelKey] || channelConfig['other'];
+        channelStats[channelKey] = { 
+          key: channelKey, 
+          name: config.name, 
+          color: config.color, 
+          icon: config.icon,
+          orders: 0, 
+          revenue: 0 
+        };
+      }
+      channelStats[channelKey].orders++;
+      channelStats[channelKey].revenue += getOrderTotal(o);
+    });
+    setChannelData(Object.values(channelStats).sort((a, b) => b.revenue - a.revenue));
+    
+    // Fulfillment data (Delivery, Pickup, In-house)
+    const fulfillmentConfig = {
+      'delivery': { name: 'Delivery', color: '#3B82F6', icon: '🚚' },
+      'pickup': { name: 'Pickup', color: '#F59E0B', icon: '🏃' },
+      'inhouse': { name: 'In-house', color: '#22C55E', icon: '🍽️' },
+      'dine_in': { name: 'In-house', color: '#22C55E', icon: '🍽️' },
+      'takeaway': { name: 'Pickup', color: '#F59E0B', icon: '🏃' },
+    };
+    
+    const fulfillmentStats = {};
+    validOrders.forEach(o => {
+      // Try to determine fulfillment type from various fields
+      let fulfillType = (o.order_type || o.fulfillment_type || o.raw_payload?.orderType || o.raw_payload?.fulfillmentType || '').toLowerCase();
+      
+      // If no explicit type, infer from provider
+      if (!fulfillType) {
+        const provider = (o.provider || '').toLowerCase();
+        if (provider === 'wolt' || provider === 'gloria') {
+          fulfillType = 'delivery';
+        } else if (provider === 'ebar') {
+          // eBar can be pickup or inhouse - check for table number
+          fulfillType = o.table_number || o.raw_payload?.tableNumber ? 'inhouse' : 'pickup';
+        } else {
+          fulfillType = 'delivery'; // default
+        }
+      }
+      
+      // Normalize fulfillment type
+      let normalizedType = 'delivery';
+      if (fulfillType.includes('pickup') || fulfillType.includes('takeaway') || fulfillType.includes('take_away')) {
+        normalizedType = 'pickup';
+      } else if (fulfillType.includes('inhouse') || fulfillType.includes('dine') || fulfillType.includes('in_house') || fulfillType.includes('in-house')) {
+        normalizedType = 'inhouse';
+      }
+      
+      if (!fulfillmentStats[normalizedType]) {
+        const config = fulfillmentConfig[normalizedType] || fulfillmentConfig['delivery'];
+        fulfillmentStats[normalizedType] = { 
+          key: normalizedType, 
+          name: config.name, 
+          color: config.color, 
+          icon: config.icon,
+          orders: 0, 
+          revenue: 0 
+        };
+      }
+      fulfillmentStats[normalizedType].orders++;
+      fulfillmentStats[normalizedType].revenue += getOrderTotal(o);
+    });
+    setFulfillmentData(Object.values(fulfillmentStats).sort((a, b) => b.revenue - a.revenue));
   }
 
   function findMargin(productName, marginMap) {
@@ -778,6 +867,168 @@ const CollinaDashboard = () => {
                 </div>
               );
             })}
+          </div>
+        </div>
+
+        {/* Channels & Fulfillment */}
+        <div className="two-col-grid" style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: '24px',
+          marginBottom: '24px',
+        }}>
+          {/* Sales Channels */}
+          <div style={{
+            background: colors.card,
+            borderRadius: '16px',
+            border: `1px solid ${colors.border}`,
+            padding: 'clamp(16px, 3vw, 24px)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+              <IconBox color={colors.cyan}>🛒</IconBox>
+              <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '18px', fontWeight: 600 }}>
+                Sales Channels
+              </h2>
+            </div>
+            
+            {/* Pie-style visualization */}
+            <div style={{ display: 'flex', gap: '20px', marginBottom: '16px' }}>
+              <div style={{ 
+                width: '120px', 
+                height: '120px', 
+                borderRadius: '50%',
+                background: `conic-gradient(${channelData.map((ch, i) => {
+                  const startPct = channelData.slice(0, i).reduce((sum, c) => sum + (c.revenue / stats.revenue * 100), 0);
+                  const endPct = startPct + (ch.revenue / stats.revenue * 100);
+                  return `${ch.color} ${startPct}% ${endPct}%`;
+                }).join(', ')})`,
+                flexShrink: 0,
+              }} />
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '6px' }}>
+                {channelData.map((ch, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ width: '12px', height: '12px', borderRadius: '3px', background: ch.color }} />
+                    <span style={{ fontSize: '13px' }}>{ch.icon} {ch.name}</span>
+                    <span style={{ marginLeft: 'auto', fontWeight: 600, fontSize: '13px' }}>
+                      {stats.revenue > 0 ? ((ch.revenue / stats.revenue) * 100).toFixed(1) : 0}%
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            {/* Details table */}
+            <div style={{ borderTop: `1px solid ${colors.borderSubtle}`, paddingTop: '12px' }}>
+              {channelData.map((ch, i) => (
+                <div key={i} style={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  alignItems: 'center',
+                  padding: '8px 0',
+                  borderBottom: i < channelData.length - 1 ? `1px solid ${colors.borderSubtle}` : 'none',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '16px' }}>{ch.icon}</span>
+                    <span style={{ fontWeight: 500 }}>{ch.name}</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                    <div style={{ textAlign: 'right' }}>
+                      <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '14px' }}>
+                        {(ch.revenue / 1000).toFixed(1)}K
+                      </p>
+                      <p style={{ color: colors.textMuted, fontSize: '11px' }}>{ch.orders} orders</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Fulfillment Type */}
+          <div style={{
+            background: colors.card,
+            borderRadius: '16px',
+            border: `1px solid ${colors.border}`,
+            padding: 'clamp(16px, 3vw, 24px)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+              <IconBox color={colors.info}>📦</IconBox>
+              <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '18px', fontWeight: 600 }}>
+                Fulfillment Type
+              </h2>
+            </div>
+            
+            {/* Horizontal bar visualization */}
+            <div style={{ marginBottom: '20px' }}>
+              <div style={{ 
+                display: 'flex', 
+                height: '32px', 
+                borderRadius: '8px', 
+                overflow: 'hidden',
+                marginBottom: '8px',
+              }}>
+                {fulfillmentData.map((ft, i) => {
+                  const pct = stats.revenue > 0 ? (ft.revenue / stats.revenue) * 100 : 0;
+                  return (
+                    <div key={i} style={{
+                      width: `${pct}%`,
+                      background: ft.color,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      minWidth: pct > 10 ? 'auto' : '0',
+                    }}>
+                      {pct > 15 && (
+                        <span style={{ color: 'white', fontSize: '12px', fontWeight: 600 }}>
+                          {ft.icon} {pct.toFixed(0)}%
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              <div style={{ display: 'flex', gap: '16px', justifyContent: 'center' }}>
+                {fulfillmentData.map((ft, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <div style={{ width: '10px', height: '10px', borderRadius: '2px', background: ft.color }} />
+                    <span style={{ fontSize: '12px', color: colors.textSecondary }}>{ft.name}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            {/* Cards for each fulfillment type */}
+            <div style={{ display: 'flex', gap: '12px' }}>
+              {fulfillmentData.map((ft, i) => (
+                <div key={i} style={{
+                  flex: 1,
+                  background: colors.elevated,
+                  borderRadius: '10px',
+                  padding: '16px',
+                  textAlign: 'center',
+                  borderTop: `3px solid ${ft.color}`,
+                }}>
+                  <span style={{ fontSize: '24px' }}>{ft.icon}</span>
+                  <p style={{ fontWeight: 600, marginTop: '8px', marginBottom: '4px' }}>{ft.name}</p>
+                  <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '20px', color: ft.color }}>
+                    {(ft.revenue / 1000).toFixed(1)}K
+                  </p>
+                  <p style={{ color: colors.textMuted, fontSize: '12px' }}>{ft.orders} orders</p>
+                  <p style={{ 
+                    background: `${ft.color}20`, 
+                    color: ft.color, 
+                    padding: '4px 8px', 
+                    borderRadius: '6px', 
+                    fontSize: '12px', 
+                    fontWeight: 600,
+                    marginTop: '8px',
+                    display: 'inline-block',
+                  }}>
+                    {stats.revenue > 0 ? ((ft.revenue / stats.revenue) * 100).toFixed(1) : 0}%
+                  </p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
