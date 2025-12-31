@@ -114,21 +114,23 @@ const CollinaDashboard = () => {
   const [heatmapData, setHeatmapData] = useState({ locations: [], hours: [], data: [] });
   const [lastUpdated, setLastUpdated] = useState(null);
   
-  // Sidebar and filters
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  // Filters (empty = no filtering)
   const [filters, setFilters] = useState({
-    categories: [], // empty = all selected
+    categories: [],
     locations: [],
     channels: [],
     hours: [],
   });
   
-  // Available filter options
+  // Sidebar
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  
+  // Filter options
   const filterOptions = {
     categories: [
-      { id: 'burger', name: 'Burgers & Combos', icon: '🍔' },
+      { id: 'burger', name: 'Burgers', icon: '🍔' },
       { id: 'pancake', name: 'Pancakes', icon: '🥞' },
-      { id: 'cooked', name: 'Cooked Meals', icon: '🍲' },
+      { id: 'cooked', name: 'Cooked', icon: '🍲' },
       { id: 'bakery', name: 'Bakery', icon: '🥐' },
       { id: 'sides', name: 'Sides', icon: '🍟' },
       { id: 'drinks', name: 'Drinks', icon: '🥤' },
@@ -139,7 +141,7 @@ const CollinaDashboard = () => {
       { id: 'gloria', name: 'Gloria', icon: '🍽️' },
       { id: 'foodtruck', name: 'Food Truck', icon: '🚚' },
     ],
-    hours: Array.from({ length: 14 }, (_, i) => ({ id: i + 10, name: `${i + 10}:00` })),
+    hours: Array.from({ length: 14 }, (_, i) => ({ id: i + 10, name: (i + 10) + ':00' })),
   };
 
   // Color palette
@@ -188,51 +190,50 @@ const CollinaDashboard = () => {
   const WOLT_FEE = 0.118; // 11.8%
   const DEFAULT_MARGIN = 0.75; // 75% default margin if not found in table
 
-  // Toggle filter selection
+  // Filter helpers
   function toggleFilter(type, id) {
-    setFilters(prev => {
-      const current = prev[type];
-      const newSelection = current.includes(id)
-        ? current.filter(x => x !== id)
-        : [...current, id];
-      return { ...prev, [type]: newSelection };
+    setFilters(function(prev) {
+      var current = prev[type];
+      var newSelection = current.includes(id)
+        ? current.filter(function(x) { return x !== id; })
+        : current.concat([id]);
+      var result = {};
+      result.categories = prev.categories;
+      result.locations = prev.locations;
+      result.channels = prev.channels;
+      result.hours = prev.hours;
+      result[type] = newSelection;
+      return result;
     });
   }
   
-  // Clear all filters
   function clearFilters() {
     setFilters({ categories: [], locations: [], channels: [], hours: [] });
   }
   
-  // Check if any filters are active
-  const hasActiveFilters = filters.categories.length > 0 || filters.locations.length > 0 || 
-                           filters.channels.length > 0 || filters.hours.length > 0;
+  var hasActiveFilters = filters.categories.length > 0 || filters.locations.length > 0 || 
+                         filters.channels.length > 0 || filters.hours.length > 0;
 
-  // Get location options from loaded data
-  const locationOptions = Object.entries(locations).map(([id, name]) => ({
-    id,
-    name: name.replace('Collina ', '').replace(' B.Brdo', ''),
-    fullName: name,
-  }));
+  var locationOptions = Object.entries(locations).map(function(entry) {
+    return {
+      id: entry[0],
+      name: entry[1].replace('Collina ', '').replace(' B.Brdo', ''),
+    };
+  });
 
   // Load data on mount and date change, auto-refresh every 10 seconds
   useEffect(() => {
     loadData();
-    
-    // Auto-refresh every 10 seconds
-    const interval = setInterval(() => {
-      loadData(true); // silent refresh (no loading spinner)
-    }, 10000);
-    
+    const interval = setInterval(() => { loadData(true); }, 10000);
     return () => clearInterval(interval);
   }, [selectedDate]);
 
-  // Re-process orders when filters change
+  // Re-process orders when orders, filters, locations or margins change
   useEffect(() => {
     if (orders.length > 0 && Object.keys(locations).length > 0) {
       processOrders(orders, locations, margins);
     }
-  }, [filters]);
+  }, [orders, filters, locations, margins]);
 
   async function loadData(silent = false) {
     if (!silent) setLoading(true);
@@ -265,7 +266,7 @@ const CollinaDashboard = () => {
 
       if (ordersData && Array.isArray(ordersData)) {
         setOrders(ordersData);
-        processOrders(ordersData, locMap, marginMap);
+        // Don't call processOrders here - let the useEffect handle it
       }
 
       // Load 14-day trend
@@ -292,28 +293,51 @@ const CollinaDashboard = () => {
     // Filter out canceled orders
     let validOrders = ordersArr.filter(o => ![8, 9, 11].includes(o.status));
     
-    // Apply location filter
+    // Apply location filter - compare as strings
     if (filters.locations.length > 0) {
-      validOrders = validOrders.filter(o => filters.locations.includes(String(o.company_id)));
+      validOrders = validOrders.filter(function(o) {
+        var companyId = String(o.company_id);
+        for (var i = 0; i < filters.locations.length; i++) {
+          if (String(filters.locations[i]) === companyId) return true;
+        }
+        return false;
+      });
     }
     
     // Apply channel filter
     if (filters.channels.length > 0) {
-      validOrders = validOrders.filter(o => {
-        const provider = (o.provider || '').toLowerCase();
-        if (filters.channels.includes('wolt') && provider.includes('wolt')) return true;
-        if (filters.channels.includes('ebar') && (provider.includes('ebar') || provider.includes('emeni'))) return true;
-        if (filters.channels.includes('gloria') && provider.includes('gloria')) return true;
-        if (filters.channels.includes('foodtruck') && (provider.includes('food') || provider.includes('truck'))) return true;
+      validOrders = validOrders.filter(function(o) {
+        var provider = (o.provider || '').toLowerCase();
+        if (filters.channels.indexOf('wolt') >= 0 && provider.indexOf('wolt') >= 0) return true;
+        if (filters.channels.indexOf('ebar') >= 0 && (provider.indexOf('ebar') >= 0 || provider.indexOf('emeni') >= 0)) return true;
+        if (filters.channels.indexOf('gloria') >= 0 && provider.indexOf('gloria') >= 0) return true;
+        if (filters.channels.indexOf('foodtruck') >= 0 && (provider.indexOf('food') >= 0 || provider.indexOf('truck') >= 0)) return true;
         return false;
       });
     }
     
     // Apply hour filter
     if (filters.hours.length > 0) {
-      validOrders = validOrders.filter(o => {
-        const hour = new Date(o.created_at).getHours();
-        return filters.hours.includes(hour);
+      validOrders = validOrders.filter(function(o) {
+        var hour = new Date(o.created_at).getHours();
+        return filters.hours.indexOf(hour) >= 0;
+      });
+    }
+    
+    // Apply category filter - keep orders that have at least one item in selected categories
+    if (filters.categories.length > 0) {
+      validOrders = validOrders.filter(function(o) {
+        var items = o.items || [];
+        if (items.length === 0 && o.raw_payload && o.raw_payload.items) {
+          items = o.raw_payload.items;
+        }
+        for (var i = 0; i < items.length; i++) {
+          var itemCategory = classifyItem(items[i].name || '');
+          if (filters.categories.indexOf(itemCategory) >= 0) {
+            return true;
+          }
+        }
+        return false;
       });
     }
     
@@ -1008,6 +1032,7 @@ const CollinaDashboard = () => {
   const yesterdayRevenue = trendData.length > 1 ? trendData[trendData.length - 2]?.revenue || 0 : 0;
   const revenueTrend = yesterdayRevenue > 0 ? ((stats.revenue - yesterdayRevenue) / yesterdayRevenue) * 100 : 0;
 
+
   return (
     <div style={{
       minHeight: '100vh',
@@ -1029,228 +1054,106 @@ const CollinaDashboard = () => {
           }
           
           .sidebar-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 998;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s ease;
+            position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+            z-index: 998; opacity: 0; pointer-events: none; transition: opacity 0.3s;
           }
-          .sidebar-overlay.open {
-            opacity: 1;
-            pointer-events: auto;
-          }
+          .sidebar-overlay.open { opacity: 1; pointer-events: auto; }
           .sidebar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 320px;
-            height: 100vh;
-            background: #1A1F2E;
-            border-right: 1px solid rgba(255, 255, 255, 0.05);
-            z-index: 999;
-            transform: translateX(-100%);
-            transition: transform 0.3s ease;
-            overflow-y: auto;
+            position: fixed; top: 0; left: 0; width: 300px; height: 100vh;
+            background: #1A1F2E; z-index: 999; transform: translateX(-100%);
+            transition: transform 0.3s; padding: 20px; overflow-y: auto;
           }
-          .sidebar.open {
-            transform: translateX(0);
-          }
-          .filter-checkbox {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px 12px;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: background 0.15s ease;
-          }
-          .filter-checkbox:hover {
-            background: #252232;
-          }
-          .filter-checkbox.selected {
-            background: rgba(139, 92, 246, 0.15);
-          }
-          .checkbox-box {
-            width: 20px;
-            height: 20px;
-            border: 2px solid #2A2735;
-            border-radius: 4px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.15s ease;
-          }
-          .checkbox-box.checked {
-            background: #8B5CF6;
-            border-color: #8B5CF6;
-          }
+          .sidebar.open { transform: translateX(0); }
         `}
       </style>
       
       {/* Sidebar Overlay */}
       <div 
-        className={`sidebar-overlay ${sidebarOpen ? 'open' : ''}`}
-        onClick={() => setSidebarOpen(false)}
+        className={sidebarOpen ? 'sidebar-overlay open' : 'sidebar-overlay'}
+        onClick={function() { setSidebarOpen(false); }}
       />
       
       {/* Sidebar */}
-      <div className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
-        <div style={{ padding: '20px' }}>
-          {/* Sidebar Header */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-            <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '20px', fontWeight: 600 }}>
-              🎛️ Filters
-            </h2>
-            <button
-              onClick={() => setSidebarOpen(false)}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: colors.textSecondary,
-                fontSize: '24px',
-                cursor: 'pointer',
-                padding: '4px',
-              }}
+      <div className={sidebarOpen ? 'sidebar open' : 'sidebar'}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
+          <h2 style={{ fontSize: '18px' }}>🎛️ Filters</h2>
+          <button onClick={function() { setSidebarOpen(false); }} style={{ background: 'none', border: 'none', color: 'white', fontSize: '20px', cursor: 'pointer' }}>✕</button>
+        </div>
+        
+        {hasActiveFilters && (
+          <button
+            onClick={clearFilters}
+            style={{ width: '100%', padding: '10px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '8px', color: '#EF4444', fontSize: '13px', fontWeight: 600, cursor: 'pointer', marginBottom: '20px' }}
+          >
+            Clear All Filters
+          </button>
+        )}
+        
+        <h3 style={{ fontSize: '11px', color: '#888', marginBottom: '10px', letterSpacing: '0.5px' }}>📍 LOCATIONS</h3>
+        {locationOptions.map(function(loc) {
+          var isSelected = filters.locations.includes(loc.id);
+          return (
+            <div 
+              key={loc.id}
+              onClick={function() { toggleFilter('locations', loc.id); }}
+              style={{ padding: '10px', background: isSelected ? 'rgba(139,92,246,0.2)' : 'transparent', borderRadius: '8px', cursor: 'pointer', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '10px' }}
             >
-              ✕
-            </button>
-          </div>
-          
-          {/* Clear filters button */}
-          {hasActiveFilters && (
-            <button
-              onClick={clearFilters}
-              style={{
-                width: '100%',
-                padding: '10px',
-                background: 'rgba(239, 68, 68, 0.1)',
-                border: '1px solid rgba(239, 68, 68, 0.3)',
-                borderRadius: '8px',
-                color: colors.error,
-                fontSize: '13px',
-                fontWeight: 600,
-                cursor: 'pointer',
-                marginBottom: '20px',
-              }}
-            >
-              Clear All Filters
-            </button>
-          )}
-          
-          {/* Locations Filter */}
-          <div style={{ marginBottom: '24px' }}>
-            <h3 style={{ 
-              fontSize: '12px', 
-              fontWeight: 600, 
-              color: colors.textMuted, 
-              textTransform: 'uppercase', 
-              letterSpacing: '0.5px',
-              marginBottom: '12px',
-            }}>
-              📍 Locations
-            </h3>
-            {locationOptions.map(loc => (
-              <div
-                key={loc.id}
-                className={`filter-checkbox ${filters.locations.includes(loc.id) ? 'selected' : ''}`}
-                onClick={() => toggleFilter('locations', loc.id)}
-              >
-                <div className={`checkbox-box ${filters.locations.includes(loc.id) ? 'checked' : ''}`}>
-                  {filters.locations.includes(loc.id) && <span style={{ color: 'white', fontSize: '12px' }}>✓</span>}
-                </div>
-                <span>{loc.name}</span>
+              <div style={{ width: '18px', height: '18px', borderRadius: '4px', border: '2px solid #8B5CF6', background: isSelected ? '#8B5CF6' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {isSelected && <span style={{ fontSize: '12px' }}>✓</span>}
               </div>
-            ))}
-          </div>
-          
-          {/* Channels Filter */}
-          <div style={{ marginBottom: '24px' }}>
-            <h3 style={{ 
-              fontSize: '12px', 
-              fontWeight: 600, 
-              color: colors.textMuted, 
-              textTransform: 'uppercase', 
-              letterSpacing: '0.5px',
-              marginBottom: '12px',
-            }}>
-              🛒 Sales Channels
-            </h3>
-            {filterOptions.channels.map(ch => (
-              <div
-                key={ch.id}
-                className={`filter-checkbox ${filters.channels.includes(ch.id) ? 'selected' : ''}`}
-                onClick={() => toggleFilter('channels', ch.id)}
-              >
-                <div className={`checkbox-box ${filters.channels.includes(ch.id) ? 'checked' : ''}`}>
-                  {filters.channels.includes(ch.id) && <span style={{ color: 'white', fontSize: '12px' }}>✓</span>}
-                </div>
-                <span>{ch.icon} {ch.name}</span>
-              </div>
-            ))}
-          </div>
-          
-          {/* Categories Filter */}
-          <div style={{ marginBottom: '24px' }}>
-            <h3 style={{ 
-              fontSize: '12px', 
-              fontWeight: 600, 
-              color: colors.textMuted, 
-              textTransform: 'uppercase', 
-              letterSpacing: '0.5px',
-              marginBottom: '12px',
-            }}>
-              🍽️ Categories
-            </h3>
-            {filterOptions.categories.map(cat => (
-              <div
-                key={cat.id}
-                className={`filter-checkbox ${filters.categories.includes(cat.id) ? 'selected' : ''}`}
-                onClick={() => toggleFilter('categories', cat.id)}
-              >
-                <div className={`checkbox-box ${filters.categories.includes(cat.id) ? 'checked' : ''}`}>
-                  {filters.categories.includes(cat.id) && <span style={{ color: 'white', fontSize: '12px' }}>✓</span>}
-                </div>
-                <span>{cat.icon} {cat.name}</span>
-              </div>
-            ))}
-          </div>
-          
-          {/* Hours Filter */}
-          <div style={{ marginBottom: '24px' }}>
-            <h3 style={{ 
-              fontSize: '12px', 
-              fontWeight: 600, 
-              color: colors.textMuted, 
-              textTransform: 'uppercase', 
-              letterSpacing: '0.5px',
-              marginBottom: '12px',
-            }}>
-              🕐 Hours
-            </h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
-              {filterOptions.hours.map(h => (
-                <div
-                  key={h.id}
-                  onClick={() => toggleFilter('hours', h.id)}
-                  style={{
-                    padding: '8px 4px',
-                    borderRadius: '6px',
-                    textAlign: 'center',
-                    fontSize: '12px',
-                    fontWeight: 500,
-                    cursor: 'pointer',
-                    background: filters.hours.includes(h.id) ? colors.purple : colors.elevated,
-                    color: filters.hours.includes(h.id) ? 'white' : colors.textSecondary,
-                    border: `1px solid ${filters.hours.includes(h.id) ? colors.purple : colors.borderSubtle}`,
-                  }}
-                >
-                  {h.id}h
-                </div>
-              ))}
+              {loc.name}
             </div>
-          </div>
+          );
+        })}
+        
+        <h3 style={{ fontSize: '11px', color: '#888', marginTop: '20px', marginBottom: '10px', letterSpacing: '0.5px' }}>🛒 CHANNELS</h3>
+        {filterOptions.channels.map(function(ch) {
+          var isSelected = filters.channels.includes(ch.id);
+          return (
+            <div 
+              key={ch.id}
+              onClick={function() { toggleFilter('channels', ch.id); }}
+              style={{ padding: '10px', background: isSelected ? 'rgba(139,92,246,0.2)' : 'transparent', borderRadius: '8px', cursor: 'pointer', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '10px' }}
+            >
+              <div style={{ width: '18px', height: '18px', borderRadius: '4px', border: '2px solid #8B5CF6', background: isSelected ? '#8B5CF6' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {isSelected && <span style={{ fontSize: '12px' }}>✓</span>}
+              </div>
+              {ch.icon} {ch.name}
+            </div>
+          );
+        })}
+        
+        <h3 style={{ fontSize: '11px', color: '#888', marginTop: '20px', marginBottom: '10px', letterSpacing: '0.5px' }}>🍽️ CATEGORIES</h3>
+        {filterOptions.categories.map(function(cat) {
+          var isSelected = filters.categories.includes(cat.id);
+          return (
+            <div 
+              key={cat.id}
+              onClick={function() { toggleFilter('categories', cat.id); }}
+              style={{ padding: '10px', background: isSelected ? 'rgba(139,92,246,0.2)' : 'transparent', borderRadius: '8px', cursor: 'pointer', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '10px' }}
+            >
+              <div style={{ width: '18px', height: '18px', borderRadius: '4px', border: '2px solid #8B5CF6', background: isSelected ? '#8B5CF6' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {isSelected && <span style={{ fontSize: '12px' }}>✓</span>}
+              </div>
+              {cat.icon} {cat.name}
+            </div>
+          );
+        })}
+        
+        <h3 style={{ fontSize: '11px', color: '#888', marginTop: '20px', marginBottom: '10px', letterSpacing: '0.5px' }}>🕐 HOURS</h3>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '4px' }}>
+          {filterOptions.hours.map(function(h) {
+            var isSelected = filters.hours.includes(h.id);
+            return (
+              <div 
+                key={h.id}
+                onClick={function() { toggleFilter('hours', h.id); }}
+                style={{ padding: '8px 4px', background: isSelected ? '#8B5CF6' : '#252232', borderRadius: '6px', textAlign: 'center', fontSize: '11px', cursor: 'pointer', color: isSelected ? 'white' : '#888' }}
+              >
+                {h.id}h
+              </div>
+            );
+          })}
         </div>
       </div>
       
@@ -1261,38 +1164,14 @@ const CollinaDashboard = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             {/* Hamburger Menu */}
             <button
-              onClick={() => setSidebarOpen(true)}
-              style={{
-                background: colors.card,
-                border: `1px solid ${colors.border}`,
-                borderRadius: '10px',
-                padding: '10px 12px',
-                cursor: 'pointer',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '4px',
-                position: 'relative',
-              }}
+              onClick={function() { setSidebarOpen(true); }}
+              style={{ background: '#1A1F2E', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', padding: '10px 12px', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '4px', position: 'relative' }}
             >
-              <div style={{ width: '20px', height: '2px', background: colors.textSecondary, borderRadius: '1px' }} />
-              <div style={{ width: '20px', height: '2px', background: colors.textSecondary, borderRadius: '1px' }} />
-              <div style={{ width: '20px', height: '2px', background: colors.textSecondary, borderRadius: '1px' }} />
+              <div style={{ width: '20px', height: '2px', background: '#888', borderRadius: '1px' }} />
+              <div style={{ width: '20px', height: '2px', background: '#888', borderRadius: '1px' }} />
+              <div style={{ width: '20px', height: '2px', background: '#888', borderRadius: '1px' }} />
               {hasActiveFilters && (
-                <div style={{
-                  position: 'absolute',
-                  top: '-4px',
-                  right: '-4px',
-                  width: '16px',
-                  height: '16px',
-                  borderRadius: '50%',
-                  background: colors.purple,
-                  color: 'white',
-                  fontSize: '10px',
-                  fontWeight: 700,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}>
+                <div style={{ position: 'absolute', top: '-4px', right: '-4px', width: '16px', height: '16px', borderRadius: '50%', background: '#8B5CF6', color: 'white', fontSize: '10px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   {filters.locations.length + filters.channels.length + filters.categories.length + filters.hours.length}
                 </div>
               )}
@@ -1311,10 +1190,10 @@ const CollinaDashboard = () => {
               </h1>
               <p style={{ color: colors.textSecondary, fontSize: '14px' }}>
                 {formatDate(selectedDate)}
-            </p>
+              </p>
+            </div>
           </div>
           <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-            {/* Live indicator */}
             <div style={{
               display: 'flex',
               alignItems: 'center',
@@ -1329,7 +1208,6 @@ const CollinaDashboard = () => {
                 height: '8px',
                 borderRadius: '50%',
                 background: colors.success,
-                animation: 'pulse 2s infinite',
               }} />
               <span style={{ color: colors.success, fontSize: '12px', fontWeight: 600 }}>LIVE</span>
               {lastUpdated && (
@@ -1344,7 +1222,7 @@ const CollinaDashboard = () => {
               onChange={(e) => setSelectedDate(e.target.value)}
               style={{
                 background: colors.card,
-                border: `1px solid ${colors.border}`,
+                border: '1px solid ' + colors.border,
                 borderRadius: '10px',
                 padding: '10px 16px',
                 color: colors.textPrimary,
@@ -1353,107 +1231,6 @@ const CollinaDashboard = () => {
             />
           </div>
         </div>
-
-        {/* Active Filters Bar */}
-        {hasActiveFilters && (
-          <div style={{
-            background: 'rgba(139, 92, 246, 0.1)',
-            border: '1px solid rgba(139, 92, 246, 0.3)',
-            borderRadius: '10px',
-            padding: '12px 16px',
-            marginBottom: '20px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-            flexWrap: 'wrap',
-          }}>
-            <span style={{ color: colors.purple, fontSize: '12px', fontWeight: 600 }}>Active Filters:</span>
-            {filters.locations.map(id => {
-              const loc = locationOptions.find(l => l.id === id);
-              return loc ? (
-                <span key={id} style={{
-                  background: colors.purple,
-                  color: 'white',
-                  padding: '4px 10px',
-                  borderRadius: '12px',
-                  fontSize: '11px',
-                  fontWeight: 500,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                }}>
-                  📍 {loc.name}
-                  <span onClick={() => toggleFilter('locations', id)} style={{ cursor: 'pointer', opacity: 0.7 }}>✕</span>
-                </span>
-              ) : null;
-            })}
-            {filters.channels.map(id => {
-              const ch = filterOptions.channels.find(c => c.id === id);
-              return ch ? (
-                <span key={id} style={{
-                  background: colors.cyan,
-                  color: 'white',
-                  padding: '4px 10px',
-                  borderRadius: '12px',
-                  fontSize: '11px',
-                  fontWeight: 500,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                }}>
-                  {ch.icon} {ch.name}
-                  <span onClick={() => toggleFilter('channels', id)} style={{ cursor: 'pointer', opacity: 0.7 }}>✕</span>
-                </span>
-              ) : null;
-            })}
-            {filters.categories.map(id => {
-              const cat = filterOptions.categories.find(c => c.id === id);
-              return cat ? (
-                <span key={id} style={{
-                  background: colors.warning,
-                  color: '#000',
-                  padding: '4px 10px',
-                  borderRadius: '12px',
-                  fontSize: '11px',
-                  fontWeight: 500,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                }}>
-                  {cat.icon} {cat.name}
-                  <span onClick={() => toggleFilter('categories', id)} style={{ cursor: 'pointer', opacity: 0.7 }}>✕</span>
-                </span>
-              ) : null;
-            })}
-            {filters.hours.length > 0 && (
-              <span style={{
-                background: colors.info,
-                color: 'white',
-                padding: '4px 10px',
-                borderRadius: '12px',
-                fontSize: '11px',
-                fontWeight: 500,
-              }}>
-                🕐 {filters.hours.length} hours selected
-              </span>
-            )}
-            <button
-              onClick={clearFilters}
-              style={{
-                marginLeft: 'auto',
-                background: 'none',
-                border: 'none',
-                color: colors.error,
-                fontSize: '12px',
-                fontWeight: 600,
-                cursor: 'pointer',
-              }}
-            >
-              Clear All
-            </button>
-          </div>
-        )}
-
         {/* Main KPIs */}
         <div className="kpi-grid" style={{
           background: colors.card,
