@@ -1047,8 +1047,8 @@ const CollinaDashboard = () => {
             left: 0;
             width: 320px;
             height: 100vh;
-            background: ${colors.card};
-            border-right: 1px solid ${colors.border};
+            background: #1A1F2E;
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
             z-index: 999;
             transform: translateX(-100%);
             transition: transform 0.3s ease;
@@ -1067,7 +1067,7 @@ const CollinaDashboard = () => {
             transition: background 0.15s ease;
           }
           .filter-checkbox:hover {
-            background: ${colors.elevated};
+            background: #252232;
           }
           .filter-checkbox.selected {
             background: rgba(139, 92, 246, 0.15);
@@ -1075,7 +1075,7 @@ const CollinaDashboard = () => {
           .checkbox-box {
             width: 20px;
             height: 20px;
-            border: 2px solid ${colors.borderSubtle};
+            border: 2px solid #2A2735;
             border-radius: 4px;
             display: flex;
             align-items: center;
@@ -1083,8 +1083,8 @@ const CollinaDashboard = () => {
             transition: all 0.15s ease;
           }
           .checkbox-box.checked {
-            background: ${colors.purple};
-            border-color: ${colors.purple};
+            background: #8B5CF6;
+            border-color: #8B5CF6;
           }
         `}
       </style>
@@ -2183,7 +2183,7 @@ const CollinaDashboard = () => {
               <span style={{ color: colors.textMuted, fontSize: '11px', marginRight: '8px' }}>Order Placed</span>
               <div style={{ flex: 1, display: 'flex', height: '32px', borderRadius: '6px', overflow: 'hidden' }}>
                 {deliveryPerformance.total > 0 && (
-                  <>
+                  <React.Fragment>
                     <div style={{ 
                       width: `${(deliveryPerformance.avgPrep / deliveryPerformance.total) * 100}%`, 
                       background: colors.warning,
@@ -2217,7 +2217,7 @@ const CollinaDashboard = () => {
                         {deliveryPerformance.avgTransit.toFixed(1)}m
                       </span>
                     </div>
-                  </>
+                  </React.Fragment>
                 )}
               </div>
               <span style={{ color: colors.textMuted, fontSize: '11px', marginLeft: '8px' }}>Delivered</span>
