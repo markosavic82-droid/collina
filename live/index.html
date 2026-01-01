@@ -17,21 +17,77 @@
       background: #0f0f0f;
       color: #ffffff;
       min-height: 100vh;
-      padding: 20px;
+      padding: 15px 20px;
     }
 
     .header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 30px;
-      padding-bottom: 20px;
+      margin-bottom: 15px;
+      padding-bottom: 15px;
       border-bottom: 1px solid #333;
+      gap: 15px;
+      flex-wrap: nowrap;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .burger-btn {
+      background: #1a1a2e;
+      border: 1px solid #333;
+      border-radius: 8px;
+      color: #8B5CF6;
+      padding: 8px 10px;
+      cursor: pointer;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      position: relative;
+    }
+
+    .burger-btn:hover {
+      background: rgba(139, 92, 246, 0.2);
+      border-color: #8B5CF6;
+    }
+
+    .burger-btn .filter-badge {
+      position: absolute;
+      top: -5px;
+      right: -5px;
+      background: #ef4444;
+      color: #fff;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      font-size: 10px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .burger-btn .filter-badge.hidden {
+      display: none;
     }
 
     .header h1 {
-      font-size: 28px;
+      font-size: 22px;
       color: #8B5CF6;
+      white-space: nowrap;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      flex-shrink: 0;
     }
 
     .header .status {
@@ -77,110 +133,27 @@
       color: #fff;
     }
 
-    .filters-row {
-      display: flex;
-      align-items: center;
-      gap: 15px;
-    }
-
-    .filter-dropdown {
-      position: relative;
-    }
-
-    .filter-btn {
-      background: #1a1a1a;
-      border: 1px solid #333;
-      border-radius: 8px;
-      color: #fff;
-      padding: 8px 14px;
-      cursor: pointer;
-      font-size: 13px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      transition: all 0.2s;
-    }
-
-    .filter-btn:hover {
-      border-color: #8B5CF6;
-    }
-
-    .filter-count {
-      background: #8B5CF6;
-      color: #fff;
-      padding: 2px 8px;
-      border-radius: 10px;
-      font-size: 11px;
-    }
-
-    .dropdown-menu {
-      display: none;
-      position: absolute;
-      top: 100%;
-      left: 0;
-      background: #1a1a1a;
-      border: 1px solid #333;
-      border-radius: 8px;
-      min-width: 200px;
-      max-height: 300px;
-      overflow-y: auto;
-      z-index: 1000;
-      margin-top: 5px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-    }
-
-    .dropdown-menu.show {
-      display: block;
-    }
-
-    .dropdown-item {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 10px 14px;
-      cursor: pointer;
-      transition: background 0.2s;
-      font-size: 13px;
-    }
-
-    .dropdown-item:hover {
-      background: #252525;
-    }
-
-    .dropdown-item input[type="checkbox"] {
-      width: 16px;
-      height: 16px;
-      accent-color: #8B5CF6;
-      cursor: pointer;
-    }
-
-    .dropdown-divider {
-      height: 1px;
-      background: #333;
-      margin: 5px 0;
-    }
-
-    /* Status Filter Tabs */
+    /* Status Filter Tabs - Compact */
     .status-tabs {
       display: flex;
-      gap: 10px;
-      margin-bottom: 20px;
-      padding: 10px 0;
+      gap: 6px;
       overflow-x: auto;
+      flex-shrink: 0;
     }
 
     .status-tab {
       display: flex;
       align-items: center;
-      gap: 8px;
-      padding: 12px 20px;
+      gap: 5px;
+      padding: 6px 12px;
       background: #1a1a1a;
-      border: 2px solid #333;
-      border-radius: 12px;
+      border: 1px solid #333;
+      border-radius: 8px;
       color: #888;
       cursor: pointer;
       transition: all 0.2s;
       white-space: nowrap;
+      font-size: 12px;
     }
 
     .status-tab:hover {
@@ -195,19 +168,26 @@
     }
 
     .status-tab .tab-icon {
-      font-size: 18px;
+      font-size: 14px;
     }
 
     .status-tab .tab-label {
       font-weight: 500;
-      font-size: 14px;
+      font-size: 12px;
+      display: none;
+    }
+
+    @media (min-width: 1200px) {
+      .status-tab .tab-label {
+        display: inline;
+      }
     }
 
     .status-tab .tab-count {
       background: #333;
-      padding: 2px 10px;
-      border-radius: 12px;
-      font-size: 12px;
+      padding: 2px 6px;
+      border-radius: 8px;
+      font-size: 11px;
       font-weight: 600;
     }
 
@@ -229,6 +209,37 @@
     
     .status-tab[data-status="canceled"].active { border-color: #ef4444; }
     .status-tab[data-status="canceled"].active .tab-count { background: #ef4444; }
+
+    /* View Toggle - Compact */
+    .view-toggle {
+      display: flex;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    .view-btn {
+      padding: 6px 10px;
+      background: #1a1a1a;
+      border: 1px solid #333;
+      color: #888;
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.2s;
+    }
+
+    .view-btn:first-child {
+      border-radius: 8px 0 0 8px;
+    }
+
+    .view-btn:last-child {
+      border-radius: 0 8px 8px 0;
+    }
+
+    .view-btn.active {
+      background: #8B5CF6;
+      border-color: #8B5CF6;
+      color: white;
+    }
 
     /* Grid view for filtered orders */
     .orders-grid {
@@ -622,6 +633,56 @@
       color: #666;
     }
 
+    /* Prep Time Badge */
+    .prep-time-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      background: #1a1a2e;
+      border: 1px solid #333;
+    }
+    
+    .prep-time-badge.fast {
+      background: rgba(34, 197, 94, 0.15);
+      border-color: #22c55e;
+      color: #4ade80;
+    }
+    
+    .prep-time-badge.normal {
+      background: rgba(251, 191, 36, 0.15);
+      border-color: #f59e0b;
+      color: #fbbf24;
+    }
+    
+    .prep-time-badge.slow {
+      background: rgba(239, 68, 68, 0.15);
+      border-color: #ef4444;
+      color: #f87171;
+    }
+    
+    .prep-time-badge.pending {
+      color: #666;
+    }
+
+    .order-footer .prep-time-badge {
+      margin-left: auto;
+      margin-right: 10px;
+    }
+
+    .table-prep-time {
+      font-weight: 600;
+      font-size: 12px;
+    }
+    
+    .table-prep-time.fast { color: #4ade80; }
+    .table-prep-time.normal { color: #fbbf24; }
+    .table-prep-time.slow { color: #f87171; }
+    .table-prep-time.pending { color: #666; }
+
     /* Delivery Tracking Styles */
     .delivery-info {
       background: #1a1a2e;
@@ -690,6 +751,141 @@
     .last-updated {
       color: #666;
       font-size: 12px;
+    }
+
+    /* Sidebar Filters */
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 999;
+    }
+    
+    .sidebar-overlay.active {
+      display: block;
+    }
+    
+    .filters-sidebar {
+      position: fixed;
+      top: 0;
+      left: -350px;
+      width: 320px;
+      height: 100vh;
+      background: #1a1a2e;
+      border-right: 1px solid #333;
+      z-index: 1000;
+      transition: left 0.3s ease;
+      overflow-y: auto;
+      padding: 20px;
+    }
+    
+    .filters-sidebar.active {
+      left: 0;
+    }
+    
+    .sidebar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid #333;
+    }
+    
+    .sidebar-header h2 {
+      font-size: 18px;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .sidebar-close {
+      background: none;
+      border: none;
+      color: #888;
+      font-size: 24px;
+      cursor: pointer;
+      padding: 5px;
+      line-height: 1;
+    }
+    
+    .sidebar-close:hover {
+      color: #fff;
+    }
+    
+    .clear-filters-btn {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(135deg, #7f1d1d 0%, #991b1b 100%);
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-bottom: 25px;
+      transition: all 0.2s;
+    }
+    
+    .clear-filters-btn:hover {
+      background: linear-gradient(135deg, #991b1b 0%, #b91c1c 100%);
+    }
+    
+    .filter-section {
+      margin-bottom: 25px;
+    }
+    
+    .filter-section-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .filter-option {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 12px;
+      margin-bottom: 4px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .filter-option:hover {
+      background: rgba(139, 92, 246, 0.1);
+    }
+    
+    .filter-option.selected {
+      background: rgba(139, 92, 246, 0.2);
+      border: 1px solid #8B5CF6;
+    }
+    
+    .filter-option input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      accent-color: #8B5CF6;
+      cursor: pointer;
+    }
+    
+    .filter-option label {
+      flex: 1;
+      cursor: pointer;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
 
     /* Modal Styles */
@@ -957,102 +1153,110 @@
   </style>
 </head>
 <body>
+  <!-- Sidebar Overlay -->
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+  
+  <!-- Filters Sidebar (LEFT) -->
+  <div class="filters-sidebar" id="filtersSidebar">
+    <div class="sidebar-header">
+      <h2>🎚️ Filters</h2>
+      <button class="sidebar-close" onclick="toggleSidebar()">×</button>
+    </div>
+    
+    <button class="clear-filters-btn" onclick="clearAllFilters()">Clear All Filters</button>
+    
+    <div class="filter-section">
+      <div class="filter-section-title">📍 LOCATIONS</div>
+      <div id="sidebarLocationOptions"></div>
+    </div>
+    
+    <div class="filter-section">
+      <div class="filter-section-title">📱 CHANNELS</div>
+      <div class="filter-option">
+        <input type="checkbox" id="channel-wolt" value="wolt" checked onchange="updateChannelFilter()">
+        <label for="channel-wolt">🏃 Wolt</label>
+      </div>
+      <div class="filter-option">
+        <input type="checkbox" id="channel-ebar" value="ebar" checked onchange="updateChannelFilter()">
+        <label for="channel-ebar">📱 eBar</label>
+      </div>
+      <div class="filter-option">
+        <input type="checkbox" id="channel-gloriafood" value="gloriafood" checked onchange="updateChannelFilter()">
+        <label for="channel-gloriafood">🍽️ Gloria</label>
+      </div>
+      <div class="filter-option">
+        <input type="checkbox" id="channel-pult" value="pult" checked onchange="updateChannelFilter()">
+        <label for="channel-pult">🚚 Food Truck</label>
+      </div>
+    </div>
+  </div>
+
+  <!-- Single Line Header -->
   <div class="header">
-    <h1>🍔 Collina Orders</h1>
-    <div class="filters-row">
+    <div class="header-left">
+      <button class="burger-btn" onclick="toggleSidebar()">
+        ☰
+        <span class="filter-badge hidden" id="activeFiltersCount">0</span>
+      </button>
+      <h1>🍔 Collina Orders</h1>
       <div class="date-selector">
         <button class="date-btn" onclick="changeDate(-1)">◀</button>
         <input type="date" id="selectedDate" onchange="loadOrdersForDate()">
         <button class="date-btn" onclick="changeDate(1)">▶</button>
       </div>
-      
-      <div class="filter-dropdown">
-        <button class="filter-btn" onclick="toggleDropdown('locationDropdown')">
-          📍 Lokacije <span class="filter-count" id="locationCount">Sve</span>
-        </button>
-        <div class="dropdown-menu" id="locationDropdown">
-          <label class="dropdown-item">
-            <input type="checkbox" value="all" checked onchange="toggleAllLocations(this)"> Sve lokacije
-          </label>
-          <div class="dropdown-divider"></div>
-          <div id="locationOptions"></div>
-        </div>
-      </div>
-      
-      <div class="filter-dropdown">
-        <button class="filter-btn" onclick="toggleDropdown('channelDropdown')">
-          📱 Kanal <span class="filter-count" id="channelCount">Svi</span>
-        </button>
-        <div class="dropdown-menu" id="channelDropdown">
-          <label class="dropdown-item">
-            <input type="checkbox" value="all" checked onchange="toggleAllChannels(this)"> Svi kanali
-          </label>
-          <div class="dropdown-divider"></div>
-          <label class="dropdown-item">
-            <input type="checkbox" value="wolt" checked onchange="updateChannelFilter()"> 🟦 Wolt
-          </label>
-          <label class="dropdown-item">
-            <input type="checkbox" value="gloriafood" checked onchange="updateChannelFilter()"> 🟨 GloriaFood
-          </label>
-          <label class="dropdown-item">
-            <input type="checkbox" value="ebar" checked onchange="updateChannelFilter()"> 🟩 eBar
-          </label>
-          <label class="dropdown-item">
-            <input type="checkbox" value="pult" checked onchange="updateChannelFilter()"> 🟪 Pult
-          </label>
-        </div>
-      </div>
     </div>
     
-    <div class="status">
-      <div class="status-dot"></div>
-      <span>Live</span>
-      <span class="last-updated" id="lastUpdated">Loading...</span>
+    <!-- Status Filter Tabs (inline) -->
+    <div class="status-tabs">
+      <button class="status-tab active" data-status="all" onclick="setStatusFilter('all')">
+        <span class="tab-icon">📋</span>
+        <span class="tab-label">Sve</span>
+        <span class="tab-count" id="countAll">0</span>
+      </button>
+      <button class="status-tab" data-status="new" onclick="setStatusFilter('new')">
+        <span class="tab-icon">🆕</span>
+        <span class="tab-label">Novo</span>
+        <span class="tab-count" id="countNew">0</span>
+      </button>
+      <button class="status-tab" data-status="production" onclick="setStatusFilter('production')">
+        <span class="tab-icon">👨‍🍳</span>
+        <span class="tab-label">Priprema</span>
+        <span class="tab-count" id="countProduction">0</span>
+      </button>
+      <button class="status-tab" data-status="ready" onclick="setStatusFilter('ready')">
+        <span class="tab-icon">✅</span>
+        <span class="tab-label">Spremno</span>
+        <span class="tab-count" id="countReady">0</span>
+      </button>
+      <button class="status-tab" data-status="paid" onclick="setStatusFilter('paid')">
+        <span class="tab-icon">💰</span>
+        <span class="tab-label">Završeno</span>
+        <span class="tab-count" id="countPaid">0</span>
+      </button>
+      <button class="status-tab" data-status="canceled" onclick="setStatusFilter('canceled')">
+        <span class="tab-icon">❌</span>
+        <span class="tab-label">Otkazano</span>
+        <span class="tab-count" id="countCanceled">0</span>
+      </button>
     </div>
-  </div>
 
-  <!-- Status Filter Tabs -->
-  <div class="status-tabs">
-    <button class="status-tab active" data-status="all" onclick="setStatusFilter('all')">
-      <span class="tab-icon">📋</span>
-      <span class="tab-label">Sve</span>
-      <span class="tab-count" id="countAll">0</span>
-    </button>
-    <button class="status-tab" data-status="new" onclick="setStatusFilter('new')">
-      <span class="tab-icon">🆕</span>
-      <span class="tab-label">Novo</span>
-      <span class="tab-count" id="countNew">0</span>
-    </button>
-    <button class="status-tab" data-status="production" onclick="setStatusFilter('production')">
-      <span class="tab-icon">👨‍🍳</span>
-      <span class="tab-label">Priprema</span>
-      <span class="tab-count" id="countProduction">0</span>
-    </button>
-    <button class="status-tab" data-status="ready" onclick="setStatusFilter('ready')">
-      <span class="tab-icon">✅</span>
-      <span class="tab-label">Spremno / Dostava</span>
-      <span class="tab-count" id="countReady">0</span>
-    </button>
-    <button class="status-tab" data-status="paid" onclick="setStatusFilter('paid')">
-      <span class="tab-icon">💰</span>
-      <span class="tab-label">Završeno</span>
-      <span class="tab-count" id="countPaid">0</span>
-    </button>
-    <button class="status-tab" data-status="canceled" onclick="setStatusFilter('canceled')">
-      <span class="tab-icon">❌</span>
-      <span class="tab-label">Otkazano</span>
-      <span class="tab-count" id="countCanceled">0</span>
-    </button>
-  </div>
-
-  <!-- View Toggle -->
-  <div class="view-toggle">
-    <button class="view-btn active" data-view="cards" onclick="setViewMode('cards')">
-      <span>🃏</span> Kartice
-    </button>
-    <button class="view-btn" data-view="table" onclick="setViewMode('table')">
-      <span>📋</span> Tabela
-    </button>
+    <div class="header-right">
+      <!-- View Toggle -->
+      <div class="view-toggle">
+        <button class="view-btn active" data-view="cards" onclick="setViewMode('cards')">
+          <span>🃏</span>
+        </button>
+        <button class="view-btn" data-view="table" onclick="setViewMode('table')">
+          <span>📋</span>
+        </button>
+      </div>
+      
+      <div class="status">
+        <div class="status-dot"></div>
+        <span>Live</span>
+        <span class="last-updated" id="lastUpdated">Loading...</span>
+      </div>
+    </div>
   </div>
 
   <!-- Stats bar hidden, counts now in tabs -->
@@ -1094,6 +1298,7 @@
           <th>Stavke</th>
           <th>Ukupno</th>
           <th>Status</th>
+          <th>Priprema</th>
           <th>Dostava</th>
           <th>Vreme</th>
         </tr>
@@ -1208,77 +1413,97 @@
     // Filter Functions
     // ============================================
     function populateLocationFilter() {
-      const container = document.getElementById('locationOptions');
+      const container = document.getElementById('sidebarLocationOptions');
       container.innerHTML = '';
       
       Object.entries(locations).forEach(([id, name]) => {
-        const label = document.createElement('label');
-        label.className = 'dropdown-item';
-        label.innerHTML = `
-          <input type="checkbox" value="${id}" checked onchange="updateLocationFilter()"> ${name}
+        const div = document.createElement('div');
+        div.className = 'filter-option';
+        div.innerHTML = `
+          <input type="checkbox" id="loc-${id}" value="${id}" checked onchange="updateLocationFilter()">
+          <label for="loc-${id}">${name}</label>
         `;
-        container.appendChild(label);
+        container.appendChild(div);
       });
     }
-
-    function toggleDropdown(id) {
-      // Close all other dropdowns
-      document.querySelectorAll('.dropdown-menu').forEach(menu => {
-        if (menu.id !== id) menu.classList.remove('show');
-      });
-      // Toggle this one
-      document.getElementById(id).classList.toggle('show');
+    
+    function toggleSidebar() {
+      const sidebar = document.getElementById('filtersSidebar');
+      const overlay = document.getElementById('sidebarOverlay');
+      sidebar.classList.toggle('active');
+      overlay.classList.toggle('active');
     }
-
-    // Close dropdowns when clicking outside
-    document.addEventListener('click', (e) => {
-      if (!e.target.closest('.filter-dropdown')) {
-        document.querySelectorAll('.dropdown-menu').forEach(menu => {
-          menu.classList.remove('show');
-        });
+    
+    function clearAllFilters() {
+      // Reset all location checkboxes
+      document.querySelectorAll('#sidebarLocationOptions input[type="checkbox"]').forEach(cb => {
+        cb.checked = true;
+      });
+      // Reset all channel checkboxes
+      document.querySelectorAll('.filters-sidebar input[type="checkbox"]').forEach(cb => {
+        cb.checked = true;
+      });
+      
+      selectedLocations = new Set();
+      selectedChannels = new Set(['wolt', 'gloriafood', 'ebar', 'pult']);
+      updateActiveFiltersCount();
+      applyFilters();
+    }
+    
+    function updateActiveFiltersCount() {
+      let count = 0;
+      
+      // Count unchecked locations
+      const totalLocations = Object.keys(locations).length;
+      const checkedLocations = document.querySelectorAll('#sidebarLocationOptions input[type="checkbox"]:checked').length;
+      if (checkedLocations < totalLocations && checkedLocations > 0) {
+        count += (totalLocations - checkedLocations);
       }
-    });
+      
+      // Count unchecked channels
+      const totalChannels = 4;
+      const checkedChannels = document.querySelectorAll('.filters-sidebar input[id^="channel-"]:checked').length;
+      if (checkedChannels < totalChannels) {
+        count += (totalChannels - checkedChannels);
+      }
+      
+      const badge = document.getElementById('activeFiltersCount');
+      badge.textContent = count;
+      badge.classList.toggle('hidden', count === 0);
+    }
 
     function toggleAllLocations(checkbox) {
-      const checkboxes = document.querySelectorAll('#locationOptions input[type="checkbox"]');
+      const checkboxes = document.querySelectorAll('#sidebarLocationOptions input[type="checkbox"]');
       checkboxes.forEach(cb => cb.checked = checkbox.checked);
       updateLocationFilter();
     }
 
     function toggleAllChannels(checkbox) {
-      const checkboxes = document.querySelectorAll('#channelDropdown input[type="checkbox"]:not([value="all"])');
+      const checkboxes = document.querySelectorAll('.filters-sidebar input[id^="channel-"]');
       checkboxes.forEach(cb => cb.checked = checkbox.checked);
       updateChannelFilter();
     }
 
     function updateLocationFilter() {
-      const checkboxes = document.querySelectorAll('#locationOptions input[type="checkbox"]:checked');
-      selectedLocations = new Set(Array.from(checkboxes).map(cb => cb.value));
+      const checkboxes = document.querySelectorAll('#sidebarLocationOptions input[type="checkbox"]:checked');
+      const allCheckboxes = document.querySelectorAll('#sidebarLocationOptions input[type="checkbox"]');
       
-      // Update "all" checkbox state
-      const allCheckbox = document.querySelector('#locationDropdown input[value="all"]');
-      const totalLocations = document.querySelectorAll('#locationOptions input[type="checkbox"]').length;
-      allCheckbox.checked = selectedLocations.size === totalLocations;
+      if (checkboxes.length === allCheckboxes.length) {
+        // All selected = no filter
+        selectedLocations = new Set();
+      } else {
+        selectedLocations = new Set(Array.from(checkboxes).map(cb => cb.value));
+      }
       
-      // Update count display
-      const countEl = document.getElementById('locationCount');
-      countEl.textContent = selectedLocations.size === totalLocations ? 'Sve' : selectedLocations.size;
-      
+      updateActiveFiltersCount();
       applyFilters();
     }
 
     function updateChannelFilter() {
-      const checkboxes = document.querySelectorAll('#channelDropdown input[type="checkbox"]:checked:not([value="all"])');
+      const checkboxes = document.querySelectorAll('.filters-sidebar input[id^="channel-"]:checked');
       selectedChannels = new Set(Array.from(checkboxes).map(cb => cb.value));
       
-      // Update "all" checkbox state
-      const allCheckbox = document.querySelector('#channelDropdown input[value="all"]');
-      allCheckbox.checked = selectedChannels.size === 4;
-      
-      // Update count display
-      const countEl = document.getElementById('channelCount');
-      countEl.textContent = selectedChannels.size === 4 ? 'Svi' : selectedChannels.size;
-      
+      updateActiveFiltersCount();
       applyFilters();
     }
 
@@ -1425,8 +1650,79 @@
         .select('*')
         .in('order_id', orderIds);
 
+      // Fetch lifecycle data - use order_id from database (batch to avoid limits)
+      const orderIdsForLifecycle = orders.map(o => o.order_id);
+      
+      let lifecycleData = [];
+      if (orderIdsForLifecycle.length > 0) {
+        const batchSize = 100;
+        for (let i = 0; i < orderIdsForLifecycle.length; i += batchSize) {
+          const batch = orderIdsForLifecycle.slice(i, i + batchSize);
+          const { data } = await supabaseClient
+            .from('emeni_order_lifecycle')
+            .select('*')
+            .in('order_id', batch);
+          if (data) {
+            lifecycleData = lifecycleData.concat(data);
+          }
+        }
+      }
+
       orders.forEach(order => {
         order.items = items?.filter(i => i.order_id === order.order_id) || [];
+        
+        // Match lifecycle by order_id from database
+        const lifecycle = lifecycleData.filter(l => l.order_id === order.order_id);
+        const acceptedEvent = lifecycle.find(l => Number(l.status) === 3); // status 3 = accepted
+        const readyEvent = lifecycle.find(l => Number(l.status) === 5);    // status 5 = ready
+        
+        if (acceptedEvent && readyEvent) {
+          const acceptedTime = new Date(acceptedEvent.timestamp);
+          const readyTime = new Date(readyEvent.timestamp);
+          order.prep_minutes = Math.round((readyTime - acceptedTime) / 60000); // minutes
+        } else if (acceptedEvent) {
+          // Still in production - calculate time since accepted
+          const acceptedTime = new Date(acceptedEvent.timestamp);
+          order.prep_minutes_ongoing = Math.round((new Date() - acceptedTime) / 60000);
+        } else {
+          // Fallback: try to get times from raw_payload
+          const rp = order.raw_payload || {};
+          
+          // Get accepted time from various possible fields
+          const acceptedStr = rp.accepted || rp.acceptedAt || rp.confirmed_at || rp.pickup?.time;
+          // Get ready time from various possible fields  
+          const readyStr = rp.ready || rp.readyAt || rp.ready_at || rp.completed || rp.completedAt;
+          
+          if (acceptedStr && readyStr) {
+            const acceptedTime = new Date(acceptedStr);
+            const readyTime = new Date(readyStr);
+            if (!isNaN(acceptedTime) && !isNaN(readyTime)) {
+              order.prep_minutes = Math.round((readyTime - acceptedTime) / 60000);
+            }
+          } else if (acceptedStr && (Number(order.status) === 3 || Number(order.status) === 4)) {
+            // In production with accepted time from raw_payload
+            const acceptedTime = new Date(acceptedStr);
+            if (!isNaN(acceptedTime)) {
+              order.prep_minutes_ongoing = Math.round((new Date() - acceptedTime) / 60000);
+            }
+          }
+          
+          // For Wolt: check pickup.time as accepted and delivery estimates
+          if (!order.prep_minutes && !order.prep_minutes_ongoing && rp.pickup?.time) {
+            const pickupTime = new Date(rp.pickup.time);
+            // If order is ready/delivered, estimate from pickup to now or delivery
+            if (Number(order.status) >= 5 && rp.dropoff?.time) {
+              const dropoffTime = new Date(rp.dropoff.time);
+              // Rough estimate: prep time is ~70% of total time (pickup to dropoff)
+              const totalMins = Math.round((dropoffTime - pickupTime) / 60000);
+              order.prep_minutes = Math.max(5, Math.round(totalMins * 0.5)); // Estimate
+            }
+          }
+        }
+        
+        // Sanity check - cap unrealistic values
+        if (order.prep_minutes > 180) order.prep_minutes = undefined; // More than 3 hours is likely wrong
+        if (order.prep_minutes_ongoing > 180) order.prep_minutes_ongoing = undefined;
       });
 
       allOrders = orders;
@@ -1479,18 +1775,31 @@
 
     // Close modal on Escape key
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') closeModal();
+      if (e.key === 'Escape') {
+        closeModal();
+        // Also close sidebar if open
+        const sidebar = document.getElementById('filtersSidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        if (sidebar.classList.contains('active')) {
+          sidebar.classList.remove('active');
+          overlay.classList.remove('active');
+        }
+      }
     });
 
     // ============================================
     // Render Order Detail
     // ============================================
     function renderOrderDetail(order, lifecycle) {
-      // Get items from regular items or invalidOrderDetails
+      // Get items from regular items, raw_payload.items, or invalidOrderDetails
       let items = order.items || [];
       let total = 0;
       
-      if (items.length === 0 && order.raw_payload?.invalidOrderDetails?.items) {
+      if (items.length === 0 && order.raw_payload?.items) {
+        // Use items directly from raw_payload (for eBar, etc.)
+        items = order.raw_payload.items;
+        total = items.reduce((sum, item) => sum + (parseFloat(item.price) * parseFloat(item.quantity)), 0);
+      } else if (items.length === 0 && order.raw_payload?.invalidOrderDetails?.items) {
         items = order.raw_payload.invalidOrderDetails.items;
         total = order.raw_payload.invalidOrderDetails.total || 0;
       } else {
@@ -1755,11 +2064,15 @@
     // Render Table Row
     // ============================================
     function renderTableRow(order) {
-      // Get items from regular items or invalidOrderDetails
+      // Get items from regular items, raw_payload.items, or invalidOrderDetails
       let items = order.items || [];
       let total = 0;
       
-      if (items.length === 0 && order.raw_payload?.invalidOrderDetails?.items) {
+      if (items.length === 0 && order.raw_payload?.items) {
+        // Use items directly from raw_payload (for eBar, etc.)
+        items = order.raw_payload.items;
+        total = items.reduce((sum, item) => sum + (parseFloat(item.price) * parseFloat(item.quantity)), 0);
+      } else if (items.length === 0 && order.raw_payload?.invalidOrderDetails?.items) {
         items = order.raw_payload.invalidOrderDetails.items;
         total = order.raw_payload.invalidOrderDetails.total || 0;
       } else {
@@ -1803,6 +2116,19 @@
         `;
       }
       
+      // Prep time display
+      let prepTimeHtml = '-';
+      let prepTimeClass = 'pending';
+      if (order.prep_minutes !== undefined) {
+        const mins = order.prep_minutes;
+        prepTimeClass = mins <= 15 ? 'fast' : mins <= 30 ? 'normal' : 'slow';
+        prepTimeHtml = `<span class="table-prep-time ${prepTimeClass}">✓ ${mins} min</span>`;
+      } else if (order.prep_minutes_ongoing !== undefined) {
+        const mins = order.prep_minutes_ongoing;
+        prepTimeClass = mins <= 15 ? 'fast' : mins <= 30 ? 'normal' : 'slow';
+        prepTimeHtml = `<span class="table-prep-time ${prepTimeClass}">⏱ ${mins} min</span>`;
+      }
+      
       return `
         <tr onclick="openOrderDetail(${order.order_id})">
           <td><strong>#${order.order_no}</strong></td>
@@ -1812,6 +2138,7 @@
           <td><div class="table-items" title="${itemsSummary}">${itemsSummary}</div></td>
           <td class="table-total">${total.toFixed(0)} RSD</td>
           <td><span class="table-status ${statusGroup}">${statusLabels[statusGroup]}</span></td>
+          <td>${prepTimeHtml}</td>
           <td>${deliveryHtml}</td>
           <td>${time}</td>
         </tr>
@@ -1822,11 +2149,15 @@
     // Render Order Card
     // ============================================
     function renderOrderCard(order, statusClass) {
-      // Get items from regular items or invalidOrderDetails
+      // Get items from regular items, raw_payload.items, or invalidOrderDetails
       let items = order.items || [];
       let total = 0;
       
-      if (items.length === 0 && order.raw_payload?.invalidOrderDetails?.items) {
+      if (items.length === 0 && order.raw_payload?.items) {
+        // Use items directly from raw_payload (for eBar, etc.)
+        items = order.raw_payload.items;
+        total = items.reduce((sum, item) => sum + (parseFloat(item.price) * parseFloat(item.quantity)), 0);
+      } else if (items.length === 0 && order.raw_payload?.invalidOrderDetails?.items) {
         // Use items from invalidOrderDetails (for invalid Wolt orders)
         items = order.raw_payload.invalidOrderDetails.items;
         total = order.raw_payload.invalidOrderDetails.total || 0;
@@ -1934,6 +2265,15 @@
           ${deliveryHtml}
           <div class="order-footer">
             <span class="order-total">${total.toFixed(0)} RSD</span>
+            ${order.prep_minutes !== undefined ? `
+              <span class="prep-time-badge ${order.prep_minutes <= 15 ? 'fast' : order.prep_minutes <= 30 ? 'normal' : 'slow'}">
+                ✓ ${order.prep_minutes} min
+              </span>
+            ` : order.prep_minutes_ongoing !== undefined ? `
+              <span class="prep-time-badge ${order.prep_minutes_ongoing <= 15 ? 'fast' : order.prep_minutes_ongoing <= 30 ? 'normal' : 'slow'}">
+                ⏱ ${order.prep_minutes_ongoing} min
+              </span>
+            ` : ''}
             <span class="order-time">${time}</span>
           </div>
         </div>
@@ -1959,7 +2299,7 @@
         tableContainer.style.display = 'block';
         
         if (orders.length === 0) {
-          tableBody.innerHTML = '<tr><td colspan="9" class="table-empty">Nema porudžbina</td></tr>';
+          tableBody.innerHTML = '<tr><td colspan="10" class="table-empty">Nema porudžbina</td></tr>';
         } else {
           tableBody.innerHTML = orders.map(o => renderTableRow(o)).join('');
         }
