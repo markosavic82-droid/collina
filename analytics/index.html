@@ -73,7 +73,18 @@ function getOrderTotal(o) {
   if (orderTotal === 0) {
     let items = o.items || [];
     if (items.length === 0 && o.raw_payload?.items) items = o.raw_payload.items;
-    orderTotal = items.reduce((s, item) => s + (parseFloat(item.price) || 0) * (parseFloat(item.quantity) || 1), 0);
+    orderTotal = items.reduce((s, item) => {
+      const qty = parseFloat(item.quantity) || 1;
+      // Base item price * quantity
+      let itemTotal = (parseFloat(item.price) || 0) * qty;
+      // Add modifiers (extras apply per item, so multiply by item quantity)
+      if (item.modifiers && Array.isArray(item.modifiers)) {
+        item.modifiers.forEach(mod => {
+          itemTotal += (parseFloat(mod.price) || 0) * (parseFloat(mod.quantity) || 1) * qty;
+        });
+      }
+      return s + itemTotal;
+    }, 0);
   }
   return orderTotal;
 }
@@ -106,6 +117,14 @@ const CollinaDashboard = () => {
   const [categoryData, setCategoryData] = useState([]);
   const [topProducts, setTopProducts] = useState([]);
   const [trendData, setTrendData] = useState([]);
+  const [comparisonData, setComparisonData] = useState([]);
+  const [rawTrendOrders, setRawTrendOrders] = useState([]);
+  const [rawCompareOrders, setRawCompareOrders] = useState([]);
+  const [trendPeriod, setTrendPeriod] = useState(14); // days: 7, 14, 30, 60, 90
+  const [compareMode, setCompareMode] = useState(null); // null, 'week', 'month', 'quarter', 'year', 'custom'
+  const [customCompareStart, setCustomCompareStart] = useState('');
+  const [customCompareEnd, setCustomCompareEnd] = useState('');
+  const [compareEndDate, setCompareEndDate] = useState('');
   const [channelData, setChannelData] = useState([]);
   const [fulfillmentData, setFulfillmentData] = useState([]);
   const [kitchenPerformance, setKitchenPerformance] = useState({ byVenue: [], byHour: [] });
@@ -223,10 +242,11 @@ const CollinaDashboard = () => {
 
   // Load data on mount and date change, auto-refresh every 10 seconds
   useEffect(() => {
-    loadData();
-    const interval = setInterval(() => { loadData(true); }, 10000);
+    console.log('useEffect triggered:', { selectedDate, trendPeriod, compareMode });
+    loadData(false, selectedDate, trendPeriod, compareMode, customCompareStart, customCompareEnd);
+    const interval = setInterval(() => { loadData(true, selectedDate, trendPeriod, compareMode, customCompareStart, customCompareEnd); }, 10000);
     return () => clearInterval(interval);
-  }, [selectedDate]);
+  }, [selectedDate, trendPeriod, compareMode, customCompareStart, customCompareEnd]);
 
   // Re-process orders when orders, filters, locations or margins change
   useEffect(() => {
@@ -235,7 +255,78 @@ const CollinaDashboard = () => {
     }
   }, [orders, filters, locations, margins]);
 
-  async function loadData(silent = false) {
+  // Re-process trend data when filters change
+  useEffect(() => {
+    if (rawTrendOrders.length > 0) {
+      processTrend(rawTrendOrders, false, trendPeriod, selectedDate);
+    }
+    if (rawCompareOrders.length > 0 && compareEndDate) {
+      processTrend(rawCompareOrders, true, trendPeriod, compareEndDate);
+    }
+  }, [filters, rawTrendOrders, rawCompareOrders, trendPeriod, selectedDate, compareEndDate]);
+
+  // Helper to get next day in YYYY-MM-DD format
+  function getNextDay(dateStr) {
+    const d = new Date(dateStr);
+    d.setDate(d.getDate() + 1);
+    return d.toISOString().split('T')[0];
+  }
+  
+  // Helper to subtract days from a date string
+  function subtractDays(dateStr, days) {
+    const d = new Date(dateStr);
+    d.setDate(d.getDate() - days);
+    return d.toISOString().split('T')[0];
+  }
+
+  // Convert Belgrade local date to UTC timestamp range
+  // Belgrade is UTC+1 in winter, UTC+2 in summer (CEST)
+  // For simplicity, using UTC+1 (most of the year for business hours)
+  function getUTCRange(dateStr) {
+    // For Belgrade date "2026-01-03", we want:
+    // Start: 2026-01-02T23:00:00Z (midnight Belgrade = 23:00 UTC previous day)
+    // End: 2026-01-03T23:00:00Z (midnight next day Belgrade = 23:00 UTC same day)
+    const d = new Date(dateStr + 'T00:00:00+01:00'); // Parse as Belgrade time
+    const startUTC = d.toISOString();
+    d.setDate(d.getDate() + 1);
+    const endUTC = d.toISOString();
+    return { start: startUTC, end: endUTC };
+  }
+
+  // Helper to fetch all records with pagination (Supabase has 1000 row limit)
+  async function supabaseFetchAll(baseUrl) {
+    let allData = [];
+    let offset = 0;
+    const limit = 1000;
+    
+    while (true) {
+      const url = `${baseUrl}&limit=${limit}&offset=${offset}`;
+      const data = await supabaseFetch(url);
+      
+      if (!data || !Array.isArray(data) || data.length === 0) {
+        break;
+      }
+      
+      allData = allData.concat(data);
+      
+      if (data.length < limit) {
+        break; // Last page
+      }
+      
+      offset += limit;
+      
+      // Safety limit - max 10 pages (10000 records)
+      if (offset >= 10000) {
+        console.log('Reached pagination limit of 10000 records');
+        break;
+      }
+    }
+    
+    return allData;
+  }
+
+  async function loadData(silent = false, selDate = selectedDate, period = 14, compMode = null, custStart = '', custEnd = '') {
+    console.log('loadData called:', { silent, selDate, period, compMode });
     if (!silent) setLoading(true);
     try {
       // Load locations
@@ -254,14 +345,11 @@ const CollinaDashboard = () => {
       }
       setMargins(marginMap);
 
-      // Load orders for selected date
-      const startDate = new Date(selectedDate);
-      startDate.setHours(0, 0, 0, 0);
-      const endDate = new Date(selectedDate);
-      endDate.setHours(23, 59, 59, 999);
+      // Load orders for selected date (timezone-aware for Belgrade UTC+1)
+      const { start: dayStartUTC, end: dayEndUTC } = getUTCRange(selDate);
 
-      const ordersData = await supabaseFetch(
-        `${SUPABASE_URL}/rest/v1/emeni_orders?select=*&created_at=gte.${startDate.toISOString()}&created_at=lte.${endDate.toISOString()}&order=created_at.asc`
+      const ordersData = await supabaseFetchAll(
+        `${SUPABASE_URL}/rest/v1/emeni_orders?select=*&created_at=gte.${dayStartUTC}&created_at=lt.${dayEndUTC}&order=created_at.asc`
       );
 
       if (ordersData && Array.isArray(ordersData)) {
@@ -269,17 +357,83 @@ const CollinaDashboard = () => {
         // Don't call processOrders here - let the useEffect handle it
       }
 
-      // Load 14-day trend
-      const trendStart = new Date(selectedDate);
-      trendStart.setDate(trendStart.getDate() - 13);
-      trendStart.setHours(0, 0, 0, 0);
+      // Load trend data for selected period (timezone-aware)
+      const trendStartDate = subtractDays(selDate, period - 1);
+      const { start: trendStartUTC } = getUTCRange(trendStartDate);
+      const { end: trendEndUTC } = getUTCRange(selDate);
 
-      const trendOrders = await supabaseFetch(
-        `${SUPABASE_URL}/rest/v1/emeni_orders?select=created_at,total,order_total,amount,raw_payload,items,status&created_at=gte.${trendStart.toISOString()}&created_at=lte.${endDate.toISOString()}&status=neq.8&status=neq.9`
+      console.log('Trend query:', { period, selDate, trendStartDate, trendStartUTC, trendEndUTC });
+
+      const trendOrders = await supabaseFetchAll(
+        `${SUPABASE_URL}/rest/v1/emeni_orders?select=*&created_at=gte.${trendStartUTC}&created_at=lt.${trendEndUTC}`
       );
 
+      console.log('Trend orders result:', trendOrders?.length || 0, 'orders (with pagination)');
+
       if (trendOrders && Array.isArray(trendOrders)) {
-        processTrend(trendOrders);
+        setRawTrendOrders(trendOrders);
+        processTrend(trendOrders, false, period, selDate);
+      } else {
+        console.log('No trend orders or invalid response:', trendOrders);
+        setRawTrendOrders([]);
+        processTrend([], false, period, selDate);
+      }
+
+      // Load comparison data if compareMode is active
+      if (compMode) {
+        let compareShift = 0;
+        let compStartDate, compEndDate;
+        
+        if (compMode === 'week') compareShift = 7;
+        else if (compMode === 'month') compareShift = 30;
+        else if (compMode === 'quarter') compareShift = 90;
+        else if (compMode === 'year') compareShift = 365;
+        else if (compMode === 'custom' && custStart && custEnd) {
+          compStartDate = custStart;
+          compEndDate = custEnd;
+        }
+        
+        if (compMode !== 'custom') {
+          // Calculate comparison end date (selDate minus shift)
+          compEndDate = subtractDays(selDate, compareShift);
+          // Calculate comparison start date (end date minus period)
+          compStartDate = subtractDays(compEndDate, period - 1);
+        }
+        
+        if (compStartDate && compEndDate) {
+          // Get timezone-aware UTC range for comparison period
+          const { start: compStartUTC } = getUTCRange(compStartDate);
+          const { end: compEndUTC } = getUTCRange(compEndDate);
+          
+          // Use wolt_orders for historical comparison data
+          const compareOrders = await supabaseFetchAll(
+            `${SUPABASE_URL}/rest/v1/wolt_orders?select=*&created_at=gte.${compStartUTC}&created_at=lt.${compEndUTC}`
+          );
+          
+          console.log('Comparison orders from wolt_orders:', compareOrders?.length || 0);
+          
+          if (compareOrders && Array.isArray(compareOrders)) {
+            // Normalize wolt_orders to match emeni_orders format
+            const normalizedOrders = compareOrders.map(o => ({
+              ...o,
+              // wolt_orders uses 'amount' (in cents), convert to match emeni format
+              order_total: o.amount / 100,
+              // Map venue_name to a pseudo company_id for filtering
+              company_id: o.venue_name,
+              // Map order_status text to numeric (assume 'delivered' is valid)
+              status: (o.order_status === 'rejected' || o.order_status === 'cancelled') ? 8 : 1,
+              // Provider for channel filtering
+              provider: 'wolt',
+            }));
+            setRawCompareOrders(normalizedOrders);
+            setCompareEndDate(compEndDate);
+            processTrend(normalizedOrders, true, period, compEndDate);
+          }
+        }
+      } else {
+        setComparisonData([]);
+        setRawCompareOrders([]);
+        setCompareEndDate('');
       }
 
     } catch (err) {
@@ -316,11 +470,12 @@ const CollinaDashboard = () => {
       });
     }
     
-    // Apply hour filter
+    // Apply hour filter (use Belgrade time UTC+1)
     if (filters.hours.length > 0) {
       validOrders = validOrders.filter(function(o) {
-        var hour = new Date(o.created_at).getHours();
-        return filters.hours.indexOf(hour) >= 0;
+        var utcDate = new Date(o.created_at);
+        var belgradeHour = (utcDate.getUTCHours() + 1) % 24;
+        return filters.hours.indexOf(belgradeHour) >= 0;
       });
     }
     
@@ -453,7 +608,8 @@ const CollinaDashboard = () => {
     const hourlyMap = {};
     for (let h = 0; h < 24; h++) hourlyMap[h] = { hour: `${h}h`, orders: 0, revenue: 0 };
     validOrders.forEach(o => {
-      const hour = new Date(o.created_at).getHours();
+      const utcDate = new Date(o.created_at);
+      const hour = (utcDate.getUTCHours() + 1) % 24; // Belgrade UTC+1
       hourlyMap[hour].orders++;
       hourlyMap[hour].revenue += getOrderTotal(o);
     });
@@ -649,7 +805,8 @@ const CollinaDashboard = () => {
     
     validOrders.forEach(o => {
       const locName = locMap[o.company_id] || 'Unknown';
-      const hour = new Date(o.created_at).getHours();
+      const utcDate = new Date(o.created_at);
+      const hour = (utcDate.getUTCHours() + 1) % 24; // Belgrade UTC+1
       
       // Get prep time from various sources
       let prepTime = null;
@@ -795,7 +952,8 @@ const CollinaDashboard = () => {
     const hourlyStats = {};
     
     validOrders.forEach(o => {
-      const hour = new Date(o.created_at).getHours();
+      const utcDate = new Date(o.created_at);
+      const hour = (utcDate.getUTCHours() + 1) % 24; // Belgrade UTC+1
       if (!hourlyStats[hour]) {
         hourlyStats[hour] = { 
           hour: `${hour}h`, 
@@ -853,7 +1011,8 @@ const CollinaDashboard = () => {
     
     validOrders.forEach(o => {
       const locName = (locMap[o.company_id] || 'Unknown').replace('Collina ', '').replace(' B.Brdo', '');
-      const hour = new Date(o.created_at).getHours();
+      const utcDate = new Date(o.created_at);
+      const hour = (utcDate.getUTCHours() + 1) % 24; // Belgrade UTC+1
       
       if (hour < 10 || hour > 23) return;
       
@@ -907,24 +1066,107 @@ const CollinaDashboard = () => {
     return null;
   }
 
-  function processTrend(ordersArr) {
+  function processTrend(ordersArr, isComparison = false, periodDays = 14, endDateStr = selectedDate) {
+    console.log('processTrend called:', { isComparison, orderCount: ordersArr?.length, periodDays, endDateStr });
+    
+    // Filter out canceled orders (status 8, 9, 11)
+    let validOrders = (ordersArr || []).filter(o => ![8, 9, 11].includes(o.status));
+    
+    // Apply location filter
+    if (filters.locations.length > 0) {
+      validOrders = validOrders.filter(function(o) {
+        var companyId = String(o.company_id);
+        // For wolt_orders (comparison), company_id is actually venue_name
+        // Check if it matches any selected location by name or company_id
+        for (var i = 0; i < filters.locations.length; i++) {
+          var filterId = String(filters.locations[i]);
+          if (filterId === companyId) return true;
+          // Also check if venue_name matches location name from our locations map
+          var locName = locations[filterId];
+          if (locName && companyId.toLowerCase().includes(locName.toLowerCase().split(' ')[0])) return true;
+          if (locName && locName.toLowerCase().includes(companyId.toLowerCase().split(' ')[0])) return true;
+        }
+        return false;
+      });
+    }
+    
+    // Apply channel filter
+    if (filters.channels.length > 0) {
+      validOrders = validOrders.filter(function(o) {
+        var provider = (o.provider || '').toLowerCase();
+        if (filters.channels.indexOf('wolt') >= 0 && provider.indexOf('wolt') >= 0) return true;
+        if (filters.channels.indexOf('ebar') >= 0 && (provider.indexOf('ebar') >= 0 || provider.indexOf('emeni') >= 0)) return true;
+        if (filters.channels.indexOf('gloria') >= 0 && provider.indexOf('gloria') >= 0) return true;
+        if (filters.channels.indexOf('foodtruck') >= 0 && (provider.indexOf('food') >= 0 || provider.indexOf('truck') >= 0)) return true;
+        return false;
+      });
+    }
+    
+    // Apply hour filter (use Belgrade time UTC+1)
+    if (filters.hours.length > 0) {
+      validOrders = validOrders.filter(function(o) {
+        var utcDate = new Date(o.created_at);
+        var belgradeHour = (utcDate.getUTCHours() + 1) % 24;
+        return filters.hours.indexOf(belgradeHour) >= 0;
+      });
+    }
+    
+    // Apply category filter
+    if (filters.categories.length > 0) {
+      validOrders = validOrders.filter(function(o) {
+        var items = o.items || [];
+        if (items.length === 0 && o.raw_payload && o.raw_payload.items) {
+          items = o.raw_payload.items;
+        }
+        for (var i = 0; i < items.length; i++) {
+          var itemCategory = classifyItem(items[i].name || '');
+          if (filters.categories.indexOf(itemCategory) >= 0) {
+            return true;
+          }
+        }
+        return false;
+      });
+    }
+    
+    console.log('After all filters:', validOrders.length, 'valid orders');
+    
+    // Create entries for ALL days in the period (initialized to 0)
     const dailyMap = {};
-    ordersArr.forEach(o => {
-      const date = o.created_at.split('T')[0];
-      if (!dailyMap[date]) {
-        dailyMap[date] = { date, revenue: 0, orders: 0 };
+    const endDate = new Date(endDateStr);
+    for (let i = periodDays - 1; i >= 0; i--) {
+      const d = new Date(endDate);
+      d.setDate(d.getDate() - i);
+      const dateKey = d.toISOString().split('T')[0];
+      dailyMap[dateKey] = { date: dateKey, revenue: 0, orders: 0 };
+    }
+    
+    // Fill in actual order data (convert UTC timestamp to Belgrade local date)
+    validOrders.forEach(o => {
+      // Convert UTC timestamp to Belgrade local time (UTC+1)
+      const utcDate = new Date(o.created_at);
+      const belgradeDate = new Date(utcDate.getTime() + (1 * 60 * 60 * 1000)); // Add 1 hour for CET
+      const dateKey = belgradeDate.toISOString().split('T')[0];
+      if (dailyMap[dateKey]) {
+        dailyMap[dateKey].revenue += getOrderTotal(o);
+        dailyMap[dateKey].orders++;
       }
-      dailyMap[date].revenue += getOrderTotal(o);
-      dailyMap[date].orders++;
     });
     
     const trend = Object.values(dailyMap)
       .sort((a, b) => a.date.localeCompare(b.date))
-      .map(d => ({
+      .map((d, i) => ({
         ...d,
         dateLabel: new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        dayIndex: i,
       }));
-    setTrendData(trend);
+    
+    console.log('processTrend result:', { isComparison, trendLength: trend.length, firstDate: trend[0]?.date, lastDate: trend[trend.length-1]?.date, totalRevenue: trend.reduce((s, d) => s + d.revenue, 0) });
+    
+    if (isComparison) {
+      setComparisonData(trend);
+    } else {
+      setTrendData(trend);
+    }
   }
 
   // Helper components
@@ -1332,70 +1574,309 @@ const CollinaDashboard = () => {
           ))}
         </div>
 
-        {/* Charts Row */}
-        <div className="two-col-grid" style={{
-          display: 'grid',
-          gridTemplateColumns: '2fr 1fr',
-          gap: '24px',
+        {/* Revenue Trend with Comparison */}
+        <div style={{
+          background: colors.card,
+          borderRadius: '16px',
+          border: `1px solid ${colors.border}`,
+          padding: 'clamp(16px, 3vw, 24px)',
           marginBottom: '24px',
         }}>
-          {/* 14-Day Trend */}
-          <div style={{
-            background: colors.card,
-            borderRadius: '16px',
-            border: `1px solid ${colors.border}`,
-            padding: 'clamp(16px, 3vw, 24px)',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+          {/* Header with controls */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <IconBox color="#F472B6">📈</IconBox>
               <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '18px', fontWeight: 600 }}>
-                14-Day Revenue Trend
+                Revenue Trend
               </h2>
             </div>
-            <div style={{ height: '250px' }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={trendData}>
-                  <defs>
-                    <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={colors.purple} stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor={colors.purple} stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke={colors.borderSubtle} />
-                  <XAxis dataKey="dateLabel" stroke={colors.textMuted} fontSize={11} />
-                  <YAxis stroke={colors.textMuted} fontSize={11} tickFormatter={v => `${(v/1000).toFixed(0)}K`} />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Area type="monotone" dataKey="revenue" stroke={colors.purple} fill="url(#colorRevenue)" strokeWidth={2} name="Revenue" />
-                </AreaChart>
-              </ResponsiveContainer>
+            
+            {/* Controls */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center' }}>
+              {/* Period selector */}
+              <div style={{ display: 'flex', gap: '4px', background: colors.elevated, borderRadius: '8px', padding: '4px' }}>
+                {[7, 14, 30, 60, 90].map(days => (
+                  <button
+                    key={days}
+                    onClick={() => setTrendPeriod(days)}
+                    style={{
+                      padding: '6px 12px',
+                      fontSize: '12px',
+                      fontWeight: 500,
+                      background: trendPeriod === days ? colors.purple : 'transparent',
+                      color: trendPeriod === days ? 'white' : colors.textSecondary,
+                      border: 'none',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                    }}
+                  >
+                    {days}D
+                  </button>
+                ))}
+              </div>
+              
+              {/* Compare dropdown */}
+              <div style={{ position: 'relative' }}>
+                <select
+                  value={compareMode || ''}
+                  onChange={(e) => setCompareMode(e.target.value || null)}
+                  style={{
+                    padding: '8px 32px 8px 12px',
+                    fontSize: '12px',
+                    fontWeight: 500,
+                    background: compareMode ? colors.purple : colors.elevated,
+                    color: compareMode ? 'white' : colors.textSecondary,
+                    border: `1px solid ${colors.borderSubtle}`,
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    appearance: 'none',
+                    outline: 'none',
+                  }}
+                >
+                  <option value="">Compare with...</option>
+                  <option value="week">Week ago</option>
+                  <option value="month">Month ago</option>
+                  <option value="quarter">Quarter ago</option>
+                  <option value="year">Year ago</option>
+                  <option value="custom">Custom period</option>
+                </select>
+                <span style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: compareMode ? 'white' : colors.textMuted }}>▾</span>
+              </div>
+              
+              {/* Clear comparison button */}
+              {compareMode && (
+                <button
+                  onClick={() => { setCompareMode(null); setCustomCompareStart(''); setCustomCompareEnd(''); }}
+                  style={{
+                    padding: '8px 12px',
+                    fontSize: '12px',
+                    background: 'rgba(239, 68, 68, 0.1)',
+                    color: colors.error,
+                    border: `1px solid rgba(239, 68, 68, 0.3)`,
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                  }}
+                >
+                  ✕ Clear
+                </button>
+              )}
             </div>
           </div>
-
-          {/* Hourly Orders */}
-          <div style={{
-            background: colors.card,
-            borderRadius: '16px',
-            border: `1px solid ${colors.border}`,
-            padding: 'clamp(16px, 3vw, 24px)',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-              <IconBox color={colors.info}>⏰</IconBox>
-              <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '18px', fontWeight: 600 }}>
-                Orders by Hour
-              </h2>
+          
+          {/* Custom date range picker */}
+          {compareMode === 'custom' && (
+            <div style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: '12px',
+              alignItems: 'center',
+              padding: '12px 16px',
+              background: colors.elevated,
+              borderRadius: '10px',
+              marginBottom: '16px',
+            }}>
+              <span style={{ color: colors.textSecondary, fontSize: '12px' }}>Compare with:</span>
+              <input
+                type="date"
+                value={customCompareStart}
+                onChange={(e) => setCustomCompareStart(e.target.value)}
+                style={{
+                  padding: '6px 10px',
+                  fontSize: '12px',
+                  background: colors.bg,
+                  color: colors.textPrimary,
+                  border: `1px solid ${colors.borderSubtle}`,
+                  borderRadius: '6px',
+                  outline: 'none',
+                }}
+              />
+              <span style={{ color: colors.textMuted }}>to</span>
+              <input
+                type="date"
+                value={customCompareEnd}
+                onChange={(e) => setCustomCompareEnd(e.target.value)}
+                style={{
+                  padding: '6px 10px',
+                  fontSize: '12px',
+                  background: colors.bg,
+                  color: colors.textPrimary,
+                  border: `1px solid ${colors.borderSubtle}`,
+                  borderRadius: '6px',
+                  outline: 'none',
+                }}
+              />
             </div>
-            <div style={{ height: '250px' }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={hourlyData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke={colors.borderSubtle} />
-                  <XAxis dataKey="hour" stroke={colors.textMuted} fontSize={11} />
-                  <YAxis stroke={colors.textMuted} fontSize={11} />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Bar dataKey="orders" fill={colors.purple} radius={[4, 4, 0, 0]} name="Orders" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+          )}
+          
+          {/* Period info */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+            <p style={{ color: colors.textSecondary, fontSize: '12px' }}>
+              {trendData.length > 0 ? `${trendData[0]?.dateLabel} - ${trendData[trendData.length - 1]?.dateLabel}` : 'Loading...'}
+            </p>
+            {compareMode && comparisonData.length > 0 && (
+              <p style={{ color: colors.textMuted, fontSize: '12px' }}>
+                vs {comparisonData[0]?.dateLabel} - {comparisonData[comparisonData.length - 1]?.dateLabel}
+              </p>
+            )}
           </div>
+          
+          {/* Chart */}
+          <div style={{ height: '300px' }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <ComposedChart data={trendData.map((d, i) => ({
+                ...d,
+                compareRevenue: comparisonData[i]?.revenue || null,
+                compareOrders: comparisonData[i]?.orders || null,
+                compareLabel: comparisonData[i]?.dateLabel || null,
+              }))}>
+                <defs>
+                  <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={colors.purple} stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor={colors.purple} stopOpacity={0}/>
+                  </linearGradient>
+                  <linearGradient id="colorCompare" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={colors.textMuted} stopOpacity={0.2}/>
+                    <stop offset="95%" stopColor={colors.textMuted} stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke={colors.borderSubtle} />
+                <XAxis dataKey="dateLabel" stroke={colors.textMuted} fontSize={11} />
+                <YAxis yAxisId="left" stroke={colors.textMuted} fontSize={11} tickFormatter={v => `${(v/1000).toFixed(0)}K`} />
+                <YAxis yAxisId="right" orientation="right" stroke={colors.cyan} fontSize={11} />
+                <Tooltip 
+                  content={({ active, payload, label }) => {
+                    if (active && payload && payload.length) {
+                      const data = payload[0]?.payload;
+                      return (
+                        <div style={{
+                          background: colors.card,
+                          border: `1px solid ${colors.borderSubtle}`,
+                          borderRadius: '12px',
+                          padding: '12px 16px',
+                          boxShadow: '0 10px 40px rgba(0,0,0,0.3)',
+                        }}>
+                          <p style={{ color: colors.textSecondary, fontSize: '12px', marginBottom: '8px' }}>{label}</p>
+                          <p style={{ color: colors.purple, fontSize: '14px', fontWeight: 600 }}>
+                            Revenue: {data?.revenue ? `${(data.revenue / 1000).toFixed(0)}K` : 'N/A'}
+                          </p>
+                          <p style={{ color: colors.cyan, fontSize: '14px', fontWeight: 600 }}>
+                            Orders: {data?.orders || 'N/A'}
+                          </p>
+                          {compareMode && data?.compareRevenue && (
+                            <>
+                              <p style={{ color: colors.textMuted, fontSize: '12px', marginTop: '8px', borderTop: `1px solid ${colors.borderSubtle}`, paddingTop: '8px' }}>
+                                {data.compareLabel}:
+                              </p>
+                              <p style={{ color: colors.textMuted, fontSize: '13px' }}>
+                                Revenue: {(data.compareRevenue / 1000).toFixed(0)}K
+                              </p>
+                              <p style={{ color: colors.textMuted, fontSize: '13px' }}>
+                                Orders: {data.compareOrders || 'N/A'}
+                              </p>
+                            </>
+                          )}
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                {compareMode && comparisonData.length > 0 && (
+                  <Area 
+                    type="monotone" 
+                    dataKey="compareRevenue" 
+                    yAxisId="left"
+                    stroke={colors.textMuted} 
+                    fill="url(#colorCompare)" 
+                    strokeWidth={2} 
+                    strokeDasharray="5 5"
+                    name="Comparison Revenue" 
+                  />
+                )}
+                {compareMode && comparisonData.length > 0 && (
+                  <Line 
+                    type="monotone" 
+                    dataKey="compareOrders" 
+                    yAxisId="right"
+                    stroke={colors.textMuted} 
+                    strokeWidth={2} 
+                    strokeDasharray="5 5"
+                    dot={false}
+                    name="Comparison Orders" 
+                  />
+                )}
+                <Area type="monotone" dataKey="revenue" yAxisId="left" stroke={colors.purple} fill="url(#colorRevenue)" strokeWidth={2} name="Revenue" />
+                <Line type="monotone" dataKey="orders" yAxisId="right" stroke={colors.cyan} strokeWidth={2} dot={false} name="Orders" />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </div>
+          
+          {/* Legend */}
+          <div style={{ display: 'flex', gap: '24px', justifyContent: 'center', marginTop: '16px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ width: '24px', height: '3px', background: colors.purple, borderRadius: '2px' }} />
+              <span style={{ color: colors.textSecondary, fontSize: '12px' }}>Revenue</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ width: '24px', height: '3px', background: colors.cyan, borderRadius: '2px' }} />
+              <span style={{ color: colors.textSecondary, fontSize: '12px' }}>Orders</span>
+            </div>
+            {compareMode && comparisonData.length > 0 && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ width: '24px', height: '3px', background: colors.textMuted, borderRadius: '2px', borderStyle: 'dashed', borderWidth: '0 0 3px 0' }} />
+                <span style={{ color: colors.textMuted, fontSize: '12px' }}>
+                  {compareMode === 'week' ? 'Week Ago' : 
+                   compareMode === 'month' ? 'Month Ago' : 
+                   compareMode === 'quarter' ? 'Quarter Ago' : 
+                   compareMode === 'year' ? 'Year Ago' : 'Custom Period'}
+                </span>
+              </div>
+            )}
+          </div>
+          
+          {/* Summary stats */}
+          {compareMode && comparisonData.length > 0 && (
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(3, 1fr)',
+              gap: '16px',
+              marginTop: '20px',
+              padding: '16px',
+              background: colors.elevated,
+              borderRadius: '12px',
+            }}>
+              {(() => {
+                const currentTotal = trendData.reduce((sum, d) => sum + d.revenue, 0);
+                const compareTotal = comparisonData.reduce((sum, d) => sum + d.revenue, 0);
+                const change = compareTotal > 0 ? ((currentTotal - compareTotal) / compareTotal) * 100 : 0;
+                const currentOrders = trendData.reduce((sum, d) => sum + d.orders, 0);
+                const compareOrders = comparisonData.reduce((sum, d) => sum + d.orders, 0);
+                const ordersChange = compareOrders > 0 ? ((currentOrders - compareOrders) / compareOrders) * 100 : 0;
+                const currentAvg = currentOrders > 0 ? currentTotal / currentOrders : 0;
+                const compareAvg = compareOrders > 0 ? compareTotal / compareOrders : 0;
+                const avgChange = compareAvg > 0 ? ((currentAvg - compareAvg) / compareAvg) * 100 : 0;
+                
+                return [
+                  { label: 'Revenue Change', value: `${change >= 0 ? '+' : ''}${change.toFixed(1)}%`, positive: change >= 0 },
+                  { label: 'Orders Change', value: `${ordersChange >= 0 ? '+' : ''}${ordersChange.toFixed(1)}%`, positive: ordersChange >= 0 },
+                  { label: 'Avg Basket Change', value: `${avgChange >= 0 ? '+' : ''}${avgChange.toFixed(1)}%`, positive: avgChange >= 0 },
+                ].map((stat, i) => (
+                  <div key={i} style={{ textAlign: 'center' }}>
+                    <p style={{ color: colors.textMuted, fontSize: '11px', marginBottom: '4px' }}>{stat.label}</p>
+                    <p style={{ 
+                      fontFamily: "'Space Grotesk', sans-serif", 
+                      fontSize: '20px', 
+                      fontWeight: 700, 
+                      color: stat.positive ? colors.success : colors.error 
+                    }}>
+                      {stat.value}
+                    </p>
+                  </div>
+                ));
+              })()}
+            </div>
+          )}
         </div>
 
         {/* Location Performance */}
