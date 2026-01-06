@@ -1,0 +1,2147 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Collina Admin - Meni</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg-primary: #0a0a0c;
+            --bg-secondary: #12121a;
+            --bg-card: #1a1a24;
+            --bg-card-hover: #222230;
+            --accent: #e07d62;
+            --accent-light: #f0a08a;
+            --accent-dark: #c46a52;
+            --text-primary: #f5f5f7;
+            --text-secondary: #8888a0;
+            --text-muted: #55556a;
+            --success: #4ade80;
+            --warning: #fbbf24;
+            --error: #f87171;
+            --border: rgba(255, 255, 255, 0.08);
+            --border-light: rgba(255, 255, 255, 0.15);
+            --font: 'Outfit', sans-serif;
+        }
+
+        body {
+            font-family: var(--font);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        /* Login Screen */
+        .login-screen {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: var(--bg-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .login-screen.hidden {
+            display: none;
+        }
+
+        .login-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 40px;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .login-logo {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 8px;
+        }
+
+        .login-title {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 32px;
+        }
+
+        .login-input {
+            width: 100%;
+            padding: 16px 20px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-size: 16px;
+            font-family: inherit;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+
+        .login-input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 16px;
+            background: var(--accent);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .login-btn:hover {
+            background: var(--accent-dark);
+        }
+
+        .login-error {
+            color: var(--error);
+            font-size: 14px;
+            margin-top: 16px;
+            display: none;
+        }
+
+        /* Main Layout */
+        .app {
+            display: none;
+        }
+
+        .app.show {
+            display: block;
+        }
+
+        /* Header */
+        .header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .header-title {
+            font-size: 16px;
+            color: var(--text-secondary);
+            padding-left: 20px;
+            border-left: 1px solid var(--border);
+        }
+
+        .logout-btn {
+            padding: 10px 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        /* Main */
+        .main {
+            display: flex;
+            min-height: calc(100vh - 65px);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 220px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            padding: 20px 0;
+            flex-shrink: 0;
+        }
+
+        .nav-item {
+            padding: 14px 24px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.2s;
+        }
+
+        .nav-item:hover {
+            background: var(--bg-card);
+            color: var(--text-primary);
+        }
+
+        .nav-item.active {
+            background: rgba(224, 125, 98, 0.15);
+            color: var(--accent);
+            border-right: 3px solid var(--accent);
+        }
+
+        .nav-icon {
+            font-size: 18px;
+        }
+
+        /* Content */
+        .content {
+            flex: 1;
+            padding: 24px;
+            overflow-y: auto;
+        }
+
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .page-title {
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .add-btn {
+            padding: 12px 24px;
+            background: var(--accent);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .add-btn:hover {
+            background: var(--accent-dark);
+        }
+
+        .add-btn.secondary {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+        }
+
+        .add-btn.secondary:hover {
+            background: var(--bg-card);
+            border-color: var(--accent);
+        }
+
+        .page-header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .page-header-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .filter-select {
+            padding: 10px 14px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 14px;
+            cursor: pointer;
+            min-width: 180px;
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .drag-hint {
+            padding: 10px 18px;
+            font-size: 13px;
+            color: var(--text-muted);
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+
+        .drag-handle {
+            cursor: grab;
+            color: var(--text-muted);
+            font-size: 16px;
+            padding: 4px;
+        }
+
+        .drag-handle:hover {
+            color: var(--text-primary);
+        }
+
+        tr.dragging {
+            opacity: 0.5;
+            background: var(--bg-secondary);
+        }
+
+        tr.drag-over {
+            border-top: 2px solid var(--accent);
+        }
+
+        .section-row {
+            background: linear-gradient(90deg, var(--accent) 0%, transparent 100%) !important;
+        }
+
+        .section-row td {
+            padding: 12px 18px !important;
+            font-weight: 700;
+            font-size: 15px;
+            color: white;
+            border-bottom: none !important;
+        }
+
+        .section-title-text {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .section-btn {
+            padding: 4px 10px;
+            background: rgba(255,255,255,0.2);
+            border: none;
+            border-radius: 6px;
+            color: white;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .section-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .section-cat-badge {
+            padding: 2px 8px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+            margin-left: 10px;
+        }
+
+        /* Table */
+        .table-wrapper {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            overflow: hidden;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 14px 18px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background: var(--bg-secondary);
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background: var(--bg-card-hover);
+        }
+
+        .item-image {
+            width: 50px;
+            height: 50px;
+            border-radius: 8px;
+            object-fit: cover;
+            background: var(--bg-secondary);
+        }
+
+        .item-image-placeholder {
+            width: 50px;
+            height: 50px;
+            border-radius: 8px;
+            background: var(--bg-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: var(--text-muted);
+        }
+
+        .status-badge {
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-badge.active {
+            background: rgba(74, 222, 128, 0.15);
+            color: var(--success);
+        }
+
+        .status-badge.inactive {
+            background: rgba(248, 113, 113, 0.15);
+            color: var(--error);
+        }
+
+        code {
+            padding: 2px 6px;
+            background: var(--bg-secondary);
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            color: var(--accent);
+        }
+
+        .old-price {
+            text-decoration: line-through;
+            color: var(--text-muted);
+            margin-right: 8px;
+            font-size: 13px;
+        }
+
+        .discount-price {
+            color: var(--success);
+            font-weight: 600;
+        }
+
+        .locations-badge {
+            padding: 4px 8px;
+            background: rgba(139, 92, 246, 0.15);
+            color: #a78bfa;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .location-checkboxes {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 8px;
+        }
+
+        .location-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .location-checkbox:hover {
+            border-color: var(--accent);
+        }
+
+        .location-checkbox input:checked + span {
+            color: var(--accent);
+        }
+
+        .action-btn {
+            padding: 8px 14px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 13px;
+            cursor: pointer;
+            margin-right: 6px;
+        }
+
+        .action-btn:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--border-light);
+        }
+
+        .action-btn.delete {
+            color: var(--error);
+        }
+
+        .action-btn.delete:hover {
+            background: rgba(248, 113, 113, 0.15);
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+            padding: 20px;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            width: 100%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .modal-close {
+            width: 32px;
+            height: 32px;
+            background: var(--bg-secondary);
+            border: none;
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        .modal-body {
+            padding: 24px;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            padding: 12px 16px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-size: 15px;
+            font-family: inherit;
+        }
+
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+
+        .form-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+        }
+
+        .form-checkbox input {
+            width: 20px;
+            height: 20px;
+            accent-color: var(--accent);
+        }
+
+        .form-hint {
+            display: block;
+            margin-top: 6px;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        /* Image Upload */
+        .image-upload {
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .image-upload:hover {
+            border-color: var(--accent);
+            background: rgba(224, 125, 98, 0.05);
+        }
+
+        .image-upload-icon {
+            font-size: 36px;
+            margin-bottom: 8px;
+        }
+
+        .image-upload-text {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .image-preview {
+            margin-top: 12px;
+        }
+
+        .image-preview img {
+            max-width: 100%;
+            max-height: 150px;
+            border-radius: 8px;
+        }
+
+        .modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-secondary {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            border: none;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-dark);
+        }
+
+        /* Ingredients Multi-select */
+        .ingredients-select {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 12px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            min-height: 50px;
+        }
+
+        .ing-tag {
+            padding: 6px 12px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .ing-tag:hover {
+            border-color: var(--accent);
+        }
+
+        .ing-tag.selected {
+            background: rgba(224, 125, 98, 0.2);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            padding: 14px 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-size: 14px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 300;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .toast.success { border-color: var(--success); color: var(--success); }
+        .toast.error { border-color: var(--error); color: var(--error); }
+    </style>
+</head>
+<body>
+    <!-- Login Screen -->
+    <div class="login-screen" id="login-screen">
+        <div class="login-box">
+            <div class="login-logo">Collina</div>
+            <div class="login-title">Admin Panel</div>
+            <input type="password" class="login-input" id="login-password" placeholder="Lozinka" onkeyup="if(event.key==='Enter')login()">
+            <button class="login-btn" onclick="login()">Prijava</button>
+            <div class="login-error" id="login-error">Pogrešna lozinka</div>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div class="app" id="app">
+        <header class="header">
+            <div class="header-left">
+                <div class="logo">Collina</div>
+                <div class="header-title">⚙️ Admin Panel</div>
+            </div>
+            <button class="logout-btn" onclick="logout()">Odjava</button>
+        </header>
+
+        <div class="main">
+            <nav class="sidebar">
+                <div class="nav-item active" onclick="showPage('categories', this)">
+                    <span class="nav-icon">📂</span> Kategorije
+                </div>
+                <div class="nav-item" onclick="showPage('items', this)">
+                    <span class="nav-icon">🍔</span> Proizvodi
+                </div>
+                <div class="nav-item" onclick="showPage('ingredients', this)">
+                    <span class="nav-icon">🧀</span> Dodaci
+                </div>
+                <div class="nav-item" onclick="showPage('locations', this)">
+                    <span class="nav-icon">📍</span> Lokacije
+                </div>
+            </nav>
+
+            <div class="content">
+                <!-- Categories Page -->
+                <div class="page active" id="page-categories">
+                    <div class="page-header">
+                        <h1 class="page-title">Kategorije</h1>
+                        <button class="add-btn" onclick="openCategoryModal()">+ Nova kategorija</button>
+                    </div>
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Redosled</th>
+                                    <th>Naziv</th>
+                                    <th>Status</th>
+                                    <th>Akcije</th>
+                                </tr>
+                            </thead>
+                            <tbody id="categories-table"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Items Page -->
+                <div class="page" id="page-items">
+                    <div class="page-header">
+                        <div class="page-header-left">
+                            <h1 class="page-title">Proizvodi</h1>
+                            <select class="filter-select" id="category-filter" onchange="filterItemsByCategory()">
+                                <option value="">Sve kategorije</option>
+                            </select>
+                        </div>
+                        <div class="page-header-right">
+                            <button class="add-btn secondary" onclick="openSectionModal()">+ Sekcija</button>
+                            <button class="add-btn" onclick="openItemModal()">+ Novi proizvod</button>
+                        </div>
+                    </div>
+                    <div class="drag-hint">💡 Prevuci redove za promenu redosleda</div>
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th style="width:30px"></th>
+                                    <th>Slika</th>
+                                    <th>Naziv</th>
+                                    <th>Kategorija</th>
+                                    <th>Cena</th>
+                                    <th>Lokacije</th>
+                                    <th>Status</th>
+                                    <th>Akcije</th>
+                                </tr>
+                            </thead>
+                            <tbody id="items-table"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Ingredients Page -->
+                <div class="page" id="page-ingredients">
+                    <div class="page-header">
+                        <h1 class="page-title">Dodaci</h1>
+                        <button class="add-btn" onclick="openIngredientModal()">+ Novi dodatak</button>
+                    </div>
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Redosled</th>
+                                    <th>Naziv</th>
+                                    <th>Cena</th>
+                                    <th>Status</th>
+                                    <th>Akcije</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ingredients-table"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Locations Page -->
+                <div class="page" id="page-locations">
+                    <div class="page-header">
+                        <h1 class="page-title">Lokacije</h1>
+                        <button class="add-btn" onclick="openLocationModal()">+ Nova lokacija</button>
+                    </div>
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Redosled</th>
+                                    <th>Naziv</th>
+                                    <th>Adresa</th>
+                                    <th>Slug</th>
+                                    <th>Opcije</th>
+                                    <th>Status</th>
+                                    <th>Akcije</th>
+                                </tr>
+                            </thead>
+                            <tbody id="locations-table"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Location Modal -->
+    <div class="modal-overlay" id="location-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title" id="location-modal-title">Nova lokacija</h2>
+                <button class="modal-close" onclick="closeLocationModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="location-id">
+                <div class="form-group">
+                    <label class="form-label">Naziv</label>
+                    <input type="text" class="form-input" id="location-name" placeholder="npr. Collina Vračar">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Adresa</label>
+                    <input type="text" class="form-input" id="location-address" placeholder="npr. Dravska 1">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Slug (jedinstveni ID)</label>
+                    <input type="text" class="form-input" id="location-slug" placeholder="npr. vracar">
+                    <span class="form-hint">Koristi se za filter proizvoda po lokaciji</span>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Redosled</label>
+                        <input type="number" class="form-input" id="location-sort" value="0" min="0">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-checkbox">
+                        <input type="checkbox" id="location-active" checked>
+                        Aktivna lokacija
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label class="form-checkbox">
+                        <input type="checkbox" id="location-drive-through">
+                        🚗 Drive-Thru
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label class="form-checkbox">
+                        <input type="checkbox" id="location-new">
+                        ✨ NOVO (prikazuje badge)
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeLocationModal()">Otkaži</button>
+                <button class="btn btn-primary" onclick="saveLocation()">Sačuvaj</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Category Modal -->
+    <div class="modal-overlay" id="category-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title" id="category-modal-title">Nova kategorija</h2>
+                <button class="modal-close" onclick="closeCategoryModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="cat-id">
+                <div class="form-group">
+                    <label class="form-label">Naziv</label>
+                    <input type="text" class="form-input" id="cat-name" placeholder="npr. Burgeri">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Opis (opciono)</label>
+                    <textarea class="form-textarea" id="cat-desc" placeholder="Kratak opis kategorije"></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Redosled</label>
+                        <input type="number" class="form-input" id="cat-sort" value="0" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">&nbsp;</label>
+                        <label class="form-checkbox">
+                            <input type="checkbox" id="cat-active" checked>
+                            Aktivna
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeCategoryModal()">Otkaži</button>
+                <button class="btn btn-primary" onclick="saveCategory()">Sačuvaj</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Item Modal -->
+    <div class="modal-overlay" id="item-modal">
+        <div class="modal" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2 class="modal-title" id="item-modal-title">Novi proizvod</h2>
+                <button class="modal-close" onclick="closeItemModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="item-id">
+                <div class="form-group">
+                    <label class="form-label">Naziv</label>
+                    <input type="text" class="form-input" id="item-name" placeholder="npr. Classic Burger">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Opis</label>
+                    <textarea class="form-textarea" id="item-desc" placeholder="Opis proizvoda"></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Kategorija</label>
+                        <select class="form-select" id="item-category"></select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Cena (RSD)</label>
+                        <input type="number" class="form-input" id="item-price" placeholder="690" min="0">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Akcijska cena (RSD) - ostaviti prazno ako nema akcije</label>
+                    <input type="number" class="form-input" id="item-discounted-price" placeholder="Akcijska cena" min="0">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Slika</label>
+                    <div class="image-upload" onclick="document.getElementById('item-image-input').click()">
+                        <div class="image-upload-icon">📷</div>
+                        <div class="image-upload-text">Klikni za upload slike</div>
+                        <div class="image-preview" id="item-image-preview"></div>
+                    </div>
+                    <input type="file" id="item-image-input" accept="image/*" style="display:none" onchange="previewImage(this)">
+                    <input type="hidden" id="item-image-url">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Dostupni dodaci</label>
+                    <div class="ingredients-select" id="item-ingredients"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Redosled</label>
+                        <input type="number" class="form-input" id="item-sort" value="0" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">&nbsp;</label>
+                        <label class="form-checkbox">
+                            <input type="checkbox" id="item-available" checked>
+                            Dostupan
+                        </label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-checkbox">
+                        <input type="checkbox" id="item-popular" onchange="togglePopularSort()">
+                        ⭐ Popularno (prikazuje se u "Popularno" kategoriji)
+                    </label>
+                </div>
+                <div class="form-group" id="popular-sort-group" style="display: none;">
+                    <label class="form-label">Pozicija u Popularno sekciji</label>
+                    <input type="number" class="form-input" id="item-popular-sort" placeholder="0" min="0" style="width: 100px;">
+                    <span class="form-hint">Manji broj = viša pozicija</span>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Dostupno na lokacijama</label>
+                    <div class="location-checkboxes" id="item-locations">
+                        <!-- Populated dynamically from database -->
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeItemModal()">Otkaži</button>
+                <button class="btn btn-primary" onclick="saveItem()">Sačuvaj</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ingredient Modal -->
+    <div class="modal-overlay" id="ingredient-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title" id="ingredient-modal-title">Novi dodatak</h2>
+                <button class="modal-close" onclick="closeIngredientModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="ing-id">
+                <div class="form-group">
+                    <label class="form-label">Naziv</label>
+                    <input type="text" class="form-input" id="ing-name" placeholder="npr. Ekstra sir">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Cena (RSD)</label>
+                        <input type="number" class="form-input" id="ing-price" value="0" min="0" placeholder="50">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Redosled</label>
+                        <input type="number" class="form-input" id="ing-sort" value="0" min="0">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-checkbox">
+                        <input type="checkbox" id="ing-available" checked>
+                        Dostupan
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeIngredientModal()">Otkaži</button>
+                <button class="btn btn-primary" onclick="saveIngredient()">Sačuvaj</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section Modal -->
+    <div class="modal-overlay" id="section-modal">
+        <div class="modal" style="max-width: 400px;">
+            <div class="modal-header">
+                <h2 class="modal-title" id="section-modal-title">Nova sekcija</h2>
+                <button class="modal-close" onclick="closeSectionModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="section-id">
+                <div class="form-group">
+                    <label class="form-label">Kategorija</label>
+                    <select class="form-select" id="section-category"></select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Naziv sekcije</label>
+                    <input type="text" class="form-input" id="section-name" placeholder="npr. Smash Burgeri">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Pozicija (redosled)</label>
+                    <input type="number" class="form-input" id="section-sort" value="0" min="0">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeSectionModal()">Otkaži</button>
+                <button class="btn btn-primary" onclick="saveSection()">Sačuvaj</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // ============================================
+        // CONFIGURATION
+        // ============================================
+        const SUPABASE_URL = 'https://bbnbbbpofelbkyuffslj.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJibmJiYnBvZmVsYmt5dWZmc2xqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUwNTI0MzQsImV4cCI6MjA4MDYyODQzNH0.koW44soAB-bEfh8OzqjGBwdgov4Snscw1ITsg5OureU';
+        const STORAGE_BUCKET = 'shop-images';
+
+        // ============================================
+        // STATE
+        // ============================================
+        let db = null;
+        let categories = [];
+        let items = [];
+        let sections = [];
+        let ingredients = [];
+        let locations = [];
+        let itemIngredients = {};
+        let selectedItemIngredients = [];
+        let currentCategoryFilter = '';
+
+        // ============================================
+        // AUTHENTICATION
+        // ============================================
+        async function login() {
+            const password = document.getElementById('login-password').value;
+            
+            try {
+                db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                
+                const { data, error } = await db
+                    .from('shop_settings')
+                    .select('value')
+                    .eq('key', 'admin_password')
+                    .single();
+
+                if (error || !data || data.value !== password) {
+                    document.getElementById('login-error').style.display = 'block';
+                    return;
+                }
+
+                // Success
+                localStorage.setItem('collina_admin_auth', 'true');
+                showApp();
+
+            } catch (e) {
+                console.error('Login error:', e);
+                document.getElementById('login-error').style.display = 'block';
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('collina_admin_auth');
+            location.reload();
+        }
+
+        function checkAuth() {
+            if (localStorage.getItem('collina_admin_auth') === 'true') {
+                db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                showApp();
+            }
+        }
+
+        function showApp() {
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('app').classList.add('show');
+            loadAllData();
+        }
+
+        // ============================================
+        // DATA LOADING
+        // ============================================
+        async function loadAllData() {
+            await Promise.all([
+                loadCategories(),
+                loadItems(),
+                loadSections(),
+                loadIngredients(),
+                loadItemIngredients(),
+                loadLocations()
+            ]);
+            
+            renderCategories();
+            renderItems();
+            renderIngredients();
+            renderLocations();
+            populateCategoryFilter();
+            populateLocationCheckboxes();
+        }
+
+        function populateCategoryFilter() {
+            const select = document.getElementById('category-filter');
+            select.innerHTML = '<option value="">Sve kategorije</option>' +
+                categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+        }
+
+        function filterItemsByCategory() {
+            currentCategoryFilter = document.getElementById('category-filter').value;
+            renderItems();
+        }
+
+        async function loadCategories() {
+            const { data } = await db.from('shop_menu_categories').select('*').order('sort_order');
+            categories = data || [];
+        }
+
+        async function loadItems() {
+            const { data } = await db.from('shop_menu_items').select('*').order('sort_order');
+            items = data || [];
+        }
+
+        async function loadSections() {
+            const { data } = await db.from('shop_menu_sections').select('*').order('sort_order');
+            sections = data || [];
+        }
+
+        async function loadIngredients() {
+            const { data } = await db.from('shop_ingredients').select('*').order('sort_order');
+            ingredients = data || [];
+        }
+
+        async function loadLocations() {
+            const { data } = await db.from('shop_locations').select('*').order('sort_order');
+            locations = data || [];
+        }
+
+        async function loadItemIngredients() {
+            const { data } = await db.from('shop_item_ingredients').select('*');
+            itemIngredients = {};
+            (data || []).forEach(m => {
+                if (!itemIngredients[m.item_id]) itemIngredients[m.item_id] = [];
+                itemIngredients[m.item_id].push(m.ingredient_id);
+            });
+        }
+        
+        function populateLocationCheckboxes() {
+            const container = document.getElementById('item-locations');
+            if (locations.length === 0) return;
+            
+            container.innerHTML = locations.map(loc => `
+                <label class="location-checkbox">
+                    <input type="checkbox" id="loc-${loc.slug}" checked>
+                    <span>${loc.name}</span>
+                </label>
+            `).join('');
+        }
+
+        // ============================================
+        // RENDER TABLES
+        // ============================================
+        function renderCategories() {
+            const tbody = document.getElementById('categories-table');
+            
+            if (categories.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4"><div class="empty-state"><div class="empty-icon">📂</div>Nema kategorija</div></td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = categories.map(cat => `
+                <tr>
+                    <td>${cat.sort_order}</td>
+                    <td><strong>${cat.name}</strong></td>
+                    <td><span class="status-badge ${cat.is_active ? 'active' : 'inactive'}">${cat.is_active ? 'Aktivna' : 'Neaktivna'}</span></td>
+                    <td>
+                        <button class="action-btn" onclick="editCategory('${cat.id}')">✏️ Izmeni</button>
+                        <button class="action-btn delete" onclick="deleteCategory('${cat.id}')">🗑️</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function renderItems() {
+            const tbody = document.getElementById('items-table');
+            
+            // Filter items by category if selected
+            let filteredItems = items;
+            let filteredSections = sections;
+            
+            if (currentCategoryFilter) {
+                filteredItems = items.filter(item => item.category_id === currentCategoryFilter);
+                filteredSections = sections.filter(section => section.category_id === currentCategoryFilter);
+            }
+            
+            // Combine items and sections, sort by sort_order
+            const allRows = [
+                ...filteredItems.map(item => ({ type: 'item', data: item, sort_order: item.sort_order })),
+                ...filteredSections.map(section => ({ type: 'section', data: section, sort_order: section.sort_order }))
+            ].sort((a, b) => a.sort_order - b.sort_order);
+            
+            if (allRows.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="empty-icon">🍔</div>Nema proizvoda</div></td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = allRows.map(row => {
+                if (row.type === 'section') {
+                    const section = row.data;
+                    const sectionCat = categories.find(c => c.id === section.category_id);
+                    return `
+                        <tr class="section-row" draggable="true" data-type="section" data-id="${section.id}" data-sort="${section.sort_order}">
+                            <td><span class="drag-handle">⠿</span></td>
+                            <td colspan="5">
+                                <div class="section-title-text">
+                                    <span>📌</span>
+                                    <span>${section.name}</span>
+                                    ${!currentCategoryFilter && sectionCat ? `<span class="section-cat-badge">${sectionCat.name}</span>` : ''}
+                                </div>
+                            </td>
+                            <td colspan="2">
+                                <div class="section-actions">
+                                    <button class="section-btn" onclick="editSection('${section.id}')">✏️</button>
+                                    <button class="section-btn" onclick="deleteSection('${section.id}')">🗑️</button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }
+                
+                const item = row.data;
+                const cat = categories.find(c => c.id === item.category_id);
+                const hasDiscount = item.discounted_price && item.discounted_price < item.price;
+                const locationsList = item.available_locations || locations.map(l => l.slug);
+                
+                // Build location abbreviations from database
+                const locDisplay = locationsList.map(slug => {
+                    const loc = locations.find(l => l.slug === slug);
+                    if (loc) {
+                        // Create short abbreviation from name
+                        return loc.name.replace('Collina ', '').replace('Kuhinjica ', 'K:').substring(0, 3).toUpperCase();
+                    }
+                    return slug.substring(0, 2).toUpperCase();
+                }).join(', ');
+                
+                return `
+                    <tr draggable="true" data-type="item" data-id="${item.id}" data-sort="${item.sort_order}">
+                        <td><span class="drag-handle">⠿</span></td>
+                        <td>
+                            ${item.image_url 
+                                ? `<img src="${item.image_url}" class="item-image">`
+                                : `<div class="item-image-placeholder">🍽️</div>`}
+                        </td>
+                        <td><strong>${item.name}</strong></td>
+                        <td>${cat?.name || '-'}</td>
+                        <td>
+                            ${hasDiscount 
+                                ? `<span class="old-price">${item.price}</span><span class="discount-price">${item.discounted_price} RSD</span>`
+                                : `${item.price} RSD`}
+                        </td>
+                        <td><span class="locations-badge">${locDisplay || 'Sve'}</span></td>
+                        <td><span class="status-badge ${item.is_available ? 'active' : 'inactive'}">${item.is_available ? 'Dostupan' : 'Nedostupan'}</span></td>
+                        <td>
+                            <button class="action-btn" onclick="editItem('${item.id}')">✏️ Izmeni</button>
+                            <button class="action-btn delete" onclick="deleteItem('${item.id}')">🗑️</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+            
+            // Initialize drag and drop
+            initDragAndDrop();
+        }
+        
+        // ============================================
+        // DRAG AND DROP
+        // ============================================
+        let draggedRow = null;
+        
+        function initDragAndDrop() {
+            const tbody = document.getElementById('items-table');
+            const rows = tbody.querySelectorAll('tr[draggable="true"]');
+            
+            rows.forEach(row => {
+                row.addEventListener('dragstart', handleDragStart);
+                row.addEventListener('dragend', handleDragEnd);
+                row.addEventListener('dragover', handleDragOver);
+                row.addEventListener('dragleave', handleDragLeave);
+                row.addEventListener('drop', handleDrop);
+            });
+        }
+        
+        function handleDragStart(e) {
+            draggedRow = this;
+            this.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+        }
+        
+        function handleDragEnd(e) {
+            this.classList.remove('dragging');
+            document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+        }
+        
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            this.classList.add('drag-over');
+        }
+        
+        function handleDragLeave(e) {
+            this.classList.remove('drag-over');
+        }
+        
+        async function handleDrop(e) {
+            e.preventDefault();
+            this.classList.remove('drag-over');
+            
+            if (draggedRow === this) return;
+            
+            const tbody = document.getElementById('items-table');
+            const allRows = Array.from(tbody.querySelectorAll('tr[draggable="true"]'));
+            
+            const draggedIndex = allRows.indexOf(draggedRow);
+            const targetIndex = allRows.indexOf(this);
+            
+            // Move the row in DOM
+            if (draggedIndex < targetIndex) {
+                this.parentNode.insertBefore(draggedRow, this.nextSibling);
+            } else {
+                this.parentNode.insertBefore(draggedRow, this);
+            }
+            
+            // Update sort_order for all rows
+            await updateSortOrders();
+        }
+        
+        async function updateSortOrders() {
+            const tbody = document.getElementById('items-table');
+            const allRows = Array.from(tbody.querySelectorAll('tr[draggable="true"]'));
+            
+            const updates = [];
+            
+            allRows.forEach((row, index) => {
+                const type = row.dataset.type;
+                const id = row.dataset.id;
+                const newSort = index * 10; // Use 10 increments for flexibility
+                
+                if (type === 'item') {
+                    updates.push(db.from('shop_menu_items').update({ sort_order: newSort }).eq('id', id));
+                } else if (type === 'section') {
+                    updates.push(db.from('shop_menu_sections').update({ sort_order: newSort }).eq('id', id));
+                }
+            });
+            
+            try {
+                await Promise.all(updates);
+                showToast('Redosled sačuvan!', 'success');
+                
+                // Reload to sync state
+                await Promise.all([loadItems(), loadSections()]);
+            } catch (e) {
+                console.error('Error updating sort order:', e);
+                showToast('Greška pri čuvanju redosleda', 'error');
+            }
+        }
+        
+        // ============================================
+        // SECTION MODAL
+        // ============================================
+        function openSectionModal(id = null) {
+            document.getElementById('section-modal-title').textContent = id ? 'Izmeni sekciju' : 'Nova sekcija';
+            document.getElementById('section-id').value = id || '';
+            
+            // Populate category dropdown
+            document.getElementById('section-category').innerHTML = 
+                '<option value="">-- Izaberi kategoriju --</option>' +
+                categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+            
+            if (id) {
+                const section = sections.find(s => s.id === id);
+                document.getElementById('section-category').value = section.category_id || '';
+                document.getElementById('section-name').value = section.name;
+                document.getElementById('section-sort').value = section.sort_order;
+            } else {
+                // Default to current filter category if one is selected
+                document.getElementById('section-category').value = currentCategoryFilter || '';
+                document.getElementById('section-name').value = '';
+                // Default sort order - at the end
+                const maxSort = Math.max(0, ...items.map(i => i.sort_order), ...sections.map(s => s.sort_order));
+                document.getElementById('section-sort').value = maxSort + 10;
+            }
+            
+            document.getElementById('section-modal').classList.add('show');
+        }
+        
+        function closeSectionModal() {
+            document.getElementById('section-modal').classList.remove('show');
+        }
+        
+        function editSection(id) {
+            openSectionModal(id);
+        }
+        
+        async function saveSection() {
+            const id = document.getElementById('section-id').value;
+            const categoryId = document.getElementById('section-category').value;
+            const data = {
+                category_id: categoryId || null,
+                name: document.getElementById('section-name').value.trim(),
+                sort_order: parseInt(document.getElementById('section-sort').value) || 0
+            };
+            
+            if (!data.name) {
+                showToast('Unesite naziv sekcije', 'error');
+                return;
+            }
+            
+            if (!data.category_id) {
+                showToast('Izaberite kategoriju', 'error');
+                return;
+            }
+            
+            try {
+                if (id) {
+                    await db.from('shop_menu_sections').update(data).eq('id', id);
+                } else {
+                    await db.from('shop_menu_sections').insert([data]);
+                }
+                
+                closeSectionModal();
+                await loadSections();
+                renderItems();
+                showToast('Sekcija sačuvana!', 'success');
+            } catch (e) {
+                console.error(e);
+                showToast('Greška pri čuvanju', 'error');
+            }
+        }
+        
+        async function deleteSection(id) {
+            if (!confirm('Obrisati sekciju?')) return;
+            
+            try {
+                await db.from('shop_menu_sections').delete().eq('id', id);
+                await loadSections();
+                renderItems();
+                showToast('Sekcija obrisana!', 'success');
+            } catch (e) {
+                showToast('Greška pri brisanju', 'error');
+            }
+        }
+
+        function renderIngredients() {
+            const tbody = document.getElementById('ingredients-table');
+            
+            if (ingredients.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state"><div class="empty-icon">🧀</div>Nema dodataka</div></td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = ingredients.map(ing => `
+                <tr>
+                    <td>${ing.sort_order}</td>
+                    <td><strong>${ing.name}</strong></td>
+                    <td>+${ing.price} RSD</td>
+                    <td><span class="status-badge ${ing.is_available ? 'active' : 'inactive'}">${ing.is_available ? 'Dostupan' : 'Nedostupan'}</span></td>
+                    <td>
+                        <button class="action-btn" onclick="editIngredient('${ing.id}')">✏️ Izmeni</button>
+                        <button class="action-btn delete" onclick="deleteIngredient('${ing.id}')">🗑️</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // ============================================
+        // NAVIGATION
+        // ============================================
+        function showPage(page, el) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.getElementById('page-' + page).classList.add('active');
+            el.classList.add('active');
+        }
+
+        // ============================================
+        // CATEGORY MODAL
+        // ============================================
+        function openCategoryModal(id = null) {
+            document.getElementById('category-modal-title').textContent = id ? 'Izmeni kategoriju' : 'Nova kategorija';
+            document.getElementById('cat-id').value = id || '';
+            
+            if (id) {
+                const cat = categories.find(c => c.id === id);
+                document.getElementById('cat-name').value = cat.name;
+                document.getElementById('cat-desc').value = cat.description || '';
+                document.getElementById('cat-sort').value = cat.sort_order;
+                document.getElementById('cat-active').checked = cat.is_active;
+            } else {
+                document.getElementById('cat-name').value = '';
+                document.getElementById('cat-desc').value = '';
+                document.getElementById('cat-sort').value = categories.length;
+                document.getElementById('cat-active').checked = true;
+            }
+            
+            document.getElementById('category-modal').classList.add('show');
+        }
+
+        function closeCategoryModal() {
+            document.getElementById('category-modal').classList.remove('show');
+        }
+
+        function editCategory(id) {
+            openCategoryModal(id);
+        }
+
+        async function saveCategory() {
+            const id = document.getElementById('cat-id').value;
+            const data = {
+                name: document.getElementById('cat-name').value.trim(),
+                description: document.getElementById('cat-desc').value.trim() || null,
+                sort_order: parseInt(document.getElementById('cat-sort').value) || 0,
+                is_active: document.getElementById('cat-active').checked,
+                updated_at: new Date().toISOString()
+            };
+
+            if (!data.name) {
+                showToast('Unesite naziv', 'error');
+                return;
+            }
+
+            try {
+                if (id) {
+                    await db.from('shop_menu_categories').update(data).eq('id', id);
+                } else {
+                    await db.from('shop_menu_categories').insert([data]);
+                }
+                
+                closeCategoryModal();
+                await loadCategories();
+                renderCategories();
+                showToast('Sačuvano!', 'success');
+            } catch (e) {
+                console.error(e);
+                showToast('Greška pri čuvanju', 'error');
+            }
+        }
+
+        async function deleteCategory(id) {
+            if (!confirm('Obrisati kategoriju?')) return;
+            
+            try {
+                await db.from('shop_menu_categories').delete().eq('id', id);
+                await loadCategories();
+                renderCategories();
+                showToast('Obrisano!', 'success');
+            } catch (e) {
+                showToast('Greška pri brisanju', 'error');
+            }
+        }
+
+        // ============================================
+        // ITEM MODAL
+        // ============================================
+        function openItemModal(id = null) {
+            document.getElementById('item-modal-title').textContent = id ? 'Izmeni proizvod' : 'Novi proizvod';
+            document.getElementById('item-id').value = id || '';
+            
+            // Populate category select
+            document.getElementById('item-category').innerHTML = 
+                '<option value="">-- Izaberi kategoriju --</option>' +
+                categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+            
+            // Populate ingredients
+            selectedItemIngredients = [];
+            renderItemIngredients();
+            
+            // Populate location checkboxes
+            populateLocationCheckboxes();
+            
+            if (id) {
+                const item = items.find(i => i.id === id);
+                document.getElementById('item-name').value = item.name;
+                document.getElementById('item-desc').value = item.description || '';
+                document.getElementById('item-category').value = item.category_id || '';
+                document.getElementById('item-price').value = item.price;
+                document.getElementById('item-discounted-price').value = item.discounted_price || '';
+                document.getElementById('item-sort').value = item.sort_order;
+                document.getElementById('item-available').checked = item.is_available;
+                document.getElementById('item-popular').checked = item.is_popular || false;
+                document.getElementById('item-popular-sort').value = item.popular_sort_order || 0;
+                document.getElementById('item-image-url').value = item.image_url || '';
+                
+                // Show/hide popular sort field
+                togglePopularSort();
+                
+                // Image preview
+                if (item.image_url) {
+                    document.getElementById('item-image-preview').innerHTML = `<img src="${item.image_url}">`;
+                } else {
+                    document.getElementById('item-image-preview').innerHTML = '';
+                }
+                
+                // Locations - check only those in item's available_locations
+                const itemLocs = item.available_locations || locations.map(l => l.slug);
+                locations.forEach(loc => {
+                    const checkbox = document.getElementById(`loc-${loc.slug}`);
+                    if (checkbox) checkbox.checked = itemLocs.includes(loc.slug);
+                });
+                
+                // Load item's ingredients
+                selectedItemIngredients = itemIngredients[id] || [];
+                renderItemIngredients();
+            } else {
+                document.getElementById('item-name').value = '';
+                document.getElementById('item-desc').value = '';
+                document.getElementById('item-category').value = '';
+                document.getElementById('item-price').value = '';
+                document.getElementById('item-discounted-price').value = '';
+                document.getElementById('item-sort').value = items.length;
+                document.getElementById('item-available').checked = true;
+                document.getElementById('item-popular').checked = false;
+                document.getElementById('item-popular-sort').value = 0;
+                document.getElementById('item-image-url').value = '';
+                document.getElementById('item-image-preview').innerHTML = '';
+                document.getElementById('popular-sort-group').style.display = 'none';
+                
+                // All locations checked by default
+                locations.forEach(loc => {
+                    const checkbox = document.getElementById(`loc-${loc.slug}`);
+                    if (checkbox) checkbox.checked = true;
+                });
+            }
+            
+            document.getElementById('item-modal').classList.add('show');
+        }
+        
+        function togglePopularSort() {
+            const isPopular = document.getElementById('item-popular').checked;
+            document.getElementById('popular-sort-group').style.display = isPopular ? 'block' : 'none';
+        }
+
+        function closeItemModal() {
+            document.getElementById('item-modal').classList.remove('show');
+        }
+
+        function editItem(id) {
+            openItemModal(id);
+        }
+
+        function renderItemIngredients() {
+            document.getElementById('item-ingredients').innerHTML = ingredients.map(ing => `
+                <div class="ing-tag ${selectedItemIngredients.includes(ing.id) ? 'selected' : ''}" 
+                     onclick="toggleItemIngredient('${ing.id}')">
+                    ${ing.name} (+${ing.price})
+                </div>
+            `).join('');
+        }
+
+        function toggleItemIngredient(id) {
+            const idx = selectedItemIngredients.indexOf(id);
+            if (idx > -1) {
+                selectedItemIngredients.splice(idx, 1);
+            } else {
+                selectedItemIngredients.push(id);
+            }
+            renderItemIngredients();
+        }
+
+        function previewImage(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('item-image-preview').innerHTML = `<img src="${e.target.result}">`;
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        async function uploadImage(file) {
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${Date.now()}.${fileExt}`;
+            
+            const { data, error } = await db.storage
+                .from(STORAGE_BUCKET)
+                .upload(fileName, file);
+
+            if (error) throw error;
+
+            const { data: urlData } = db.storage
+                .from(STORAGE_BUCKET)
+                .getPublicUrl(fileName);
+
+            return urlData.publicUrl;
+        }
+
+        async function saveItem() {
+            const id = document.getElementById('item-id').value;
+            const fileInput = document.getElementById('item-image-input');
+            let imageUrl = document.getElementById('item-image-url').value;
+
+            // Upload new image if selected
+            if (fileInput.files && fileInput.files[0]) {
+                try {
+                    imageUrl = await uploadImage(fileInput.files[0]);
+                } catch (e) {
+                    console.error('Upload error:', e);
+                    showToast('Greška pri uploadu slike', 'error');
+                    return;
+                }
+            }
+
+            const discountedPrice = document.getElementById('item-discounted-price').value;
+            const popularSortOrder = document.getElementById('item-popular-sort').value;
+            
+            // Get selected locations dynamically
+            const availableLocations = [];
+            locations.forEach(loc => {
+                const checkbox = document.getElementById(`loc-${loc.slug}`);
+                if (checkbox && checkbox.checked) {
+                    availableLocations.push(loc.slug);
+                }
+            });
+            
+            const data = {
+                name: document.getElementById('item-name').value.trim(),
+                description: document.getElementById('item-desc').value.trim() || null,
+                category_id: document.getElementById('item-category').value || null,
+                price: parseInt(document.getElementById('item-price').value) || 0,
+                discounted_price: discountedPrice ? parseInt(discountedPrice) : null,
+                image_url: imageUrl || null,
+                sort_order: parseInt(document.getElementById('item-sort').value) || 0,
+                is_available: document.getElementById('item-available').checked,
+                is_popular: document.getElementById('item-popular').checked,
+                popular_sort_order: popularSortOrder ? parseInt(popularSortOrder) : 0,
+                available_locations: availableLocations,
+                updated_at: new Date().toISOString()
+            };
+
+            if (!data.name || !data.price) {
+                showToast('Unesite naziv i cenu', 'error');
+                return;
+            }
+
+            try {
+                let itemId = id;
+                
+                if (id) {
+                    await db.from('shop_menu_items').update(data).eq('id', id);
+                } else {
+                    const { data: inserted } = await db.from('shop_menu_items').insert([data]).select().single();
+                    itemId = inserted.id;
+                }
+                
+                // Update item ingredients
+                await db.from('shop_item_ingredients').delete().eq('item_id', itemId);
+                if (selectedItemIngredients.length > 0) {
+                    const mappings = selectedItemIngredients.map(ingId => ({
+                        item_id: itemId,
+                        ingredient_id: ingId
+                    }));
+                    await db.from('shop_item_ingredients').insert(mappings);
+                }
+                
+                closeItemModal();
+                await loadItems();
+                await loadItemIngredients();
+                renderItems();
+                showToast('Sačuvano!', 'success');
+            } catch (e) {
+                console.error(e);
+                showToast('Greška pri čuvanju', 'error');
+            }
+        }
+
+        async function deleteItem(id) {
+            if (!confirm('Obrisati proizvod?')) return;
+            
+            try {
+                await db.from('shop_item_ingredients').delete().eq('item_id', id);
+                await db.from('shop_menu_items').delete().eq('id', id);
+                await loadItems();
+                renderItems();
+                showToast('Obrisano!', 'success');
+            } catch (e) {
+                showToast('Greška pri brisanju', 'error');
+            }
+        }
+
+        // ============================================
+        // INGREDIENT MODAL
+        // ============================================
+        function openIngredientModal(id = null) {
+            document.getElementById('ingredient-modal-title').textContent = id ? 'Izmeni dodatak' : 'Novi dodatak';
+            document.getElementById('ing-id').value = id || '';
+            
+            if (id) {
+                const ing = ingredients.find(i => i.id === id);
+                document.getElementById('ing-name').value = ing.name;
+                document.getElementById('ing-price').value = ing.price;
+                document.getElementById('ing-sort').value = ing.sort_order;
+                document.getElementById('ing-available').checked = ing.is_available;
+            } else {
+                document.getElementById('ing-name').value = '';
+                document.getElementById('ing-price').value = 0;
+                document.getElementById('ing-sort').value = ingredients.length;
+                document.getElementById('ing-available').checked = true;
+            }
+            
+            document.getElementById('ingredient-modal').classList.add('show');
+        }
+
+        function closeIngredientModal() {
+            document.getElementById('ingredient-modal').classList.remove('show');
+        }
+
+        function editIngredient(id) {
+            openIngredientModal(id);
+        }
+
+        async function saveIngredient() {
+            const id = document.getElementById('ing-id').value;
+            const data = {
+                name: document.getElementById('ing-name').value.trim(),
+                price: parseInt(document.getElementById('ing-price').value) || 0,
+                sort_order: parseInt(document.getElementById('ing-sort').value) || 0,
+                is_available: document.getElementById('ing-available').checked,
+                updated_at: new Date().toISOString()
+            };
+
+            if (!data.name) {
+                showToast('Unesite naziv', 'error');
+                return;
+            }
+
+            try {
+                if (id) {
+                    await db.from('shop_ingredients').update(data).eq('id', id);
+                } else {
+                    await db.from('shop_ingredients').insert([data]);
+                }
+                
+                closeIngredientModal();
+                await loadIngredients();
+                renderIngredients();
+                showToast('Sačuvano!', 'success');
+            } catch (e) {
+                console.error(e);
+                showToast('Greška pri čuvanju', 'error');
+            }
+        }
+
+        async function deleteIngredient(id) {
+            if (!confirm('Obrisati dodatak?')) return;
+            
+            try {
+                await db.from('shop_item_ingredients').delete().eq('ingredient_id', id);
+                await db.from('shop_ingredients').delete().eq('id', id);
+                await loadIngredients();
+                renderIngredients();
+                showToast('Obrisano!', 'success');
+            } catch (e) {
+                showToast('Greška pri brisanju', 'error');
+            }
+        }
+
+        // ============================================
+        // LOCATIONS CRUD
+        // ============================================
+        function renderLocations() {
+            const tbody = document.getElementById('locations-table');
+            
+            if (locations.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="empty-icon">📍</div>Nema lokacija</div></td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = locations.map(loc => `
+                <tr>
+                    <td>${loc.sort_order}</td>
+                    <td><strong>${loc.name}</strong></td>
+                    <td>${loc.address}</td>
+                    <td><code>${loc.slug}</code></td>
+                    <td>
+                        ${loc.has_drive_through ? '<span class="status-badge active">🚗 Drive-Thru</span>' : ''}
+                        ${loc.is_new ? '<span class="status-badge" style="background:rgba(34,197,94,0.2);color:#22C55E;">✨ NOVO</span>' : ''}
+                    </td>
+                    <td><span class="status-badge ${loc.is_active ? 'active' : 'inactive'}">${loc.is_active ? 'Aktivna' : 'Neaktivna'}</span></td>
+                    <td>
+                        <button class="action-btn" onclick="editLocation('${loc.id}')">✏️ Izmeni</button>
+                        <button class="action-btn delete" onclick="deleteLocation('${loc.id}')">🗑️</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function openLocationModal(id = null) {
+            document.getElementById('location-modal-title').textContent = id ? 'Izmeni lokaciju' : 'Nova lokacija';
+            document.getElementById('location-id').value = id || '';
+            
+            if (id) {
+                const loc = locations.find(l => l.id === id);
+                document.getElementById('location-name').value = loc.name;
+                document.getElementById('location-address').value = loc.address;
+                document.getElementById('location-slug').value = loc.slug;
+                document.getElementById('location-sort').value = loc.sort_order;
+                document.getElementById('location-active').checked = loc.is_active;
+                document.getElementById('location-drive-through').checked = loc.has_drive_through || false;
+                document.getElementById('location-new').checked = loc.is_new || false;
+            } else {
+                document.getElementById('location-name').value = '';
+                document.getElementById('location-address').value = '';
+                document.getElementById('location-slug').value = '';
+                document.getElementById('location-sort').value = locations.length;
+                document.getElementById('location-active').checked = true;
+                document.getElementById('location-drive-through').checked = false;
+                document.getElementById('location-new').checked = false;
+            }
+            
+            document.getElementById('location-modal').classList.add('show');
+        }
+
+        function closeLocationModal() {
+            document.getElementById('location-modal').classList.remove('show');
+        }
+
+        function editLocation(id) {
+            openLocationModal(id);
+        }
+
+        async function saveLocation() {
+            const id = document.getElementById('location-id').value;
+            const data = {
+                name: document.getElementById('location-name').value.trim(),
+                address: document.getElementById('location-address').value.trim(),
+                slug: document.getElementById('location-slug').value.trim().toLowerCase().replace(/\s+/g, '_'),
+                sort_order: parseInt(document.getElementById('location-sort').value) || 0,
+                is_active: document.getElementById('location-active').checked,
+                has_drive_through: document.getElementById('location-drive-through').checked,
+                is_new: document.getElementById('location-new').checked
+            };
+
+            if (!data.name || !data.slug) {
+                showToast('Unesite naziv i slug', 'error');
+                return;
+            }
+
+            try {
+                if (id) {
+                    await db.from('shop_locations').update(data).eq('id', id);
+                } else {
+                    await db.from('shop_locations').insert([data]);
+                }
+                
+                closeLocationModal();
+                await loadLocations();
+                renderLocations();
+                populateLocationCheckboxes();
+                showToast('Lokacija sačuvana!', 'success');
+            } catch (e) {
+                console.error(e);
+                showToast('Greška pri čuvanju', 'error');
+            }
+        }
+
+        async function deleteLocation(id) {
+            if (!confirm('Obrisati lokaciju?')) return;
+            
+            try {
+                await db.from('shop_locations').delete().eq('id', id);
+                await loadLocations();
+                renderLocations();
+                populateLocationCheckboxes();
+                showToast('Obrisano!', 'success');
+            } catch (e) {
+                showToast('Greška pri brisanju', 'error');
+            }
+        }
+
+        // ============================================
+        // TOAST
+        // ============================================
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'toast ' + type + ' show';
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2500);
+        }
+
+        // ============================================
+        // INIT
+        // ============================================
+        document.addEventListener('DOMContentLoaded', checkAuth);
+    </script>
+</body>
+</html>
