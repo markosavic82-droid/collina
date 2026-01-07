@@ -1691,14 +1691,21 @@
         // ANALYTICS TRACKING
         // ============================================
         function trackEvent(eventName, params = {}) {
+            // Standard Meta Pixel events
+            const standardMetaEvents = [
+                'AddPaymentInfo', 'AddToCart', 'AddToWishlist', 'CompleteRegistration',
+                'Contact', 'CustomizeProduct', 'Donate', 'FindLocation', 'InitiateCheckout',
+                'Lead', 'PageView', 'Purchase', 'Schedule', 'Search', 'StartTrial',
+                'SubmitApplication', 'Subscribe', 'ViewContent'
+            ];
+            
             // Meta Pixel tracking (use EUR - Meta doesn't support RSD)
             if (typeof fbq !== 'undefined') {
                 try {
                     const metaParams = {...params};
-                    if (metaParams.currency === 'EUR') {
-                        // Already EUR from caller, keep as is
-                    }
-                    fbq('track', eventName, metaParams);
+                    // Use 'track' for standard events, 'trackCustom' for custom events
+                    const trackMethod = standardMetaEvents.includes(eventName) ? 'track' : 'trackCustom';
+                    fbq(trackMethod, eventName, metaParams);
                     console.log('📊 Meta Pixel:', eventName, metaParams);
                 } catch (e) {
                     console.warn('Meta Pixel error:', e);
