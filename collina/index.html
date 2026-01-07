@@ -2,7 +2,7 @@
 <html lang="sr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Collina - Naruči</title>
     
     <!-- Google Analytics (GA4) -->
@@ -1071,6 +1071,7 @@
         /* Cart Footer */
         .cart-footer {
             padding: 16px 20px;
+            padding-bottom: calc(24px + env(safe-area-inset-bottom, 20px));
             border-top: 1px solid var(--border);
             background: var(--bg-secondary);
         }
@@ -1690,17 +1691,21 @@
         // ANALYTICS TRACKING
         // ============================================
         function trackEvent(eventName, params = {}) {
-            // Meta Pixel tracking
+            // Meta Pixel tracking (use EUR - Meta doesn't support RSD)
             if (typeof fbq !== 'undefined') {
                 try {
-                    fbq('track', eventName, params);
-                    console.log('📊 Meta Pixel:', eventName, params);
+                    const metaParams = {...params};
+                    if (metaParams.currency === 'EUR') {
+                        // Already EUR from caller, keep as is
+                    }
+                    fbq('track', eventName, metaParams);
+                    console.log('📊 Meta Pixel:', eventName, metaParams);
                 } catch (e) {
                     console.warn('Meta Pixel error:', e);
                 }
             }
             
-            // Google Analytics 4 tracking
+            // Google Analytics 4 tracking (supports RSD)
             if (typeof gtag !== 'undefined') {
                 try {
                     // Map event names to GA4 standard events
@@ -1713,9 +1718,9 @@
                     
                     const ga4Event = ga4EventMap[eventName] || eventName;
                     
-                    // Build GA4 parameters
+                    // Build GA4 parameters (use RSD for GA4)
                     const ga4Params = {
-                        currency: params.currency || 'RSD',
+                        currency: 'RSD',
                         value: params.value || 0,
                         items: (params.content_ids || []).map((id, idx) => ({
                             item_id: id,
@@ -2226,7 +2231,7 @@
                 content_ids: [item.id],
                 content_type: 'product',
                 value: itemPrice,
-                currency: 'RSD'
+                currency: 'EUR'
             });
 
             currentProduct = item;
@@ -2370,7 +2375,7 @@
                 content_ids: [currentProduct.id],
                 content_type: 'product',
                 value: totalPrice,
-                currency: 'RSD',
+                currency: 'EUR',
                 num_items: sheetQty
             });
 
@@ -2419,7 +2424,7 @@
                 content_ids: [item.id],
                 content_type: 'product',
                 value: itemPrice,
-                currency: 'RSD',
+                currency: 'EUR',
                 num_items: 1
             });
 
@@ -2453,7 +2458,7 @@
                     content_ids: cart.map(c => c.item.id),
                     content_type: 'product',
                     value: cartValue,
-                    currency: 'RSD',
+                    currency: 'EUR',
                     num_items: cart.reduce((sum, c) => sum + c.qty, 0)
                 });
             }
@@ -2849,7 +2854,7 @@
                     content_ids: orderItems.map(item => item.item_id),
                     content_type: 'product',
                     value: total,
-                    currency: 'RSD',
+                    currency: 'EUR',
                     num_items: orderItems.reduce((sum, item) => sum + item.quantity, 0),
                     order_id: orderId,
                     content_name: orderItems.map(item => item.name).join(', ')
