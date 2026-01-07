@@ -1050,7 +1050,19 @@
     .items-table .item-modifiers {
       font-size: 12px;
       color: #888;
-      margin-top: 4px;
+      margin-top: 6px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+
+    .items-table .modifier-tag {
+      background: rgba(139, 92, 246, 0.15);
+      color: #A78BFA;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      white-space: nowrap;
     }
 
     .lifecycle-timeline {
@@ -1393,6 +1405,114 @@
     let selectedChannels = new Set(['wolt', 'gloriafood', 'ebar', 'pult']); // All by default
     let selectedStatus = 'all'; // Status filter: 'all', 'new', 'production', 'ready', 'paid', 'canceled'
     let viewMode = 'cards'; // 'cards' or 'table'
+
+    // E-BAR items map for resolving modifier names (Sifra -> {n: name, p: price})
+    const EBAR_ITEMS = {"6985164":{"n":"2X Collina burger+pomfrit+2x Pepsi 0.33","p":1527},"30410":{"n":"2x Pepsi+2xDouble collina SMASH","p":1584},"30411":{"n":"2xPepsi+2xDouble jalapeSMASH+2xPOMFRIT","p":1968},"8642":{"n":"7 Up 0.25 flasica","p":220},"778229":{"n":"7 UP 0.33 l","p":130},"8640":{"n":"7 UP 0.33 limenka","p":280},"10192":{"n":"Am.Nutela plazma visnja+kokta 0,33","p":512},"30413":{"n":"Am.pal.krem plazma+pepsi 0.33","p":572},"6985147":{"n":"Amer.Dubai palacinka","p":960},"10067":{"n":"Amercka palacinka javorov sirup","p":395},"5122":{"n":"Americka beli eurokrem","p":410},"20201":{"n":"Americka beli krem -D","p":575},"65203":{"n":"Americka cipiripi","p":395},"20203":{"n":"Americka cipiripi-D","p":555},"6985149":{"n":"Americka DUBAI pal.","p":790},"65120":{"n":"Americka eurokrem","p":395},"20202":{"n":"Americka eurokrem-D","p":555},"65121":{"n":"Americka nutella","p":445},"20200":{"n":"Americka nutella-D","p":575},"20252":{"n":"dod.banana dos.","p":80},"20224":{"n":"dod.barbique sos dos.","p":80},"20218":{"n":"dod.barbique sos dos.1","p":80},"20225":{"n":"dod.chily sos dos.","p":80},"20230":{"n":"dod.jaje dos.","p":85},"20262":{"n":"dod.kikiriki dos.","p":80},"20254":{"n":"dod.kokos dos.","p":75},"20227":{"n":"dod.krastavcici dos.","p":85},"20255":{"n":"dod.krem bananica dos.","p":90},"20233":{"n":"dod.kukuruz sal.dos.","p":145},"20264":{"n":"dod.lesnik dos.","p":90},"20229":{"n":"dod.majonez dos.","p":80},"20249":{"n":"dod.malina dos.","p":110},"20247":{"n":"dod.meso 120g dos.","p":215},"20246":{"n":"dod.meso 80g dos.","p":145},"20263":{"n":"dod.orah dos.","p":80},"20248":{"n":"dod.panirani kackavalj dos.","p":100},"20228":{"n":"dod.paradajz dos.","p":80},"20231":{"n":"dod.pavlaka dos.","p":80},"20237":{"n":"dod.pecenica dos.","p":100},"20244":{"n":"dod.pecurke dos.","p":85},"20234":{"n":"dod.pileca sal.dos","p":145},"20260":{"n":"dod.plazma dos.","p":80},"20261":{"n":"dod.plazma u mleku dos.","p":100},"20289":{"n":"Dod.polimark kecap dos.","p":85},"20245":{"n":"dod.pomfrit dos.","p":250},"20250":{"n":"dod.pomorandza dos.","p":80},"20256":{"n":"dod.preliv cokolada dos.","p":80},"20257":{"n":"dod.preliv karamela dos.","p":80},"20258":{"n":"dod.preliv sumsko voce dos.","p":80},"20238":{"n":"dod.prsuta dos.","p":120},"20235":{"n":"dod.ruska sal.dos","p":125},"20242":{"n":"dod.senf dos.","p":80},"20226":{"n":"dod.slanina dos.","p":90},"20236":{"n":"dod.sunka dos.","p":100},"20253":{"n":"dod.suvo grozdje dos.","p":85},"20243":{"n":"dod.tartar sos dos","p":80},"20239":{"n":"dod.topljeni sir dos.","p":90},"20232":{"n":"dod.urnebes dos.","p":85},"20251":{"n":"dod.visnja dos.","p":90},"238":{"n":"Dodatak Banana","p":80},"8809":{"n":"Dodatak barbiqu sos","p":80},"222":{"n":"Dodatak chily sos","p":80},"258":{"n":"Dodatak feta sir","p":80},"212":{"n":"Dodatak govedja prsuta","p":120},"8695":{"n":"Dodatak heinz kecap","p":85},"10041":{"n":"Dodatak jaje a","p":85},"8670":{"n":"Dodatak kackavalj 50 gr","p":80},"240":{"n":"Dodatak karamela","p":60},"9690":{"n":"Dodatak kecap bb","p":85},"221":{"n":"Dodatak Kikiriki","p":80},"9653":{"n":"Dodatak kikiriki c","p":80},"233":{"n":"Dodatak Kokos","p":75},"244":{"n":"Dodatak krastavcici kiseli","p":85},"234":{"n":"Dodatak krem bananica","p":90},"246":{"n":"Dodatak kukuruz","p":75},"218":{"n":"Dodatak lesnik","p":90},"8684":{"n":"Dodatak luk","p":20},"202":{"n":"Dodatak majonez","p":80},"237":{"n":"Dodatak malina","p":110},"10036":{"n":"Dodatak malina a","p":110},"9662":{"n":"Dodatak malina c","p":110},"9703":{"n":"Dodatak malo meso","p":145},"10059":{"n":"Dodatak malo meso bb","p":145},"287":{"n":"Dodatak Margarin","p":60},"223":{"n":"Dodatak orah","p":80},"8667":{"n":"Dodatak origano","p":20},"8703":{"n":"Dodatak panirani kackavalj","p":100},"257":{"n":"Dodatak paradajz","p":80},"210":{"n":"Dodatak pecenica","p":100},"283":{"n":"Dodatak pecurke","p":85},"215":{"n":"Dodatak pecurke m","p":85},"10043":{"n":"Dodatak pileca salata a","p":145},"8721":{"n":"Dodatak piletina 70 gr","p":90},"216":{"n":"Dodatak plazma","p":80},"239":{"n":"Dodatak plazma u mleku","p":100},"200":{"n":"Dodatak polimark kecap","p":85},"225":{"n":"Dodatak pomfrit 150 gr","p":200},"232":{"n":"Dodatak pomorandza","p":80},"241":{"n":"Dodatak preliv cokolada","p":80},"242":{"n":"Dodatak preliv sumsko voce","p":80},"259":{"n":"Dodatak ruska salata","p":145},"206":{"n":"Dodatak senf","p":80},"289":{"n":"Dodatak slag","p":70},"286":{"n":"Dodatak slanina","p":90},"208":{"n":"Dodatak sunka","p":100},"236":{"n":"Dodatak suvo grozdje","p":85},"8804":{"n":"Dodatak tartar sos","p":80},"278":{"n":"Dodatak topljeni sir","p":90},"282":{"n":"Dodatak tunjevina","p":80},"245":{"n":"Dodatak urnebes","p":85},"9704":{"n":"Dodatak veliko meso","p":215},"10060":{"n":"Dodatak veliko meso bb","p":215},"235":{"n":"Dodatak visnja","p":90},"8663":{"n":"Dodatak zelena salata","p":60}};
+
+    // Price-based modifier name lookup (for when referenceID doesn't match E-BAR Sifra)
+    // Maps price -> most common modifier name for that price (for sweet pancakes context)
+    const MODIFIER_BY_PRICE = {
+      20: "Dodatak luk",
+      50: "Jalapeno dodatak", 
+      60: "Dodatak karamela",
+      65: "Jaje dodatak",
+      70: "Dodatak slag",
+      75: "Dodatak kokos",
+      80: "Dodatak",  // Many options at 80 - show generic
+      85: "Dodatak jaje",
+      90: "Dodatak slanina",
+      100: "Dodatak plazma u mleku",
+      110: "Dodatak malina",
+      120: "Dodatak prsuta",
+      125: "Dodatak ruska salata",
+      145: "Dodatak malo meso",
+      200: "Dodatak pomfrit",
+      215: "Dodatak veliko meso",
+      250: "Dodatak pomfrit"
+    };
+    
+    // Cache for product names fetched from Supabase
+    let productNamesCache = {};
+    let productNamesFetched = false;
+    
+    // Fetch product names from Supabase emeni_products table
+    async function fetchProductNames() {
+      if (productNamesFetched) return;
+      
+      try {
+        const { data, error } = await supabaseClient
+          .from('emeni_products')
+          .select('product_id, name, price');
+        
+        if (data && Array.isArray(data)) {
+          data.forEach(p => {
+            productNamesCache[p.product_id] = { name: p.name, price: p.price };
+          });
+          console.log(`Loaded ${data.length} product names`);
+        }
+      } catch (e) {
+        console.log('Could not fetch product names:', e);
+      }
+      productNamesFetched = true;
+    }
+
+    // Helper function to resolve modifier name from productID, referenceID or price
+    function getModifierName(modifier) {
+      // First try to get name from modifier itself
+      if (modifier.name && modifier.name !== 'Modifier' && !modifier.name.startsWith('Modifier')) {
+        return modifier.name;
+      }
+      
+      // Try to get name from productNamesCache using productID
+      const productId = modifier.productID || modifier.product_id;
+      if (productId && productNamesCache[productId]) {
+        return productNamesCache[productId].name;
+      }
+      
+      // Try to get name from EBAR_ITEMS using productReferenceID
+      const refId = modifier.productReferenceID || modifier.referenceID || modifier.reference_id;
+      if (refId && EBAR_ITEMS[refId]) {
+        return EBAR_ITEMS[refId].n;
+      }
+      
+      // Fallback: match by price to get a reasonable name
+      const price = parseFloat(modifier.price) || 0;
+      if (MODIFIER_BY_PRICE[price]) {
+        return MODIFIER_BY_PRICE[price];
+      }
+      
+      // Last resort - show price in name
+      return modifier.value || `Dodatak (${price} RSD)`;
+    }
+
+    // Helper function to get modifier price
+    function getModifierPrice(modifier) {
+      // First try modifier's own price
+      if (modifier.price !== undefined && modifier.price !== null) {
+        return parseFloat(modifier.price) || 0;
+      }
+      // Fallback to EBAR_ITEMS
+      const refId = modifier.productReferenceID || modifier.referenceID || modifier.reference_id;
+      if (refId && EBAR_ITEMS[refId]) {
+        return EBAR_ITEMS[refId].p || 0;
+      }
+      return 0;
+    }
+
+    // Helper function to calculate item total including modifiers
+    function calculateItemTotal(item) {
+      const qty = parseFloat(item.quantity) || 1;
+      let itemTotal = (parseFloat(item.price) || 0) * qty;
+      
+      if (item.modifiers && Array.isArray(item.modifiers)) {
+        item.modifiers.forEach(mod => {
+          const modPrice = getModifierPrice(mod);
+          const modQty = parseFloat(mod.quantity) || 1;
+          itemTotal += modPrice * modQty * qty;
+        });
+      }
+      return itemTotal;
+    }
 
     // Fetch locations
     async function fetchLocations() {
@@ -1809,24 +1929,36 @@
       const formatDate = (date) => date ? new Date(date).toLocaleString('sr-RS') : 'N/A';
       const formatValue = (val) => val !== null && val !== undefined && val !== '' ? val : 'N/A';
 
-      // Items table
-      const itemsHtml = items.map(item => `
+      // Items table with correct modifier names and totals
+      const itemsHtml = items.map(item => {
+        const itemTotal = calculateItemTotal(item);
+        const modifiersHtml = item.modifiers && item.modifiers.length > 0 
+          ? `<div class="item-modifiers">
+              ${item.modifiers.map(m => {
+                const modName = getModifierName(m);
+                const modPrice = getModifierPrice(m);
+                const modQty = parseFloat(m.quantity) || 1;
+                return `<span class="modifier-tag">+ ${modName} (${modPrice} RSD${modQty > 1 ? ' x' + modQty : ''})</span>`;
+              }).join(' ')}
+            </div>`
+          : '';
+        
+        return `
         <tr>
           <td>
             <div class="item-name">${item.name}</div>
-            ${item.modifiers && item.modifiers.length > 0 ? `
-              <div class="item-modifiers">
-                ${item.modifiers.map(m => `+ ${m.name || m.value || 'Modifier'}`).join(', ')}
-              </div>
-            ` : ''}
+            ${modifiersHtml}
             ${item.note ? `<div class="item-modifiers">📝 ${item.note}</div>` : ''}
           </td>
           <td>${item.quantity}</td>
           <td>${parseFloat(item.price).toFixed(0)} RSD</td>
-          <td>${(parseFloat(item.price) * parseFloat(item.quantity)).toFixed(0)} RSD</td>
-          <td>${item.reference_id || item.posID || 'N/A'}</td>
+          <td>${itemTotal.toFixed(0)} RSD</td>
+          <td>${item.reference_id || item.posID || item.referenceID || 'N/A'}</td>
         </tr>
-      `).join('') || '<tr><td colspan="5" style="text-align:center;color:#666;">Nema stavki</td></tr>';
+      `}).join('') || '<tr><td colspan="5" style="text-align:center;color:#666;">Nema stavki</td></tr>';
+      
+      // Calculate correct total including modifiers
+      const correctTotal = items.reduce((sum, item) => sum + calculateItemTotal(item), 0);
 
       // Lifecycle timeline
       const lifecycleHtml = lifecycle.map(event => `
@@ -1880,7 +2012,7 @@
             </div>
             <div class="detail-item">
               <div class="detail-label">Total</div>
-              <div class="detail-value success" style="font-size: 20px; font-weight: bold;">${total.toFixed(0)} RSD</div>
+              <div class="detail-value success" style="font-size: 20px; font-weight: bold;">${correctTotal.toFixed(0)} RSD</div>
             </div>
           </div>
         </div>
@@ -2066,18 +2198,15 @@
     function renderTableRow(order) {
       // Get items from regular items, raw_payload.items, or invalidOrderDetails
       let items = order.items || [];
-      let total = 0;
       
       if (items.length === 0 && order.raw_payload?.items) {
-        // Use items directly from raw_payload (for eBar, etc.)
         items = order.raw_payload.items;
-        total = items.reduce((sum, item) => sum + (parseFloat(item.price) * parseFloat(item.quantity)), 0);
       } else if (items.length === 0 && order.raw_payload?.invalidOrderDetails?.items) {
         items = order.raw_payload.invalidOrderDetails.items;
-        total = order.raw_payload.invalidOrderDetails.total || 0;
-      } else {
-        total = items.reduce((sum, item) => sum + (parseFloat(item.price) * parseFloat(item.quantity)), 0);
       }
+      
+      // Calculate total including modifiers
+      const total = items.reduce((sum, item) => sum + calculateItemTotal(item), 0);
       
       const time = new Date(order.created_at).toLocaleTimeString('sr-RS', { hour: '2-digit', minute: '2-digit' });
       const locationName = locations[order.company_id] || `ID: ${order.company_id}`;
@@ -2151,29 +2280,29 @@
     function renderOrderCard(order, statusClass) {
       // Get items from regular items, raw_payload.items, or invalidOrderDetails
       let items = order.items || [];
-      let total = 0;
       
       if (items.length === 0 && order.raw_payload?.items) {
-        // Use items directly from raw_payload (for eBar, etc.)
         items = order.raw_payload.items;
-        total = items.reduce((sum, item) => sum + (parseFloat(item.price) * parseFloat(item.quantity)), 0);
       } else if (items.length === 0 && order.raw_payload?.invalidOrderDetails?.items) {
-        // Use items from invalidOrderDetails (for invalid Wolt orders)
         items = order.raw_payload.invalidOrderDetails.items;
-        total = order.raw_payload.invalidOrderDetails.total || 0;
-      } else {
-        total = items.reduce((sum, item) => sum + (parseFloat(item.price) * parseFloat(item.quantity)), 0);
       }
+      
+      // Calculate total including modifiers
+      const total = items.reduce((sum, item) => sum + calculateItemTotal(item), 0);
       
       const time = new Date(order.created_at).toLocaleTimeString('sr-RS', { hour: '2-digit', minute: '2-digit' });
       const locationName = locations[order.company_id] || `ID: ${order.company_id}`;
       
-      const itemsHtml = items.slice(0, 3).map(item => `
+      // Show item prices including modifiers
+      const itemsHtml = items.slice(0, 3).map(item => {
+        const itemTotal = calculateItemTotal(item);
+        const hasModifiers = item.modifiers && item.modifiers.length > 0;
+        return `
         <div class="item">
-          <span><span class="quantity">${item.quantity}x</span> ${item.name}</span>
-          <span>${parseFloat(item.price).toFixed(0)}</span>
+          <span><span class="quantity">${item.quantity}x</span> ${item.name}${hasModifiers ? ' <span style="color:#8B5CF6;font-size:10px;">+${item.modifiers.length}</span>' : ''}</span>
+          <span>${itemTotal.toFixed(0)}</span>
         </div>
-      `).join('');
+      `}).join('');
 
       const moreItems = items.length > 3 ? `<div class="item" style="color: #666;">+ ${items.length - 3} more items...</div>` : '';
 
@@ -2417,6 +2546,7 @@
     async function init() {
       initDateSelector();
       await fetchLocations();
+      await fetchProductNames(); // Load product names for modifier display
       await loadOrders();
       setupRealtimeSubscription();
       setInterval(loadOrders, 30000);
