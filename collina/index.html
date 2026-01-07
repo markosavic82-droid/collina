@@ -4,6 +4,33 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Collina - Naruči</title>
+    
+    <!-- Google Analytics (GA4) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-NNTWMBBV4H"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-NNTWMBBV4H');
+    </script>
+    
+    <!-- Meta Pixel Code -->
+    <script>
+        !function(f,b,e,v,n,t,s)
+        {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+        n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+        if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+        n.queue=[];t=b.createElement(e);t.async=!0;
+        t.src=v;s=b.getElementsByTagName(e)[0];
+        s.parentNode.insertBefore(t,s)}(window, document,'script',
+        'https://connect.facebook.net/en_US/fbevents.js');
+        fbq('init', '159396514822389');
+        fbq('track', 'PageView');
+    </script>
+    <noscript><img height="1" width="1" style="display:none"
+        src="https://www.facebook.net/tr?id=159396514822389&ev=PageView&noscript=1"/></noscript>
+    <!-- End Meta Pixel Code -->
+    
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
@@ -1660,6 +1687,56 @@
         let LOCATIONS = {};
 
         // ============================================
+        // ANALYTICS TRACKING
+        // ============================================
+        function trackEvent(eventName, params = {}) {
+            // Meta Pixel tracking
+            if (typeof fbq !== 'undefined') {
+                try {
+                    fbq('track', eventName, params);
+                    console.log('📊 Meta Pixel:', eventName, params);
+                } catch (e) {
+                    console.warn('Meta Pixel error:', e);
+                }
+            }
+            
+            // Google Analytics 4 tracking
+            if (typeof gtag !== 'undefined') {
+                try {
+                    // Map event names to GA4 standard events
+                    const ga4EventMap = {
+                        'ViewContent': 'view_item',
+                        'AddToCart': 'add_to_cart',
+                        'InitiateCheckout': 'begin_checkout',
+                        'Purchase': 'purchase'
+                    };
+                    
+                    const ga4Event = ga4EventMap[eventName] || eventName;
+                    
+                    // Build GA4 parameters
+                    const ga4Params = {
+                        currency: params.currency || 'RSD',
+                        value: params.value || 0,
+                        items: (params.content_ids || []).map((id, idx) => ({
+                            item_id: id,
+                            item_name: params.content_name || '',
+                            quantity: params.num_items || 1
+                        }))
+                    };
+                    
+                    if (params.order_id) {
+                        ga4Params.transaction_id = params.order_id;
+                    }
+                    
+                    gtag('event', ga4Event, ga4Params);
+                    console.log('📊 GA4:', ga4Event, ga4Params);
+                } catch (e) {
+                    console.warn('GA4 error:', e);
+                }
+            }
+        }
+
+        // ============================================
         // STATE
         // ============================================
         let db = null;
@@ -1850,6 +1927,15 @@
             localStorage.setItem('collina_selected_location', locationSlug);
             localStorage.setItem('collina_order_type', type);
             
+            // Track location selection
+            const loc = LOCATIONS[locationSlug];
+            trackEvent('SelectLocation', {
+                content_name: loc?.name || locationSlug,
+                content_category: type, // pickup, delivery, drive_through
+                location_slug: locationSlug,
+                order_type: type
+            });
+            
             // Close modal and location picker
             closeOrderTypeModal();
             document.getElementById('location-picker').classList.add('hidden');
@@ -1858,7 +1944,6 @@
             document.getElementById('screen-menu').style.display = 'block';
             
             // Update header with location name
-            const loc = LOCATIONS[locationSlug];
             const shortName = loc.name.replace('Collina ', '').replace('Kuhinjica ', 'K. ');
             document.getElementById('current-location-name').textContent = shortName;
             
@@ -2134,6 +2219,16 @@
             const item = menuItems.find(i => i.id === itemId);
             if (!item) return;
 
+            // Track ViewContent event
+            const itemPrice = item.discounted_price || item.price;
+            trackEvent('ViewContent', {
+                content_name: item.name,
+                content_ids: [item.id],
+                content_type: 'product',
+                value: itemPrice,
+                currency: 'RSD'
+            });
+
             currentProduct = item;
             sheetQty = 1;
             sheetIngredients = [];
@@ -2265,6 +2360,20 @@
                 });
             }
 
+            // Track AddToCart event
+            const itemPrice = currentProduct.discounted_price || currentProduct.price;
+            let totalPrice = itemPrice * sheetQty;
+            selectedIngs.forEach(ing => totalPrice += ing.price * sheetQty);
+            
+            trackEvent('AddToCart', {
+                content_name: currentProduct.name,
+                content_ids: [currentProduct.id],
+                content_type: 'product',
+                value: totalPrice,
+                currency: 'RSD',
+                num_items: sheetQty
+            });
+
             updateCartBadge();
             renderMenu();
             closeSheet();
@@ -2303,6 +2412,17 @@
                 });
             }
 
+            // Track AddToCart event
+            const itemPrice = item.discounted_price || item.price;
+            trackEvent('AddToCart', {
+                content_name: item.name,
+                content_ids: [item.id],
+                content_type: 'product',
+                value: itemPrice,
+                currency: 'RSD',
+                num_items: 1
+            });
+
             updateCartBadge();
             renderMenu();
             showToast('Dodato u korpu', 'success');
@@ -2319,6 +2439,24 @@
             renderCart();
             document.getElementById('cart-screen').classList.add('show');
             document.body.style.overflow = 'hidden';
+            
+            // Track InitiateCheckout if cart has items
+            if (cart.length > 0) {
+                const cartValue = cart.reduce((sum, c) => {
+                    const itemPrice = c.item.discounted_price || c.item.price;
+                    let itemTotal = itemPrice * c.qty;
+                    c.selectedIngredients.forEach(ing => itemTotal += ing.price * c.qty);
+                    return sum + itemTotal;
+                }, 0);
+                
+                trackEvent('InitiateCheckout', {
+                    content_ids: cart.map(c => c.item.id),
+                    content_type: 'product',
+                    value: cartValue,
+                    currency: 'RSD',
+                    num_items: cart.reduce((sum, c) => sum + c.qty, 0)
+                });
+            }
         }
 
         function closeCart() {
@@ -2507,7 +2645,7 @@
             // Item discounts row (only show if there are discounted items)
             const itemDiscountRow = document.getElementById('item-discount-row');
             if (itemDiscount > 0) {
-                document.getElementById('item-discount-label').textContent = `Akcija -${itemDiscountPercent}%`;
+                document.getElementById('item-discount-label').textContent = `Akcija`;
                 document.getElementById('summary-item-discount').textContent = '-' + itemDiscount.toLocaleString() + ' RSD';
                 itemDiscountRow.style.display = 'flex';
             } else {
@@ -2705,6 +2843,17 @@
                     .single();
 
                 if (error) throw error;
+
+                // Track Purchase event
+                trackEvent('Purchase', {
+                    content_ids: orderItems.map(item => item.item_id),
+                    content_type: 'product',
+                    value: total,
+                    currency: 'RSD',
+                    num_items: orderItems.reduce((sum, item) => sum + item.quantity, 0),
+                    order_id: orderId,
+                    content_name: orderItems.map(item => item.name).join(', ')
+                });
 
                 // Show success
                 document.getElementById('success-order-num').textContent = '#' + data.order_number;
