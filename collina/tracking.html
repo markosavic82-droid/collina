@@ -1,0 +1,1545 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Collina - Narudžbine</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg-primary: #0a0a0c;
+            --bg-secondary: #12121a;
+            --bg-card: #1a1a24;
+            --bg-card-hover: #222230;
+            --accent: #e07d62;
+            --accent-light: #f0a08a;
+            --text-primary: #f5f5f7;
+            --text-secondary: #8888a0;
+            --text-muted: #55556a;
+            --success: #4ade80;
+            --warning: #fbbf24;
+            --error: #f87171;
+            --new: #60a5fa;
+            --border: rgba(255, 255, 255, 0.08);
+            --font: 'Outfit', sans-serif;
+        }
+
+        body {
+            font-family: var(--font);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .header-title {
+            font-size: 16px;
+            color: var(--text-secondary);
+            padding-left: 20px;
+            border-left: 1px solid var(--border);
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .status-dot.offline {
+            background: var(--error);
+            animation: none;
+        }
+
+        .sound-toggle {
+            padding: 10px 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .sound-toggle.active {
+            background: rgba(74, 222, 128, 0.15);
+            border-color: var(--success);
+            color: var(--success);
+        }
+
+        /* Main */
+        .main {
+            padding: 24px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Stats */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 20px;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-value {
+            font-size: 36px;
+            font-weight: 700;
+        }
+
+        .stat-card.new .stat-value { color: var(--new); }
+        .stat-card.accepted .stat-value { color: var(--warning); }
+        .stat-card.ready .stat-value { color: var(--success); }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .tab:hover {
+            background: var(--bg-card-hover);
+            color: var(--text-primary);
+        }
+
+        .tab.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+
+        .tab-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 22px;
+            height: 22px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 11px;
+            font-size: 12px;
+            margin-left: 8px;
+            padding: 0 6px;
+        }
+
+        .tab.active .tab-badge {
+            background: rgba(255,255,255,0.3);
+        }
+
+        /* Orders Grid */
+        .orders-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 16px;
+        }
+
+        .order-card {
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+            transition: all 0.2s;
+        }
+
+        .order-card.new {
+            border-color: var(--new);
+            animation: glow-new 2s infinite;
+        }
+
+        @keyframes glow-new {
+            0%, 100% { box-shadow: 0 0 20px rgba(96, 165, 250, 0.3); }
+            50% { box-shadow: 0 0 30px rgba(96, 165, 250, 0.5); }
+        }
+
+        .order-card.accepted {
+            border-color: var(--warning);
+        }
+
+        .order-card.ready {
+            border-color: var(--success);
+        }
+
+        .order-header {
+            padding: 16px 18px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .order-number {
+            font-size: 24px;
+            font-weight: 800;
+        }
+
+        .order-card.new .order-number { color: var(--new); }
+        .order-card.accepted .order-number { color: var(--warning); }
+        .order-card.ready .order-number { color: var(--success); }
+
+        .order-time {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        .order-badges {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            align-items: flex-end;
+        }
+
+        .order-type {
+            padding: 6px 12px;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .payment-badge {
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .payment-badge.cash {
+            background: rgba(34, 197, 94, 0.15);
+            color: #4ade80;
+        }
+
+        .payment-badge.card {
+            background: rgba(96, 165, 250, 0.15);
+            color: #60a5fa;
+        }
+
+        .order-customer {
+            padding: 14px 18px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .customer-name {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .customer-phone {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .customer-address {
+            font-size: 14px;
+            color: var(--warning);
+            margin-top: 4px;
+        }
+
+        .customer-location {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .order-items {
+            padding: 16px 18px;
+        }
+
+        .order-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+        }
+
+        .order-item:last-child {
+            border-bottom: none;
+        }
+
+        .item-qty {
+            font-weight: 700;
+            color: var(--accent);
+            margin-right: 10px;
+            min-width: 28px;
+        }
+
+        .item-name {
+            flex: 1;
+            font-weight: 500;
+        }
+
+        .item-extras {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        .item-price {
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .order-notes {
+            padding: 12px 18px;
+            background: rgba(251, 191, 36, 0.1);
+            border-top: 1px solid rgba(251, 191, 36, 0.2);
+        }
+
+        .order-notes-label {
+            font-size: 11px;
+            color: var(--warning);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+
+        .order-notes-text {
+            font-size: 14px;
+            color: var(--text-primary);
+        }
+
+        .order-footer {
+            padding: 16px 18px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .order-totals {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .order-subtotal {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .order-discount {
+            font-size: 13px;
+            color: #4ade80;
+            font-weight: 600;
+        }
+
+        .order-total {
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .order-action-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .order-action-btn.accept {
+            background: var(--new);
+            color: white;
+        }
+
+        .order-action-btn.accept:hover {
+            background: #3b82f6;
+        }
+
+        .order-action-btn.ready {
+            background: var(--success);
+            color: white;
+        }
+
+        .order-action-btn.ready:hover {
+            background: #22c55e;
+        }
+
+        .order-action-btn.complete {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 80px 40px;
+            color: var(--text-secondary);
+        }
+
+        .empty-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .empty-text {
+            font-size: 18px;
+        }
+
+        /* Loading */
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 80px;
+            color: var(--text-secondary);
+            font-size: 16px;
+        }
+
+        .spinner {
+            width: 28px;
+            height: 28px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 14px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .orders-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 12px;
+                align-items: flex-start;
+            }
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--bg-card);
+            border-radius: 20px;
+            width: 100%;
+            max-width: 400px;
+            overflow: hidden;
+            animation: modalIn 0.2s ease;
+        }
+
+        .modal.message-modal {
+            max-width: 500px;
+        }
+
+        @keyframes modalIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .modal-header h3 {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .modal-footer {
+            padding: 16px 20px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+
+        .modal-btn {
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+
+        .modal-btn.cancel {
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+        }
+
+        .modal-btn.cancel:hover {
+            background: var(--bg-card-hover);
+        }
+
+        .modal-btn.confirm {
+            background: var(--new);
+            color: white;
+        }
+
+        .modal-btn.confirm:hover {
+            background: #3b82f6;
+        }
+
+        .modal-btn.reject-confirm {
+            background: var(--error);
+            color: white;
+        }
+
+        .modal-btn.reject-confirm:hover {
+            background: #dc2626;
+        }
+
+        .reject-modal .modal-header {
+            background: rgba(248, 113, 113, 0.1);
+        }
+
+        .reject-warning {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            padding: 20px;
+            background: rgba(248, 113, 113, 0.1);
+            border-radius: 12px;
+            margin-bottom: 16px;
+        }
+
+        .reject-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+
+        .reject-warning p {
+            color: var(--text-primary);
+            font-size: 15px;
+        }
+
+        .reject-order-info {
+            background: var(--bg-secondary);
+            border-radius: 10px;
+            padding: 14px;
+            font-size: 14px;
+        }
+
+        .reject-order-info .order-num {
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 4px;
+        }
+
+        .reject-order-info .customer {
+            color: var(--text-secondary);
+        }
+
+        .order-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .order-action-btn.reject {
+            background: transparent;
+            border: 2px solid var(--error);
+            color: var(--error);
+        }
+
+        .order-action-btn.reject:hover {
+            background: var(--error);
+            color: white;
+        }
+
+        .rejected-label {
+            color: var(--error);
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .order-card.rejected {
+            opacity: 0.6;
+            border-color: var(--error);
+        }
+
+        .time-input-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: var(--bg-secondary);
+            padding: 16px;
+            border-radius: 12px;
+        }
+
+        .time-input {
+            width: 80px;
+            padding: 12px 16px;
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-size: 24px;
+            font-weight: 700;
+            text-align: center;
+            font-family: inherit;
+        }
+
+        .time-input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .time-suffix {
+            font-size: 16px;
+            color: var(--text-secondary);
+        }
+
+        .message-box {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            font-size: 14px;
+            line-height: 1.6;
+            color: var(--text-primary);
+            white-space: pre-wrap;
+            max-height: 250px;
+            overflow-y: auto;
+        }
+
+        .copy-btn {
+            width: 100%;
+            margin-top: 16px;
+            padding: 14px;
+            background: var(--success);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .copy-btn:hover {
+            background: #22c55e;
+            transform: translateY(-1px);
+        }
+
+        .copy-btn.copied {
+            background: #16a34a;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-left">
+            <div class="logo">Collina</div>
+            <div class="header-title">📋 Narudžbine</div>
+        </div>
+        <div class="header-right">
+            <div class="connection-status">
+                <div class="status-dot" id="status-dot"></div>
+                <span id="status-text">Povezan</span>
+            </div>
+            <button class="sound-toggle" id="sound-toggle" onclick="toggleSound()">
+                🔔 Zvuk
+            </button>
+        </div>
+    </header>
+
+    <main class="main">
+        <!-- Stats -->
+        <div class="stats">
+            <div class="stat-card new">
+                <div class="stat-label">Nove</div>
+                <div class="stat-value" id="stat-new">0</div>
+            </div>
+            <div class="stat-card accepted">
+                <div class="stat-label">Prihvaćene</div>
+                <div class="stat-value" id="stat-accepted">0</div>
+            </div>
+            <div class="stat-card ready">
+                <div class="stat-label">Spremne</div>
+                <div class="stat-value" id="stat-ready">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Danas ukupno</div>
+                <div class="stat-value" id="stat-today">0</div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+            <div class="tab active" data-status="new" onclick="filterOrders('new', this)">
+                Nove <span class="tab-badge" id="badge-new">0</span>
+            </div>
+            <div class="tab" data-status="accepted" onclick="filterOrders('accepted', this)">
+                Prihvaćene <span class="tab-badge" id="badge-accepted">0</span>
+            </div>
+            <div class="tab" data-status="ready" onclick="filterOrders('ready', this)">
+                Spremne <span class="tab-badge" id="badge-ready">0</span>
+            </div>
+            <div class="tab" data-status="all" onclick="filterOrders('all', this)">
+                Sve danas
+            </div>
+        </div>
+
+        <!-- Orders -->
+        <div class="orders-grid" id="orders-grid">
+            <div class="loading">
+                <div class="spinner"></div>
+                Učitavanje narudžbina...
+            </div>
+        </div>
+    </main>
+
+    <!-- Audio for new order notification -->
+    <audio id="notification-sound" preload="auto">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-positive-notification-951.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- Accept Order Modal -->
+    <div class="modal-overlay" id="accept-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Prihvati narudžbinu</h3>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: 16px; color: var(--text-secondary);">Za koliko minuta će narudžbina biti spremna?</p>
+                <div class="time-input-wrapper">
+                    <input type="number" id="prep-time-input" class="time-input" min="5" max="120" value="15" placeholder="15">
+                    <span class="time-suffix">minuta</span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn cancel" onclick="closeAcceptModal()">Otkaži</button>
+                <button class="modal-btn confirm" onclick="confirmAccept()">✓ Prihvati</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reject Order Modal -->
+    <div class="modal-overlay" id="reject-modal">
+        <div class="modal reject-modal message-modal">
+            <div class="modal-header reject-header">
+                <h3>❌ Odbij narudžbinu</h3>
+            </div>
+            <div class="modal-body">
+                <div class="reject-warning">
+                    <div class="reject-icon">⚠️</div>
+                    <p>Da li ste sigurni da želite da odbijete ovu narudžbinu?</p>
+                </div>
+                <div class="reject-order-info" id="reject-order-info">
+                    <!-- Order info will be populated here -->
+                </div>
+                
+                <p style="margin-top: 16px; margin-bottom: 12px; color: var(--text-secondary); font-size: 13px;">
+                    Poruka za kupca:
+                </p>
+                <div class="message-box" id="reject-message-preview">
+                    <!-- Generated message here -->
+                </div>
+                <button class="copy-btn" onclick="copyRejectMessage()">
+                    <span id="copy-reject-btn-text">📋 Kopiraj poruku</span>
+                </button>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn cancel" onclick="closeRejectModal()">Otkaži</button>
+                <button class="modal-btn reject-confirm" onclick="confirmReject()">❌ Odbij i pošalji</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Customer Message Modal -->
+    <div class="modal-overlay" id="message-modal">
+        <div class="modal message-modal">
+            <div class="modal-header">
+                <h3>📱 Poruka za kupca</h3>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: 12px; color: var(--text-secondary);">Kopirajte poruku i pošaljite kupcu:</p>
+                <div class="message-box" id="customer-message">
+                    <!-- Generated message here -->
+                </div>
+                <button class="copy-btn" onclick="copyMessage()">
+                    <span id="copy-btn-text">📋 Kopiraj poruku</span>
+                </button>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn confirm" onclick="closeMessageModal()">Završi</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // CONFIGURATION
+        // ============================================
+        const SUPABASE_URL = 'https://bbnbbbpofelbkyuffslj.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJibmJiYnBvZmVsYmt5dWZmc2xqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUwNTI0MzQsImV4cCI6MjA4MDYyODQzNH0.koW44soAB-bEfh8OzqjGBwdgov4Snscw1ITsg5OureU';
+
+        // ============================================
+        // STATE
+        // ============================================
+        let db = null;
+        let orders = [];
+        let currentFilter = 'new';
+        let soundEnabled = true;
+        let subscription = null;
+
+        // ============================================
+        // INITIALIZATION
+        // ============================================
+        async function init() {
+            try {
+                db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                
+                // Load initial orders
+                await loadOrders();
+                
+                // Subscribe to realtime updates
+                subscribeToOrders();
+                
+                // Update sound toggle state
+                updateSoundToggle();
+                
+            } catch (e) {
+                console.error('Init error:', e);
+                setConnectionStatus(false);
+            }
+        }
+
+        async function loadOrders() {
+            // Get today's start (Belgrade timezone = UTC+1)
+            const now = new Date();
+            const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            todayStart.setHours(todayStart.getHours() - 1); // Adjust for UTC
+
+            const { data, error } = await db
+                .from('shop_orders')
+                .select('*')
+                .gte('created_at', todayStart.toISOString())
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error('Load error:', error);
+                return;
+            }
+
+            orders = data || [];
+            updateStats();
+            renderOrders();
+        }
+
+        function subscribeToOrders() {
+            subscription = db
+                .channel('shop_orders_changes')
+                .on('postgres_changes', 
+                    { event: '*', schema: 'public', table: 'shop_orders' },
+                    (payload) => {
+                        console.log('Realtime update:', payload);
+                        handleRealtimeUpdate(payload);
+                    }
+                )
+                .subscribe((status) => {
+                    console.log('Subscription status:', status);
+                    setConnectionStatus(status === 'SUBSCRIBED');
+                });
+        }
+
+        function handleRealtimeUpdate(payload) {
+            if (payload.eventType === 'INSERT') {
+                // New order
+                orders.unshift(payload.new);
+                playNotification();
+            } else if (payload.eventType === 'UPDATE') {
+                // Update existing order
+                const idx = orders.findIndex(o => o.id === payload.new.id);
+                if (idx > -1) {
+                    orders[idx] = payload.new;
+                }
+            } else if (payload.eventType === 'DELETE') {
+                orders = orders.filter(o => o.id !== payload.old.id);
+            }
+
+            updateStats();
+            renderOrders();
+        }
+
+        // ============================================
+        // STATUS CODES (eMeni compatible)
+        // ============================================
+        const STATUS = {
+            NEW: 1,
+            ACCEPTED: 3,
+            READY: 5,
+            COMPLETED: 7,
+            REJECTED: 8,
+            CANCELLED: 9
+        };
+
+        // ============================================
+        // RENDER
+        // ============================================
+        function updateStats() {
+            const newCount = orders.filter(o => o.status === STATUS.NEW).length;
+            const acceptedCount = orders.filter(o => o.status === STATUS.ACCEPTED).length;
+            const readyCount = orders.filter(o => o.status === STATUS.READY).length;
+
+            document.getElementById('stat-new').textContent = newCount;
+            document.getElementById('stat-accepted').textContent = acceptedCount;
+            document.getElementById('stat-ready').textContent = readyCount;
+            document.getElementById('stat-today').textContent = orders.length;
+
+            document.getElementById('badge-new').textContent = newCount;
+            document.getElementById('badge-accepted').textContent = acceptedCount;
+            document.getElementById('badge-ready').textContent = readyCount;
+
+            // Update page title with new orders count
+            if (newCount > 0) {
+                document.title = `(${newCount}) Collina Shop - Narudžbine`;
+            } else {
+                document.title = 'Collina Shop - Narudžbine';
+            }
+        }
+
+        function renderOrders() {
+            const container = document.getElementById('orders-grid');
+            
+            // Map filter names to status codes
+            const filterMap = {
+                'new': STATUS.NEW,
+                'accepted': STATUS.ACCEPTED,
+                'ready': STATUS.READY,
+                'completed': STATUS.COMPLETED,
+                'rejected': STATUS.REJECTED
+            };
+            
+            let filtered = orders;
+            if (currentFilter !== 'all') {
+                const statusCode = filterMap[currentFilter];
+                filtered = orders.filter(o => o.status === statusCode);
+            }
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state" style="grid-column: 1/-1;">
+                        <div class="empty-icon">📋</div>
+                        <div class="empty-text">Nema narudžbina</div>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = filtered.map(order => {
+                const createdAt = new Date(order.created_at);
+                const timeStr = createdAt.toLocaleTimeString('sr-RS', { hour: '2-digit', minute: '2-digit' });
+                
+                const typeIcon = order.order_type === 'drive_through' ? '🚗' : (order.order_type === 'delivery' ? '🛵' : '🏪');
+                const typeText = order.order_type === 'drive_through' ? 'Drive-Thru' : (order.order_type === 'delivery' ? 'Dostava' : 'Preuzimanje');
+
+                // Map status code to CSS class
+                const statusClass = {
+                    [STATUS.NEW]: 'new',
+                    [STATUS.ACCEPTED]: 'accepted',
+                    [STATUS.READY]: 'ready',
+                    [STATUS.COMPLETED]: 'completed',
+                    [STATUS.REJECTED]: 'rejected',
+                    [STATUS.CANCELLED]: 'cancelled'
+                }[order.status] || 'new';
+
+                let actionBtn = '';
+                if (order.status === STATUS.NEW) {
+                    actionBtn = `
+                        <div class="order-actions">
+                            <button class="order-action-btn reject" onclick="showRejectModal('${order.id}')">✕ Odbij</button>
+                            <button class="order-action-btn accept" onclick="showAcceptModal('${order.id}')">✓ Prihvati</button>
+                        </div>
+                    `;
+                } else if (order.status === STATUS.ACCEPTED) {
+                    actionBtn = `<button class="order-action-btn ready" onclick="updateOrderStatus('${order.id}', STATUS.READY)">✓ Spremno</button>`;
+                } else if (order.status === STATUS.READY) {
+                    actionBtn = `<button class="order-action-btn complete" onclick="updateOrderStatus('${order.id}', STATUS.COMPLETED)">Završi</button>`;
+                } else if (order.status === STATUS.REJECTED) {
+                    actionBtn = `<span class="rejected-label">❌ Odbijena</span>`;
+                }
+
+                return `
+                    <div class="order-card ${statusClass}">
+                        <div class="order-header">
+                            <div>
+                                <div class="order-number">#${order.order_number}</div>
+                                <div class="order-time">${timeStr}</div>
+                            </div>
+                            <div class="order-badges">
+                                <div class="order-type">
+                                    ${typeIcon} ${typeText}
+                                </div>
+                                <div class="payment-badge ${order.payment_method || 'cash'}">
+                                    ${order.payment_method === 'card' ? '💳 Kartica' : '💵 Gotovina'}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="order-customer">
+                            <div class="customer-name">${order.customer_name}</div>
+                            <div class="customer-phone">📞 ${order.customer_phone}</div>
+                            ${order.location_name ? `<div class="customer-location">📍 ${order.location_name}</div>` : ''}
+                            ${order.order_type === 'delivery' && order.customer_address ? `<div class="customer-address">🏠 ${order.customer_address}</div>` : ''}
+                        </div>
+
+                        <div class="order-items">
+                            ${(order.items || []).map(item => `
+                                <div class="order-item">
+                                    <span class="item-qty">${item.quantity || item.qty}×</span>
+                                    <div style="flex: 1;">
+                                        <div class="item-name">${item.name}</div>
+                                        ${(item.modifiers || item.ingredients)?.length > 0 ? `
+                                            <div class="item-extras">+ ${(item.modifiers || item.ingredients).map(i => i.name).join(', ')}</div>
+                                        ` : ''}
+                                    </div>
+                                    <span class="item-price">${item.total?.toLocaleString()} RSD</span>
+                                </div>
+                            `).join('')}
+                        </div>
+
+                        ${order.notes ? `
+                            <div class="order-notes">
+                                <div class="order-notes-label">Napomena</div>
+                                <div class="order-notes-text">${order.notes}</div>
+                            </div>
+                        ` : ''}
+
+                        <div class="order-footer">
+                            <div class="order-totals">
+                                ${order.discount ? `
+                                    <div class="order-subtotal">Puna cena: ${order.subtotal?.toLocaleString()} RSD</div>
+                                    ${order.raw_payload?.itemDiscount > 0 ? `
+                                        <div class="order-discount">🔥 Akcija: -${order.raw_payload.itemDiscount?.toLocaleString()} RSD</div>
+                                    ` : ''}
+                                    <div class="order-discount">🎉 Popust ${order.discount_percent || 10}%: -${(order.raw_payload?.pickupDiscount || order.discount)?.toLocaleString()} RSD</div>
+                                ` : ''}
+                                <div class="order-total">${order.total?.toLocaleString()} RSD</div>
+                            </div>
+                            ${actionBtn}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function filterOrders(status, el) {
+            currentFilter = status;
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            el.classList.add('active');
+            renderOrders();
+        }
+
+        // ============================================
+        // ACTIONS
+        // ============================================
+        async function updateOrderStatus(orderId, newStatus) {
+            const updateData = { 
+                status: newStatus,
+                updated_at: new Date().toISOString()
+            };
+
+            // Add timestamp for specific statuses
+            if (newStatus === STATUS.ACCEPTED) {
+                updateData.accepted_at = new Date().toISOString();
+            } else if (newStatus === STATUS.READY) {
+                updateData.ready_at = new Date().toISOString();
+            } else if (newStatus === STATUS.COMPLETED) {
+                updateData.completed_at = new Date().toISOString();
+            }
+
+            try {
+                const { error } = await db
+                    .from('shop_orders')
+                    .update(updateData)
+                    .eq('id', orderId);
+
+                if (error) throw error;
+
+                // Get order for message generation
+                const order = orders.find(o => o.id === orderId);
+
+                // Update local state
+                const idx = orders.findIndex(o => o.id === orderId);
+                if (idx > -1) {
+                    orders[idx] = { ...orders[idx], ...updateData };
+                }
+
+                updateStats();
+                renderOrders();
+
+                // Generate ready message if status changed to ready
+                if (newStatus === STATUS.READY && order) {
+                    generateReadyMessage(order);
+                }
+
+            } catch (e) {
+                console.error('Update error:', e);
+                alert('Greška pri ažuriranju narudžbine');
+            }
+        }
+
+        // ============================================
+        // ACCEPT MODAL
+        // ============================================
+        let pendingOrderId = null;
+
+        function showAcceptModal(orderId) {
+            pendingOrderId = orderId;
+            document.getElementById('prep-time-input').value = '15';
+            document.getElementById('accept-modal').classList.add('show');
+            document.getElementById('prep-time-input').focus();
+        }
+
+        function closeAcceptModal() {
+            document.getElementById('accept-modal').classList.remove('show');
+            pendingOrderId = null;
+        }
+
+        async function confirmAccept() {
+            if (!pendingOrderId) return;
+
+            const prepTime = parseInt(document.getElementById('prep-time-input').value) || 15;
+            const order = orders.find(o => o.id === pendingOrderId);
+            
+            if (!order) {
+                closeAcceptModal();
+                return;
+            }
+
+            // Calculate ready time
+            const readyTime = new Date();
+            readyTime.setMinutes(readyTime.getMinutes() + prepTime);
+            const readyTimeStr = readyTime.toLocaleTimeString('sr-RS', { hour: '2-digit', minute: '2-digit' });
+
+            // Update order status
+            const updateData = { 
+                status: STATUS.ACCEPTED,
+                updated_at: new Date().toISOString(),
+                accepted_at: new Date().toISOString(),
+                estimated_prep_time: prepTime,
+                estimated_ready_at: readyTime.toISOString()
+            };
+
+            try {
+                const { error } = await db
+                    .from('shop_orders')
+                    .update(updateData)
+                    .eq('id', pendingOrderId);
+
+                if (error) throw error;
+
+                // Update local state
+                const idx = orders.findIndex(o => o.id === pendingOrderId);
+                if (idx > -1) {
+                    orders[idx] = { ...orders[idx], ...updateData };
+                }
+
+                updateStats();
+                renderOrders();
+
+                // Generate customer message
+                generateCustomerMessage(order, prepTime, readyTimeStr);
+
+                closeAcceptModal();
+
+            } catch (e) {
+                console.error('Accept error:', e);
+                alert('Greška pri prihvatanju narudžbine');
+            }
+        }
+
+        // ============================================
+        // REJECT MODAL
+        // ============================================
+        let pendingRejectOrderId = null;
+
+        function showRejectModal(orderId) {
+            pendingRejectOrderId = orderId;
+            const order = orders.find(o => o.id === orderId);
+            
+            if (order) {
+                document.getElementById('reject-order-info').innerHTML = `
+                    <div class="order-num">Narudžbina #${order.order_number}</div>
+                    <div class="customer">${order.customer_name} • ${order.customer_phone}</div>
+                    <div class="customer" style="margin-top: 4px;">Ukupno: ${order.total?.toLocaleString()} RSD</div>
+                `;
+                
+                // Generate message preview
+                let message = `🍔 *COLLINA* - Obaveštenje\n\n`;
+                message += `Poštovani/a ${order.customer_name},\n\n`;
+                message += `Nažalost, Vaša narudžbina #${order.order_number} ne može biti obrađena u ovom trenutku. 😔\n\n`;
+                message += `Zbog velike potražnje, trenutno nismo u mogućnosti da prihvatimo nove narudžbine.\n\n`;
+                message += `Molimo Vas da pokušate ponovo malo kasnije ili nas kontaktirajte direktno.\n\n`;
+                message += `Izvinjavamo se na neprijatnosti i nadamo se da ćemo Vas uskoro ugostiti! 🙏\n\n`;
+                message += `S poštovanjem,\n`;
+                message += `Vaša Collina 🍔`;
+                
+                document.getElementById('reject-message-preview').textContent = message;
+            }
+            
+            document.getElementById('reject-modal').classList.add('show');
+        }
+
+        function closeRejectModal() {
+            document.getElementById('reject-modal').classList.remove('show');
+            pendingRejectOrderId = null;
+        }
+
+        function copyRejectMessage() {
+            const message = document.getElementById('reject-message-preview').textContent;
+            navigator.clipboard.writeText(message).then(() => {
+                const btn = document.getElementById('copy-reject-btn-text');
+                btn.textContent = '✅ Kopirano!';
+                setTimeout(() => {
+                    btn.textContent = '📋 Kopiraj poruku';
+                }, 2000);
+            }).catch(err => {
+                console.error('Copy failed:', err);
+                // Fallback
+                const textarea = document.createElement('textarea');
+                textarea.value = message;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                
+                document.getElementById('copy-reject-btn-text').textContent = '✅ Kopirano!';
+            });
+        }
+
+        async function confirmReject() {
+            if (!pendingRejectOrderId) return;
+
+            const order = orders.find(o => o.id === pendingRejectOrderId);
+            
+            if (!order) {
+                closeRejectModal();
+                return;
+            }
+
+            // Update order status to rejected
+            const updateData = { 
+                status: STATUS.REJECTED,
+                updated_at: new Date().toISOString(),
+                rejected_at: new Date().toISOString()
+            };
+
+            try {
+                const { error } = await db
+                    .from('shop_orders')
+                    .update(updateData)
+                    .eq('id', pendingRejectOrderId);
+
+                if (error) throw error;
+
+                // Update local state
+                const idx = orders.findIndex(o => o.id === pendingRejectOrderId);
+                if (idx > -1) {
+                    orders[idx] = { ...orders[idx], ...updateData };
+                }
+
+                updateStats();
+                renderOrders();
+                closeRejectModal();
+
+            } catch (e) {
+                console.error('Reject error:', e);
+                alert('Greška pri odbijanju narudžbine');
+            }
+        }
+
+        function generateRejectMessage(order) {
+            let message = `🍔 *COLLINA* - Obaveštenje\n\n`;
+            message += `Poštovani/a ${order.customer_name},\n\n`;
+            message += `Nažalost, Vaša narudžbina #${order.order_number} ne može biti obrađena u ovom trenutku. 😔\n\n`;
+            message += `Zbog velike potražnje, trenutno nismo u mogućnosti da prihvatimo nove narudžbine.\n\n`;
+            message += `Molimo Vas da pokušate ponovo malo kasnije ili nas kontaktirajte direktno.\n\n`;
+            message += `Izvinjavamo se na neprijatnosti i nadamo se da ćemo Vas uskoro ugostiti! 🙏\n\n`;
+            message += `S poštovanjem,\n`;
+            message += `Vaša Collina 🍔`;
+
+            document.getElementById('customer-message').textContent = message;
+            document.getElementById('message-modal').classList.add('show');
+        }
+
+        function generateCustomerMessage(order, prepTime, readyTimeStr) {
+            const orderTypeText = order.order_type === 'drive_through' ? 'drive-thru' : 
+                                  order.order_type === 'delivery' ? 'dostavu' : 'preuzimanje';
+            
+            const paymentText = order.payment_method === 'card' ? '💳 Kartica' : '💵 Gotovina';
+            
+            const itemsList = (order.items || []).map(item => {
+                const qty = item.quantity || item.qty;
+                const mods = item.modifiers || item.ingredients || [];
+                let line = `• ${qty}× ${item.name}`;
+                if (mods.length > 0) {
+                    line += ` (+ ${mods.map(i => i.name).join(', ')})`;
+                }
+                return line;
+            }).join('\n');
+
+            let message = `🍔 *COLLINA* - Potvrda narudžbine\n\n`;
+            message += `Poštovani/a ${order.customer_name},\n\n`;
+            message += `Vaša narudžbina #${order.order_number} je prihvaćena! ✅\n\n`;
+            message += `📦 *Stavke:*\n${itemsList}\n\n`;
+            
+            if (order.discount) {
+                message += `💰 Puna cena: ${order.subtotal?.toLocaleString()} RSD\n`;
+                if (order.raw_payload?.itemDiscount > 0) {
+                    message += `🔥 Akcija: -${order.raw_payload.itemDiscount?.toLocaleString()} RSD\n`;
+                }
+                message += `🎉 Popust ${order.discount_percent || 10}%: -${(order.raw_payload?.pickupDiscount || order.discount)?.toLocaleString()} RSD\n`;
+                message += `💵 *Ukupno: ${order.total?.toLocaleString()} RSD*\n`;
+            } else {
+                message += `💵 *Ukupno: ${order.total?.toLocaleString()} RSD*\n`;
+            }
+            message += `💳 Plaćanje: ${paymentText}\n\n`;
+            
+            message += `⏱️ Vreme pripreme: ~${prepTime} min\n`;
+            message += `🕐 Očekivano vreme: *${readyTimeStr}*\n\n`;
+            
+            if (order.order_type === 'delivery') {
+                message += `🛵 Dostava na adresu: ${order.customer_address || 'nije uneta'}\n\n`;
+            } else if (order.order_type === 'drive_through') {
+                message += `🚗 Preuzmite na drive-thru\n`;
+                message += `📍 ${order.location_name}\n\n`;
+                message += `⚠️ *VAŽNO:* Kada stignete ispred, pošaljite nam poruku da ste stigli i mi ćemo vam izneti narudžbinu!\n\n`;
+            } else {
+                message += `🏪 Preuzmite u lokalu\n`;
+                message += `📍 ${order.location_name}\n\n`;
+            }
+            
+            message += `Hvala što ste izabrali Collina! 🙏`;
+
+            document.getElementById('customer-message').textContent = message;
+            document.getElementById('message-modal').classList.add('show');
+        }
+
+        function generateReadyMessage(order) {
+            const paymentText = order.payment_method === 'card' ? '💳 Kartica' : '💵 Gotovina';
+            
+            let message = `🍔 *COLLINA* - Narudžbina spremna!\n\n`;
+            message += `Poštovani/a ${order.customer_name},\n\n`;
+            message += `Vaša narudžbina #${order.order_number} je SPREMNA! 🎉\n\n`;
+            message += `💵 *Ukupno za naplatu: ${order.total?.toLocaleString()} RSD*\n`;
+            message += `💳 Plaćanje: ${paymentText}\n\n`;
+            
+            if (order.order_type === 'delivery') {
+                message += `🛵 Kurir je na putu ka vama!\n`;
+                message += `📍 Adresa: ${order.customer_address || 'nije uneta'}\n\n`;
+            } else if (order.order_type === 'drive_through') {
+                message += `🚗 Možete doći na drive-thru!\n`;
+                message += `📍 ${order.location_name}\n\n`;
+                message += `⚠️ *Kada stignete ispred, pošaljite nam poruku "STIGAO/LA" i mi ćemo vam izneti narudžbinu!*\n\n`;
+            } else {
+                message += `🏪 Možete doći po narudžbinu!\n`;
+                message += `📍 ${order.location_name}\n\n`;
+            }
+            
+            message += `Hvala što ste izabrali Collina! 🙏`;
+
+            document.getElementById('customer-message').textContent = message;
+            document.getElementById('message-modal').classList.add('show');
+        }
+
+        function closeMessageModal() {
+            document.getElementById('message-modal').classList.remove('show');
+        }
+
+        function copyMessage() {
+            const message = document.getElementById('customer-message').textContent;
+            navigator.clipboard.writeText(message).then(() => {
+                const btn = document.getElementById('copy-btn-text');
+                btn.textContent = '✅ Kopirano!';
+                document.querySelector('.copy-btn').classList.add('copied');
+                setTimeout(() => {
+                    btn.textContent = '📋 Kopiraj poruku';
+                    document.querySelector('.copy-btn').classList.remove('copied');
+                }, 2000);
+            }).catch(err => {
+                console.error('Copy failed:', err);
+                // Fallback for older browsers
+                const textarea = document.createElement('textarea');
+                textarea.value = message;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                
+                const btn = document.getElementById('copy-btn-text');
+                btn.textContent = '✅ Kopirano!';
+            });
+        }
+
+        // ============================================
+        // SOUND & UI
+        // ============================================
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            localStorage.setItem('shop_sound_enabled', soundEnabled);
+            updateSoundToggle();
+        }
+
+        function updateSoundToggle() {
+            const stored = localStorage.getItem('shop_sound_enabled');
+            if (stored !== null) {
+                soundEnabled = stored === 'true';
+            }
+            
+            const btn = document.getElementById('sound-toggle');
+            btn.classList.toggle('active', soundEnabled);
+            btn.innerHTML = soundEnabled ? '🔔 Zvuk uključen' : '🔕 Zvuk isključen';
+        }
+
+        function playNotification() {
+            if (!soundEnabled) return;
+            
+            const audio = document.getElementById('notification-sound');
+            audio.currentTime = 0;
+            audio.play().catch(e => console.log('Audio play failed:', e));
+        }
+
+        function setConnectionStatus(connected) {
+            const dot = document.getElementById('status-dot');
+            const text = document.getElementById('status-text');
+            
+            if (connected) {
+                dot.classList.remove('offline');
+                text.textContent = 'Povezan';
+            } else {
+                dot.classList.add('offline');
+                text.textContent = 'Nije povezan';
+            }
+        }
+
+        // ============================================
+        // START
+        // ============================================
+        document.addEventListener('DOMContentLoaded', init);
+
+        // Refresh every 30 seconds as backup
+        setInterval(() => {
+            loadOrders();
+        }, 30000);
+    </script>
+</body>
+</html>
