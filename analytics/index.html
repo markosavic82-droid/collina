@@ -21,7 +21,7 @@
   <div id="root"></div>
   <script type="text/babel">
     const { useState, useEffect } = React;
-    const { BarChart, Bar, LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, ComposedChart, PieChart, Pie } = Recharts;
+    const { BarChart, Bar, LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, ComposedChart, PieChart, Pie, ReferenceLine } = Recharts;
 
 // Supabase config
 const SUPABASE_URL = 'https://bbnbbbpofelbkyuffslj.supabase.co';
@@ -112,6 +112,7 @@ const CollinaDashboard = () => {
     avgDeliveryTime: 0,
     avgPrepTime: 0,
   });
+  const [avgRating, setAvgRating] = useState({ score: null, count: 0 });
   const [hourlyData, setHourlyData] = useState([]);
   const [locationData, setLocationData] = useState([]);
   const [categoryData, setCategoryData] = useState([]);
@@ -127,11 +128,24 @@ const CollinaDashboard = () => {
   const [compareEndDate, setCompareEndDate] = useState('');
   const [channelData, setChannelData] = useState([]);
   const [fulfillmentData, setFulfillmentData] = useState([]);
-  const [kitchenPerformance, setKitchenPerformance] = useState({ byVenue: [], byHour: [] });
-  const [deliveryPerformance, setDeliveryPerformance] = useState({ avgPrep: 0, avgWait: 0, avgTransit: 0, total: 0, byVenue: [] });
+  const [kitchenPerformance, setKitchenPerformance] = useState({ byVenue: [], byHour: [], realCount: 0, totalCount: 0 });
+  const [deliveryPerformance, setDeliveryPerformance] = useState({ avgPrep: 0, avgWait: 0, avgTransit: 0, total: 0, byVenue: [], realCount: 0, totalCount: 0 });
   const [hourlyAnalysis, setHourlyAnalysis] = useState({ data: [], criticalHours: [] });
   const [heatmapData, setHeatmapData] = useState({ locations: [], hours: [], data: [] });
   const [lastUpdated, setLastUpdated] = useState(null);
+  const [projectionData, setProjectionData] = useState({
+    chartData: [],
+    todayTotal: { revenue: 0, orders: 0 },
+    projected: { revenue: 0, orders: 0 },
+    best: { revenue: 0, orders: 0, date: '' },
+    worst: { revenue: 0, orders: 0, date: '' },
+    average: { revenue: 0, orders: 0 },
+    dayName: '',
+    currentHour: 0,
+    historicalDaysCount: 0,
+    percentComplete: 0,
+    isToday: true,
+  });
   
   // Filters (empty = no filtering)
   const [filters, setFilters] = useState({
@@ -252,6 +266,7 @@ const CollinaDashboard = () => {
   useEffect(() => {
     if (orders.length > 0 && Object.keys(locations).length > 0) {
       processOrders(orders, locations, margins);
+      loadProjectionData(selectedDate, orders, filters);
     }
   }, [orders, filters, locations, margins]);
 
@@ -352,9 +367,51 @@ const CollinaDashboard = () => {
         `${SUPABASE_URL}/rest/v1/emeni_orders?select=*&created_at=gte.${dayStartUTC}&created_at=lt.${dayEndUTC}&order=created_at.asc`
       );
 
+      // Load lifecycle data for timing information
+      let lifecycleData = [];
+      if (ordersData && ordersData.length > 0) {
+        const orderIds = ordersData.map(o => o.order_id).filter(id => id);
+        if (orderIds.length > 0) {
+          // Fetch lifecycle events for these orders
+          lifecycleData = await supabaseFetchAll(
+            `${SUPABASE_URL}/rest/v1/emeni_order_lifecycle?select=order_id,status,timestamp&order_id=in.(${orderIds.join(',')})`
+          );
+        }
+      }
+
+      // Attach lifecycle timing to orders
       if (ordersData && Array.isArray(ordersData)) {
-        setOrders(ordersData);
-        // Don't call processOrders here - let the useEffect handle it
+        const lifecycleMap = {};
+        if (lifecycleData && Array.isArray(lifecycleData)) {
+          lifecycleData.forEach(l => {
+            if (!lifecycleMap[l.order_id]) lifecycleMap[l.order_id] = {};
+            if (l.status === 3) lifecycleMap[l.order_id].accepted_at = l.timestamp;
+            if (l.status === 5) lifecycleMap[l.order_id].ready_at = l.timestamp;
+            if (l.status === 7) lifecycleMap[l.order_id].delivered_at = l.timestamp;
+          });
+        }
+        
+        // Merge lifecycle data into orders
+        const ordersWithTiming = ordersData.map(o => {
+          const timing = lifecycleMap[o.order_id] || {};
+          return { ...o, ...timing };
+        });
+        
+        setOrders(ordersWithTiming);
+      }
+
+      // Load reviews from wolt_reviews for the selected date
+      const reviewsData = await supabaseFetch(
+        `${SUPABASE_URL}/rest/v1/wolt_reviews?select=review_score&order_placed=gte.${dayStartUTC}&order_placed=lt.${dayEndUTC}&review_score=not.is.null`
+      );
+      
+      if (reviewsData && Array.isArray(reviewsData) && reviewsData.length > 0) {
+        const scores = reviewsData.map(r => r.review_score).filter(s => s !== null);
+        const avgScore = scores.reduce((a, b) => a + b, 0) / scores.length;
+        // Convert 1-5 scale to 0-10 scale
+        setAvgRating({ score: (avgScore * 2).toFixed(1), count: scores.length });
+      } else {
+        setAvgRating({ score: null, count: 0 });
       }
 
       // Load trend data for selected period (timezone-aware)
@@ -443,6 +500,200 @@ const CollinaDashboard = () => {
     setLastUpdated(new Date());
   }
 
+  // Load projection data - historical same-day-of-week comparison
+  async function loadProjectionData(selDate, todayOrders, activeFilters = {}) {
+    try {
+      const selectedDateObj = new Date(selDate + 'T12:00:00');
+      const todayDayOfWeek = selectedDateObj.getDay();
+      const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      const dayName = dayNames[todayDayOfWeek];
+      
+      // Calculate all dates matching this day of week between Oct 1 - Dec 5, 2025
+      const histStartDate = new Date('2025-10-01');
+      const histEndDate = new Date('2025-12-05');
+      const matchingDates = [];
+      
+      let currentDate = new Date(histStartDate);
+      while (currentDate <= histEndDate) {
+        if (currentDate.getDay() === todayDayOfWeek) {
+          matchingDates.push(currentDate.toISOString().split('T')[0]);
+        }
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+      
+      if (matchingDates.length === 0) return;
+      
+      // Fetch orders for matching dates in parallel
+      const dailyData = {};
+      
+      const fetchPromises = matchingDates.map(async (dateKey) => {
+        const startUTC = dateKey + 'T00:00:00Z';
+        const nextDay = new Date(dateKey);
+        nextDay.setDate(nextDay.getDate() + 1);
+        const endUTC = nextDay.toISOString().split('T')[0] + 'T00:00:00Z';
+        
+        const dayOrders = await supabaseFetch(
+          `${SUPABASE_URL}/rest/v1/wolt_orders?select=created_at,amount,order_status&created_at=gte.${startUTC}&created_at=lt.${endUTC}&limit=2000`
+        );
+        return { dateKey, dayOrders };
+      });
+      
+      const results = await Promise.all(fetchPromises);
+      
+      for (const { dateKey, dayOrders } of results) {
+        if (!dayOrders || !Array.isArray(dayOrders) || dayOrders.length === 0) continue;
+        
+        dailyData[dateKey] = { date: dateKey, hourly: {}, total: { revenue: 0, orders: 0 } };
+        for (let h = 0; h < 24; h++) {
+          dailyData[dateKey].hourly[h] = { revenue: 0, orders: 0 };
+        }
+        
+        dayOrders.forEach(o => {
+          if (o.order_status === 'rejected' || o.order_status === 'cancelled') return;
+          const orderDate = new Date(o.created_at);
+          const belgradeHour = (orderDate.getUTCHours() + 1) % 24;
+          const amount = (o.amount || 0) / 100;
+          dailyData[dateKey].hourly[belgradeHour].revenue += amount;
+          dailyData[dateKey].hourly[belgradeHour].orders += 1;
+          dailyData[dateKey].total.revenue += amount;
+          dailyData[dateKey].total.orders += 1;
+        });
+      }
+      
+      const dates = Object.keys(dailyData).filter(d => dailyData[d].total.orders > 0);
+      if (dates.length === 0) return;
+      
+      // Find best, worst
+      let bestDate = dates[0], worstDate = dates[0];
+      dates.forEach(d => {
+        if (dailyData[d].total.revenue > dailyData[bestDate].total.revenue) bestDate = d;
+        if (dailyData[d].total.revenue < dailyData[worstDate].total.revenue) worstDate = d;
+      });
+      
+      // Calculate average hourly cumulative
+      const avgHourly = {};
+      for (let h = 0; h < 24; h++) {
+        avgHourly[h] = { revenue: 0, orders: 0 };
+        dates.forEach(d => {
+          let cumRev = 0, cumOrd = 0;
+          for (let hh = 0; hh <= h; hh++) {
+            cumRev += dailyData[d].hourly[hh].revenue;
+            cumOrd += dailyData[d].hourly[hh].orders;
+          }
+          avgHourly[h].revenue += cumRev;
+          avgHourly[h].orders += cumOrd;
+        });
+        avgHourly[h].revenue /= dates.length;
+        avgHourly[h].orders /= dates.length;
+      }
+      
+      // Process today's orders - apply channel filter
+      let validTodayOrders = (todayOrders || []).filter(o => ![8, 9, 11].includes(o.status));
+      
+      // Apply channel filter if set
+      if (activeFilters.channels && activeFilters.channels.length > 0) {
+        validTodayOrders = validTodayOrders.filter(o => {
+          const provider = (o.provider || '').toLowerCase();
+          if (activeFilters.channels.includes('wolt') && provider.includes('wolt')) return true;
+          if (activeFilters.channels.includes('ebar') && (provider.includes('ebar') || provider.includes('emeni'))) return true;
+          if (activeFilters.channels.includes('gloria') && provider.includes('gloria')) return true;
+          if (activeFilters.channels.includes('foodtruck') && (provider === 'foodtruck' || provider === 'food truck')) return true;
+          return false;
+        });
+      }
+      
+      // Apply location filter if set
+      if (activeFilters.locations && activeFilters.locations.length > 0) {
+        validTodayOrders = validTodayOrders.filter(o => {
+          const companyId = String(o.company_id);
+          return activeFilters.locations.map(String).includes(companyId);
+        });
+      }
+      
+      const todayHourly = {};
+      for (let h = 0; h < 24; h++) {
+        todayHourly[h] = { revenue: 0, orders: 0 };
+      }
+      
+      validTodayOrders.forEach(o => {
+        const orderDate = new Date(o.created_at);
+        const hour = (orderDate.getUTCHours() + 1) % 24;
+        const amount = getOrderTotal(o);
+        todayHourly[hour].revenue += amount;
+        todayHourly[hour].orders += 1;
+      });
+      
+      // Current hour (Belgrade time) - or 23 if viewing past date
+      const now = new Date();
+      const todayDateStr = new Date(now.getTime() + 60 * 60 * 1000).toISOString().split('T')[0]; // Belgrade date
+      const isToday = selDate === todayDateStr;
+      const currentHour = isToday ? (now.getUTCHours() + 1) % 24 : 23;
+      
+      // Calculate today's cumulative
+      let todayCumRev = 0, todayCumOrd = 0;
+      for (let h = 0; h <= currentHour; h++) {
+        todayCumRev += todayHourly[h].revenue;
+        todayCumOrd += todayHourly[h].orders;
+      }
+      
+      // Projection calculation (only for today, not past dates)
+      const avgAtCurrentHour = avgHourly[currentHour].revenue;
+      const avgTotal = avgHourly[23].revenue;
+      const percentComplete = isToday ? (avgTotal > 0 ? avgAtCurrentHour / avgTotal : 0) : 1; // 100% for past dates
+      const projectedRev = isToday && percentComplete > 0 ? todayCumRev / percentComplete : todayCumRev;
+      const projectedOrd = isToday && percentComplete > 0 ? todayCumOrd / (avgHourly[currentHour].orders / avgHourly[23].orders) : todayCumOrd;
+      
+      // Build chart data
+      const chartData = [];
+      let todayCum = 0;
+      for (let h = 0; h <= 23; h++) {
+        let bestCum = 0, worstCum = 0;
+        for (let hh = 0; hh <= h; hh++) {
+          bestCum += dailyData[bestDate].hourly[hh].revenue;
+          worstCum += dailyData[worstDate].hourly[hh].revenue;
+        }
+        
+        if (h <= currentHour) {
+          todayCum += todayHourly[h].revenue;
+        }
+        
+        // Projection line only for today, starting from current hour
+        let projCum = null;
+        if (isToday && h >= currentHour && avgTotal > 0) {
+          const avgAtH = avgHourly[h].revenue;
+          projCum = todayCumRev + (avgAtH - avgAtCurrentHour) * (projectedRev / avgTotal);
+        }
+        
+        chartData.push({
+          hour: h + ':00',
+          hourNum: h,
+          best: Math.round(bestCum),
+          worst: Math.round(worstCum),
+          average: Math.round(avgHourly[h].revenue),
+          today: h <= currentHour ? Math.round(todayCum) : null,
+          projection: projCum ? Math.round(projCum) : null,
+        });
+      }
+      
+      setProjectionData({
+        chartData,
+        todayTotal: { revenue: todayCumRev, orders: todayCumOrd },
+        projected: { revenue: projectedRev, orders: projectedOrd },
+        best: { revenue: dailyData[bestDate].total.revenue, orders: dailyData[bestDate].total.orders, date: bestDate },
+        worst: { revenue: dailyData[worstDate].total.revenue, orders: dailyData[worstDate].total.orders, date: worstDate },
+        average: { revenue: avgTotal, orders: avgHourly[23].orders },
+        dayName,
+        currentHour,
+        historicalDaysCount: dates.length,
+        percentComplete: percentComplete * 100,
+        isToday,
+      });
+      
+    } catch (err) {
+      console.error('Error loading projection data:', err);
+    }
+  }
+
   function processOrders(ordersArr, locMap, marginMap) {
     // Filter out canceled orders
     let validOrders = ordersArr.filter(o => ![8, 9, 11].includes(o.status));
@@ -465,7 +716,7 @@ const CollinaDashboard = () => {
         if (filters.channels.indexOf('wolt') >= 0 && provider.indexOf('wolt') >= 0) return true;
         if (filters.channels.indexOf('ebar') >= 0 && (provider.indexOf('ebar') >= 0 || provider.indexOf('emeni') >= 0)) return true;
         if (filters.channels.indexOf('gloria') >= 0 && provider.indexOf('gloria') >= 0) return true;
-        if (filters.channels.indexOf('foodtruck') >= 0 && (provider.indexOf('food') >= 0 || provider.indexOf('truck') >= 0)) return true;
+        if (filters.channels.indexOf('foodtruck') >= 0 && (provider === 'foodtruck' || provider === 'food truck')) return true;
         return false;
       });
     }
@@ -692,7 +943,7 @@ const CollinaDashboard = () => {
         channelKey = 'ebar';
       } else if (provider.includes('gloria')) {
         channelKey = 'gloria';
-      } else if (provider.includes('food') || provider.includes('truck')) {
+      } else if (provider === 'foodtruck' || provider === 'food truck') {
         channelKey = 'foodtruck';
       }
       
@@ -802,34 +1053,39 @@ const CollinaDashboard = () => {
     // ========================================
     const kitchenByVenue = {};
     const kitchenByHour = {};
+    let kitchenRealCount = 0;
+    let kitchenTotalCount = 0;
     
     validOrders.forEach(o => {
       const locName = locMap[o.company_id] || 'Unknown';
       const utcDate = new Date(o.created_at);
       const hour = (utcDate.getUTCHours() + 1) % 24; // Belgrade UTC+1
       
-      // Get prep time from various sources
+      // Get prep time from lifecycle data
       let prepTime = null;
+      let isRealData = false;
       
-      // Try status timestamps
+      // Use lifecycle timestamps (accepted_at, ready_at)
       if (o.accepted_at && o.ready_at) {
         prepTime = (new Date(o.ready_at) - new Date(o.accepted_at)) / 60000;
-      } else if (o.raw_payload?.acceptedAt && o.raw_payload?.readyAt) {
-        prepTime = (new Date(o.raw_payload.readyAt) - new Date(o.raw_payload.acceptedAt)) / 60000;
-      } else if (o.raw_payload?.timestamps?.accepted && o.raw_payload?.timestamps?.ready) {
-        prepTime = (new Date(o.raw_payload.timestamps.ready) - new Date(o.raw_payload.timestamps.accepted)) / 60000;
+        if (prepTime > 0 && prepTime <= 60) {
+          isRealData = true;
+        }
       }
       
-      // Simulate prep time if not available (for demo purposes based on order complexity)
+      // Estimate prep time if not available (based on order complexity)
       if (prepTime === null || prepTime <= 0 || prepTime > 60) {
         let items = o.items || [];
         if (items.length === 0 && o.raw_payload?.items) items = o.raw_payload.items;
         const itemCount = items.reduce((sum, i) => sum + (parseInt(i.quantity) || 1), 0);
-        // Simulate: base 8 min + 2 min per item, with some randomness
-        prepTime = 8 + (itemCount * 2) + (Math.random() * 4 - 2);
+        prepTime = 8 + (itemCount * 2);
+        isRealData = false;
       }
       
       if (prepTime > 0 && prepTime < 60) {
+        kitchenTotalCount++;
+        if (isRealData) kitchenRealCount++;
+        
         // By venue
         if (!kitchenByVenue[locName]) {
           kitchenByVenue[locName] = { name: locName, times: [], count: 0 };
@@ -862,7 +1118,7 @@ const CollinaDashboard = () => {
       }
     }
     
-    setKitchenPerformance({ byVenue: kitchenVenueData, byHour: kitchenHourData });
+    setKitchenPerformance({ byVenue: kitchenVenueData, byHour: kitchenHourData, realCount: kitchenRealCount, totalCount: kitchenTotalCount });
     
     // ========================================
     // DELIVERY PERFORMANCE
@@ -871,43 +1127,54 @@ const CollinaDashboard = () => {
     let allPrepTimes = [];
     let allWaitTimes = [];
     let allTransitTimes = [];
+    let deliveryRealCount = 0;
+    let deliveryTotalCount = 0;
     
     validOrders.forEach(o => {
       const locName = locMap[o.company_id] || 'Unknown';
       const created = new Date(o.created_at);
       
-      // Get timestamps
-      const acceptedAt = o.accepted_at || o.raw_payload?.acceptedAt;
-      const readyAt = o.ready_at || o.raw_payload?.readyAt;
-      const pickedUpAt = o.picked_up_at || o.raw_payload?.pickedUpAt || o.raw_payload?.timestamps?.pickedUp;
-      const deliveredAt = o.delivered_at || o.delivery_completed_at || o.raw_payload?.deliveredAt;
+      // Get timestamps from lifecycle data
+      const acceptedAt = o.accepted_at;
+      const readyAt = o.ready_at;
+      const deliveredAt = o.delivered_at;
       
       let prepTime = 0, waitTime = 0, transitTime = 0, totalTime = 0;
+      let isRealData = false;
       
-      // Calculate or simulate times
-      if (deliveredAt) {
-        totalTime = (new Date(deliveredAt) - created) / 60000;
-        
-        if (readyAt && acceptedAt) {
-          prepTime = (new Date(readyAt) - new Date(acceptedAt)) / 60000;
-        }
-        if (pickedUpAt && readyAt) {
-          waitTime = (new Date(pickedUpAt) - new Date(readyAt)) / 60000;
-        }
-        if (deliveredAt && pickedUpAt) {
-          transitTime = (new Date(deliveredAt) - new Date(pickedUpAt)) / 60000;
+      // Calculate times from lifecycle data
+      if (acceptedAt && readyAt) {
+        prepTime = (new Date(readyAt) - new Date(acceptedAt)) / 60000;
+      }
+      if (readyAt && deliveredAt) {
+        const deliveryTime = (new Date(deliveredAt) - new Date(readyAt)) / 60000;
+        // We don't have pickup timestamp, estimate wait as 30% of delivery time
+        waitTime = deliveryTime * 0.3;
+        transitTime = deliveryTime * 0.7;
+      }
+      if (acceptedAt && deliveredAt) {
+        totalTime = (new Date(deliveredAt) - new Date(acceptedAt)) / 60000;
+        if (totalTime > 0 && totalTime <= 120) {
+          isRealData = true;
         }
       }
       
-      // Simulate if not available (for demo)
+      // Use estimates if lifecycle data not available
       if (totalTime <= 0 || totalTime > 120) {
-        totalTime = 35 + Math.random() * 20; // 35-55 min
-        prepTime = 10 + Math.random() * 5;   // 10-15 min
-        waitTime = 3 + Math.random() * 6;    // 3-9 min
-        transitTime = totalTime - prepTime - waitTime;
+        let items = o.items || [];
+        if (items.length === 0 && o.raw_payload?.items) items = o.raw_payload.items;
+        const itemCount = items.reduce((sum, i) => sum + (parseInt(i.quantity) || 1), 0);
+        prepTime = 8 + (itemCount * 2);
+        waitTime = 5;
+        transitTime = 15;
+        totalTime = prepTime + waitTime + transitTime;
+        isRealData = false;
       }
       
       if (totalTime > 0 && totalTime < 120) {
+        deliveryTotalCount++;
+        if (isRealData) deliveryRealCount++;
+        
         allPrepTimes.push(prepTime);
         allWaitTimes.push(waitTime);
         allTransitTimes.push(transitTime);
@@ -943,7 +1210,9 @@ const CollinaDashboard = () => {
       avgWait, 
       avgTransit, 
       total: totalAvg,
-      byVenue: deliveryVenueData 
+      byVenue: deliveryVenueData,
+      realCount: deliveryRealCount,
+      totalCount: deliveryTotalCount
     });
     
     // ========================================
@@ -967,25 +1236,54 @@ const CollinaDashboard = () => {
       hourlyStats[hour].orders++;
       hourlyStats[hour].revenue += getOrderTotal(o);
       
-      // Add prep/delivery times (simulated if not available)
-      let prepTime = 10 + Math.random() * 8;
-      let deliveryTime = 35 + Math.random() * 15;
+      // Try to get actual prep time from lifecycle data
+      let prepTime = null;
+      if (o.accepted_at && o.ready_at) {
+        prepTime = (new Date(o.ready_at) - new Date(o.accepted_at)) / 60000;
+      }
+      // Estimate prep time based on item count if not available
+      if (prepTime === null || prepTime <= 0 || prepTime > 60) {
+        let items = o.items || [];
+        if (items.length === 0 && o.raw_payload?.items) items = o.raw_payload.items;
+        const itemCount = items.reduce((sum, i) => sum + (parseInt(i.quantity) || 1), 0);
+        prepTime = 8 + (itemCount * 1.5); // 8 min base + 1.5 min per item
+      }
       
-      hourlyStats[hour].prepTimes.push(prepTime);
-      hourlyStats[hour].deliveryTimes.push(deliveryTime);
+      // Try to get actual delivery time from lifecycle data
+      let deliveryTime = null;
+      if (o.ready_at && o.delivered_at) {
+        deliveryTime = (new Date(o.delivered_at) - new Date(o.ready_at)) / 60000;
+      }
+      // Estimate delivery time if not available
+      if (deliveryTime === null || deliveryTime <= 0 || deliveryTime > 120) {
+        deliveryTime = 20; // Default 20 min estimate
+      }
+      
+      if (prepTime > 0 && prepTime < 60) {
+        hourlyStats[hour].prepTimes.push(prepTime);
+      }
+      if (deliveryTime > 0 && deliveryTime < 120) {
+        hourlyStats[hour].deliveryTimes.push(deliveryTime);
+      }
     });
     
     const hourlyAnalysisData = [];
     for (let h = 10; h <= 23; h++) {
       const data = hourlyStats[h];
       if (data && data.orders > 0) {
+        const avgPrep = data.prepTimes.length > 0 
+          ? Math.round(data.prepTimes.reduce((a, b) => a + b, 0) / data.prepTimes.length)
+          : null;
+        const avgDelivery = data.deliveryTimes.length > 0
+          ? Math.round(data.deliveryTimes.reduce((a, b) => a + b, 0) / data.deliveryTimes.length)
+          : null;
         hourlyAnalysisData.push({
           hour: `${h}h`,
           hourNum: h,
           orders: data.orders,
           revenue: data.revenue,
-          avgPrep: data.prepTimes.reduce((a, b) => a + b, 0) / data.prepTimes.length,
-          avgDelivery: data.deliveryTimes.reduce((a, b) => a + b, 0) / data.deliveryTimes.length,
+          avgPrep: avgPrep,
+          avgDelivery: avgDelivery,
         });
       }
     }
@@ -996,7 +1294,7 @@ const CollinaDashboard = () => {
       .slice(0, 3)
       .map(h => ({
         ...h,
-        rating: (8 + Math.random() * 2).toFixed(1), // Simulated rating
+        rating: null, // No hourly rating data available
       }));
     
     setHourlyAnalysis({ data: hourlyAnalysisData, criticalHours });
@@ -1097,7 +1395,7 @@ const CollinaDashboard = () => {
         if (filters.channels.indexOf('wolt') >= 0 && provider.indexOf('wolt') >= 0) return true;
         if (filters.channels.indexOf('ebar') >= 0 && (provider.indexOf('ebar') >= 0 || provider.indexOf('emeni') >= 0)) return true;
         if (filters.channels.indexOf('gloria') >= 0 && provider.indexOf('gloria') >= 0) return true;
-        if (filters.channels.indexOf('foodtruck') >= 0 && (provider.indexOf('food') >= 0 || provider.indexOf('truck') >= 0)) return true;
+        if (filters.channels.indexOf('foodtruck') >= 0 && (provider === 'foodtruck' || provider === 'food truck')) return true;
         return false;
       });
     }
@@ -1233,13 +1531,22 @@ const CollinaDashboard = () => {
           boxShadow: '0 10px 40px rgba(0,0,0,0.3)',
         }}>
           <p style={{ color: colors.textSecondary, fontSize: '12px', marginBottom: '8px' }}>{label}</p>
-          {payload.map((entry, index) => (
-            <p key={index} style={{ color: entry.color || colors.purple, fontSize: '14px', fontWeight: 600 }}>
-              {entry.name}: {typeof entry.value === 'number' && entry.value > 1000 
-                ? `${(entry.value / 1000).toFixed(0)}K` 
-                : entry.value}
-            </p>
-          ))}
+          {payload.map((entry, index) => {
+            let displayValue = entry.value;
+            // Format time values (Prep Time, Delivery Time) with "min" suffix
+            if (entry.name && (entry.name.includes('Time') || entry.name.includes('Prep') || entry.name.includes('Delivery'))) {
+              displayValue = entry.value !== null && entry.value !== undefined 
+                ? `${Math.round(entry.value)} min` 
+                : 'N/A';
+            } else if (typeof entry.value === 'number' && entry.value > 1000) {
+              displayValue = `${(entry.value / 1000).toFixed(0)}K`;
+            }
+            return (
+              <p key={index} style={{ color: entry.color || colors.purple, fontSize: '14px', fontWeight: 600 }}>
+                {entry.name}: {displayValue}
+              </p>
+            );
+          })}
         </div>
       );
     }
@@ -1523,18 +1830,22 @@ const CollinaDashboard = () => {
             <p style={{ color: colors.textSecondary, fontSize: '13px', marginBottom: '8px' }}>transactions</p>
           </div>
 
-          {/* Rating (Demo) */}
+          {/* Rating */}
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
               <p style={{ color: colors.textMuted, fontSize: '11px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                 AVG RATING
               </p>
-              <DemoBadge />
+              {avgRating.count > 0 && (
+                <span style={{ fontSize: '10px', color: colors.textMuted }}>({avgRating.count} reviews)</span>
+              )}
             </div>
             <p className="kpi-value" style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 'clamp(28px, 5vw, 42px)', fontWeight: 700, marginBottom: '4px' }}>
-              9.1
+              {avgRating.score !== null ? avgRating.score : '/'}
             </p>
-            <p style={{ color: colors.textSecondary, fontSize: '14px', marginBottom: '8px' }}>out of 10</p>
+            <p style={{ color: colors.textSecondary, fontSize: '14px', marginBottom: '8px' }}>
+              {avgRating.score !== null ? 'out of 10' : 'no reviews'}
+            </p>
           </div>
         </div>
 
@@ -1573,6 +1884,139 @@ const CollinaDashboard = () => {
             </div>
           ))}
         </div>
+
+        {/* Daily Projection Chart */}
+        {projectionData.chartData.length > 0 && (
+        <div style={{
+          background: colors.card,
+          borderRadius: '16px',
+          border: `1px solid ${colors.border}`,
+          padding: 'clamp(16px, 3vw, 24px)',
+          marginBottom: '24px',
+        }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <IconBox color={colors.purple}>{projectionData.isToday ? '🎯' : '📊'}</IconBox>
+              <div>
+                <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '18px', fontWeight: 600 }}>
+                  {projectionData.dayName || 'Today'} {projectionData.isToday ? 'Projection' : 'Performance'}
+                </h2>
+                <p style={{ color: colors.textMuted, fontSize: '12px' }}>
+                  {projectionData.isToday 
+                    ? `Based on ${projectionData.historicalDaysCount} historical ${projectionData.dayName}s (Oct-Dec 2025)`
+                    : `Compared to ${projectionData.historicalDaysCount} historical ${projectionData.dayName}s`
+                  }
+                </p>
+              </div>
+            </div>
+            
+            <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '10px', color: colors.textMuted, marginBottom: '2px' }}>
+                  {projectionData.isToday ? 'CURRENT' : 'ACTUAL'}
+                </div>
+                <div style={{ fontSize: '18px', fontWeight: 700, color: colors.purple }}>
+                  {((projectionData.todayTotal.revenue || 0) / 1000).toFixed(0)}K
+                </div>
+                <div style={{ fontSize: '11px', color: colors.textMuted }}>{projectionData.todayTotal.orders || 0} orders</div>
+              </div>
+              {projectionData.isToday && (
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '10px', color: colors.textMuted, marginBottom: '2px' }}>PROJECTED</div>
+                <div style={{ fontSize: '18px', fontWeight: 700, color: colors.success }}>
+                  {((projectionData.projected.revenue || 0) / 1000).toFixed(0)}K
+                </div>
+                <div style={{ fontSize: '11px', color: colors.textMuted }}>~{Math.round(projectionData.projected.orders || 0)} orders</div>
+              </div>
+              )}
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '10px', color: colors.textMuted, marginBottom: '2px' }}>vs AVG</div>
+                <div style={{ 
+                  fontSize: '18px', 
+                  fontWeight: 700, 
+                  color: (projectionData.isToday ? projectionData.projected.revenue : projectionData.todayTotal.revenue) >= (projectionData.average.revenue || 1) ? colors.success : colors.error 
+                }}>
+                  {(projectionData.average.revenue || 0) > 0 
+                    ? (((projectionData.isToday ? projectionData.projected.revenue : projectionData.todayTotal.revenue) >= (projectionData.average.revenue || 0) ? '+' : '') + ((((projectionData.isToday ? projectionData.projected.revenue : projectionData.todayTotal.revenue) / projectionData.average.revenue) - 1) * 100).toFixed(0) + '%')
+                    : '-'
+                  }
+                </div>
+                <div style={{ fontSize: '11px', color: colors.textMuted }}>
+                  {projectionData.isToday ? `${(projectionData.percentComplete || 0).toFixed(0)}% complete` : 'complete day'}
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div style={{ height: '300px' }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <ComposedChart data={projectionData.chartData}>
+                <defs>
+                  <linearGradient id="gradientBest" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={colors.success} stopOpacity={0.1}/>
+                    <stop offset="95%" stopColor={colors.success} stopOpacity={0}/>
+                  </linearGradient>
+                  <linearGradient id="gradientWorst" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={colors.error} stopOpacity={0.1}/>
+                    <stop offset="95%" stopColor={colors.error} stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke={colors.border} />
+                <XAxis dataKey="hour" stroke={colors.textMuted} fontSize={10} tickFormatter={(v) => v.replace(':00', 'h')} />
+                <YAxis stroke={colors.textMuted} fontSize={10} tickFormatter={(v) => (v/1000).toFixed(0) + 'K'} />
+                <Tooltip contentStyle={{ background: colors.elevated, border: '1px solid ' + colors.border, borderRadius: '8px' }} formatter={(value) => [(value/1000).toFixed(0) + 'K RSD', '']} />
+                <Area type="monotone" dataKey="best" name="Best" stroke={colors.success} strokeWidth={1} strokeDasharray="5 5" fill="url(#gradientBest)" dot={false} />
+                <Area type="monotone" dataKey="worst" name="Worst" stroke={colors.error} strokeWidth={1} strokeDasharray="5 5" fill="url(#gradientWorst)" dot={false} />
+                <Line type="monotone" dataKey="average" name="Average" stroke={colors.warning} strokeWidth={2} strokeDasharray="3 3" dot={false} />
+                <Line type="monotone" dataKey="projection" name="Projection" stroke={colors.purple} strokeWidth={2} strokeDasharray="8 4" dot={false} connectNulls={false} />
+                <Line type="monotone" dataKey="today" name="Today" stroke={colors.purple} strokeWidth={4} dot={{ fill: colors.purple, r: 4, strokeWidth: 2, stroke: '#fff' }} connectNulls={false} />
+                {projectionData.isToday && <ReferenceLine x={projectionData.currentHour + ':00'} stroke={colors.textMuted} strokeDasharray="3 3" />}
+              </ComposedChart>
+            </ResponsiveContainer>
+          </div>
+          
+          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', marginTop: '16px', gap: '16px' }}>
+            <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <div style={{ width: '20px', height: '3px', background: colors.purple, borderRadius: '2px' }} />
+                <span style={{ fontSize: '11px', color: colors.textMuted }}>{projectionData.isToday ? 'Today' : 'Selected Day'}</span>
+              </div>
+              {projectionData.isToday && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <div style={{ width: '20px', height: '0', borderTop: '2px dashed ' + colors.purple }} />
+                <span style={{ fontSize: '11px', color: colors.textMuted }}>Projection</span>
+              </div>
+              )}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <div style={{ width: '20px', height: '0', borderTop: '2px dashed ' + colors.warning }} />
+                <span style={{ fontSize: '11px', color: colors.textMuted }}>Average</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <div style={{ width: '20px', height: '0', borderTop: '2px dashed ' + colors.success }} />
+                <span style={{ fontSize: '11px', color: colors.textMuted }}>Best</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <div style={{ width: '20px', height: '0', borderTop: '2px dashed ' + colors.error }} />
+                <span style={{ fontSize: '11px', color: colors.textMuted }}>Worst</span>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '24px' }}>
+              <div>
+                <span style={{ fontSize: '11px', color: colors.textMuted }}>Best: </span>
+                <span style={{ fontSize: '12px', color: colors.success, fontWeight: 600 }}>{((projectionData.best.revenue || 0) / 1000).toFixed(0)}K</span>
+              </div>
+              <div>
+                <span style={{ fontSize: '11px', color: colors.textMuted }}>Avg: </span>
+                <span style={{ fontSize: '12px', color: colors.warning, fontWeight: 600 }}>{((projectionData.average.revenue || 0) / 1000).toFixed(0)}K</span>
+              </div>
+              <div>
+                <span style={{ fontSize: '11px', color: colors.textMuted }}>Worst: </span>
+                <span style={{ fontSize: '12px', color: colors.error, fontWeight: 600 }}>{((projectionData.worst.revenue || 0) / 1000).toFixed(0)}K</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        )}
 
         {/* Revenue Trend with Comparison */}
         <div style={{
@@ -1748,6 +2192,13 @@ const CollinaDashboard = () => {
                   content={({ active, payload, label }) => {
                     if (active && payload && payload.length) {
                       const data = payload[0]?.payload;
+                      // Calculate percentage changes
+                      const revChange = data?.compareRevenue && data?.revenue 
+                        ? ((data.revenue - data.compareRevenue) / data.compareRevenue * 100).toFixed(1)
+                        : null;
+                      const ordChange = data?.compareOrders && data?.orders
+                        ? ((data.orders - data.compareOrders) / data.compareOrders * 100).toFixed(1)
+                        : null;
                       return (
                         <div style={{
                           background: colors.card,
@@ -1765,15 +2216,41 @@ const CollinaDashboard = () => {
                           </p>
                           {compareMode && data?.compareRevenue && (
                             <>
-                              <p style={{ color: colors.textMuted, fontSize: '12px', marginTop: '8px', borderTop: `1px solid ${colors.borderSubtle}`, paddingTop: '8px' }}>
-                                {data.compareLabel}:
-                              </p>
-                              <p style={{ color: colors.textMuted, fontSize: '13px' }}>
-                                Revenue: {(data.compareRevenue / 1000).toFixed(0)}K
-                              </p>
-                              <p style={{ color: colors.textMuted, fontSize: '13px' }}>
-                                Orders: {data.compareOrders || 'N/A'}
-                              </p>
+                              <div style={{ marginTop: '8px', borderTop: `1px solid ${colors.borderSubtle}`, paddingTop: '8px' }}>
+                                <p style={{ color: colors.textMuted, fontSize: '12px', marginBottom: '4px' }}>
+                                  vs {data.compareLabel}:
+                                </p>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                  <span style={{ color: colors.textMuted, fontSize: '13px' }}>
+                                    Revenue: {(data.compareRevenue / 1000).toFixed(0)}K
+                                  </span>
+                                  {revChange && (
+                                    <span style={{ 
+                                      color: parseFloat(revChange) >= 0 ? '#22C55E' : '#EF4444',
+                                      fontSize: '13px',
+                                      fontWeight: 600,
+                                      marginLeft: '8px'
+                                    }}>
+                                      {parseFloat(revChange) >= 0 ? '+' : ''}{revChange}%
+                                    </span>
+                                  )}
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                  <span style={{ color: colors.textMuted, fontSize: '13px' }}>
+                                    Orders: {data.compareOrders || 'N/A'}
+                                  </span>
+                                  {ordChange && (
+                                    <span style={{ 
+                                      color: parseFloat(ordChange) >= 0 ? '#22C55E' : '#EF4444',
+                                      fontSize: '13px',
+                                      fontWeight: 600,
+                                      marginLeft: '8px'
+                                    }}>
+                                      {parseFloat(ordChange) >= 0 ? '+' : ''}{ordChange}%
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
                             </>
                           )}
                         </div>
@@ -2098,8 +2575,8 @@ const CollinaDashboard = () => {
                 <YAxis yAxisId="right" orientation="right" stroke={colors.textMuted} fontSize={11} />
                 <Tooltip content={<CustomTooltip />} />
                 <Bar yAxisId="left" dataKey="orders" fill={colors.purple} radius={[4, 4, 0, 0]} name="Orders" />
-                <Line yAxisId="right" type="monotone" dataKey="avgPrep" stroke={colors.success} strokeWidth={2} dot={false} name="Prep Time" />
-                <Line yAxisId="right" type="monotone" dataKey="avgDelivery" stroke={colors.cyan} strokeWidth={2} dot={false} name="Delivery Time" />
+                <Line yAxisId="right" type="monotone" dataKey="avgPrep" stroke="#F59E0B" strokeWidth={3} dot={{ r: 4, fill: '#F59E0B' }} name="Prep Time" />
+                <Line yAxisId="right" type="monotone" dataKey="avgDelivery" stroke="#EC4899" strokeWidth={3} dot={{ r: 4, fill: '#EC4899' }} name="Delivery Time" />
               </ComposedChart>
             </ResponsiveContainer>
           </div>
@@ -2111,11 +2588,11 @@ const CollinaDashboard = () => {
               <span style={{ fontSize: '12px', color: colors.textSecondary }}>Orders</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <div style={{ width: '20px', height: '3px', background: colors.success, borderRadius: '2px' }} />
+              <div style={{ width: '20px', height: '3px', background: '#F59E0B', borderRadius: '2px' }} />
               <span style={{ fontSize: '12px', color: colors.textSecondary }}>Prep Time</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <div style={{ width: '20px', height: '3px', background: colors.cyan, borderRadius: '2px' }} />
+              <div style={{ width: '20px', height: '3px', background: '#EC4899', borderRadius: '2px' }} />
               <span style={{ fontSize: '12px', color: colors.textSecondary }}>Delivery Time</span>
             </div>
           </div>
@@ -2145,10 +2622,10 @@ const CollinaDashboard = () => {
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                   <span style={{ color: colors.error, fontSize: '13px' }}>
-                    {h.avgDelivery.toFixed(0)}m delivery
+                    {h.avgDelivery ? `${h.avgDelivery}m delivery` : 'N/A'}
                   </span>
                   <span style={{ color: colors.warning, fontSize: '13px', fontWeight: 600 }}>
-                    {h.rating}/10 ⭐
+                    {h.rating ? `${h.rating}/10 ⭐` : '/ ⭐'}
                   </span>
                 </div>
               </div>
@@ -2334,14 +2811,20 @@ const CollinaDashboard = () => {
               <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '18px', fontWeight: 600 }}>
                 Kitchen Performance
               </h2>
-              <span style={{ 
-                background: 'rgba(34, 197, 94, 0.15)', 
-                color: colors.success, 
-                padding: '2px 8px', 
-                borderRadius: '4px', 
-                fontSize: '10px', 
-                fontWeight: 600 
-              }}>SIM</span>
+              {kitchenPerformance.totalCount > 0 && (
+                <span style={{ 
+                  background: kitchenPerformance.realCount / kitchenPerformance.totalCount > 0.5 
+                    ? 'rgba(34, 197, 94, 0.15)' 
+                    : 'rgba(245, 158, 11, 0.15)', 
+                  color: kitchenPerformance.realCount / kitchenPerformance.totalCount > 0.5 
+                    ? colors.success 
+                    : colors.warning, 
+                  padding: '2px 8px', 
+                  borderRadius: '4px', 
+                  fontSize: '10px', 
+                  fontWeight: 600 
+                }}>{Math.round(kitchenPerformance.realCount / kitchenPerformance.totalCount * 100)}% LIVE</span>
+              )}
               {kitchenPerformance.byVenue.some(v => v.avgTime > 17) && (
                 <span style={{ fontSize: '16px' }}>⚠️</span>
               )}
@@ -2432,6 +2915,20 @@ const CollinaDashboard = () => {
               <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '18px', fontWeight: 600 }}>
                 Delivery Performance
               </h2>
+              {deliveryPerformance.totalCount > 0 && (
+                <span style={{ 
+                  background: deliveryPerformance.realCount / deliveryPerformance.totalCount > 0.5 
+                    ? 'rgba(34, 197, 94, 0.15)' 
+                    : 'rgba(245, 158, 11, 0.15)', 
+                  color: deliveryPerformance.realCount / deliveryPerformance.totalCount > 0.5 
+                    ? colors.success 
+                    : colors.warning, 
+                  padding: '2px 8px', 
+                  borderRadius: '4px', 
+                  fontSize: '10px', 
+                  fontWeight: 600 
+                }}>{Math.round(deliveryPerformance.realCount / deliveryPerformance.totalCount * 100)}% LIVE</span>
+              )}
               {deliveryPerformance.total > 35 && <span style={{ fontSize: '16px' }}>⚠️</span>}
             </div>
             
