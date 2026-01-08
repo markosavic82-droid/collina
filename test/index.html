@@ -214,7 +214,7 @@
 
         /* Main Content */
         .main {
-            padding: 145px 16px 20px; /* Account for header + sticky categories */
+            padding: 145px 16px 100px; /* Account for header + sticky categories + bottom nav */
             max-width: 600px;
             margin: 0 auto;
         }
@@ -1563,6 +1563,367 @@
             opacity: 0.8;
         }
 
+        /* ============================================
+           BOTTOM NAVIGATION
+           ============================================ */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--bg-primary);
+            border-top: 1px solid var(--border);
+            padding-bottom: env(safe-area-inset-bottom, 0);
+            z-index: 100;
+        }
+
+        .bottom-nav-inner {
+            display: flex;
+            justify-content: space-around;
+            padding: 8px 0;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .bottom-nav-btn {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding: 8px;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .bottom-nav-btn.active {
+            color: var(--accent);
+        }
+
+        .bottom-nav-icon {
+            font-size: 22px;
+        }
+
+        .bottom-nav-label {
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .bottom-nav-badge {
+            position: absolute;
+            top: 2px;
+            right: 50%;
+            transform: translateX(14px);
+            min-width: 18px;
+            height: 18px;
+            background: var(--accent);
+            color: white;
+            font-size: 10px;
+            font-weight: 700;
+            border-radius: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 4px;
+        }
+
+        /* ============================================
+           HOME SCREEN
+           ============================================ */
+        .screen {
+            display: none;
+            padding-bottom: 90px;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        .home-screen {
+            padding: 20px;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .home-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-top: 10px;
+        }
+
+        .home-greeting {
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .home-avatar {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--accent), #a855f7);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: 700;
+            color: white;
+            cursor: pointer;
+        }
+
+        /* Points Card */
+        .points-card {
+            background: linear-gradient(135deg, var(--accent), #a855f7);
+            border-radius: 20px;
+            padding: 24px;
+            margin-bottom: 24px;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .points-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -30%;
+            width: 200px;
+            height: 200px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50%;
+        }
+
+        .points-card-label {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 8px;
+        }
+
+        .points-card-value {
+            font-size: 42px;
+            font-weight: 800;
+            margin-bottom: 16px;
+        }
+
+        .points-progress {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .points-level {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .points-bar {
+            flex: 1;
+            height: 6px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .points-bar-fill {
+            height: 100%;
+            background: white;
+            border-radius: 3px;
+            transition: width 0.3s;
+        }
+
+        .points-xp {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        /* Action Buttons */
+        .home-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .home-action-btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .home-action-btn:hover {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+        }
+
+        .home-action-icon {
+            font-size: 32px;
+        }
+
+        .home-action-label {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        /* Section Title */
+        .home-section-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Coupons Carousel */
+        .coupons-scroll {
+            display: flex;
+            gap: 12px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+            margin-bottom: 24px;
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .coupons-scroll::-webkit-scrollbar {
+            display: none;
+        }
+
+        .coupon-card {
+            flex-shrink: 0;
+            width: 140px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 16px;
+            text-align: center;
+            scroll-snap-align: start;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .coupon-card:hover {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+        }
+
+        .coupon-card.selected {
+            border-color: var(--success);
+            background: rgba(34, 197, 94, 0.1);
+        }
+
+        .coupon-icon {
+            font-size: 32px;
+            margin-bottom: 8px;
+        }
+
+        .coupon-name {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .coupon-desc {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+        }
+
+        .coupon-use-btn {
+            width: 100%;
+            padding: 8px;
+            background: var(--accent);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .coupon-use-btn:hover {
+            background: var(--accent-hover);
+        }
+
+        .coupon-card.selected .coupon-use-btn {
+            background: var(--success);
+        }
+
+        /* Featured Products */
+        .featured-scroll {
+            display: flex;
+            gap: 12px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .featured-scroll::-webkit-scrollbar {
+            display: none;
+        }
+
+        .featured-card {
+            flex-shrink: 0;
+            width: 160px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .featured-card:hover {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+        }
+
+        .featured-image {
+            width: 100%;
+            aspect-ratio: 16/9;
+            object-fit: cover;
+        }
+
+        .featured-content {
+            padding: 12px;
+        }
+
+        .featured-name {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            line-height: 1.3;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .featured-price {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .featured-old-price {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-decoration: line-through;
+            margin-right: 6px;
+        }
+
         /* Location Picker Screen */
         .location-picker {
             position: fixed;
@@ -1877,7 +2238,75 @@
         </div>
     </div>
 
-    <!-- Header -->
+    <!-- HOME SCREEN -->
+    <div class="screen home-screen" id="screen-home">
+        <div class="home-header">
+            <div class="home-greeting" id="home-greeting">Ćao! 👋</div>
+            <div class="home-avatar" id="home-avatar" onclick="openProfileMenu()">👤</div>
+        </div>
+
+        <!-- Points Card -->
+        <div class="points-card">
+            <div class="points-card-label">Collina Poeni</div>
+            <div class="points-card-value" id="home-points">0</div>
+            <div class="points-progress">
+                <span class="points-level" id="home-level">⭐ Nivo 1</span>
+                <div class="points-bar">
+                    <div class="points-bar-fill" id="home-progress" style="width: 0%"></div>
+                </div>
+                <span class="points-xp" id="home-xp">0/500</span>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="home-actions">
+            <div class="home-action-btn" onclick="showScreen('menu')">
+                <span class="home-action-icon">🍔</span>
+                <span class="home-action-label">Naruči</span>
+            </div>
+            <div class="home-action-btn" onclick="openProfileMenu()">
+                <span class="home-action-icon">📋</span>
+                <span class="home-action-label">Istorija</span>
+            </div>
+        </div>
+
+        <!-- Coupons Section -->
+        <div class="home-section-title">🎫 Tvoji kuponi</div>
+        <div class="coupons-scroll" id="coupons-scroll">
+            <div class="coupon-card" id="coupon-discount30" onclick="toggleCoupon('discount30')">
+                <div class="coupon-icon">🏷️</div>
+                <div class="coupon-name">30% popust</div>
+                <div class="coupon-desc">Prva narudžbina</div>
+                <button class="coupon-use-btn" id="coupon-btn-discount30">Iskoristi</button>
+            </div>
+            <div class="coupon-card" id="coupon-free_delivery" onclick="toggleCoupon('free_delivery')">
+                <div class="coupon-icon">🛵</div>
+                <div class="coupon-name">Besplatna dostava</div>
+                <div class="coupon-desc">1x dostava</div>
+                <button class="coupon-use-btn" id="coupon-btn-free_delivery">Iskoristi</button>
+            </div>
+            <div class="coupon-card" id="coupon-free_fries" onclick="toggleCoupon('free_fries')">
+                <div class="coupon-icon">🍟</div>
+                <div class="coupon-name">Gratis pomfrit</div>
+                <div class="coupon-desc">Uz narudžbinu</div>
+                <button class="coupon-use-btn" id="coupon-btn-free_fries">Iskoristi</button>
+            </div>
+            <div class="coupon-card" id="coupon-free_pancake" onclick="toggleCoupon('free_pancake')">
+                <div class="coupon-icon">🥞</div>
+                <div class="coupon-name">Gratis palačinka</div>
+                <div class="coupon-desc">Uz narudžbinu</div>
+                <button class="coupon-use-btn" id="coupon-btn-free_pancake">Iskoristi</button>
+            </div>
+        </div>
+
+        <!-- Featured Products -->
+        <div class="home-section-title">🔥 Preporučujemo</div>
+        <div class="featured-scroll" id="featured-scroll">
+            <!-- Populated dynamically -->
+        </div>
+    </div>
+
+    <!-- Header (for menu screen) -->
     <header class="header" id="main-header" style="display: none;">
         <div class="header-left">
             <div class="logo">Collina</div>
@@ -1904,7 +2333,7 @@
     </nav>
 
     <!-- Main Menu Screen -->
-    <main class="main screen" id="screen-menu" style="display: none;">
+    <main class="main screen" id="screen-menu">
         <!-- Menu Items -->
         <div class="menu-grid" id="menu-grid">
             <div class="loading">
@@ -1994,6 +2423,29 @@
         </div>
         <button class="success-btn" onclick="newOrder()">Nova narudžbina</button>
     </div>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav" id="bottom-nav" style="display: none;">
+        <div class="bottom-nav-inner">
+            <button class="bottom-nav-btn active" onclick="showScreen('home')" id="nav-home">
+                <span class="bottom-nav-icon">🏠</span>
+                <span class="bottom-nav-label">Početna</span>
+            </button>
+            <button class="bottom-nav-btn" onclick="showScreen('menu')" id="nav-menu">
+                <span class="bottom-nav-icon">🍔</span>
+                <span class="bottom-nav-label">Meni</span>
+            </button>
+            <button class="bottom-nav-btn" onclick="openCart()" id="nav-cart" style="position: relative;">
+                <span class="bottom-nav-icon">🛒</span>
+                <span class="bottom-nav-label">Korpa</span>
+                <span class="bottom-nav-badge" id="nav-cart-badge" style="display: none;">0</span>
+            </button>
+            <button class="bottom-nav-btn" onclick="openProfileMenu()" id="nav-profile">
+                <span class="bottom-nav-icon">👤</span>
+                <span class="bottom-nav-label">Profil</span>
+            </button>
+        </div>
+    </nav>
 
     <!-- Toast -->
     <div class="toast" id="toast"></div>
@@ -2355,14 +2807,18 @@
             if (customer && customer.first_name) {
                 // Show customer initial
                 const initial = customer.first_name.charAt(0).toUpperCase();
-                initialEl.textContent = initial;
-                avatarEl.classList.remove('guest');
-                avatarEl.title = `${customer.first_name} ${customer.last_name || ''}`.trim();
+                if (initialEl) initialEl.textContent = initial;
+                if (avatarEl) {
+                    avatarEl.classList.remove('guest');
+                    avatarEl.title = `${customer.first_name} ${customer.last_name || ''}`.trim();
+                }
             } else {
                 // Guest mode
-                initialEl.textContent = '👤';
-                avatarEl.classList.add('guest');
-                avatarEl.title = 'Moj nalog';
+                if (initialEl) initialEl.textContent = '👤';
+                if (avatarEl) {
+                    avatarEl.classList.add('guest');
+                    avatarEl.title = 'Moj nalog';
+                }
             }
             
             // Pre-fill checkout form fields if they exist
@@ -2378,6 +2834,11 @@
             }
             if (addressInput && customer && customer.address) {
                 addressInput.value = customer.address;
+            }
+            
+            // Update home screen if visible
+            if (document.getElementById('screen-home')) {
+                updateHomeScreen();
             }
         }
         
@@ -2665,18 +3126,143 @@
             // Close modal and location picker
             closeOrderTypeModal();
             document.getElementById('location-picker').classList.add('hidden');
-            document.getElementById('main-header').style.display = 'flex';
-            document.getElementById('categories-nav').style.display = 'block';
-            document.getElementById('screen-menu').style.display = 'block';
             
-            // Update header with location name
-            const shortName = loc.name.replace('Collina ', '').replace('Kuhinjica ', 'K. ');
-            document.getElementById('current-location-name').textContent = shortName;
+            // Show bottom nav
+            document.getElementById('bottom-nav').style.display = 'block';
             
-            // Load and render menu
+            // Load menu data
             await loadMenu();
-            renderMenu();
-            renderCategories();
+            
+            // Show home screen
+            showScreen('home');
+            
+            // Update home screen with customer data
+            updateHomeScreen();
+            
+            // Load featured products
+            loadFeaturedProducts();
+        }
+
+        function showScreen(screenName) {
+            // Hide all screens
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById('main-header').style.display = 'none';
+            document.getElementById('categories-nav').style.display = 'none';
+            
+            // Update nav buttons
+            document.querySelectorAll('.bottom-nav-btn').forEach(btn => btn.classList.remove('active'));
+            
+            if (screenName === 'home') {
+                document.getElementById('screen-home').classList.add('active');
+                document.getElementById('nav-home').classList.add('active');
+            } else if (screenName === 'menu') {
+                document.getElementById('screen-menu').classList.add('active');
+                document.getElementById('screen-menu').style.display = 'block';
+                document.getElementById('main-header').style.display = 'flex';
+                document.getElementById('categories-nav').style.display = 'block';
+                document.getElementById('nav-menu').classList.add('active');
+                
+                // Update header with location name
+                const loc = LOCATIONS[selectedLocation];
+                if (loc) {
+                    const shortName = loc.name.replace('Collina ', '').replace('Kuhinjica ', 'K. ');
+                    document.getElementById('current-location-name').textContent = shortName;
+                }
+                
+                renderMenu();
+                renderCategories();
+            }
+        }
+        
+        function updateHomeScreen() {
+            // Update greeting
+            const greetingEl = document.getElementById('home-greeting');
+            const avatarEl = document.getElementById('home-avatar');
+            
+            if (customer && customer.first_name) {
+                greetingEl.textContent = `Ćao, ${customer.first_name}! 👋`;
+                avatarEl.textContent = customer.first_name.charAt(0).toUpperCase();
+            } else {
+                greetingEl.textContent = 'Ćao! 👋';
+                avatarEl.textContent = '👤';
+            }
+            
+            // Update points
+            const points = customer?.loyalty_points || 0;
+            document.getElementById('home-points').textContent = points;
+            
+            // Calculate level
+            const levels = [
+                { min: 0, max: 500, level: 1, name: 'Gost' },
+                { min: 500, max: 1500, level: 2, name: 'Redovan' },
+                { min: 1500, max: 4000, level: 3, name: 'Ljubitelj' },
+                { min: 4000, max: 10000, level: 4, name: 'VIP' }
+            ];
+            
+            let currentLevel = levels[0];
+            for (const lvl of levels) {
+                if (points >= lvl.min) currentLevel = lvl;
+            }
+            
+            const progress = Math.min(100, ((points - currentLevel.min) / (currentLevel.max - currentLevel.min)) * 100);
+            
+            document.getElementById('home-level').textContent = `⭐ Nivo ${currentLevel.level}`;
+            document.getElementById('home-progress').style.width = `${progress}%`;
+            document.getElementById('home-xp').textContent = `${points}/${currentLevel.max}`;
+        }
+        
+        // Selected coupons for cart
+        let selectedCoupons = [];
+        
+        function toggleCoupon(couponId) {
+            const card = document.getElementById(`coupon-${couponId}`);
+            const btn = document.getElementById(`coupon-btn-${couponId}`);
+            
+            if (selectedCoupons.includes(couponId)) {
+                // Remove coupon
+                selectedCoupons = selectedCoupons.filter(c => c !== couponId);
+                card.classList.remove('selected');
+                btn.textContent = 'Iskoristi';
+                showToast('Kupon uklonjen', 'info');
+            } else {
+                // Check limit (max 2)
+                if (selectedCoupons.length >= 2) {
+                    showToast('Maksimalno 2 kupona po narudžbini', 'error');
+                    return;
+                }
+                // Add coupon
+                selectedCoupons.push(couponId);
+                card.classList.add('selected');
+                btn.textContent = '✓ U korpi';
+                showToast('Kupon dodat u korpu! 🎉', 'success');
+            }
+        }
+        
+        function loadFeaturedProducts() {
+            const container = document.getElementById('featured-scroll');
+            
+            // Get items with discounts (akcija) or popular items
+            const featured = menuItems
+                .filter(item => item.discounted_price || item.is_popular)
+                .slice(0, 6);
+            
+            if (featured.length === 0) {
+                // Fallback to first 6 items
+                featured.push(...menuItems.slice(0, 6));
+            }
+            
+            container.innerHTML = featured.map(item => `
+                <div class="featured-card" onclick="openSheet('${item.id}')">
+                    <img class="featured-image" src="${item.image_url || 'https://via.placeholder.com/160x90?text=🍔'}" alt="${item.name}" onerror="this.src='https://via.placeholder.com/160x90?text=🍔'">
+                    <div class="featured-content">
+                        <div class="featured-name">${item.name}</div>
+                        <div class="featured-price">
+                            ${item.discounted_price ? `<span class="featured-old-price">${item.price}</span>` : ''}
+                            ${item.discounted_price || item.price} RSD
+                        </div>
+                    </div>
+                </div>
+            `).join('');
         }
 
         async function selectLocation(locationId) {
@@ -2686,9 +3272,10 @@
 
         function changeLocation() {
             document.getElementById('location-picker').classList.remove('hidden');
+            document.getElementById('bottom-nav').style.display = 'none';
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             document.getElementById('main-header').style.display = 'none';
             document.getElementById('categories-nav').style.display = 'none';
-            document.getElementById('screen-menu').style.display = 'none';
             renderLocationPicker();
         }
 
@@ -3156,9 +3743,18 @@
 
         function updateCartBadge() {
             const count = cart.reduce((sum, c) => sum + c.qty, 0);
+            
+            // Header badge
             const badge = document.getElementById('cart-badge');
             badge.textContent = count;
             badge.classList.toggle('show', count > 0);
+            
+            // Bottom nav badge
+            const navBadge = document.getElementById('nav-cart-badge');
+            if (navBadge) {
+                navBadge.textContent = count;
+                navBadge.style.display = count > 0 ? 'flex' : 'none';
+            }
         }
 
         function openCart() {
