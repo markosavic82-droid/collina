@@ -833,7 +833,7 @@
         <div class="password-box">
             <h2>🔐 Kuhinja</h2>
             <p>Unesite šifru za pristup</p>
-            <input type="password" class="password-input" id="password-input" placeholder="••••" maxlength="10" autofocus>
+            <input type="password" class="password-input" id="password-input" placeholder="••••" maxlength="20" autofocus>
             <button class="password-btn" onclick="checkPassword()">Pristupi</button>
             <div class="password-error" id="password-error">Pogrešna šifra</div>
         </div>
@@ -991,6 +991,8 @@
         function checkPassword() {
             const input = document.getElementById('password-input');
             const error = document.getElementById('password-error');
+            
+            console.log('Entered:', input.value, 'Expected:', KITCHEN_PASSWORD);
             
             if (input.value === KITCHEN_PASSWORD) {
                 sessionStorage.setItem('kitchen_authenticated', 'true');
