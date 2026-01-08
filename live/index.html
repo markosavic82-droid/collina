@@ -563,11 +563,36 @@
       justify-content: space-between;
       align-items: flex-start;
       margin-bottom: 10px;
+      gap: 8px;
     }
 
     .order-number {
       font-size: 20px;
       font-weight: bold;
+    }
+
+    .order-note-icon {
+      font-size: 14px;
+      cursor: help;
+      animation: pulse-note 2s infinite;
+    }
+
+    @keyframes pulse-note {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+
+    .order-note-preview {
+      background: rgba(251, 191, 36, 0.15);
+      border: 1px solid rgba(251, 191, 36, 0.3);
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 12px;
+      color: #fbbf24;
+      margin-bottom: 10px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .order-provider {
@@ -1793,49 +1818,74 @@
         
         // Match lifecycle by order_id from database
         const lifecycle = lifecycleData.filter(l => l.order_id === order.order_id);
-        const acceptedEvent = lifecycle.find(l => Number(l.status) === 3); // status 3 = accepted
-        const readyEvent = lifecycle.find(l => Number(l.status) === 5);    // status 5 = ready
         
-        if (acceptedEvent && readyEvent) {
-          const acceptedTime = new Date(acceptedEvent.timestamp);
-          const readyTime = new Date(readyEvent.timestamp);
-          order.prep_minutes = Math.round((readyTime - acceptedTime) / 60000); // minutes
-        } else if (acceptedEvent) {
-          // Still in production - calculate time since accepted
-          const acceptedTime = new Date(acceptedEvent.timestamp);
-          order.prep_minutes_ongoing = Math.round((new Date() - acceptedTime) / 60000);
-        } else {
-          // Fallback: try to get times from raw_payload
-          const rp = order.raw_payload || {};
+        // Determine provider type for different prep time logic
+        const provider = (order.provider || '').toLowerCase();
+        const isEbar = provider === 'ebar' || provider === 'emeniwaiter';
+        
+        // For eBar: prep time = Accepted (status 3) to Paid (status 5)
+        // For Wolt/Gloria: prep time = Accepted (status 3) to Ready (status 5 or 7)
+        const acceptedEvent = lifecycle.find(l => Number(l.status) === 3); // status 3 = accepted
+        const paidEvent = lifecycle.find(l => l.event_type === 'order.paid' || Number(l.status) === 5); // paid event or status 5
+        const readyEvent = lifecycle.find(l => Number(l.status) === 5 || Number(l.status) === 7); // status 5/7 = ready/delivered
+        
+        if (isEbar) {
+          // eBar: from accepted/created to paid
+          const startEvent = acceptedEvent || lifecycle.find(l => l.event_type === 'order.created');
+          const endEvent = paidEvent;
           
-          // Get accepted time from various possible fields
-          const acceptedStr = rp.accepted || rp.acceptedAt || rp.confirmed_at || rp.pickup?.time;
-          // Get ready time from various possible fields  
-          const readyStr = rp.ready || rp.readyAt || rp.ready_at || rp.completed || rp.completedAt;
-          
-          if (acceptedStr && readyStr) {
-            const acceptedTime = new Date(acceptedStr);
-            const readyTime = new Date(readyStr);
-            if (!isNaN(acceptedTime) && !isNaN(readyTime)) {
-              order.prep_minutes = Math.round((readyTime - acceptedTime) / 60000);
-            }
-          } else if (acceptedStr && (Number(order.status) === 3 || Number(order.status) === 4)) {
-            // In production with accepted time from raw_payload
-            const acceptedTime = new Date(acceptedStr);
-            if (!isNaN(acceptedTime)) {
-              order.prep_minutes_ongoing = Math.round((new Date() - acceptedTime) / 60000);
-            }
+          if (startEvent && endEvent) {
+            const startTime = new Date(startEvent.timestamp);
+            const endTime = new Date(endEvent.timestamp);
+            order.prep_minutes = Math.round((endTime - startTime) / 60000);
+          } else if (startEvent && Number(order.status) < 5) {
+            // Still in progress - calculate time since started
+            const startTime = new Date(startEvent.timestamp);
+            order.prep_minutes_ongoing = Math.round((new Date() - startTime) / 60000);
           }
-          
-          // For Wolt: check pickup.time as accepted and delivery estimates
-          if (!order.prep_minutes && !order.prep_minutes_ongoing && rp.pickup?.time) {
-            const pickupTime = new Date(rp.pickup.time);
-            // If order is ready/delivered, estimate from pickup to now or delivery
-            if (Number(order.status) >= 5 && rp.dropoff?.time) {
-              const dropoffTime = new Date(rp.dropoff.time);
-              // Rough estimate: prep time is ~70% of total time (pickup to dropoff)
-              const totalMins = Math.round((dropoffTime - pickupTime) / 60000);
-              order.prep_minutes = Math.max(5, Math.round(totalMins * 0.5)); // Estimate
+        } else {
+          // Wolt/Gloria: from accepted to ready
+          if (acceptedEvent && readyEvent) {
+            const acceptedTime = new Date(acceptedEvent.timestamp);
+            const readyTime = new Date(readyEvent.timestamp);
+            order.prep_minutes = Math.round((readyTime - acceptedTime) / 60000);
+          } else if (acceptedEvent) {
+            // Still in production - calculate time since accepted
+            const acceptedTime = new Date(acceptedEvent.timestamp);
+            order.prep_minutes_ongoing = Math.round((new Date() - acceptedTime) / 60000);
+          } else {
+            // Fallback: try to get times from raw_payload
+            const rp = order.raw_payload || {};
+            
+            // Get accepted time from various possible fields
+            const acceptedStr = rp.accepted || rp.acceptedAt || rp.confirmed_at || rp.pickup?.time;
+            // Get ready time from various possible fields  
+            const readyStr = rp.ready || rp.readyAt || rp.ready_at || rp.completed || rp.completedAt;
+            
+            if (acceptedStr && readyStr) {
+              const acceptedTime = new Date(acceptedStr);
+              const readyTime = new Date(readyStr);
+              if (!isNaN(acceptedTime) && !isNaN(readyTime)) {
+                order.prep_minutes = Math.round((readyTime - acceptedTime) / 60000);
+              }
+            } else if (acceptedStr && (Number(order.status) === 3 || Number(order.status) === 4)) {
+              // In production with accepted time from raw_payload
+              const acceptedTime = new Date(acceptedStr);
+              if (!isNaN(acceptedTime)) {
+                order.prep_minutes_ongoing = Math.round((new Date() - acceptedTime) / 60000);
+              }
+            }
+            
+            // For Wolt: check pickup.time as accepted and delivery estimates
+            if (!order.prep_minutes && !order.prep_minutes_ongoing && rp.pickup?.time) {
+              const pickupTime = new Date(rp.pickup.time);
+              // If order is ready/delivered, estimate from pickup to now or delivery
+              if (Number(order.status) >= 5 && rp.dropoff?.time) {
+                const dropoffTime = new Date(rp.dropoff.time);
+                // Rough estimate: prep time is ~70% of total time (pickup to dropoff)
+                const totalMins = Math.round((dropoffTime - pickupTime) / 60000);
+                order.prep_minutes = Math.max(5, Math.round(totalMins * 0.5)); // Estimate
+              }
             }
           }
         }
@@ -2235,6 +2285,12 @@
       const provider = (order.provider || 'pult').toLowerCase();
       const deliveryStatus = order.delivery_status || 'pending';
       
+      // Check for notes - can be on order level OR on individual items
+      const orderNote = order.note || order.raw_payload?.note || '';
+      const itemNotes = items.filter(i => i.note).map(i => `${i.name}: ${i.note}`);
+      const hasNotes = orderNote || itemNotes.length > 0;
+      const allNotes = [orderNote, ...itemNotes].filter(n => n).join(' | ');
+      
       let deliveryHtml = '-';
       if (order.delivery_type === 'Delivery') {
         deliveryHtml = `
@@ -2260,7 +2316,7 @@
       
       return `
         <tr onclick="openOrderDetail(${order.order_id})">
-          <td><strong>#${order.order_no}</strong></td>
+          <td><strong>#${order.order_no}</strong> ${hasNotes ? `<span title="${allNotes.replace(/"/g, '&quot;')}" style="cursor:help;">📝</span>` : ''}</td>
           <td><span class="table-location">${locationName}</span></td>
           <td><span class="table-provider ${provider}">${provider}</span></td>
           <td>${order.delivery_type || 'N/A'}</td>
@@ -2374,12 +2430,20 @@
         stickersHtml += '</div>';
       }
 
+      // Check for notes - can be on order level OR on individual items
+      const orderNote = order.note || order.raw_payload?.note || '';
+      const itemNotes = items.filter(i => i.note).map(i => `${i.name}: ${i.note}`);
+      const hasNotes = orderNote || itemNotes.length > 0;
+      const allNotes = [orderNote, ...itemNotes].filter(n => n).join(' | ');
+      const notePreview = orderNote || itemNotes[0] || '';
+
       return `
         <div class="order-card ${statusClass}" onclick="openOrderDetail(${order.order_id})">
           ${stickersHtml}
           <div class="order-location-tag">📍 ${locationName}</div>
           <div class="order-header">
             <span class="order-number">#${order.order_no}</span>
+            ${hasNotes ? `<span class="order-note-icon" title="${allNotes.replace(/"/g, '&quot;')}">📝</span>` : ''}
             <span class="order-provider ${order.provider}">${order.provider}</span>
           </div>
           <div class="order-meta">
@@ -2387,6 +2451,7 @@
             ${order.table_reference_id ? `<span class="table">🪑 ${order.table_reference_id}</span> • ` : ''}
             <span>${order.delivery_type || 'N/A'}</span>
           </div>
+          ${hasNotes ? `<div class="order-note-preview">📝 ${notePreview}</div>` : ''}
           <div class="order-items">
             ${itemsHtml}
             ${moreItems}
