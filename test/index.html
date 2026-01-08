@@ -1227,6 +1227,16 @@
             font-weight: 600;
         }
 
+        .success-points {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--success);
+            background: rgba(34, 197, 94, 0.1);
+            padding: 12px 24px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+
         .success-message {
             font-size: 15px;
             color: var(--text-secondary);
@@ -2432,6 +2442,7 @@
         <div class="success-icon">✅</div>
         <div class="success-title">Narudžbina poslata!</div>
         <div class="success-order-num">Broj narudžbine: <span id="success-order-num">#1</span></div>
+        <div class="success-points" id="success-points" style="display: none;">+0 poena!</div>
         <div class="success-message">
             Tvoja narudžbina je primljena. Dobićeš obaveštenje kada bude spremna za preuzimanje.
         </div>
@@ -2990,6 +3001,54 @@
                 console.log('📈 Customer orders updated:', newTotal);
             } catch (e) {
                 console.error('Error updating customer orders:', e);
+            }
+        }
+        
+        async function awardPoints(customerId, orderTotal, orderId) {
+            if (!db || !customerId || !orderTotal) return 0;
+            
+            // Calculate points: 1 point per 100 RSD
+            const pointsEarned = Math.floor(orderTotal / 100);
+            if (pointsEarned <= 0) return 0;
+            
+            try {
+                // Get current points
+                const { data: current } = await db
+                    .from('customers')
+                    .select('loyalty_points')
+                    .eq('id', customerId)
+                    .single();
+                
+                const newPoints = (current?.loyalty_points || 0) + pointsEarned;
+                
+                // Update customer points
+                await db
+                    .from('customers')
+                    .update({ loyalty_points: newPoints })
+                    .eq('id', customerId);
+                
+                // Record transaction
+                await db
+                    .from('points_transactions')
+                    .insert([{
+                        customer_id: customerId,
+                        points: pointsEarned,
+                        type: 'order',
+                        description: `Narudžbina #${orderId}`,
+                        order_id: orderId
+                    }]);
+                    
+                console.log('🎯 Points awarded:', pointsEarned, 'Total:', newPoints);
+                
+                // Update local customer object
+                if (customer && customer.id === customerId) {
+                    customer.loyalty_points = newPoints;
+                }
+                
+                return pointsEarned;
+            } catch (e) {
+                console.error('Error awarding points:', e);
+                return 0;
             }
         }
 
@@ -4341,9 +4400,11 @@
 
                 if (error) throw error;
 
-                // Increment customer order count
+                // Increment customer order count & award points
+                let pointsEarned = 0;
                 if (orderCustomer?.id) {
                     await incrementCustomerOrders(orderCustomer.id);
+                    pointsEarned = await awardPoints(orderCustomer.id, total, data.order_number);
                 }
                 
                 // Use (decrement) coupons
@@ -4362,6 +4423,18 @@
 
                 // Show success
                 document.getElementById('success-order-num').textContent = '#' + data.order_number;
+                
+                // Show points earned
+                const pointsEl = document.getElementById('success-points');
+                if (pointsEl) {
+                    if (pointsEarned > 0) {
+                        pointsEl.textContent = `+${pointsEarned} poena! 🎯`;
+                        pointsEl.style.display = 'block';
+                    } else {
+                        pointsEl.style.display = 'none';
+                    }
+                }
+                
                 document.getElementById('success-screen').classList.add('show');
                 closeCart();
 
@@ -4384,6 +4457,9 @@
             // Refresh coupons (some were used)
             await loadCustomerCoupons();
             renderCoupons();
+            
+            // Update home screen with new points
+            updateHomeScreen();
             
             // Go back to home screen
             showScreen('home');
