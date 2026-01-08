@@ -1307,6 +1307,262 @@
             color: var(--accent);
         }
 
+        /* Side Menu Overlay */
+        .menu-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 500;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+
+        .menu-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .side-menu {
+            position: absolute;
+            top: 0;
+            right: -320px;
+            width: 320px;
+            max-width: 85vw;
+            height: 100%;
+            background: var(--bg-primary);
+            display: flex;
+            flex-direction: column;
+            transition: right 0.3s ease;
+        }
+
+        .menu-overlay.show .side-menu {
+            right: 0;
+        }
+
+        .menu-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .menu-user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .menu-user-avatar {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--accent), #a855f7);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: 700;
+            color: white;
+        }
+
+        .menu-user-name {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .menu-user-phone {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .menu-close {
+            width: 36px;
+            height: 36px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 50%;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+        }
+
+        .menu-tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .menu-tab {
+            flex: 1;
+            padding: 14px;
+            background: none;
+            border: none;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .menu-tab.active {
+            color: var(--accent);
+            border-bottom-color: var(--accent);
+        }
+
+        .menu-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+        }
+
+        .menu-section-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+        }
+
+        /* Order History */
+        .history-empty {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-secondary);
+        }
+
+        .history-item {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 12px;
+            border-left: 3px solid var(--accent);
+        }
+
+        .history-item.completed {
+            border-left-color: var(--success);
+        }
+
+        .history-item.cancelled {
+            border-left-color: var(--error);
+        }
+
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .history-order-num {
+            font-weight: 600;
+        }
+
+        .history-date {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .history-items {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+
+        .history-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .history-status {
+            font-size: 12px;
+            padding: 4px 8px;
+            border-radius: 6px;
+            background: var(--accent);
+            color: white;
+        }
+
+        .history-status.completed {
+            background: var(--success);
+        }
+
+        .history-status.cancelled {
+            background: var(--error);
+        }
+
+        .history-total {
+            font-weight: 600;
+            color: var(--accent);
+        }
+
+        /* Profile Settings */
+        .settings-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .setting-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .setting-row:last-child {
+            border-bottom: none;
+        }
+
+        .setting-label {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .setting-value {
+            font-size: 14px;
+            font-weight: 500;
+            text-align: right;
+            max-width: 180px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .loyalty-card {
+            background: linear-gradient(135deg, var(--accent), #a855f7);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+            color: white;
+        }
+
+        .loyalty-points {
+            font-size: 36px;
+            font-weight: 700;
+        }
+
+        .loyalty-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .loyalty-orders {
+            margin-top: 12px;
+            font-size: 13px;
+            opacity: 0.8;
+        }
+
         /* Location Picker Screen */
         .location-picker {
             position: fixed;
@@ -1742,6 +1998,66 @@
     <!-- Toast -->
     <div class="toast" id="toast"></div>
 
+    <!-- Side Menu -->
+    <div class="menu-overlay" id="menu-overlay" onclick="closeProfileMenu(event)">
+        <div class="side-menu" onclick="event.stopPropagation()">
+            <div class="menu-header">
+                <div class="menu-user-info">
+                    <div class="menu-user-avatar" id="menu-avatar">👤</div>
+                    <div>
+                        <div class="menu-user-name" id="menu-user-name">Gost</div>
+                        <div class="menu-user-phone" id="menu-user-phone">-</div>
+                    </div>
+                </div>
+                <button class="menu-close" onclick="closeProfileMenu()">×</button>
+            </div>
+            
+            <div class="menu-tabs">
+                <button class="menu-tab active" onclick="switchMenuTab('history')" id="tab-btn-history">📋 Istorija</button>
+                <button class="menu-tab" onclick="switchMenuTab('profile')" id="tab-btn-profile">⚙️ Profil</button>
+            </div>
+            
+            <div class="menu-content">
+                <!-- History Tab -->
+                <div class="tab-panel" id="tab-history">
+                    <div class="menu-section-label">Prethodne narudžbine</div>
+                    <div id="order-history-list">
+                        <div class="history-empty">Učitavanje...</div>
+                    </div>
+                </div>
+                
+                <!-- Profile Tab -->
+                <div class="tab-panel" id="tab-profile" style="display: none;">
+                    <div class="loyalty-card">
+                        <div class="loyalty-points" id="profile-points">0</div>
+                        <div class="loyalty-label">Loyalty poena</div>
+                        <div class="loyalty-orders">📦 <span id="profile-orders">0</span> narudžbina ukupno</div>
+                    </div>
+                    
+                    <div class="menu-section-label">Tvoji podaci</div>
+                    <div class="settings-card">
+                        <div class="setting-row">
+                            <span class="setting-label">Ime</span>
+                            <span class="setting-value" id="profile-name">-</span>
+                        </div>
+                        <div class="setting-row">
+                            <span class="setting-label">Telefon</span>
+                            <span class="setting-value" id="profile-phone">-</span>
+                        </div>
+                        <div class="setting-row">
+                            <span class="setting-label">Email</span>
+                            <span class="setting-value" id="profile-email">-</span>
+                        </div>
+                        <div class="setting-row">
+                            <span class="setting-label">Adresa</span>
+                            <span class="setting-value" id="profile-address">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         // ============================================
         // CONFIGURATION
@@ -2066,11 +2382,115 @@
         }
         
         function openProfileMenu() {
-            // TODO: Open side menu with profile/history
+            // Update menu with customer info
+            const avatarEl = document.getElementById('menu-avatar');
+            const nameEl = document.getElementById('menu-user-name');
+            const phoneEl = document.getElementById('menu-user-phone');
+            
             if (customer) {
-                showToast(`Ćao, ${customer.first_name}! 👋`, 'success');
+                avatarEl.textContent = customer.first_name?.charAt(0).toUpperCase() || '👤';
+                avatarEl.style.background = 'linear-gradient(135deg, var(--accent), #a855f7)';
+                nameEl.textContent = [customer.first_name, customer.last_name].filter(Boolean).join(' ') || 'Korisnik';
+                phoneEl.textContent = customer.phone || '-';
+                
+                // Update profile tab
+                document.getElementById('profile-name').textContent = [customer.first_name, customer.last_name].filter(Boolean).join(' ') || '-';
+                document.getElementById('profile-phone').textContent = customer.phone || '-';
+                document.getElementById('profile-email').textContent = customer.email || '-';
+                document.getElementById('profile-address').textContent = customer.address || '-';
+                document.getElementById('profile-points').textContent = customer.loyalty_points || 0;
+                document.getElementById('profile-orders').textContent = customer.total_orders || 0;
+                
+                // Load order history
+                loadOrderHistory();
             } else {
-                showToast('Napravi nalog za skupljanje poena! 🎁', 'info');
+                avatarEl.textContent = '👤';
+                avatarEl.style.background = 'var(--bg-card)';
+                nameEl.textContent = 'Gost';
+                phoneEl.textContent = 'Nisi prijavljen/a';
+                document.getElementById('order-history-list').innerHTML = '<div class="history-empty">Prijavi se da vidiš istoriju narudžbina</div>';
+            }
+            
+            // Show overlay
+            document.getElementById('menu-overlay').classList.add('show');
+        }
+        
+        function closeProfileMenu(e) {
+            if (e && e.target !== e.currentTarget) return;
+            document.getElementById('menu-overlay').classList.remove('show');
+        }
+        
+        function switchMenuTab(tab) {
+            // Update tab buttons
+            document.querySelectorAll('.menu-tab').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`tab-btn-${tab}`).classList.add('active');
+            
+            // Show/hide panels
+            document.getElementById('tab-history').style.display = tab === 'history' ? 'block' : 'none';
+            document.getElementById('tab-profile').style.display = tab === 'profile' ? 'block' : 'none';
+        }
+        
+        async function loadOrderHistory() {
+            if (!db || !customer) return;
+            
+            const listEl = document.getElementById('order-history-list');
+            listEl.innerHTML = '<div class="history-empty">Učitavanje...</div>';
+            
+            try {
+                // Get orders for this customer by phone or customer_id
+                const { data, error } = await db
+                    .from('shop_orders')
+                    .select('*')
+                    .or(`customer_id.eq.${customer.id},customer_phone.eq.${customer.phone}`)
+                    .order('created_at', { ascending: false })
+                    .limit(20);
+                
+                if (error) throw error;
+                
+                if (!data || data.length === 0) {
+                    listEl.innerHTML = '<div class="history-empty">Još nemaš narudžbina</div>';
+                    return;
+                }
+                
+                listEl.innerHTML = data.map(order => {
+                    const date = new Date(order.created_at);
+                    const dateStr = date.toLocaleDateString('sr-RS', { day: 'numeric', month: 'short' });
+                    const timeStr = date.toLocaleTimeString('sr-RS', { hour: '2-digit', minute: '2-digit' });
+                    
+                    const items = order.items || [];
+                    const itemsStr = items.slice(0, 2).map(i => `${i.quantity}x ${i.name}`).join(', ');
+                    const moreItems = items.length > 2 ? ` +${items.length - 2}` : '';
+                    
+                    // Status mapping
+                    const statusMap = {
+                        1: { label: 'Nova', class: '' },
+                        2: { label: 'Prihvaćena', class: '' },
+                        3: { label: 'U pripremi', class: '' },
+                        5: { label: 'Spremna', class: 'completed' },
+                        7: { label: 'Završena', class: 'completed' },
+                        8: { label: 'Odbijena', class: 'cancelled' },
+                        9: { label: 'Otkazana', class: 'cancelled' }
+                    };
+                    const status = statusMap[order.status] || { label: 'U obradi', class: '' };
+                    
+                    return `
+                        <div class="history-item ${status.class}">
+                            <div class="history-header">
+                                <span class="history-order-num">#${order.order_number}</span>
+                                <span class="history-date">${dateStr} ${timeStr}</span>
+                            </div>
+                            <div class="history-items">${itemsStr}${moreItems}</div>
+                            <div class="history-footer">
+                                <span class="history-status ${status.class}">${status.label}</span>
+                                <span class="history-total">${order.total} RSD</span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                
+            } catch (e) {
+                console.error('Error loading order history:', e);
+                listEl.innerHTML = '<div class="history-empty">Greška pri učitavanju</div>';
             }
         }
         
