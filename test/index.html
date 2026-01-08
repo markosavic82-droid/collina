@@ -1837,7 +1837,14 @@
         .coupon-desc {
             font-size: 11px;
             color: var(--text-secondary);
-            margin-bottom: 10px;
+            margin-bottom: 6px;
+        }
+
+        .coupon-remaining {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--accent);
+            margin-bottom: 8px;
         }
 
         .coupon-use-btn {
@@ -2401,6 +2408,13 @@
                         <span class="order-type-badge" id="discount-type-badge">🏪 Preuzimanje</span>
                     </span>
                     <span id="summary-discount" style="color: #22C55E;">-0 RSD</span>
+                </div>
+                <div class="cart-summary-row discount" id="coupon-discount-row" style="display: none;">
+                    <span class="cart-discount-label">
+                        <span>🎫</span>
+                        <span id="coupon-discount-label">Kupon</span>
+                    </span>
+                    <span id="summary-coupon-discount" style="color: #22C55E;">-0 RSD</span>
                 </div>
                 <div class="cart-summary-row total">
                     <span>Ukupno</span>
@@ -3139,7 +3153,9 @@
             // Update home screen with customer data
             updateHomeScreen();
             
-            // Load featured products
+            // Load coupons and featured products
+            await loadCustomerCoupons();
+            renderCoupons();
             loadFeaturedProducts();
         }
 
@@ -3213,10 +3229,73 @@
         
         // Selected coupons for cart
         let selectedCoupons = [];
+        let customerCoupons = []; // From database
+        
+        async function loadCustomerCoupons() {
+            if (!db || !customer) {
+                customerCoupons = [];
+                return;
+            }
+            
+            try {
+                const { data, error } = await db
+                    .from('customer_coupons')
+                    .select(`
+                        *,
+                        coupons (*)
+                    `)
+                    .eq('customer_id', customer.id)
+                    .gt('quantity', 0);  // Only coupons with remaining uses
+                
+                if (data && !error) {
+                    customerCoupons = data.filter(cc => cc.quantity > cc.used);
+                    console.log('✅ Loaded customer coupons:', customerCoupons.length);
+                }
+            } catch (e) {
+                console.error('Error loading coupons:', e);
+                customerCoupons = [];
+            }
+        }
+        
+        function renderCoupons() {
+            const container = document.getElementById('coupons-scroll');
+            if (!container) return;
+            
+            if (!customer || customerCoupons.length === 0) {
+                container.innerHTML = `
+                    <div style="padding: 20px; color: var(--text-secondary); font-size: 14px;">
+                        ${customer ? 'Nemaš dostupne kupone' : 'Prijavi se za kupone! 🎁'}
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = customerCoupons.map(cc => {
+                const coupon = cc.coupons;
+                const remaining = cc.quantity - cc.used;
+                const isSelected = selectedCoupons.includes(coupon.id);
+                
+                return `
+                    <div class="coupon-card ${isSelected ? 'selected' : ''}" id="coupon-${coupon.id}" onclick="toggleCoupon('${coupon.id}')">
+                        <div class="coupon-icon">${coupon.icon}</div>
+                        <div class="coupon-name">${coupon.name}</div>
+                        <div class="coupon-desc">${coupon.description}</div>
+                        <div class="coupon-remaining">${remaining}x</div>
+                        <button class="coupon-use-btn" id="coupon-btn-${coupon.id}">${isSelected ? '✓ U korpi' : 'Iskoristi'}</button>
+                    </div>
+                `;
+            }).join('');
+        }
         
         function toggleCoupon(couponId) {
+            if (!customer) {
+                showToast('Prijavi se da koristiš kupone', 'info');
+                return;
+            }
+            
             const card = document.getElementById(`coupon-${couponId}`);
             const btn = document.getElementById(`coupon-btn-${couponId}`);
+            if (!card || !btn) return;
             
             if (selectedCoupons.includes(couponId)) {
                 // Remove coupon
@@ -3236,6 +3315,53 @@
                 btn.textContent = '✓ U korpi';
                 showToast('Kupon dodat u korpu! 🎉', 'success');
             }
+        }
+        
+        function getSelectedCouponData() {
+            // Get full coupon data for selected coupons
+            return selectedCoupons.map(id => {
+                const cc = customerCoupons.find(c => c.coupons.id === id);
+                return cc ? cc.coupons : null;
+            }).filter(Boolean);
+        }
+        
+        function calculateCouponDiscount(subtotal) {
+            const coupons = getSelectedCouponData();
+            let discount = 0;
+            let freeItems = [];
+            let freeDelivery = false;
+            
+            for (const coupon of coupons) {
+                if (coupon.coupon_type === 'percent') {
+                    discount += Math.round(subtotal * (coupon.value / 100));
+                } else if (coupon.coupon_type === 'fixed') {
+                    discount += coupon.value;
+                } else if (coupon.coupon_type === 'free_delivery') {
+                    freeDelivery = true;
+                } else if (coupon.coupon_type === 'free_item') {
+                    freeItems.push(coupon.name);
+                }
+            }
+            
+            return { discount, freeItems, freeDelivery };
+        }
+        
+        async function useCoupons() {
+            // Decrement coupon quantities after order
+            if (!db || !customer || selectedCoupons.length === 0) return;
+            
+            for (const couponId of selectedCoupons) {
+                const cc = customerCoupons.find(c => c.coupons.id === couponId);
+                if (cc) {
+                    await db
+                        .from('customer_coupons')
+                        .update({ used: cc.used + 1 })
+                        .eq('id', cc.id);
+                }
+            }
+            
+            // Clear selected coupons
+            selectedCoupons = [];
         }
         
         function loadFeaturedProducts() {
@@ -3952,7 +4078,14 @@
             
             // Pickup/drive-thru discount (10% on subtotal after item discounts)
             const pickupDiscount = Math.round(subtotal * (pickupDiscountPercent / 100));
-            const total = subtotal - pickupDiscount;
+            
+            // Coupon discounts
+            const couponResult = calculateCouponDiscount(subtotal - pickupDiscount);
+            const couponDiscount = couponResult.discount;
+            const freeItems = couponResult.freeItems;
+            const freeDelivery = couponResult.freeDelivery;
+            
+            const total = subtotal - pickupDiscount - couponDiscount;
             
             // Get order type display info
             const orderTypeLabels = {
@@ -3979,6 +4112,29 @@
             document.getElementById('summary-discount').textContent = '-' + pickupDiscount.toLocaleString() + ' RSD';
             document.getElementById('discount-type-badge').textContent = orderTypeLabels[orderType] || '🏪 Preuzimanje';
             document.getElementById('discount-row').style.display = 'flex';
+            
+            // Coupon discount row
+            const couponDiscountRow = document.getElementById('coupon-discount-row');
+            if (couponDiscount > 0 || freeItems.length > 0 || freeDelivery) {
+                let couponLabel = '🎫 Kupon';
+                let couponValue = '';
+                
+                if (couponDiscount > 0) {
+                    couponValue = '-' + couponDiscount.toLocaleString() + ' RSD';
+                }
+                if (freeItems.length > 0) {
+                    couponValue = (couponValue ? couponValue + ' + ' : '') + freeItems.join(', ');
+                }
+                if (freeDelivery) {
+                    couponValue = (couponValue ? couponValue + ' + ' : '') + 'Besplatna dostava';
+                }
+                
+                document.getElementById('coupon-discount-label').textContent = couponLabel;
+                document.getElementById('summary-coupon-discount').textContent = couponValue;
+                couponDiscountRow.style.display = 'flex';
+            } else {
+                couponDiscountRow.style.display = 'none';
+            }
             
             // Total
             document.getElementById('summary-total').textContent = total.toLocaleString() + ' RSD';
@@ -4108,8 +4264,14 @@
             const itemDiscount = fullPriceTotal - subtotal;
             const pickupDiscountPercent = 10;
             const pickupDiscount = Math.round(subtotal * (pickupDiscountPercent / 100));
-            const totalDiscount = itemDiscount + pickupDiscount;
-            const total = subtotal - pickupDiscount;
+            
+            // Coupon discounts
+            const couponResult = calculateCouponDiscount(subtotal - pickupDiscount);
+            const couponDiscount = couponResult.discount;
+            const usedCoupons = getSelectedCouponData();
+            
+            const totalDiscount = itemDiscount + pickupDiscount + couponDiscount;
+            const total = subtotal - pickupDiscount - couponDiscount;
 
             // Format phone with +381 prefix
             const fullPhone = normalizePhone(phone);
@@ -4135,6 +4297,8 @@
                 subtotal: subtotal,
                 itemDiscount: itemDiscount,
                 pickupDiscount: pickupDiscount,
+                couponDiscount: couponDiscount,
+                couponsUsed: usedCoupons.map(c => ({ id: c.id, name: c.name, type: c.coupon_type, value: c.value })),
                 totalDiscount: totalDiscount,
                 discountPercent: pickupDiscountPercent,
                 total: total,
@@ -4162,7 +4326,7 @@
                 location_name: LOCATIONS[selectedLocation]?.name || '',
                 items: orderItems,
                 subtotal: fullPriceTotal,           // Store full price as subtotal for reporting
-                discount: totalDiscount,            // Total discount (items + pickup)
+                discount: totalDiscount,            // Total discount (items + pickup + coupons)
                 discount_percent: pickupDiscountPercent,
                 total: total,
                 notes: notes || null
@@ -4181,6 +4345,9 @@
                 if (orderCustomer?.id) {
                     await incrementCustomerOrders(orderCustomer.id);
                 }
+                
+                // Use (decrement) coupons
+                await useCoupons();
 
                 // Track Purchase event
                 trackEvent('Purchase', {
@@ -4209,10 +4376,17 @@
             }
         }
 
-        function newOrder() {
+        async function newOrder() {
             document.getElementById('success-screen').classList.remove('show');
             customerName = '';
             customerPhone = '';
+            
+            // Refresh coupons (some were used)
+            await loadCustomerCoupons();
+            renderCoupons();
+            
+            // Go back to home screen
+            showScreen('home');
         }
 
         // ============================================
