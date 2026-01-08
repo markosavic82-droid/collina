@@ -352,6 +352,7 @@
     .table-provider.wolt { background: #00b4d8; color: #000; }
     .table-provider.gloriafood { background: #f59e0b; color: #000; }
     .table-provider.ebar { background: #22c55e; color: #000; }
+    .table-provider.emeniwaiter { background: #ec4899; color: #fff; }
     .table-provider.pult { background: #8B5CF6; color: #fff; }
 
     .table-status {
@@ -606,6 +607,7 @@
     .order-provider.eBar { background: #7c3aed20; color: #a78bfa; }
     .order-provider.gloriafood { background: #f59e0b20; color: #fbbf24; }
     .order-provider.wolt { background: #3b82f620; color: #60a5fa; }
+    .order-provider.emeniwaiter { background: #ec489920; color: #f472b6; }
 
     .order-meta {
       font-size: 12px;
@@ -1218,6 +1220,10 @@
         <label for="channel-ebar">📱 eBar</label>
       </div>
       <div class="filter-option">
+        <input type="checkbox" id="channel-emeniwaiter" value="emeniwaiter" checked onchange="updateChannelFilter()">
+        <label for="channel-emeniwaiter">🧑‍🍳 eMeniWaiter</label>
+      </div>
+      <div class="filter-option">
         <input type="checkbox" id="channel-gloriafood" value="gloriafood" checked onchange="updateChannelFilter()">
         <label for="channel-gloriafood">🍽️ Gloria</label>
       </div>
@@ -1427,7 +1433,7 @@
     
     // Filter state
     let selectedLocations = new Set(); // Empty = all
-    let selectedChannels = new Set(['wolt', 'gloriafood', 'ebar', 'pult']); // All by default
+    let selectedChannels = new Set(['wolt', 'gloriafood', 'ebar', 'emeniwaiter', 'pult']); // All by default
     let selectedStatus = 'all'; // Status filter: 'all', 'new', 'production', 'ready', 'paid', 'canceled'
     let viewMode = 'cards'; // 'cards' or 'table'
 
@@ -1590,7 +1596,7 @@
       });
       
       selectedLocations = new Set();
-      selectedChannels = new Set(['wolt', 'gloriafood', 'ebar', 'pult']);
+      selectedChannels = new Set(['wolt', 'gloriafood', 'ebar', 'emeniwaiter', 'pult']);
       updateActiveFiltersCount();
       applyFilters();
     }
@@ -2455,7 +2461,7 @@
           <div class="order-header">
             <span class="order-number">#${order.order_no}</span>
             ${hasNotes ? `<span class="order-note-icon" title="${allNotes.replace(/"/g, '&quot;')}">📝</span>` : ''}
-            <span class="order-provider ${order.provider}">${order.provider}</span>
+            <span class="order-provider ${(order.provider || 'pult').toLowerCase()}">${order.provider || 'pult'}</span>
           </div>
           <div class="order-meta">
             ${order.waiter_name ? `<span class="waiter">👨‍🍳 ${order.waiter_name}</span> • ` : ''}
