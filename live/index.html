@@ -1503,12 +1503,15 @@
         <thead>
           <tr>
             <th>#</th>
+            <th>Sto</th>
             <th>Lokacija</th>
             <th>Kanal</th>
+            <th>Konobar</th>
             <th>Tip</th>
             <th>Stavke</th>
             <th>Ukupno</th>
             <th>Status</th>
+            <th>Plaćeno</th>
             <th>Priprema</th>
             <th>Dostava</th>
             <th>Vreme</th>
@@ -2005,10 +2008,18 @@
         const statusGroup = getStatusGroup(order);
         const isPaid = order.is_paid === true || order.is_paid === 'true';
         
-        const time = new Date(order.datetime).toLocaleTimeString('sr-RS', { 
-          hour: '2-digit', 
-          minute: '2-digit' 
-        });
+        // Handle different date formats
+        let time = '-';
+        const dateValue = order.datetime || order.created_at || order.order_date;
+        if (dateValue) {
+          const dateObj = new Date(dateValue);
+          if (!isNaN(dateObj.getTime())) {
+            time = dateObj.toLocaleTimeString('sr-RS', { 
+              hour: '2-digit', 
+              minute: '2-digit' 
+            });
+          }
+        }
         
         return `
           <tr onclick="openOrderDetail(${order.order_id})" class="${isKnownTable ? '' : 'unknown-table'}">
@@ -2622,6 +2633,11 @@
       const locationName = locations[order.company_id] || `ID: ${order.company_id}`;
       const statusGroup = getStatusGroup(order);
       
+      // Table/Sto info
+      const tableId = order.table_id;
+      const isKnownTable = tableId && TABLE_NAMES[tableId] !== undefined;
+      const tableName = tableId ? (TABLE_NAMES[tableId] || `Nepoznat #${tableId}`) : '-';
+      
       const statusLabels = {
         new: 'Novo',
         production: 'Priprema',
@@ -2683,15 +2699,20 @@
         prepTimeHtml = `<span class="table-prep-time ${prepTimeClass}">⏱ ${mins} min</span>`;
       }
       
+      const isPaid = order.is_paid === true || order.is_paid === 'true';
+      
       return `
-        <tr onclick="openOrderDetail(${order.order_id})">
+        <tr onclick="openOrderDetail(${order.order_id})" class="${tableId && !isKnownTable ? 'unknown-table' : ''}">
           <td><strong>#${order.order_no}</strong> ${hasNotes ? `<span title="${allNotes.replace(/"/g, '&quot;')}" style="cursor:help;">📝</span>` : ''}</td>
+          <td>${tableId ? `<span class="table-id-badge ${isKnownTable ? '' : 'unknown'}">${tableName}</span>` : '-'}</td>
           <td><span class="table-location">${locationName}</span></td>
           <td><span class="table-provider ${provider}">${provider}</span></td>
+          <td>${order.waiter_name || '-'}</td>
           <td>${order.delivery_type || 'N/A'}</td>
           <td><div class="table-items" title="${itemsSummary}">${itemsSummary}</div></td>
           <td class="table-total">${total.toFixed(0)} RSD</td>
           <td><span class="table-status ${statusGroup}">${statusLabels[statusGroup]}</span></td>
+          <td>${isPaid ? '✅ Da' : '❌ Ne'}</td>
           <td>${prepTimeHtml}</td>
           <td>${deliveryHtml}</td>
           <td>${time}</td>
