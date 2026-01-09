@@ -17,27 +17,563 @@
       background: #0f0f0f;
       color: #ffffff;
       min-height: 100vh;
-      padding: 20px;
+      padding: 15px 20px;
     }
 
     .header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 30px;
-      padding-bottom: 20px;
+      margin-bottom: 15px;
+      padding-bottom: 15px;
       border-bottom: 1px solid #333;
+      gap: 15px;
+      flex-wrap: nowrap;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .burger-btn {
+      background: #1a1a2e;
+      border: 1px solid #333;
+      border-radius: 8px;
+      color: #8B5CF6;
+      padding: 8px 10px;
+      cursor: pointer;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      position: relative;
+    }
+
+    .burger-btn:hover {
+      background: rgba(139, 92, 246, 0.2);
+      border-color: #8B5CF6;
+    }
+
+    .burger-btn .filter-badge {
+      position: absolute;
+      top: -5px;
+      right: -5px;
+      background: #ef4444;
+      color: #fff;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      font-size: 10px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .burger-btn .filter-badge.hidden {
+      display: none;
     }
 
     .header h1 {
-      font-size: 28px;
+      font-size: 22px;
       color: #8B5CF6;
+      white-space: nowrap;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      flex-shrink: 0;
     }
 
     .header .status {
       display: flex;
       align-items: center;
       gap: 10px;
+    }
+
+    .date-selector {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .date-selector input[type="date"] {
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 8px;
+      color: #fff;
+      padding: 8px 12px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .date-selector input[type="date"]::-webkit-calendar-picker-indicator {
+      filter: invert(1);
+      cursor: pointer;
+    }
+
+    .date-btn {
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 6px;
+      color: #8B5CF6;
+      padding: 8px 12px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.2s;
+    }
+
+    .date-btn:hover {
+      background: #8B5CF6;
+      color: #fff;
+    }
+
+    /* Status Filter Tabs - Compact */
+    .status-tabs {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      flex-shrink: 0;
+    }
+
+    .status-tab {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 6px 12px;
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 8px;
+      color: #888;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+      font-size: 12px;
+    }
+
+    .status-tab:hover {
+      border-color: #555;
+      color: #fff;
+    }
+
+    .status-tab.active {
+      border-color: #8B5CF6;
+      background: linear-gradient(135deg, #1a1a2e 0%, #252540 100%);
+      color: #fff;
+    }
+
+    .status-tab .tab-icon {
+      font-size: 14px;
+    }
+
+    .status-tab .tab-label {
+      font-weight: 500;
+      font-size: 12px;
+      display: none;
+    }
+
+    @media (min-width: 1200px) {
+      .status-tab .tab-label {
+        display: inline;
+      }
+    }
+
+    .status-tab .tab-count {
+      background: #333;
+      padding: 2px 6px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .status-tab.active .tab-count {
+      background: #8B5CF6;
+    }
+
+    .status-tab[data-status="new"].active { border-color: #f59e0b; }
+    .status-tab[data-status="new"].active .tab-count { background: #f59e0b; }
+    
+    .status-tab[data-status="production"].active { border-color: #f97316; }
+    .status-tab[data-status="production"].active .tab-count { background: #f97316; }
+    
+    .status-tab[data-status="ready"].active { border-color: #3b82f6; }
+    .status-tab[data-status="ready"].active .tab-count { background: #3b82f6; }
+    
+    .status-tab[data-status="paid"].active { border-color: #22c55e; }
+    .status-tab[data-status="paid"].active .tab-count { background: #22c55e; }
+    
+    .status-tab[data-status="canceled"].active { border-color: #ef4444; }
+    .status-tab[data-status="canceled"].active .tab-count { background: #ef4444; }
+
+    /* View Toggle - Compact */
+    .view-toggle {
+      display: flex;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    .view-btn {
+      padding: 6px 10px;
+      background: #1a1a1a;
+      border: 1px solid #333;
+      color: #888;
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.2s;
+    }
+
+    .view-btn:first-child {
+      border-radius: 8px 0 0 8px;
+    }
+
+    .view-btn:last-child {
+      border-radius: 0 8px 8px 0;
+    }
+
+    .view-btn.active {
+      background: #8B5CF6;
+      border-color: #8B5CF6;
+      color: white;
+    }
+
+    /* Grid view for filtered orders */
+    .orders-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 15px;
+      padding: 10px 0;
+    }
+
+    .orders-grid .order-card {
+      margin: 0;
+    }
+
+    .orders-grid-empty {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 60px 20px;
+      color: #666;
+      font-size: 16px;
+    }
+
+    /* View Toggle */
+    .view-toggle {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 15px;
+    }
+
+    .view-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 8px;
+      color: #888;
+      cursor: pointer;
+      font-size: 13px;
+      transition: all 0.2s;
+    }
+
+    .view-btn:hover {
+      border-color: #555;
+      color: #fff;
+    }
+
+    .view-btn.active {
+      background: #8B5CF6;
+      border-color: #8B5CF6;
+      color: #fff;
+    }
+
+    /* Table View */
+    .orders-table-container {
+      background: #1a1a1a;
+      border-radius: 12px;
+      border: 1px solid #333;
+      overflow: hidden;
+    }
+
+    .orders-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .orders-table th {
+      background: #252525;
+      padding: 12px 15px;
+      text-align: left;
+      font-weight: 600;
+      color: #888;
+      border-bottom: 1px solid #333;
+      white-space: nowrap;
+    }
+
+    .orders-table td {
+      padding: 12px 15px;
+      border-bottom: 1px solid #2a2a2a;
+      vertical-align: middle;
+    }
+
+    .orders-table tr:hover {
+      background: #252525;
+      cursor: pointer;
+    }
+
+    .orders-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .table-location {
+      display: inline-block;
+      background: #8B5CF6;
+      color: #fff;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+    }
+
+    .table-provider {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .table-provider.wolt { background: #00b4d8; color: #000; }
+    .table-provider.gloriafood { background: #f59e0b; color: #000; }
+    .table-provider.ebar { background: #22c55e; color: #000; }
+    .table-provider.emeniwaiter { background: #ec4899; color: #fff; }
+    .table-provider.pult { background: #8B5CF6; color: #fff; }
+
+    .table-status {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .table-status.new { background: #f59e0b20; color: #f59e0b; }
+    .table-status.production { background: #f9731620; color: #f97316; }
+    .table-status.ready { background: #3b82f620; color: #3b82f6; }
+    .table-status.paid { background: #22c55e20; color: #22c55e; }
+    .table-status.canceled { background: #ef444420; color: #ef4444; }
+
+    .table-delivery {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .table-delivery-status {
+      padding: 3px 8px;
+      border-radius: 10px;
+      font-size: 10px;
+      font-weight: 500;
+    }
+
+    .table-delivery-status.delivered { background: #065F46; color: #A7F3D0; }
+    .table-delivery-status.pending { background: #374151; color: #9CA3AF; }
+    .table-delivery-status.started { background: #5B21B6; color: #DDD6FE; }
+
+    .table-items {
+      max-width: 250px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: #aaa;
+      font-size: 12px;
+    }
+
+    .table-total {
+      font-weight: 600;
+      color: #22c55e;
+    }
+
+    .table-empty {
+      text-align: center;
+      padding: 40px;
+      color: #666;
+    }
+
+    /* Main Navigation Tabs */
+    .main-nav-tabs {
+      display: flex;
+      gap: 4px;
+      background: #1a1a1a;
+      padding: 4px;
+      border-radius: 10px;
+      margin-right: 15px;
+    }
+
+    .main-nav-tab {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      background: transparent;
+      border: none;
+      border-radius: 8px;
+      color: #888;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+
+    .main-nav-tab:hover {
+      color: #fff;
+      background: #252525;
+    }
+
+    .main-nav-tab.active {
+      background: #8B5CF6;
+      color: #fff;
+    }
+
+    /* Tables View Container */
+    .tables-view-container {
+      display: none;
+    }
+
+    .tables-view-container.active {
+      display: block;
+    }
+
+    .tables-view-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      padding: 15px 20px;
+      background: #1a1a1a;
+      border-radius: 12px;
+      border: 1px solid #333;
+    }
+
+    .tables-view-header h2 {
+      font-size: 18px;
+      color: #8B5CF6;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .tables-filter-group {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .tables-filter-group label {
+      color: #888;
+      font-size: 13px;
+    }
+
+    .table-dropdown {
+      background: #252525;
+      border: 1px solid #333;
+      border-radius: 8px;
+      color: #fff;
+      padding: 10px 15px;
+      font-size: 14px;
+      min-width: 200px;
+      cursor: pointer;
+    }
+
+    .table-dropdown:focus {
+      outline: none;
+      border-color: #8B5CF6;
+    }
+
+    .table-dropdown option {
+      background: #1a1a1a;
+      color: #fff;
+      padding: 10px;
+    }
+
+    .tables-stats {
+      display: flex;
+      gap: 20px;
+      color: #888;
+      font-size: 13px;
+    }
+
+    .tables-stats span {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .tables-stats .count {
+      color: #8B5CF6;
+      font-weight: 600;
+    }
+
+    .table-id-badge {
+      display: inline-block;
+      background: #8B5CF6;
+      color: #fff;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .table-id-badge.unknown {
+      background: #ef4444;
+    }
+
+    .discount-badge {
+      display: inline-block;
+      background: #f59e0b;
+      color: #000;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .table-final-price {
+      font-weight: 600;
+      color: #22c55e;
+    }
+
+    .orders-table tr.unknown-table {
+      background: rgba(239, 68, 68, 0.1);
+    }
+
+    .orders-table tr.unknown-table:hover {
+      background: rgba(239, 68, 68, 0.2);
+    }
+
+    .table-name-badge {
+      display: inline-block;
+      background: #374151;
+      color: #fff;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    /* Live View Container */
+    .live-view-container {
+      display: block;
+    }
+
+    .live-view-container.hidden {
+      display: none;
     }
 
     .status-dot {
@@ -147,18 +683,87 @@
     .order-card.production { border-left-color: #f97316; }
     .order-card.ready { border-left-color: #3b82f6; }
     .order-card.paid { border-left-color: #22c55e; }
+
+    .stickers-container {
+      position: absolute;
+      top: -8px;
+      right: 10px;
+      display: flex;
+      gap: 6px;
+      z-index: 10;
+    }
+
+    .sticker {
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+
+    .sticker.delivered {
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+      color: #fff;
+    }
+
+    .sticker.paid {
+      background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+      color: #fff;
+    }
+
+    .order-card {
+      position: relative;
+    }
     .order-card.canceled { border-left-color: #ef4444; }
+
+    .order-location-tag {
+      background: linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 6px 10px;
+      border-radius: 6px;
+      margin-bottom: 10px;
+      display: inline-block;
+    }
 
     .order-header {
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
       margin-bottom: 10px;
+      gap: 8px;
     }
 
     .order-number {
       font-size: 20px;
       font-weight: bold;
+    }
+
+    .order-note-icon {
+      font-size: 14px;
+      cursor: help;
+      animation: pulse-note 2s infinite;
+    }
+
+    @keyframes pulse-note {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+
+    .order-note-preview {
+      background: rgba(251, 191, 36, 0.15);
+      border: 1px solid rgba(251, 191, 36, 0.3);
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 12px;
+      color: #fbbf24;
+      margin-bottom: 10px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .order-provider {
@@ -172,6 +777,7 @@
     .order-provider.eBar { background: #7c3aed20; color: #a78bfa; }
     .order-provider.gloriafood { background: #f59e0b20; color: #fbbf24; }
     .order-provider.wolt { background: #3b82f620; color: #60a5fa; }
+    .order-provider.emeniwaiter { background: #ec489920; color: #f472b6; }
 
     .order-meta {
       font-size: 12px;
@@ -224,6 +830,109 @@
       color: #666;
     }
 
+    /* Prep Time Badge */
+    .prep-time-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      background: #1a1a2e;
+      border: 1px solid #333;
+    }
+    
+    .prep-time-badge.fast {
+      background: rgba(34, 197, 94, 0.15);
+      border-color: #22c55e;
+      color: #4ade80;
+    }
+    
+    .prep-time-badge.normal {
+      background: rgba(251, 191, 36, 0.15);
+      border-color: #f59e0b;
+      color: #fbbf24;
+    }
+    
+    .prep-time-badge.slow {
+      background: rgba(239, 68, 68, 0.15);
+      border-color: #ef4444;
+      color: #f87171;
+    }
+    
+    .prep-time-badge.pending {
+      color: #666;
+    }
+
+    .order-footer .prep-time-badge {
+      margin-left: auto;
+      margin-right: 10px;
+    }
+
+    .table-prep-time {
+      font-weight: 600;
+      font-size: 12px;
+    }
+    
+    .table-prep-time.fast { color: #4ade80; }
+    .table-prep-time.normal { color: #fbbf24; }
+    .table-prep-time.slow { color: #f87171; }
+    .table-prep-time.pending { color: #666; }
+
+    /* Delivery Tracking Styles */
+    .delivery-info {
+      background: #1a1a2e;
+      border-radius: 8px;
+      padding: 10px 12px;
+      margin-top: 10px;
+      border: 1px solid #333;
+    }
+
+    .delivery-status-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .delivery-status-badge.pending { background: #374151; color: #9CA3AF; }
+    .delivery-status-badge.assigned { background: #1E3A5F; color: #93C5FD; }
+    .delivery-status-badge.started { background: #5B21B6; color: #DDD6FE; }
+    .delivery-status-badge.in_progress { background: #7C3AED; color: #EDE9FE; }
+    .delivery-status-badge.arrived { background: #B45309; color: #FDE68A; }
+    .delivery-status-badge.delivered { background: #065F46; color: #A7F3D0; }
+    .delivery-status-badge.failed { background: #7F1D1D; color: #FECACA; }
+
+    .delivery-courier {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: #ccc;
+    }
+
+    .delivery-courier .courier-icon {
+      font-size: 16px;
+    }
+
+    .delivery-courier .courier-name {
+      font-weight: 500;
+    }
+
+    .delivery-courier .track-link {
+      margin-left: auto;
+      color: #8B5CF6;
+      text-decoration: none;
+      font-size: 11px;
+    }
+
+    .delivery-courier .track-link:hover {
+      text-decoration: underline;
+    }
+
     .empty-state {
       text-align: center;
       color: #555;
@@ -239,6 +948,141 @@
     .last-updated {
       color: #666;
       font-size: 12px;
+    }
+
+    /* Sidebar Filters */
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 999;
+    }
+    
+    .sidebar-overlay.active {
+      display: block;
+    }
+    
+    .filters-sidebar {
+      position: fixed;
+      top: 0;
+      left: -350px;
+      width: 320px;
+      height: 100vh;
+      background: #1a1a2e;
+      border-right: 1px solid #333;
+      z-index: 1000;
+      transition: left 0.3s ease;
+      overflow-y: auto;
+      padding: 20px;
+    }
+    
+    .filters-sidebar.active {
+      left: 0;
+    }
+    
+    .sidebar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid #333;
+    }
+    
+    .sidebar-header h2 {
+      font-size: 18px;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .sidebar-close {
+      background: none;
+      border: none;
+      color: #888;
+      font-size: 24px;
+      cursor: pointer;
+      padding: 5px;
+      line-height: 1;
+    }
+    
+    .sidebar-close:hover {
+      color: #fff;
+    }
+    
+    .clear-filters-btn {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(135deg, #7f1d1d 0%, #991b1b 100%);
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-bottom: 25px;
+      transition: all 0.2s;
+    }
+    
+    .clear-filters-btn:hover {
+      background: linear-gradient(135deg, #991b1b 0%, #b91c1c 100%);
+    }
+    
+    .filter-section {
+      margin-bottom: 25px;
+    }
+    
+    .filter-section-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .filter-option {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 12px;
+      margin-bottom: 4px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .filter-option:hover {
+      background: rgba(139, 92, 246, 0.1);
+    }
+    
+    .filter-option.selected {
+      background: rgba(139, 92, 246, 0.2);
+      border: 1px solid #8B5CF6;
+    }
+    
+    .filter-option input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      accent-color: #8B5CF6;
+      cursor: pointer;
+    }
+    
+    .filter-option label {
+      flex: 1;
+      cursor: pointer;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
 
     /* Modal Styles */
@@ -403,7 +1247,19 @@
     .items-table .item-modifiers {
       font-size: 12px;
       color: #888;
-      margin-top: 4px;
+      margin-top: 6px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+
+    .items-table .modifier-tag {
+      background: rgba(139, 92, 246, 0.15);
+      color: #A78BFA;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      white-space: nowrap;
     }
 
     .lifecycle-timeline {
@@ -506,89 +1362,289 @@
   </style>
 </head>
 <body>
+  <!-- Sidebar Overlay -->
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+  
+  <!-- Filters Sidebar (LEFT) -->
+  <div class="filters-sidebar" id="filtersSidebar">
+    <div class="sidebar-header">
+      <h2>🎚️ Filters</h2>
+      <button class="sidebar-close" onclick="toggleSidebar()">×</button>
+    </div>
+    
+    <button class="clear-filters-btn" onclick="clearAllFilters()">Clear All Filters</button>
+    
+    <div class="filter-section">
+      <div class="filter-section-title">📍 LOCATIONS</div>
+      <div id="sidebarLocationOptions"></div>
+    </div>
+    
+    <div class="filter-section">
+      <div class="filter-section-title">📱 CHANNELS</div>
+      <div class="filter-option">
+        <input type="checkbox" id="channel-wolt" value="wolt" checked onchange="updateChannelFilter()">
+        <label for="channel-wolt">🏃 Wolt</label>
+      </div>
+      <div class="filter-option">
+        <input type="checkbox" id="channel-ebar" value="ebar" checked onchange="updateChannelFilter()">
+        <label for="channel-ebar">📱 eBar</label>
+      </div>
+      <div class="filter-option">
+        <input type="checkbox" id="channel-emeniwaiter" value="emeniwaiter" checked onchange="updateChannelFilter()">
+        <label for="channel-emeniwaiter">🧑‍🍳 eMeniWaiter</label>
+      </div>
+      <div class="filter-option">
+        <input type="checkbox" id="channel-gloriafood" value="gloriafood" checked onchange="updateChannelFilter()">
+        <label for="channel-gloriafood">🍽️ Gloria</label>
+      </div>
+      <div class="filter-option">
+        <input type="checkbox" id="channel-pult" value="pult" checked onchange="updateChannelFilter()">
+        <label for="channel-pult">🚚 Food Truck</label>
+      </div>
+    </div>
+  </div>
+
+  <!-- Single Line Header -->
   <div class="header">
-    <h1>🍔 Collina Orders</h1>
-    <div class="status">
-      <div class="status-dot"></div>
-      <span>Live</span>
-      <span class="last-updated" id="lastUpdated">Loading...</span>
+    <div class="header-left">
+      <button class="burger-btn" onclick="toggleSidebar()">
+        ☰
+        <span class="filter-badge hidden" id="activeFiltersCount">0</span>
+      </button>
+      <h1>🍔 Collina Orders</h1>
+      
+      <!-- Main Navigation Tabs -->
+      <div class="main-nav-tabs">
+        <button class="main-nav-tab active" data-page="live" onclick="switchPage('live')">
+          <span>📡</span> Live View
+        </button>
+        <button class="main-nav-tab" data-page="tables" onclick="switchPage('tables')">
+          <span>📊</span> Reporting
+        </button>
+      </div>
+
+      <div class="date-selector">
+        <button class="date-btn" onclick="changeDate(-1)">◀</button>
+        <input type="date" id="selectedDate" onchange="loadOrdersForDate()">
+        <button class="date-btn" onclick="changeDate(1)">▶</button>
+      </div>
+    </div>
+    
+    <!-- Status Filter Tabs (inline) -->
+    <div class="status-tabs">
+      <button class="status-tab active" data-status="all" onclick="setStatusFilter('all')">
+        <span class="tab-icon">📋</span>
+        <span class="tab-label">Sve</span>
+        <span class="tab-count" id="countAll">0</span>
+      </button>
+      <button class="status-tab" data-status="new" onclick="setStatusFilter('new')">
+        <span class="tab-icon">🆕</span>
+        <span class="tab-label">Novo</span>
+        <span class="tab-count" id="countNew">0</span>
+      </button>
+      <button class="status-tab" data-status="production" onclick="setStatusFilter('production')">
+        <span class="tab-icon">👨‍🍳</span>
+        <span class="tab-label">Priprema</span>
+        <span class="tab-count" id="countProduction">0</span>
+      </button>
+      <button class="status-tab" data-status="ready" onclick="setStatusFilter('ready')">
+        <span class="tab-icon">✅</span>
+        <span class="tab-label">Spremno</span>
+        <span class="tab-count" id="countReady">0</span>
+      </button>
+      <button class="status-tab" data-status="paid" onclick="setStatusFilter('paid')">
+        <span class="tab-icon">💰</span>
+        <span class="tab-label">Završeno</span>
+        <span class="tab-count" id="countPaid">0</span>
+      </button>
+      <button class="status-tab" data-status="canceled" onclick="setStatusFilter('canceled')">
+        <span class="tab-icon">❌</span>
+        <span class="tab-label">Otkazano</span>
+        <span class="tab-count" id="countCanceled">0</span>
+      </button>
+    </div>
+
+    <div class="header-right">
+      <!-- View Toggle -->
+      <div class="view-toggle">
+        <button class="view-btn" data-view="cards" onclick="setViewMode('cards')">
+          <span>🃏</span>
+        </button>
+        <button class="view-btn active" data-view="table" onclick="setViewMode('table')">
+          <span>📋</span>
+        </button>
+      </div>
+      
+      <div class="status">
+        <div class="status-dot"></div>
+        <span>Live</span>
+        <span class="last-updated" id="lastUpdated">Loading...</span>
+      </div>
     </div>
   </div>
 
-  <div class="stats-bar">
-    <div class="stat-card new">
-      <h3>New / Accepted</h3>
-      <div class="value" id="statNew">0</div>
+  <!-- Live View Container -->
+  <div class="live-view-container" id="liveViewContainer">
+    <!-- Stats bar hidden, counts now in tabs -->
+    <div class="stats-bar" style="display: none;">
+      <div class="stat-card new">
+        <h3>New / Pending</h3>
+        <div class="value" id="statNew">0</div>
+      </div>
+      <div class="stat-card production">
+        <h3>Accepted / In Production</h3>
+        <div class="value" id="statProduction">0</div>
+      </div>
+      <div class="stat-card ready">
+        <h3>Ready / Delivery</h3>
+        <div class="value" id="statReady">0</div>
+      </div>
+      <div class="stat-card paid">
+        <h3>Paid Today</h3>
+        <div class="value" id="statPaid">0</div>
+      </div>
+      <div class="stat-card canceled">
+        <h3>Canceled / Rejected</h3>
+        <div class="value" id="statCanceled">0</div>
+      </div>
     </div>
-    <div class="stat-card production">
-      <h3>In Production</h3>
-      <div class="value" id="statProduction">0</div>
+
+    <!-- Grid view for filtered status -->
+    <div class="orders-grid" id="ordersGrid" style="display: none;"></div>
+
+    <!-- Table view -->
+    <div class="orders-table-container" id="ordersTableContainer" style="display: none;">
+      <table class="orders-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Sto</th>
+            <th>Lokacija</th>
+            <th>Kanal</th>
+            <th>Konobar</th>
+            <th>Tip</th>
+            <th>Stavke</th>
+            <th>Ukupno</th>
+            <th>Popust</th>
+            <th>Finalna Cena</th>
+            <th>Status</th>
+            <th>Plaćeno</th>
+            <th>Priprema</th>
+            <th>Dostava</th>
+            <th>Vreme</th>
+          </tr>
+        </thead>
+        <tbody id="ordersTableBody"></tbody>
+      </table>
     </div>
-    <div class="stat-card ready">
-      <h3>Ready / Delivery</h3>
-      <div class="value" id="statReady">0</div>
-    </div>
-    <div class="stat-card paid">
-      <h3>Paid Today</h3>
-      <div class="value" id="statPaid">0</div>
-    </div>
-    <div class="stat-card canceled">
-      <h3>Canceled / Rejected</h3>
-      <div class="value" id="statCanceled">0</div>
+
+    <div class="columns" id="columnsView">
+      <div class="column new">
+        <div class="column-header">
+          <h2>🆕 Novo</h2>
+          <span class="count" id="colCountNew">0</span>
+        </div>
+        <div id="ordersNew" class="orders-list">
+          <div class="loading">Loading...</div>
+        </div>
+      </div>
+
+      <div class="column production">
+        <div class="column-header">
+          <h2>👨‍🍳 Priprema</h2>
+          <span class="count" id="colCountProduction">0</span>
+        </div>
+        <div id="ordersProduction" class="orders-list">
+          <div class="loading">Loading...</div>
+        </div>
+      </div>
+
+      <div class="column ready">
+        <div class="column-header">
+          <h2>✅ Spremno / Dostava</h2>
+          <span class="count" id="colCountReady">0</span>
+        </div>
+        <div id="ordersReady" class="orders-list">
+          <div class="loading">Loading...</div>
+        </div>
+      </div>
+
+      <div class="column paid">
+        <div class="column-header">
+          <h2>💰 Završeno</h2>
+          <span class="count" id="colCountPaid">0</span>
+        </div>
+        <div id="ordersPaid" class="orders-list">
+          <div class="loading">Loading...</div>
+        </div>
+      </div>
+
+      <div class="column canceled">
+        <div class="column-header">
+          <h2>❌ Otkazano</h2>
+          <span class="count" id="colCountCanceled">0</span>
+        </div>
+        <div id="ordersCanceled" class="orders-list">
+          <div class="loading">Loading...</div>
+        </div>
+      </div>
     </div>
   </div>
+  <!-- End Live View Container -->
 
-  <div class="columns">
-    <div class="column new">
-      <div class="column-header">
-        <h2>🆕 New / Accepted</h2>
-        <span class="count" id="countNew">0</span>
-      </div>
-      <div id="ordersNew" class="orders-list">
-        <div class="loading">Loading...</div>
+  <!-- Tables View Container -->
+  <div class="tables-view-container" id="tablesViewContainer">
+    <div class="tables-view-header">
+      <h2>📊 Reporting - Pregled po Stolovima</h2>
+      <div class="tables-filter-group">
+        <label for="tableFilter">Filter po stolu:</label>
+        <select class="table-dropdown" id="tableFilter" onchange="filterByTable()">
+          <option value="all">Svi stolovi</option>
+          <option value="ostalo">⚠️ Ostalo (nepoznati)</option>
+          <option value="3086">Hotel Gosti (#3086)</option>
+          <option value="3087">Hotel Zaposleni (#3087)</option>
+          <option value="3088">Apsekt (#3088)</option>
+          <option value="3105">Servesia Poli (#3105)</option>
+          <option value="3095">Telefon (#3095)</option>
+          <option value="3097">TO Magazin (#3097)</option>
+          <option value="3098">TO Vozaci (#3098)</option>
+          <option value="3100">TO Kancelarija (#3100)</option>
+          <option value="3090">TO Kuhinja (#3090)</option>
+          <option value="3092">TO Šank 1 (#3092)</option>
+          <option value="3093">Nataša (#3093)</option>
+          <option value="3094">Ana (#3094)</option>
+          <option value="3095">Marko (#3095)</option>
+        </select>
+        <div class="tables-stats">
+          <span>Porudžbine: <span class="count" id="tablesOrderCount">0</span></span>
+          <span>Ukupno: <span class="count" id="tablesTotal">0 RSD</span></span>
+        </div>
       </div>
     </div>
-
-    <div class="column production">
-      <div class="column-header">
-        <h2>👨‍🍳 In Production</h2>
-        <span class="count" id="countProduction">0</span>
-      </div>
-      <div id="ordersProduction" class="orders-list">
-        <div class="loading">Loading...</div>
-      </div>
-    </div>
-
-    <div class="column ready">
-      <div class="column-header">
-        <h2>✅ Ready / Delivery</h2>
-        <span class="count" id="countReady">0</span>
-      </div>
-      <div id="ordersReady" class="orders-list">
-        <div class="loading">Loading...</div>
-      </div>
-    </div>
-
-    <div class="column paid">
-      <div class="column-header">
-        <h2>💰 Completed</h2>
-        <span class="count" id="countPaid">0</span>
-      </div>
-      <div id="ordersPaid" class="orders-list">
-        <div class="loading">Loading...</div>
-      </div>
-    </div>
-
-    <div class="column canceled">
-      <div class="column-header">
-        <h2>❌ Canceled / Rejected</h2>
-        <span class="count" id="countCanceled">0</span>
-      </div>
-      <div id="ordersCanceled" class="orders-list">
-        <div class="loading">Loading...</div>
-      </div>
+    
+    <div class="orders-table-container" style="display: block;">
+      <table class="orders-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Sto</th>
+            <th>Lokacija</th>
+            <th>Kanal</th>
+            <th>Konobar</th>
+            <th>Stavke</th>
+            <th>Ukupno</th>
+            <th>Popust</th>
+            <th>Finalna Cena</th>
+            <th>Status</th>
+            <th>Plaćeno</th>
+            <th>Vreme</th>
+          </tr>
+        </thead>
+        <tbody id="tablesTableBody"></tbody>
+      </table>
     </div>
   </div>
+  <!-- End Tables View Container -->
 
   <!-- Order Detail Modal -->
   <div class="modal-overlay" id="modalOverlay">
@@ -617,11 +1673,485 @@
 
     // Store all orders for quick access
     let allOrders = [];
+    let locations = {};
+    
+    // Filter state
+    let selectedLocations = new Set(); // Empty = all
+    let selectedChannels = new Set(['wolt', 'gloriafood', 'ebar', 'emeniwaiter', 'pult']); // All by default
+    let selectedStatus = 'all'; // Status filter: 'all', 'new', 'production', 'ready', 'paid', 'canceled'
+    let viewMode = 'table'; // 'cards' or 'table' - default to table
+    let currentPage = 'live'; // 'live' or 'tables'
+    let selectedTableFilter = 'all'; // Table filter for tables view
+
+    // Table Reference ID to Name mapping
+    // Add your table ID -> name mappings here
+    const TABLE_NAMES = {
+      // Original mappings from eMeni
+      '3086': 'Hotel Gosti',
+      '3087': 'Hotel Zaposleni',
+      '3088': 'Apsekt',
+      '3105': 'Servesia Poli',
+      '3095': 'Telefon',
+      '3097': 'TO Magazin',
+      '3098': 'TO Vozaci',
+      '3100': 'TO Kancelarija',
+      '3090': 'TO Kuhinja',
+      '3092': 'TO Šank 1',
+      '3093': 'Nataša',
+      '3094': 'Ana',
+      // Add more mappings as needed for your actual table IDs
+    };
+
+    // Table discount percentages (0-100)
+    const TABLE_DISCOUNTS = {
+      '3086': 0,    // Hotel Gosti - 0%
+      '3087': 0,    // Hotel Zaposleni - 0%
+      '3088': 15,   // Apsekt - 15%
+      '3105': 15,   // Servesia Poli - 15%
+      '3095': 25,   // Telefon - 25%
+      '3097': 25,   // TO Magazin - 25%
+      '3098': 25,   // TO Vozaci - 25%
+      '3100': 50,   // TO Kancelarija - 50%
+      '3090': 50,   // TO Kuhinja - 50%
+      '3092': 50,   // TO Šank 1 - 50%
+      '3093': 100,  // Nataša - 100%
+      '3094': 100,  // Ana - 100%
+    };
+
+    // E-BAR items map for resolving modifier names (Sifra -> {n: name, p: price})
+    const EBAR_ITEMS = {"6985164":{"n":"2X Collina burger+pomfrit+2x Pepsi 0.33","p":1527},"30410":{"n":"2x Pepsi+2xDouble collina SMASH","p":1584},"30411":{"n":"2xPepsi+2xDouble jalapeSMASH+2xPOMFRIT","p":1968},"8642":{"n":"7 Up 0.25 flasica","p":220},"778229":{"n":"7 UP 0.33 l","p":130},"8640":{"n":"7 UP 0.33 limenka","p":280},"10192":{"n":"Am.Nutela plazma visnja+kokta 0,33","p":512},"30413":{"n":"Am.pal.krem plazma+pepsi 0.33","p":572},"6985147":{"n":"Amer.Dubai palacinka","p":960},"10067":{"n":"Amercka palacinka javorov sirup","p":395},"5122":{"n":"Americka beli eurokrem","p":410},"20201":{"n":"Americka beli krem -D","p":575},"65203":{"n":"Americka cipiripi","p":395},"20203":{"n":"Americka cipiripi-D","p":555},"6985149":{"n":"Americka DUBAI pal.","p":790},"65120":{"n":"Americka eurokrem","p":395},"20202":{"n":"Americka eurokrem-D","p":555},"65121":{"n":"Americka nutella","p":445},"20200":{"n":"Americka nutella-D","p":575},"20252":{"n":"dod.banana dos.","p":80},"20224":{"n":"dod.barbique sos dos.","p":80},"20218":{"n":"dod.barbique sos dos.1","p":80},"20225":{"n":"dod.chily sos dos.","p":80},"20230":{"n":"dod.jaje dos.","p":85},"20262":{"n":"dod.kikiriki dos.","p":80},"20254":{"n":"dod.kokos dos.","p":75},"20227":{"n":"dod.krastavcici dos.","p":85},"20255":{"n":"dod.krem bananica dos.","p":90},"20233":{"n":"dod.kukuruz sal.dos.","p":145},"20264":{"n":"dod.lesnik dos.","p":90},"20229":{"n":"dod.majonez dos.","p":80},"20249":{"n":"dod.malina dos.","p":110},"20247":{"n":"dod.meso 120g dos.","p":215},"20246":{"n":"dod.meso 80g dos.","p":145},"20263":{"n":"dod.orah dos.","p":80},"20248":{"n":"dod.panirani kackavalj dos.","p":100},"20228":{"n":"dod.paradajz dos.","p":80},"20231":{"n":"dod.pavlaka dos.","p":80},"20237":{"n":"dod.pecenica dos.","p":100},"20244":{"n":"dod.pecurke dos.","p":85},"20234":{"n":"dod.pileca sal.dos","p":145},"20260":{"n":"dod.plazma dos.","p":80},"20261":{"n":"dod.plazma u mleku dos.","p":100},"20289":{"n":"Dod.polimark kecap dos.","p":85},"20245":{"n":"dod.pomfrit dos.","p":250},"20250":{"n":"dod.pomorandza dos.","p":80},"20256":{"n":"dod.preliv cokolada dos.","p":80},"20257":{"n":"dod.preliv karamela dos.","p":80},"20258":{"n":"dod.preliv sumsko voce dos.","p":80},"20238":{"n":"dod.prsuta dos.","p":120},"20235":{"n":"dod.ruska sal.dos","p":125},"20242":{"n":"dod.senf dos.","p":80},"20226":{"n":"dod.slanina dos.","p":90},"20236":{"n":"dod.sunka dos.","p":100},"20253":{"n":"dod.suvo grozdje dos.","p":85},"20243":{"n":"dod.tartar sos dos","p":80},"20239":{"n":"dod.topljeni sir dos.","p":90},"20232":{"n":"dod.urnebes dos.","p":85},"20251":{"n":"dod.visnja dos.","p":90},"238":{"n":"Dodatak Banana","p":80},"8809":{"n":"Dodatak barbiqu sos","p":80},"222":{"n":"Dodatak chily sos","p":80},"258":{"n":"Dodatak feta sir","p":80},"212":{"n":"Dodatak govedja prsuta","p":120},"8695":{"n":"Dodatak heinz kecap","p":85},"10041":{"n":"Dodatak jaje a","p":85},"8670":{"n":"Dodatak kackavalj 50 gr","p":80},"240":{"n":"Dodatak karamela","p":60},"9690":{"n":"Dodatak kecap bb","p":85},"221":{"n":"Dodatak Kikiriki","p":80},"9653":{"n":"Dodatak kikiriki c","p":80},"233":{"n":"Dodatak Kokos","p":75},"244":{"n":"Dodatak krastavcici kiseli","p":85},"234":{"n":"Dodatak krem bananica","p":90},"246":{"n":"Dodatak kukuruz","p":75},"218":{"n":"Dodatak lesnik","p":90},"8684":{"n":"Dodatak luk","p":20},"202":{"n":"Dodatak majonez","p":80},"237":{"n":"Dodatak malina","p":110},"10036":{"n":"Dodatak malina a","p":110},"9662":{"n":"Dodatak malina c","p":110},"9703":{"n":"Dodatak malo meso","p":145},"10059":{"n":"Dodatak malo meso bb","p":145},"287":{"n":"Dodatak Margarin","p":60},"223":{"n":"Dodatak orah","p":80},"8667":{"n":"Dodatak origano","p":20},"8703":{"n":"Dodatak panirani kackavalj","p":100},"257":{"n":"Dodatak paradajz","p":80},"210":{"n":"Dodatak pecenica","p":100},"283":{"n":"Dodatak pecurke","p":85},"215":{"n":"Dodatak pecurke m","p":85},"10043":{"n":"Dodatak pileca salata a","p":145},"8721":{"n":"Dodatak piletina 70 gr","p":90},"216":{"n":"Dodatak plazma","p":80},"239":{"n":"Dodatak plazma u mleku","p":100},"200":{"n":"Dodatak polimark kecap","p":85},"225":{"n":"Dodatak pomfrit 150 gr","p":200},"232":{"n":"Dodatak pomorandza","p":80},"241":{"n":"Dodatak preliv cokolada","p":80},"242":{"n":"Dodatak preliv sumsko voce","p":80},"259":{"n":"Dodatak ruska salata","p":145},"206":{"n":"Dodatak senf","p":80},"289":{"n":"Dodatak slag","p":70},"286":{"n":"Dodatak slanina","p":90},"208":{"n":"Dodatak sunka","p":100},"236":{"n":"Dodatak suvo grozdje","p":85},"8804":{"n":"Dodatak tartar sos","p":80},"278":{"n":"Dodatak topljeni sir","p":90},"282":{"n":"Dodatak tunjevina","p":80},"245":{"n":"Dodatak urnebes","p":85},"9704":{"n":"Dodatak veliko meso","p":215},"10060":{"n":"Dodatak veliko meso bb","p":215},"235":{"n":"Dodatak visnja","p":90},"8663":{"n":"Dodatak zelena salata","p":60}};
+
+    // Price-based modifier name lookup (for when referenceID doesn't match E-BAR Sifra)
+    // Maps price -> most common modifier name for that price (for sweet pancakes context)
+    const MODIFIER_BY_PRICE = {
+      20: "Dodatak luk",
+      50: "Jalapeno dodatak", 
+      60: "Dodatak karamela",
+      65: "Jaje dodatak",
+      70: "Dodatak slag",
+      75: "Dodatak kokos",
+      80: "Dodatak",  // Many options at 80 - show generic
+      85: "Dodatak jaje",
+      90: "Dodatak slanina",
+      100: "Dodatak plazma u mleku",
+      110: "Dodatak malina",
+      120: "Dodatak prsuta",
+      125: "Dodatak ruska salata",
+      145: "Dodatak malo meso",
+      200: "Dodatak pomfrit",
+      215: "Dodatak veliko meso",
+      250: "Dodatak pomfrit"
+    };
+    
+    // Cache for product names fetched from Supabase
+    let productNamesCache = {};
+    let productNamesFetched = false;
+    
+    // Fetch product names from Supabase emeni_products table
+    async function fetchProductNames() {
+      if (productNamesFetched) return;
+      
+      try {
+        const { data, error } = await supabaseClient
+          .from('emeni_products')
+          .select('product_id, name, price');
+        
+        if (data && Array.isArray(data)) {
+          data.forEach(p => {
+            productNamesCache[p.product_id] = { name: p.name, price: p.price };
+          });
+          console.log(`Loaded ${data.length} product names`);
+        }
+      } catch (e) {
+        console.log('Could not fetch product names:', e);
+      }
+      productNamesFetched = true;
+    }
+
+    // Helper function to resolve modifier name from productID, referenceID or price
+    function getModifierName(modifier) {
+      // First try to get name from modifier itself
+      if (modifier.name && modifier.name !== 'Modifier' && !modifier.name.startsWith('Modifier')) {
+        return modifier.name;
+      }
+      
+      // Try to get name from productNamesCache using productID
+      const productId = modifier.productID || modifier.product_id;
+      if (productId && productNamesCache[productId]) {
+        return productNamesCache[productId].name;
+      }
+      
+      // Try to get name from EBAR_ITEMS using productReferenceID
+      const refId = modifier.productReferenceID || modifier.referenceID || modifier.reference_id;
+      if (refId && EBAR_ITEMS[refId]) {
+        return EBAR_ITEMS[refId].n;
+      }
+      
+      // Fallback: match by price to get a reasonable name
+      const price = parseFloat(modifier.price) || 0;
+      if (MODIFIER_BY_PRICE[price]) {
+        return MODIFIER_BY_PRICE[price];
+      }
+      
+      // Last resort - show price in name
+      return modifier.value || `Dodatak (${price} RSD)`;
+    }
+
+    // Helper function to get modifier price
+    function getModifierPrice(modifier) {
+      // First try modifier's own price
+      if (modifier.price !== undefined && modifier.price !== null) {
+        return parseFloat(modifier.price) || 0;
+      }
+      // Fallback to EBAR_ITEMS
+      const refId = modifier.productReferenceID || modifier.referenceID || modifier.reference_id;
+      if (refId && EBAR_ITEMS[refId]) {
+        return EBAR_ITEMS[refId].p || 0;
+      }
+      return 0;
+    }
+
+    // Helper function to calculate item total including modifiers
+    function calculateItemTotal(item) {
+      const qty = parseFloat(item.quantity) || 1;
+      let itemTotal = (parseFloat(item.price) || 0) * qty;
+      
+      if (item.modifiers && Array.isArray(item.modifiers)) {
+        item.modifiers.forEach(mod => {
+          const modPrice = getModifierPrice(mod);
+          const modQty = parseFloat(mod.quantity) || 1;
+          itemTotal += modPrice * modQty * qty;
+        });
+      }
+      return itemTotal;
+    }
+
+    // Fetch locations
+    async function fetchLocations() {
+      const { data, error } = await supabaseClient
+        .from('emeni_locations')
+        .select('*');
+      
+      if (!error && data) {
+        data.forEach(loc => {
+          locations[loc.company_id] = loc.location_name;
+        });
+        // Populate location filter dropdown
+        populateLocationFilter();
+      }
+    }
+
+    // ============================================
+    // Filter Functions
+    // ============================================
+    function populateLocationFilter() {
+      const container = document.getElementById('sidebarLocationOptions');
+      container.innerHTML = '';
+      
+      Object.entries(locations).forEach(([id, name]) => {
+        const div = document.createElement('div');
+        div.className = 'filter-option';
+        div.innerHTML = `
+          <input type="checkbox" id="loc-${id}" value="${id}" checked onchange="updateLocationFilter()">
+          <label for="loc-${id}">${name}</label>
+        `;
+        container.appendChild(div);
+      });
+    }
+    
+    function toggleSidebar() {
+      const sidebar = document.getElementById('filtersSidebar');
+      const overlay = document.getElementById('sidebarOverlay');
+      sidebar.classList.toggle('active');
+      overlay.classList.toggle('active');
+    }
+    
+    function clearAllFilters() {
+      // Reset all location checkboxes
+      document.querySelectorAll('#sidebarLocationOptions input[type="checkbox"]').forEach(cb => {
+        cb.checked = true;
+      });
+      // Reset all channel checkboxes
+      document.querySelectorAll('.filters-sidebar input[type="checkbox"]').forEach(cb => {
+        cb.checked = true;
+      });
+      
+      selectedLocations = new Set();
+      selectedChannels = new Set(['wolt', 'gloriafood', 'ebar', 'emeniwaiter', 'pult']);
+      updateActiveFiltersCount();
+      applyFilters();
+    }
+    
+    function updateActiveFiltersCount() {
+      let count = 0;
+      
+      // Count unchecked locations
+      const totalLocations = Object.keys(locations).length;
+      const checkedLocations = document.querySelectorAll('#sidebarLocationOptions input[type="checkbox"]:checked').length;
+      if (checkedLocations < totalLocations && checkedLocations > 0) {
+        count += (totalLocations - checkedLocations);
+      }
+      
+      // Count unchecked channels
+      const totalChannels = 4;
+      const checkedChannels = document.querySelectorAll('.filters-sidebar input[id^="channel-"]:checked').length;
+      if (checkedChannels < totalChannels) {
+        count += (totalChannels - checkedChannels);
+      }
+      
+      const badge = document.getElementById('activeFiltersCount');
+      badge.textContent = count;
+      badge.classList.toggle('hidden', count === 0);
+    }
+
+    function toggleAllLocations(checkbox) {
+      const checkboxes = document.querySelectorAll('#sidebarLocationOptions input[type="checkbox"]');
+      checkboxes.forEach(cb => cb.checked = checkbox.checked);
+      updateLocationFilter();
+    }
+
+    function toggleAllChannels(checkbox) {
+      const checkboxes = document.querySelectorAll('.filters-sidebar input[id^="channel-"]');
+      checkboxes.forEach(cb => cb.checked = checkbox.checked);
+      updateChannelFilter();
+    }
+
+    function updateLocationFilter() {
+      const checkboxes = document.querySelectorAll('#sidebarLocationOptions input[type="checkbox"]:checked');
+      const allCheckboxes = document.querySelectorAll('#sidebarLocationOptions input[type="checkbox"]');
+      
+      if (checkboxes.length === allCheckboxes.length) {
+        // All selected = no filter
+        selectedLocations = new Set();
+      } else {
+        selectedLocations = new Set(Array.from(checkboxes).map(cb => cb.value));
+      }
+      
+      updateActiveFiltersCount();
+      applyFilters();
+    }
+
+    function updateChannelFilter() {
+      const checkboxes = document.querySelectorAll('.filters-sidebar input[id^="channel-"]:checked');
+      selectedChannels = new Set(Array.from(checkboxes).map(cb => cb.value));
+      
+      updateActiveFiltersCount();
+      applyFilters();
+    }
+
+    function setStatusFilter(status) {
+      selectedStatus = status;
+      
+      // Update active tab
+      document.querySelectorAll('.status-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.status === status);
+      });
+      
+      applyFilters();
+    }
+
+    function setViewMode(mode) {
+      viewMode = mode;
+      
+      // Update active button
+      document.querySelectorAll('.view-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.view === mode);
+      });
+      
+      applyFilters();
+    }
+
+    // ============================================
+    // Page Switching (Live View / Tables View)
+    // ============================================
+    function switchPage(page) {
+      currentPage = page;
+      
+      // Update nav tabs
+      document.querySelectorAll('.main-nav-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.page === page);
+      });
+      
+      // Show/hide containers
+      const liveContainer = document.getElementById('liveViewContainer');
+      const tablesContainer = document.getElementById('tablesViewContainer');
+      
+      if (page === 'live') {
+        liveContainer.classList.remove('hidden');
+        tablesContainer.classList.remove('active');
+      } else if (page === 'tables') {
+        liveContainer.classList.add('hidden');
+        tablesContainer.classList.add('active');
+        renderTablesView();
+      }
+    }
+
+    function filterByTable() {
+      selectedTableFilter = document.getElementById('tableFilter').value;
+      renderTablesView();
+    }
+
+    function renderTablesView() {
+      const tableBody = document.getElementById('tablesTableBody');
+      
+      // Filter orders that have a table_id (not table_reference_id!)
+      let tableOrders = allOrders.filter(order => order.table_id);
+      
+      // Apply table filter using table_id
+      if (selectedTableFilter === 'ostalo') {
+        // Show only orders with unknown table IDs
+        tableOrders = tableOrders.filter(order => 
+          TABLE_NAMES[order.table_id] === undefined
+        );
+      } else if (selectedTableFilter !== 'all') {
+        tableOrders = tableOrders.filter(order => 
+          String(order.table_id) === selectedTableFilter
+        );
+      }
+      
+      // Sort by time (newest first)
+      tableOrders.sort((a, b) => new Date(b.datetime) - new Date(a.datetime));
+      
+      // Update stats - now includes final prices after discounts
+      let totalAmount = 0;
+      let totalFinalAmount = 0;
+      tableOrders.forEach(order => {
+        const items = order.items || order.raw_payload?.items || [];
+        const orderTotal = items.reduce((s, item) => s + (item.price || 0) * (item.quantity || 1), 0);
+        const discountPercent = order.table_id ? (TABLE_DISCOUNTS[order.table_id] || 0) : 0;
+        const finalPrice = orderTotal - (orderTotal * discountPercent / 100);
+        totalAmount += orderTotal;
+        totalFinalAmount += finalPrice;
+      });
+      
+      document.getElementById('tablesOrderCount').textContent = tableOrders.length;
+      document.getElementById('tablesTotal').textContent = `${totalFinalAmount.toLocaleString('sr-RS')} RSD`;
+      
+      // Render table rows
+      if (tableOrders.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="12" class="table-empty">Nema porudžbina za izabrani sto</td></tr>';
+        return;
+      }
+      
+      tableBody.innerHTML = tableOrders.map(order => {
+        const items = order.items || order.raw_payload?.items || [];
+        const total = items.reduce((sum, item) => sum + (item.price || 0) * (item.quantity || 1), 0);
+        const itemsSummary = items.slice(0, 2).map(i => `${i.quantity}x ${i.name}`).join(', ');
+        const moreItems = items.length > 2 ? ` +${items.length - 2}` : '';
+        
+        const locationName = locations[order.company_id] || `ID: ${order.company_id}`;
+        const tableId = order.table_id;
+        const isKnownTable = TABLE_NAMES[tableId] !== undefined;
+        const tableName = TABLE_NAMES[tableId] || `Nepoznat #${tableId}`;
+        
+        // Discount calculation
+        const discountPercent = tableId ? (TABLE_DISCOUNTS[tableId] || 0) : 0;
+        const discountAmount = total * (discountPercent / 100);
+        const finalPrice = total - discountAmount;
+        
+        const provider = (order.provider || 'pult').toLowerCase();
+        
+        const statusGroup = getStatusGroup(order);
+        const isPaid = order.is_paid === true || order.is_paid === 'true';
+        
+        // Handle different date formats
+        let time = '-';
+        const dateValue = order.datetime || order.created_at || order.order_date;
+        if (dateValue) {
+          const dateObj = new Date(dateValue);
+          if (!isNaN(dateObj.getTime())) {
+            time = dateObj.toLocaleTimeString('sr-RS', { 
+              hour: '2-digit', 
+              minute: '2-digit' 
+            });
+          }
+        }
+        
+        return `
+          <tr onclick="openOrderDetail(${order.order_id})" class="${isKnownTable ? '' : 'unknown-table'}">
+            <td><strong>#${order.order_no}</strong></td>
+            <td><span class="table-id-badge ${isKnownTable ? '' : 'unknown'}">${tableName}</span></td>
+            <td><span class="table-location">${locationName}</span></td>
+            <td><span class="table-provider ${provider}">${order.provider || 'Pult'}</span></td>
+            <td>${order.waiter_name || '-'}</td>
+            <td class="table-items">${itemsSummary}${moreItems}</td>
+            <td class="table-total">${total.toLocaleString('sr-RS')} RSD</td>
+            <td>${discountPercent > 0 ? `<span class="discount-badge">${discountPercent}%</span>` : '-'}</td>
+            <td class="table-final-price">${finalPrice.toLocaleString('sr-RS')} RSD</td>
+            <td><span class="table-status ${statusGroup}">${statusGroup}</span></td>
+            <td>${isPaid ? '✅ Da' : '❌ Ne'}</td>
+            <td>${time}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function getStatusGroup(order) {
+      const status = order.status;
+      // Check paid first - paid orders should go to paid regardless of status
+      if (order.is_paid === true || order.is_paid === 'true') return 'paid';
+      if (STATUS_GROUPS.canceled.includes(status)) return 'canceled';
+      if (STATUS_GROUPS.new.includes(status)) return 'new';
+      if (STATUS_GROUPS.production.includes(status)) return 'production';
+      if (STATUS_GROUPS.ready.includes(status)) return 'ready';
+      return 'other';
+    }
+
+    function updateStatusCounts(orders) {
+      const counts = { all: 0, new: 0, production: 0, ready: 0, paid: 0, canceled: 0 };
+      
+      orders.forEach(order => {
+        counts.all++;
+        const group = getStatusGroup(order);
+        if (counts[group] !== undefined) counts[group]++;
+      });
+      
+      // Update tab counts
+      document.getElementById('countAll').textContent = counts.all;
+      document.getElementById('countNew').textContent = counts.new;
+      document.getElementById('countProduction').textContent = counts.production;
+      document.getElementById('countReady').textContent = counts.ready;
+      document.getElementById('countPaid').textContent = counts.paid;
+      document.getElementById('countCanceled').textContent = counts.canceled;
+    }
+
+    function applyFilters() {
+      // First apply location and channel filters
+      const baseFiltered = allOrders.filter(order => {
+        // Location filter
+        const locationMatch = selectedLocations.size === 0 || 
+                             selectedLocations.size === Object.keys(locations).length ||
+                             selectedLocations.has(String(order.company_id));
+        
+        // Channel filter
+        const provider = (order.provider || '').toLowerCase();
+        const channelMatch = selectedChannels.has(provider) || 
+                            (provider === '' && selectedChannels.has('pult'));
+        
+        return locationMatch && channelMatch;
+      });
+      
+      // Update counts based on location/channel filtered orders
+      updateStatusCounts(baseFiltered);
+      
+      // Then apply status filter
+      const filteredOrders = baseFiltered.filter(order => {
+        if (selectedStatus === 'all') return true;
+        return getStatusGroup(order) === selectedStatus;
+      });
+      
+      renderOrders(filteredOrders);
+      
+      // Also update tables view if it's active
+      if (currentPage === 'tables') {
+        renderTablesView();
+      }
+    }
 
     // Status groupings
     const STATUS_GROUPS = {
-      new: [1, 3, 12, 13],
-      production: [4],
+      new: [1, 12, 13],
+      production: [3, 4],
       ready: [5, 6, 7],
       paid: [],
       canceled: [8, 9, 11]  // Rejected, Canceled, Invalid
@@ -646,14 +2176,29 @@
     // ============================================
     // Fetch Orders
     // ============================================
+    let selectedDateValue = null;
+
     async function fetchOrders() {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      const dateInput = document.getElementById('selectedDate');
+      let startDate, endDate;
+      
+      if (dateInput && dateInput.value) {
+        // Use selected date
+        startDate = new Date(dateInput.value + 'T00:00:00');
+        endDate = new Date(dateInput.value + 'T23:59:59');
+      } else {
+        // Default to today
+        startDate = new Date();
+        startDate.setHours(0, 0, 0, 0);
+        endDate = new Date();
+        endDate.setHours(23, 59, 59, 999);
+      }
 
       const { data: orders, error } = await supabaseClient
         .from('emeni_orders')
         .select('*')
-        .gte('created_at', today.toISOString())
+        .gte('created_at', startDate.toISOString())
+        .lte('created_at', endDate.toISOString())
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -667,8 +2212,106 @@
         .select('*')
         .in('order_id', orderIds);
 
+      // Fetch lifecycle data - use order_id from database (batch to avoid limits)
+      const orderIdsForLifecycle = orders.map(o => o.order_id);
+      
+      let lifecycleData = [];
+      if (orderIdsForLifecycle.length > 0) {
+        const batchSize = 100;
+        for (let i = 0; i < orderIdsForLifecycle.length; i += batchSize) {
+          const batch = orderIdsForLifecycle.slice(i, i + batchSize);
+          const { data } = await supabaseClient
+            .from('emeni_order_lifecycle')
+            .select('*')
+            .in('order_id', batch);
+          if (data) {
+            lifecycleData = lifecycleData.concat(data);
+          }
+        }
+      }
+
       orders.forEach(order => {
         order.items = items?.filter(i => i.order_id === order.order_id) || [];
+        
+        // Match lifecycle by order_id from database
+        const lifecycle = lifecycleData.filter(l => l.order_id === order.order_id);
+        
+        // Determine provider type for different prep/delivery time logic
+        const provider = (order.provider || '').toLowerCase();
+        const isEbar = provider === 'ebar' || provider === 'emeniwaiter';
+        const isWolt = provider === 'wolt';
+        const isGloria = provider === 'gloriafood' || provider === 'gloria';
+        
+        // Find lifecycle events
+        const createdEvent = lifecycle.find(l => l.event_type === 'order.created');
+        const acceptedEvent = lifecycle.find(l => l.event_type === 'order.statusChanged' && Number(l.status) === 3) 
+                           || lifecycle.find(l => Number(l.status) === 3);
+        const readyEvent = lifecycle.find(l => l.event_type === 'order.statusChanged' && Number(l.status) === 5)
+                        || lifecycle.find(l => Number(l.status) === 5 && l.event_type !== 'order.paid');
+        const deliveredEvent = lifecycle.find(l => l.event_type === 'order.statusChanged' && Number(l.status) === 7)
+                            || lifecycle.find(l => Number(l.status) === 7);
+        const paidEvent = lifecycle.find(l => l.event_type === 'order.paid');
+        
+        // ========== PREP TIME ==========
+        // eBar: Accepted → Paid
+        // Wolt: Accepted → Ready
+        // Gloria: Accepted → Ready
+        
+        if (isEbar) {
+          const startEvent = acceptedEvent || createdEvent;
+          const endEvent = paidEvent;
+          
+          if (startEvent && endEvent) {
+            const startTime = new Date(startEvent.timestamp);
+            const endTime = new Date(endEvent.timestamp);
+            order.prep_minutes = Math.round((endTime - startTime) / 60000);
+          } else if (startEvent && Number(order.status) < 5) {
+            const startTime = new Date(startEvent.timestamp);
+            order.prep_minutes_ongoing = Math.round((new Date() - startTime) / 60000);
+          }
+        } else {
+          // Wolt/Gloria: Accepted → Ready
+          if (acceptedEvent && readyEvent) {
+            const acceptedTime = new Date(acceptedEvent.timestamp);
+            const readyTime = new Date(readyEvent.timestamp);
+            order.prep_minutes = Math.round((readyTime - acceptedTime) / 60000);
+          } else if (acceptedEvent && Number(order.status) < 5) {
+            const acceptedTime = new Date(acceptedEvent.timestamp);
+            order.prep_minutes_ongoing = Math.round((new Date() - acceptedTime) / 60000);
+          }
+        }
+        
+        // ========== DELIVERY TIME ==========
+        // Wolt: Ready → Delivered
+        // Gloria: Ready → Paid
+        
+        if (isWolt && order.delivery_type === 'Delivery') {
+          if (readyEvent && deliveredEvent) {
+            const readyTime = new Date(readyEvent.timestamp);
+            const deliveredTime = new Date(deliveredEvent.timestamp);
+            order.delivery_minutes = Math.round((deliveredTime - readyTime) / 60000);
+          } else if (readyEvent && Number(order.status) === 5) {
+            // Ready but not yet delivered
+            const readyTime = new Date(readyEvent.timestamp);
+            order.delivery_minutes_ongoing = Math.round((new Date() - readyTime) / 60000);
+          }
+        } else if (isGloria && order.delivery_type === 'Delivery') {
+          if (readyEvent && paidEvent) {
+            const readyTime = new Date(readyEvent.timestamp);
+            const paidTime = new Date(paidEvent.timestamp);
+            order.delivery_minutes = Math.round((paidTime - readyTime) / 60000);
+          } else if (readyEvent && !paidEvent) {
+            // Ready but not yet paid/delivered
+            const readyTime = new Date(readyEvent.timestamp);
+            order.delivery_minutes_ongoing = Math.round((new Date() - readyTime) / 60000);
+          }
+        }
+        
+        // Sanity check - cap unrealistic values
+        if (order.prep_minutes > 180) order.prep_minutes = undefined;
+        if (order.prep_minutes_ongoing > 180) order.prep_minutes_ongoing = undefined;
+        if (order.delivery_minutes > 180) order.delivery_minutes = undefined;
+        if (order.delivery_minutes_ongoing > 180) order.delivery_minutes_ongoing = undefined;
       });
 
       allOrders = orders;
@@ -721,35 +2364,70 @@
 
     // Close modal on Escape key
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') closeModal();
+      if (e.key === 'Escape') {
+        closeModal();
+        // Also close sidebar if open
+        const sidebar = document.getElementById('filtersSidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        if (sidebar.classList.contains('active')) {
+          sidebar.classList.remove('active');
+          overlay.classList.remove('active');
+        }
+      }
     });
 
     // ============================================
     // Render Order Detail
     // ============================================
     function renderOrderDetail(order, lifecycle) {
-      const total = order.items.reduce((sum, item) => sum + (parseFloat(item.price) * parseFloat(item.quantity)), 0);
+      // Get items from regular items, raw_payload.items, or invalidOrderDetails
+      let items = order.items || [];
+      let total = 0;
+      
+      if (items.length === 0 && order.raw_payload?.items) {
+        // Use items directly from raw_payload (for eBar, etc.)
+        items = order.raw_payload.items;
+        total = items.reduce((sum, item) => sum + (parseFloat(item.price) * parseFloat(item.quantity)), 0);
+      } else if (items.length === 0 && order.raw_payload?.invalidOrderDetails?.items) {
+        items = order.raw_payload.invalidOrderDetails.items;
+        total = order.raw_payload.invalidOrderDetails.total || 0;
+      } else {
+        total = items.reduce((sum, item) => sum + (parseFloat(item.price) * parseFloat(item.quantity)), 0);
+      }
+      
       const formatDate = (date) => date ? new Date(date).toLocaleString('sr-RS') : 'N/A';
       const formatValue = (val) => val !== null && val !== undefined && val !== '' ? val : 'N/A';
 
-      // Items table
-      const itemsHtml = order.items.map(item => `
+      // Items table with correct modifier names and totals
+      const itemsHtml = items.map(item => {
+        const itemTotal = calculateItemTotal(item);
+        const modifiersHtml = item.modifiers && item.modifiers.length > 0 
+          ? `<div class="item-modifiers">
+              ${item.modifiers.map(m => {
+                const modName = getModifierName(m);
+                const modPrice = getModifierPrice(m);
+                const modQty = parseFloat(m.quantity) || 1;
+                return `<span class="modifier-tag">+ ${modName} (${modPrice} RSD${modQty > 1 ? ' x' + modQty : ''})</span>`;
+              }).join(' ')}
+            </div>`
+          : '';
+        
+        return `
         <tr>
           <td>
             <div class="item-name">${item.name}</div>
-            ${item.modifiers && item.modifiers.length > 0 ? `
-              <div class="item-modifiers">
-                ${item.modifiers.map(m => `+ ${m.name || m.value || 'Modifier'}`).join(', ')}
-              </div>
-            ` : ''}
+            ${modifiersHtml}
             ${item.note ? `<div class="item-modifiers">📝 ${item.note}</div>` : ''}
           </td>
           <td>${item.quantity}</td>
           <td>${parseFloat(item.price).toFixed(0)} RSD</td>
-          <td>${(parseFloat(item.price) * parseFloat(item.quantity)).toFixed(0)} RSD</td>
-          <td>${item.reference_id || 'N/A'}</td>
+          <td>${itemTotal.toFixed(0)} RSD</td>
+          <td>${item.reference_id || item.posID || item.referenceID || 'N/A'}</td>
         </tr>
-      `).join('');
+      `}).join('') || '<tr><td colspan="5" style="text-align:center;color:#666;">Nema stavki</td></tr>';
+      
+      // Calculate correct total including modifiers
+      const correctTotal = items.reduce((sum, item) => sum + calculateItemTotal(item), 0);
 
       // Lifecycle timeline
       const lifecycleHtml = lifecycle.map(event => `
@@ -778,8 +2456,8 @@
               <div class="detail-value">${formatValue(order.provider)}</div>
             </div>
             <div class="detail-item">
-              <div class="detail-label">Company ID</div>
-              <div class="detail-value">${formatValue(order.company_id)}</div>
+              <div class="detail-label">Location</div>
+              <div class="detail-value highlight">${locations[order.company_id] || 'Unknown'} (ID: ${formatValue(order.company_id)})</div>
             </div>
             <div class="detail-item">
               <div class="detail-label">Status</div>
@@ -803,7 +2481,7 @@
             </div>
             <div class="detail-item">
               <div class="detail-label">Total</div>
-              <div class="detail-value success" style="font-size: 20px; font-weight: bold;">${total.toFixed(0)} RSD</div>
+              <div class="detail-value success" style="font-size: 20px; font-weight: bold;">${correctTotal.toFixed(0)} RSD</div>
             </div>
           </div>
         </div>
@@ -869,6 +2547,47 @@
             </div>
           </div>
         </div>
+
+        <!-- Delivery Tracking -->
+        ${order.delivery_type === 'Delivery' ? `
+        <div class="detail-section">
+          <h3>🛵 Delivery Tracking</h3>
+          <div class="detail-grid">
+            <div class="detail-item">
+              <div class="detail-label">Delivery Status</div>
+              <div class="detail-value"><span class="delivery-status-badge ${order.delivery_status || 'pending'}">${order.delivery_status || 'pending'}</span></div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Tookan Job ID</div>
+              <div class="detail-value">${formatValue(order.tookan_job_id)}</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Courier</div>
+              <div class="detail-value">${order.is_wolt_drive ? '🚗 ' : '🛵 '}${formatValue(order.fleet_name)}</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Courier Phone</div>
+              <div class="detail-value">${formatValue(order.fleet_phone)}</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Started At</div>
+              <div class="detail-value">${formatDate(order.delivery_started_at)}</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Arrived At</div>
+              <div class="detail-value">${formatDate(order.delivery_arrived_at)}</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Completed At</div>
+              <div class="detail-value">${formatDate(order.delivery_completed_at)}</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Tracking Link</div>
+              <div class="detail-value">${order.tracking_link ? `<a href="${order.tracking_link}" target="_blank" style="color: #8B5CF6;">Open Tracking →</a>` : '-'}</div>
+            </div>
+          </div>
+        </div>
+        ` : ''}
 
         <!-- Timestamps -->
         <div class="detail-section">
@@ -943,38 +2662,268 @@
     }
 
     // ============================================
+    // Render Table Row
+    // ============================================
+    function renderTableRow(order) {
+      // Get items from regular items, raw_payload.items, or invalidOrderDetails
+      let items = order.items || [];
+      
+      if (items.length === 0 && order.raw_payload?.items) {
+        items = order.raw_payload.items;
+      } else if (items.length === 0 && order.raw_payload?.invalidOrderDetails?.items) {
+        items = order.raw_payload.invalidOrderDetails.items;
+      }
+      
+      // Calculate total including modifiers
+      const total = items.reduce((sum, item) => sum + calculateItemTotal(item), 0);
+      
+      const time = new Date(order.created_at).toLocaleTimeString('sr-RS', { hour: '2-digit', minute: '2-digit' });
+      const locationName = locations[order.company_id] || `ID: ${order.company_id}`;
+      const statusGroup = getStatusGroup(order);
+      
+      // Table/Sto info
+      const tableId = order.table_id;
+      const isKnownTable = tableId && TABLE_NAMES[tableId] !== undefined;
+      const tableName = tableId ? (TABLE_NAMES[tableId] || `Nepoznat #${tableId}`) : '-';
+      
+      // Discount calculation
+      const discountPercent = tableId ? (TABLE_DISCOUNTS[tableId] || 0) : 0;
+      const discountAmount = total * (discountPercent / 100);
+      const finalPrice = total - discountAmount;
+      
+      const statusLabels = {
+        new: 'Novo',
+        production: 'Priprema',
+        ready: 'Spremno / Dostava',
+        paid: 'Završeno',
+        canceled: 'Otkazano',
+        other: 'Ostalo'
+      };
+      
+      const deliveryLabels = {
+        pending: 'Čeka se',
+        assigned: 'Dodeljeno',
+        started: 'Krenuo',
+        in_progress: 'U toku',
+        arrived: 'Stigao',
+        delivered: 'Dostavljeno',
+        failed: 'Neuspešno'
+      };
+      
+      const itemsSummary = items.map(i => `${i.quantity}x ${i.name}`).join(', ') || 'Nema stavki';
+      const provider = (order.provider || 'pult').toLowerCase();
+      const deliveryStatus = order.delivery_status || 'pending';
+      
+      // Check for notes - can be on order level OR on individual items
+      const orderNote = order.note || order.raw_payload?.note || '';
+      const itemNotes = items.filter(i => i.note).map(i => `${i.name}: ${i.note}`);
+      const hasNotes = orderNote || itemNotes.length > 0;
+      const allNotes = [orderNote, ...itemNotes].filter(n => n).join(' | ');
+      
+      let deliveryHtml = '-';
+      if (order.delivery_type === 'Delivery') {
+        // Show delivery time for Wolt/Gloria
+        let deliveryTimeHtml = '';
+        if (order.delivery_minutes !== undefined) {
+          const mins = order.delivery_minutes;
+          const timeClass = mins <= 30 ? 'fast' : mins <= 45 ? 'normal' : 'slow';
+          deliveryTimeHtml = `<span class="table-prep-time ${timeClass}">✓ ${mins} min</span>`;
+        } else if (order.delivery_minutes_ongoing !== undefined) {
+          const mins = order.delivery_minutes_ongoing;
+          const timeClass = mins <= 30 ? 'fast' : mins <= 45 ? 'normal' : 'slow';
+          deliveryTimeHtml = `<span class="table-prep-time ${timeClass}">⏱ ${mins} min</span>`;
+        } else {
+          // Show status badge if no delivery time
+          deliveryTimeHtml = `<span class="table-delivery-status ${deliveryStatus}">${deliveryLabels[deliveryStatus] || 'Čeka se'}</span>`;
+        }
+        deliveryHtml = deliveryTimeHtml;
+      }
+      
+      // Prep time display
+      let prepTimeHtml = '-';
+      let prepTimeClass = 'pending';
+      if (order.prep_minutes !== undefined) {
+        const mins = order.prep_minutes;
+        prepTimeClass = mins <= 15 ? 'fast' : mins <= 30 ? 'normal' : 'slow';
+        prepTimeHtml = `<span class="table-prep-time ${prepTimeClass}">✓ ${mins} min</span>`;
+      } else if (order.prep_minutes_ongoing !== undefined) {
+        const mins = order.prep_minutes_ongoing;
+        prepTimeClass = mins <= 15 ? 'fast' : mins <= 30 ? 'normal' : 'slow';
+        prepTimeHtml = `<span class="table-prep-time ${prepTimeClass}">⏱ ${mins} min</span>`;
+      }
+      
+      const isPaid = order.is_paid === true || order.is_paid === 'true';
+      
+      return `
+        <tr onclick="openOrderDetail(${order.order_id})" class="${tableId && !isKnownTable ? 'unknown-table' : ''}">
+          <td><strong>#${order.order_no}</strong> ${hasNotes ? `<span title="${allNotes.replace(/"/g, '&quot;')}" style="cursor:help;">📝</span>` : ''}</td>
+          <td>${tableId ? `<span class="table-id-badge ${isKnownTable ? '' : 'unknown'}">${tableName}</span>` : '-'}</td>
+          <td><span class="table-location">${locationName}</span></td>
+          <td><span class="table-provider ${provider}">${provider}</span></td>
+          <td>${order.waiter_name || '-'}</td>
+          <td>${order.delivery_type || 'N/A'}</td>
+          <td><div class="table-items" title="${itemsSummary}">${itemsSummary}</div></td>
+          <td class="table-total">${total.toFixed(0)} RSD</td>
+          <td>${discountPercent > 0 ? `<span class="discount-badge">${discountPercent}%</span>` : '-'}</td>
+          <td class="table-final-price">${finalPrice.toFixed(0)} RSD</td>
+          <td><span class="table-status ${statusGroup}">${statusLabels[statusGroup]}</span></td>
+          <td>${isPaid ? '✅ Da' : '❌ Ne'}</td>
+          <td>${prepTimeHtml}</td>
+          <td>${deliveryHtml}</td>
+          <td>${time}</td>
+        </tr>
+      `;
+    }
+
+    // ============================================
     // Render Order Card
     // ============================================
     function renderOrderCard(order, statusClass) {
-      const total = order.items.reduce((sum, item) => sum + (parseFloat(item.price) * parseFloat(item.quantity)), 0);
-      const time = new Date(order.created_at).toLocaleTimeString('sr-RS', { hour: '2-digit', minute: '2-digit' });
+      // Get items from regular items, raw_payload.items, or invalidOrderDetails
+      let items = order.items || [];
       
-      const itemsHtml = order.items.slice(0, 3).map(item => `
+      if (items.length === 0 && order.raw_payload?.items) {
+        items = order.raw_payload.items;
+      } else if (items.length === 0 && order.raw_payload?.invalidOrderDetails?.items) {
+        items = order.raw_payload.invalidOrderDetails.items;
+      }
+      
+      // Calculate total including modifiers
+      const total = items.reduce((sum, item) => sum + calculateItemTotal(item), 0);
+      
+      const time = new Date(order.created_at).toLocaleTimeString('sr-RS', { hour: '2-digit', minute: '2-digit' });
+      const locationName = locations[order.company_id] || `ID: ${order.company_id}`;
+      
+      // Show item prices including modifiers
+      const itemsHtml = items.slice(0, 3).map(item => {
+        const itemTotal = calculateItemTotal(item);
+        const hasModifiers = item.modifiers && item.modifiers.length > 0;
+        return `
         <div class="item">
-          <span><span class="quantity">${item.quantity}x</span> ${item.name}</span>
-          <span>${parseFloat(item.price).toFixed(0)}</span>
+          <span><span class="quantity">${item.quantity}x</span> ${item.name}${hasModifiers ? ' <span style="color:#8B5CF6;font-size:10px;">+${item.modifiers.length}</span>' : ''}</span>
+          <span>${itemTotal.toFixed(0)}</span>
         </div>
-      `).join('');
+      `}).join('');
 
-      const moreItems = order.items.length > 3 ? `<div class="item" style="color: #666;">+ ${order.items.length - 3} more items...</div>` : '';
+      const moreItems = items.length > 3 ? `<div class="item" style="color: #666;">+ ${items.length - 3} more items...</div>` : '';
+
+      // Delivery tracking info
+      let deliveryHtml = '';
+      if (order.delivery_type === 'Delivery') {
+        const deliveryStatus = order.delivery_status || 'pending';
+        const statusLabels = {
+          pending: '⏳ Čeka se',
+          assigned: '👤 Dodeljeno',
+          started: '🛵 Kurir krenuo',
+          in_progress: '📍 U toku',
+          arrived: '🏠 Stigao',
+          delivered: '✅ Dostavljeno',
+          failed: '❌ Neuspešno'
+        };
+        
+        // Map job_status numbers to status names
+        const jobStatusMap = {
+          0: 'assigned',      // Assigned
+          1: 'started',       // Started  
+          2: 'delivered',     // Successful/Completed
+          3: 'failed',        // Failed
+          4: 'in_progress',   // In Progress
+          6: 'pending',       // Unassigned
+          7: 'pending',       // Accepted
+          8: 'pending',       // Decline
+          9: 'arrived'        // Arrived
+        };
+        
+        // Use job_status if delivery_status is not set
+        let displayStatus = deliveryStatus;
+        if (order.job_status !== undefined && !order.delivery_status) {
+          displayStatus = jobStatusMap[order.job_status] || 'pending';
+        }
+        
+        deliveryHtml = `
+          <div class="delivery-info">
+            <span class="delivery-status-badge ${displayStatus}">${statusLabels[displayStatus] || displayStatus}</span>
+            ${order.fleet_name ? `
+              <div class="delivery-courier">
+                <span class="courier-icon">${order.is_wolt_drive ? '🚗' : '🛵'}</span>
+                <span class="courier-name">${order.fleet_name}</span>
+                ${order.tracking_link ? `<a href="${order.tracking_link}" target="_blank" class="track-link" onclick="event.stopPropagation()">Prati →</a>` : ''}
+              </div>
+            ` : `
+              <div class="delivery-courier" style="color: #666;">
+                <span class="courier-icon">⏳</span>
+                <span class="courier-name">Čeka se kurir...</span>
+              </div>
+            `}
+          </div>
+        `;
+      }
+
+      // Check if order is paid and/or delivered
+      const isPaidOrder = order.is_paid === true || order.is_paid === 'true';
+      const isDelivered = order.delivery_status === 'delivered';
+      
+      let stickersHtml = '';
+      if (isDelivered || isPaidOrder) {
+        stickersHtml = '<div class="stickers-container">';
+        if (isDelivered) {
+          stickersHtml += '<div class="sticker delivered">✅ Isporučeno</div>';
+        }
+        if (isPaidOrder) {
+          stickersHtml += '<div class="sticker paid">💰 Plaćeno</div>';
+        }
+        stickersHtml += '</div>';
+      }
+
+      // Check for notes - can be on order level OR on individual items
+      const orderNote = order.note || order.raw_payload?.note || '';
+      const itemNotes = items.filter(i => i.note).map(i => `${i.name}: ${i.note}`);
+      const hasNotes = orderNote || itemNotes.length > 0;
+      const allNotes = [orderNote, ...itemNotes].filter(n => n).join(' | ');
+      const notePreview = orderNote || itemNotes[0] || '';
 
       return `
         <div class="order-card ${statusClass}" onclick="openOrderDetail(${order.order_id})">
+          ${stickersHtml}
+          <div class="order-location-tag">📍 ${locationName}</div>
           <div class="order-header">
             <span class="order-number">#${order.order_no}</span>
-            <span class="order-provider ${order.provider}">${order.provider}</span>
+            ${hasNotes ? `<span class="order-note-icon" title="${allNotes.replace(/"/g, '&quot;')}">📝</span>` : ''}
+            <span class="order-provider ${(order.provider || 'pult').toLowerCase()}">${order.provider || 'pult'}</span>
           </div>
           <div class="order-meta">
             ${order.waiter_name ? `<span class="waiter">👨‍🍳 ${order.waiter_name}</span> • ` : ''}
             ${order.table_reference_id ? `<span class="table">🪑 ${order.table_reference_id}</span> • ` : ''}
             <span>${order.delivery_type || 'N/A'}</span>
           </div>
+          ${hasNotes ? `<div class="order-note-preview">📝 ${notePreview}</div>` : ''}
           <div class="order-items">
             ${itemsHtml}
             ${moreItems}
           </div>
+          ${deliveryHtml}
           <div class="order-footer">
             <span class="order-total">${total.toFixed(0)} RSD</span>
+            ${order.prep_minutes !== undefined ? `
+              <span class="prep-time-badge ${order.prep_minutes <= 15 ? 'fast' : order.prep_minutes <= 30 ? 'normal' : 'slow'}" title="Priprema">
+                🍳 ${order.prep_minutes} min
+              </span>
+            ` : order.prep_minutes_ongoing !== undefined ? `
+              <span class="prep-time-badge ${order.prep_minutes_ongoing <= 15 ? 'fast' : order.prep_minutes_ongoing <= 30 ? 'normal' : 'slow'}" title="Priprema">
+                🍳 ${order.prep_minutes_ongoing} min
+              </span>
+            ` : ''}
+            ${order.delivery_type === 'Delivery' ? (
+              order.delivery_minutes !== undefined ? `
+                <span class="prep-time-badge ${order.delivery_minutes <= 30 ? 'fast' : order.delivery_minutes <= 45 ? 'normal' : 'slow'}" title="Dostava">
+                  🚚 ${order.delivery_minutes} min
+                </span>
+              ` : order.delivery_minutes_ongoing !== undefined ? `
+                <span class="prep-time-badge ${order.delivery_minutes_ongoing <= 30 ? 'fast' : order.delivery_minutes_ongoing <= 45 ? 'normal' : 'slow'}" title="Dostava">
+                  🚚 ${order.delivery_minutes_ongoing} min
+                </span>
+              ` : ''
+            ) : ''}
             <span class="order-time">${time}</span>
           </div>
         </div>
@@ -985,44 +2934,81 @@
     // Render All Orders
     // ============================================
     function renderOrders(orders) {
-      const newOrders = orders.filter(o => STATUS_GROUPS.new.includes(o.status) && !o.is_paid);
-      const productionOrders = orders.filter(o => STATUS_GROUPS.production.includes(o.status) && !o.is_paid);
-      const readyOrders = orders.filter(o => STATUS_GROUPS.ready.includes(o.status) && !o.is_paid);
-      const paidOrders = orders.filter(o => o.is_paid);
-      const canceledOrders = orders.filter(o => STATUS_GROUPS.canceled.includes(o.status));
+      const columnsView = document.getElementById('columnsView');
+      const gridView = document.getElementById('ordersGrid');
+      const tableContainer = document.getElementById('ordersTableContainer');
+      const tableBody = document.getElementById('ordersTableBody');
+      
+      // Hide all views first
+      columnsView.style.display = 'none';
+      gridView.style.display = 'none';
+      tableContainer.style.display = 'none';
+      
+      if (viewMode === 'table') {
+        // TABLE VIEW
+        tableContainer.style.display = 'block';
+        
+        if (orders.length === 0) {
+          tableBody.innerHTML = '<tr><td colspan="10" class="table-empty">Nema porudžbina</td></tr>';
+        } else {
+          tableBody.innerHTML = orders.map(o => renderTableRow(o)).join('');
+        }
+      } else {
+        // CARDS VIEW
+        if (selectedStatus === 'all') {
+          // Show columns view
+          columnsView.style.display = 'grid';
+          
+          const isPaid = (o) => o.is_paid === true || o.is_paid === 'true';
+          const newOrders = orders.filter(o => STATUS_GROUPS.new.includes(o.status) && !isPaid(o));
+          const productionOrders = orders.filter(o => STATUS_GROUPS.production.includes(o.status) && !isPaid(o));
+          const readyOrders = orders.filter(o => STATUS_GROUPS.ready.includes(o.status) && !isPaid(o));
+          const paidOrders = orders.filter(o => isPaid(o));
+          const canceledOrders = orders.filter(o => STATUS_GROUPS.canceled.includes(o.status));
 
-      document.getElementById('ordersNew').innerHTML = newOrders.length 
-        ? newOrders.map(o => renderOrderCard(o, 'new')).join('')
-        : '<div class="empty-state">No new orders</div>';
+          document.getElementById('ordersNew').innerHTML = newOrders.length 
+            ? newOrders.map(o => renderOrderCard(o, 'new')).join('')
+            : '<div class="empty-state">Nema novih porudžbina</div>';
 
-      document.getElementById('ordersProduction').innerHTML = productionOrders.length
-        ? productionOrders.map(o => renderOrderCard(o, 'production')).join('')
-        : '<div class="empty-state">No orders in production</div>';
+          document.getElementById('ordersProduction').innerHTML = productionOrders.length
+            ? productionOrders.map(o => renderOrderCard(o, 'production')).join('')
+            : '<div class="empty-state">Nema porudžbina u pripremi</div>';
 
-      document.getElementById('ordersReady').innerHTML = readyOrders.length
-        ? readyOrders.map(o => renderOrderCard(o, 'ready')).join('')
-        : '<div class="empty-state">No ready orders</div>';
+          document.getElementById('ordersReady').innerHTML = readyOrders.length
+            ? readyOrders.map(o => renderOrderCard(o, 'ready')).join('')
+            : '<div class="empty-state">Nema spremnih porudžbina</div>';
 
-      document.getElementById('ordersPaid').innerHTML = paidOrders.length
-        ? paidOrders.map(o => renderOrderCard(o, 'paid')).join('')
-        : '<div class="empty-state">No completed orders</div>';
+          document.getElementById('ordersPaid').innerHTML = paidOrders.length
+            ? paidOrders.map(o => renderOrderCard(o, 'paid')).join('')
+            : '<div class="empty-state">Nema završenih porudžbina</div>';
 
-      document.getElementById('ordersCanceled').innerHTML = canceledOrders.length
-        ? canceledOrders.map(o => renderOrderCard(o, 'canceled')).join('')
-        : '<div class="empty-state">No canceled orders</div>';
+          document.getElementById('ordersCanceled').innerHTML = canceledOrders.length
+            ? canceledOrders.map(o => renderOrderCard(o, 'canceled')).join('')
+            : '<div class="empty-state">Nema otkazanih porudžbina</div>';
 
-      // Update counts
-      document.getElementById('countNew').textContent = newOrders.length;
-      document.getElementById('countProduction').textContent = productionOrders.length;
-      document.getElementById('countReady').textContent = readyOrders.length;
-      document.getElementById('countPaid').textContent = paidOrders.length;
-      document.getElementById('countCanceled').textContent = canceledOrders.length;
+          // Update column counts
+          document.getElementById('colCountNew').textContent = newOrders.length;
+          document.getElementById('colCountProduction').textContent = productionOrders.length;
+          document.getElementById('colCountReady').textContent = readyOrders.length;
+          document.getElementById('colCountPaid').textContent = paidOrders.length;
+          document.getElementById('colCountCanceled').textContent = canceledOrders.length;
+        } else {
+          // Show grid view for single status
+          gridView.style.display = 'grid';
+          
+          if (orders.length === 0) {
+            gridView.innerHTML = '<div class="orders-grid-empty">Nema porudžbina u ovoj kategoriji</div>';
+          } else {
+            gridView.innerHTML = orders.map(o => renderOrderCard(o, selectedStatus)).join('');
+          }
+        }
+      }
 
-      document.getElementById('statNew').textContent = newOrders.length;
-      document.getElementById('statProduction').textContent = productionOrders.length;
-      document.getElementById('statReady').textContent = readyOrders.length;
-      document.getElementById('statPaid').textContent = paidOrders.length;
-      document.getElementById('statCanceled').textContent = canceledOrders.length;
+      document.getElementById('statNew').textContent = document.getElementById('countNew').textContent;
+      document.getElementById('statProduction').textContent = document.getElementById('countProduction').textContent;
+      document.getElementById('statReady').textContent = document.getElementById('countReady').textContent;
+      document.getElementById('statPaid').textContent = document.getElementById('countPaid').textContent;
+      document.getElementById('statCanceled').textContent = document.getElementById('countCanceled').textContent;
 
       document.getElementById('lastUpdated').textContent = 
         `Updated: ${new Date().toLocaleTimeString('sr-RS')}`;
@@ -1047,14 +3033,47 @@
     // ============================================
     // Initialize
     // ============================================
-    async function loadOrders() {
-      const orders = await fetchOrders();
-      renderOrders(orders);
+    // Date Selector Functions
+    // ============================================
+    function initDateSelector() {
+      const dateInput = document.getElementById('selectedDate');
+      // Default to today
+      const today = new Date();
+      dateInput.value = today.toISOString().split('T')[0];
     }
 
-    loadOrders();
-    setupRealtimeSubscription();
-    setInterval(loadOrders, 30000);
+    function changeDate(delta) {
+      const dateInput = document.getElementById('selectedDate');
+      const current = new Date(dateInput.value);
+      current.setDate(current.getDate() + delta);
+      dateInput.value = current.toISOString().split('T')[0];
+      loadOrdersForDate();
+    }
+
+    async function loadOrdersForDate() {
+      document.getElementById('lastUpdated').textContent = 'Loading...';
+      await loadOrders();
+    }
+
+    // ============================================
+    // Load Orders
+    // ============================================
+    async function loadOrders() {
+      const orders = await fetchOrders();
+      allOrders = orders; // Store for filtering
+      applyFilters(); // Apply current filters
+    }
+
+    async function init() {
+      initDateSelector();
+      await fetchLocations();
+      await fetchProductNames(); // Load product names for modifier display
+      await loadOrders();
+      setupRealtimeSubscription();
+      setInterval(loadOrders, 30000);
+    }
+
+    init();
   </script>
 </body>
 </html>
