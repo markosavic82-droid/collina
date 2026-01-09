@@ -534,6 +534,21 @@
       background: #ef4444;
     }
 
+    .discount-badge {
+      display: inline-block;
+      background: #f59e0b;
+      color: #000;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .table-final-price {
+      font-weight: 600;
+      color: #22c55e;
+    }
+
     .orders-table tr.unknown-table {
       background: rgba(239, 68, 68, 0.1);
     }
@@ -1452,10 +1467,10 @@
     <div class="header-right">
       <!-- View Toggle -->
       <div class="view-toggle">
-        <button class="view-btn active" data-view="cards" onclick="setViewMode('cards')">
+        <button class="view-btn" data-view="cards" onclick="setViewMode('cards')">
           <span>🃏</span>
         </button>
-        <button class="view-btn" data-view="table" onclick="setViewMode('table')">
+        <button class="view-btn active" data-view="table" onclick="setViewMode('table')">
           <span>📋</span>
         </button>
       </div>
@@ -1510,6 +1525,8 @@
             <th>Tip</th>
             <th>Stavke</th>
             <th>Ukupno</th>
+            <th>Popust</th>
+            <th>Finalna Cena</th>
             <th>Status</th>
             <th>Plaćeno</th>
             <th>Priprema</th>
@@ -1616,6 +1633,8 @@
             <th>Konobar</th>
             <th>Stavke</th>
             <th>Ukupno</th>
+            <th>Popust</th>
+            <th>Finalna Cena</th>
             <th>Status</th>
             <th>Plaćeno</th>
             <th>Vreme</th>
@@ -1660,7 +1679,7 @@
     let selectedLocations = new Set(); // Empty = all
     let selectedChannels = new Set(['wolt', 'gloriafood', 'ebar', 'emeniwaiter', 'pult']); // All by default
     let selectedStatus = 'all'; // Status filter: 'all', 'new', 'production', 'ready', 'paid', 'canceled'
-    let viewMode = 'cards'; // 'cards' or 'table'
+    let viewMode = 'table'; // 'cards' or 'table' - default to table
     let currentPage = 'live'; // 'live' or 'tables'
     let selectedTableFilter = 'all'; // Table filter for tables view
 
@@ -1681,6 +1700,22 @@
       '3093': 'Nataša',
       '3094': 'Ana',
       // Add more mappings as needed for your actual table IDs
+    };
+
+    // Table discount percentages (0-100)
+    const TABLE_DISCOUNTS = {
+      '3086': 0,    // Hotel Gosti - 0%
+      '3087': 0,    // Hotel Zaposleni - 0%
+      '3088': 15,   // Apsekt - 15%
+      '3105': 15,   // Servesia Poli - 15%
+      '3095': 25,   // Telefon - 25%
+      '3097': 25,   // TO Magazin - 25%
+      '3098': 25,   // TO Vozaci - 25%
+      '3100': 50,   // TO Kancelarija - 50%
+      '3090': 50,   // TO Kuhinja - 50%
+      '3092': 50,   // TO Šank 1 - 50%
+      '3093': 100,  // Nataša - 100%
+      '3094': 100,  // Ana - 100%
     };
 
     // E-BAR items map for resolving modifier names (Sifra -> {n: name, p: price})
@@ -1977,18 +2012,24 @@
       // Sort by time (newest first)
       tableOrders.sort((a, b) => new Date(b.datetime) - new Date(a.datetime));
       
-      // Update stats
-      const totalAmount = tableOrders.reduce((sum, order) => {
+      // Update stats - now includes final prices after discounts
+      let totalAmount = 0;
+      let totalFinalAmount = 0;
+      tableOrders.forEach(order => {
         const items = order.items || order.raw_payload?.items || [];
-        return sum + items.reduce((s, item) => s + (item.price || 0) * (item.quantity || 1), 0);
-      }, 0);
+        const orderTotal = items.reduce((s, item) => s + (item.price || 0) * (item.quantity || 1), 0);
+        const discountPercent = order.table_id ? (TABLE_DISCOUNTS[order.table_id] || 0) : 0;
+        const finalPrice = orderTotal - (orderTotal * discountPercent / 100);
+        totalAmount += orderTotal;
+        totalFinalAmount += finalPrice;
+      });
       
       document.getElementById('tablesOrderCount').textContent = tableOrders.length;
-      document.getElementById('tablesTotal').textContent = `${totalAmount.toLocaleString('sr-RS')} RSD`;
+      document.getElementById('tablesTotal').textContent = `${totalFinalAmount.toLocaleString('sr-RS')} RSD`;
       
       // Render table rows
       if (tableOrders.length === 0) {
-        tableBody.innerHTML = '<tr><td colspan="10" class="table-empty">Nema porudžbina za izabrani sto</td></tr>';
+        tableBody.innerHTML = '<tr><td colspan="12" class="table-empty">Nema porudžbina za izabrani sto</td></tr>';
         return;
       }
       
@@ -2002,6 +2043,11 @@
         const tableId = order.table_id;
         const isKnownTable = TABLE_NAMES[tableId] !== undefined;
         const tableName = TABLE_NAMES[tableId] || `Nepoznat #${tableId}`;
+        
+        // Discount calculation
+        const discountPercent = tableId ? (TABLE_DISCOUNTS[tableId] || 0) : 0;
+        const discountAmount = total * (discountPercent / 100);
+        const finalPrice = total - discountAmount;
         
         const provider = (order.provider || 'pult').toLowerCase();
         
@@ -2030,6 +2076,8 @@
             <td>${order.waiter_name || '-'}</td>
             <td class="table-items">${itemsSummary}${moreItems}</td>
             <td class="table-total">${total.toLocaleString('sr-RS')} RSD</td>
+            <td>${discountPercent > 0 ? `<span class="discount-badge">${discountPercent}%</span>` : '-'}</td>
+            <td class="table-final-price">${finalPrice.toLocaleString('sr-RS')} RSD</td>
             <td><span class="table-status ${statusGroup}">${statusGroup}</span></td>
             <td>${isPaid ? '✅ Da' : '❌ Ne'}</td>
             <td>${time}</td>
@@ -2638,6 +2686,11 @@
       const isKnownTable = tableId && TABLE_NAMES[tableId] !== undefined;
       const tableName = tableId ? (TABLE_NAMES[tableId] || `Nepoznat #${tableId}`) : '-';
       
+      // Discount calculation
+      const discountPercent = tableId ? (TABLE_DISCOUNTS[tableId] || 0) : 0;
+      const discountAmount = total * (discountPercent / 100);
+      const finalPrice = total - discountAmount;
+      
       const statusLabels = {
         new: 'Novo',
         production: 'Priprema',
@@ -2711,6 +2764,8 @@
           <td>${order.delivery_type || 'N/A'}</td>
           <td><div class="table-items" title="${itemsSummary}">${itemsSummary}</div></td>
           <td class="table-total">${total.toFixed(0)} RSD</td>
+          <td>${discountPercent > 0 ? `<span class="discount-badge">${discountPercent}%</span>` : '-'}</td>
+          <td class="table-final-price">${finalPrice.toFixed(0)} RSD</td>
           <td><span class="table-status ${statusGroup}">${statusLabels[statusGroup]}</span></td>
           <td>${isPaid ? '✅ Da' : '❌ Ne'}</td>
           <td>${prepTimeHtml}</td>
