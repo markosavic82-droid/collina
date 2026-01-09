@@ -406,6 +406,161 @@
       color: #666;
     }
 
+    /* Main Navigation Tabs */
+    .main-nav-tabs {
+      display: flex;
+      gap: 4px;
+      background: #1a1a1a;
+      padding: 4px;
+      border-radius: 10px;
+      margin-right: 15px;
+    }
+
+    .main-nav-tab {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      background: transparent;
+      border: none;
+      border-radius: 8px;
+      color: #888;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+
+    .main-nav-tab:hover {
+      color: #fff;
+      background: #252525;
+    }
+
+    .main-nav-tab.active {
+      background: #8B5CF6;
+      color: #fff;
+    }
+
+    /* Tables View Container */
+    .tables-view-container {
+      display: none;
+    }
+
+    .tables-view-container.active {
+      display: block;
+    }
+
+    .tables-view-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      padding: 15px 20px;
+      background: #1a1a1a;
+      border-radius: 12px;
+      border: 1px solid #333;
+    }
+
+    .tables-view-header h2 {
+      font-size: 18px;
+      color: #8B5CF6;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .tables-filter-group {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .tables-filter-group label {
+      color: #888;
+      font-size: 13px;
+    }
+
+    .table-dropdown {
+      background: #252525;
+      border: 1px solid #333;
+      border-radius: 8px;
+      color: #fff;
+      padding: 10px 15px;
+      font-size: 14px;
+      min-width: 200px;
+      cursor: pointer;
+    }
+
+    .table-dropdown:focus {
+      outline: none;
+      border-color: #8B5CF6;
+    }
+
+    .table-dropdown option {
+      background: #1a1a1a;
+      color: #fff;
+      padding: 10px;
+    }
+
+    .tables-stats {
+      display: flex;
+      gap: 20px;
+      color: #888;
+      font-size: 13px;
+    }
+
+    .tables-stats span {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .tables-stats .count {
+      color: #8B5CF6;
+      font-weight: 600;
+    }
+
+    .table-id-badge {
+      display: inline-block;
+      background: #8B5CF6;
+      color: #fff;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .table-id-badge.unknown {
+      background: #ef4444;
+    }
+
+    .orders-table tr.unknown-table {
+      background: rgba(239, 68, 68, 0.1);
+    }
+
+    .orders-table tr.unknown-table:hover {
+      background: rgba(239, 68, 68, 0.2);
+    }
+
+    .table-name-badge {
+      display: inline-block;
+      background: #374151;
+      color: #fff;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    /* Live View Container */
+    .live-view-container {
+      display: block;
+    }
+
+    .live-view-container.hidden {
+      display: none;
+    }
+
     .status-dot {
       width: 10px;
       height: 10px;
@@ -1242,6 +1397,17 @@
         <span class="filter-badge hidden" id="activeFiltersCount">0</span>
       </button>
       <h1>🍔 Collina Orders</h1>
+      
+      <!-- Main Navigation Tabs -->
+      <div class="main-nav-tabs">
+        <button class="main-nav-tab active" data-page="live" onclick="switchPage('live')">
+          <span>📡</span> Live View
+        </button>
+        <button class="main-nav-tab" data-page="tables" onclick="switchPage('tables')">
+          <span>📊</span> Reporting
+        </button>
+      </div>
+
       <div class="date-selector">
         <button class="date-btn" onclick="changeDate(-1)">◀</button>
         <input type="date" id="selectedDate" onchange="loadOrdersForDate()">
@@ -1302,105 +1468,161 @@
     </div>
   </div>
 
-  <!-- Stats bar hidden, counts now in tabs -->
-  <div class="stats-bar" style="display: none;">
-    <div class="stat-card new">
-      <h3>New / Pending</h3>
-      <div class="value" id="statNew">0</div>
+  <!-- Live View Container -->
+  <div class="live-view-container" id="liveViewContainer">
+    <!-- Stats bar hidden, counts now in tabs -->
+    <div class="stats-bar" style="display: none;">
+      <div class="stat-card new">
+        <h3>New / Pending</h3>
+        <div class="value" id="statNew">0</div>
+      </div>
+      <div class="stat-card production">
+        <h3>Accepted / In Production</h3>
+        <div class="value" id="statProduction">0</div>
+      </div>
+      <div class="stat-card ready">
+        <h3>Ready / Delivery</h3>
+        <div class="value" id="statReady">0</div>
+      </div>
+      <div class="stat-card paid">
+        <h3>Paid Today</h3>
+        <div class="value" id="statPaid">0</div>
+      </div>
+      <div class="stat-card canceled">
+        <h3>Canceled / Rejected</h3>
+        <div class="value" id="statCanceled">0</div>
+      </div>
     </div>
-    <div class="stat-card production">
-      <h3>Accepted / In Production</h3>
-      <div class="value" id="statProduction">0</div>
+
+    <!-- Grid view for filtered status -->
+    <div class="orders-grid" id="ordersGrid" style="display: none;"></div>
+
+    <!-- Table view -->
+    <div class="orders-table-container" id="ordersTableContainer" style="display: none;">
+      <table class="orders-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Lokacija</th>
+            <th>Kanal</th>
+            <th>Tip</th>
+            <th>Stavke</th>
+            <th>Ukupno</th>
+            <th>Status</th>
+            <th>Priprema</th>
+            <th>Dostava</th>
+            <th>Vreme</th>
+          </tr>
+        </thead>
+        <tbody id="ordersTableBody"></tbody>
+      </table>
     </div>
-    <div class="stat-card ready">
-      <h3>Ready / Delivery</h3>
-      <div class="value" id="statReady">0</div>
-    </div>
-    <div class="stat-card paid">
-      <h3>Paid Today</h3>
-      <div class="value" id="statPaid">0</div>
-    </div>
-    <div class="stat-card canceled">
-      <h3>Canceled / Rejected</h3>
-      <div class="value" id="statCanceled">0</div>
+
+    <div class="columns" id="columnsView">
+      <div class="column new">
+        <div class="column-header">
+          <h2>🆕 Novo</h2>
+          <span class="count" id="colCountNew">0</span>
+        </div>
+        <div id="ordersNew" class="orders-list">
+          <div class="loading">Loading...</div>
+        </div>
+      </div>
+
+      <div class="column production">
+        <div class="column-header">
+          <h2>👨‍🍳 Priprema</h2>
+          <span class="count" id="colCountProduction">0</span>
+        </div>
+        <div id="ordersProduction" class="orders-list">
+          <div class="loading">Loading...</div>
+        </div>
+      </div>
+
+      <div class="column ready">
+        <div class="column-header">
+          <h2>✅ Spremno / Dostava</h2>
+          <span class="count" id="colCountReady">0</span>
+        </div>
+        <div id="ordersReady" class="orders-list">
+          <div class="loading">Loading...</div>
+        </div>
+      </div>
+
+      <div class="column paid">
+        <div class="column-header">
+          <h2>💰 Završeno</h2>
+          <span class="count" id="colCountPaid">0</span>
+        </div>
+        <div id="ordersPaid" class="orders-list">
+          <div class="loading">Loading...</div>
+        </div>
+      </div>
+
+      <div class="column canceled">
+        <div class="column-header">
+          <h2>❌ Otkazano</h2>
+          <span class="count" id="colCountCanceled">0</span>
+        </div>
+        <div id="ordersCanceled" class="orders-list">
+          <div class="loading">Loading...</div>
+        </div>
+      </div>
     </div>
   </div>
+  <!-- End Live View Container -->
 
-  <!-- Grid view for filtered status -->
-  <div class="orders-grid" id="ordersGrid" style="display: none;"></div>
-
-  <!-- Table view -->
-  <div class="orders-table-container" id="ordersTableContainer" style="display: none;">
-    <table class="orders-table">
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>Lokacija</th>
-          <th>Kanal</th>
-          <th>Tip</th>
-          <th>Stavke</th>
-          <th>Ukupno</th>
-          <th>Status</th>
-          <th>Priprema</th>
-          <th>Dostava</th>
-          <th>Vreme</th>
-        </tr>
-      </thead>
-      <tbody id="ordersTableBody"></tbody>
-    </table>
-  </div>
-
-  <div class="columns" id="columnsView">
-    <div class="column new">
-      <div class="column-header">
-        <h2>🆕 Novo</h2>
-        <span class="count" id="colCountNew">0</span>
-      </div>
-      <div id="ordersNew" class="orders-list">
-        <div class="loading">Loading...</div>
+  <!-- Tables View Container -->
+  <div class="tables-view-container" id="tablesViewContainer">
+    <div class="tables-view-header">
+      <h2>📊 Reporting - Pregled po Stolovima</h2>
+      <div class="tables-filter-group">
+        <label for="tableFilter">Filter po stolu:</label>
+        <select class="table-dropdown" id="tableFilter" onchange="filterByTable()">
+          <option value="all">Svi stolovi</option>
+          <option value="ostalo">⚠️ Ostalo (nepoznati)</option>
+          <option value="3086">Hotel Gosti (#3086)</option>
+          <option value="3087">Hotel Zaposleni (#3087)</option>
+          <option value="3088">Apsekt (#3088)</option>
+          <option value="3105">Servesia Poli (#3105)</option>
+          <option value="3095">Telefon (#3095)</option>
+          <option value="3097">TO Magazin (#3097)</option>
+          <option value="3098">TO Vozaci (#3098)</option>
+          <option value="3100">TO Kancelarija (#3100)</option>
+          <option value="3090">TO Kuhinja (#3090)</option>
+          <option value="3092">TO Šank 1 (#3092)</option>
+          <option value="3093">Nataša (#3093)</option>
+          <option value="3094">Ana (#3094)</option>
+          <option value="3095">Marko (#3095)</option>
+        </select>
+        <div class="tables-stats">
+          <span>Porudžbine: <span class="count" id="tablesOrderCount">0</span></span>
+          <span>Ukupno: <span class="count" id="tablesTotal">0 RSD</span></span>
+        </div>
       </div>
     </div>
-
-    <div class="column production">
-      <div class="column-header">
-        <h2>👨‍🍳 Priprema</h2>
-        <span class="count" id="colCountProduction">0</span>
-      </div>
-      <div id="ordersProduction" class="orders-list">
-        <div class="loading">Loading...</div>
-      </div>
-    </div>
-
-    <div class="column ready">
-      <div class="column-header">
-        <h2>✅ Spremno / Dostava</h2>
-        <span class="count" id="colCountReady">0</span>
-      </div>
-      <div id="ordersReady" class="orders-list">
-        <div class="loading">Loading...</div>
-      </div>
-    </div>
-
-    <div class="column paid">
-      <div class="column-header">
-        <h2>💰 Završeno</h2>
-        <span class="count" id="colCountPaid">0</span>
-      </div>
-      <div id="ordersPaid" class="orders-list">
-        <div class="loading">Loading...</div>
-      </div>
-    </div>
-
-    <div class="column canceled">
-      <div class="column-header">
-        <h2>❌ Otkazano</h2>
-        <span class="count" id="colCountCanceled">0</span>
-      </div>
-      <div id="ordersCanceled" class="orders-list">
-        <div class="loading">Loading...</div>
-      </div>
+    
+    <div class="orders-table-container" style="display: block;">
+      <table class="orders-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Sto</th>
+            <th>Lokacija</th>
+            <th>Kanal</th>
+            <th>Konobar</th>
+            <th>Stavke</th>
+            <th>Ukupno</th>
+            <th>Status</th>
+            <th>Plaćeno</th>
+            <th>Vreme</th>
+          </tr>
+        </thead>
+        <tbody id="tablesTableBody"></tbody>
+      </table>
     </div>
   </div>
+  <!-- End Tables View Container -->
 
   <!-- Order Detail Modal -->
   <div class="modal-overlay" id="modalOverlay">
@@ -1436,6 +1658,27 @@
     let selectedChannels = new Set(['wolt', 'gloriafood', 'ebar', 'emeniwaiter', 'pult']); // All by default
     let selectedStatus = 'all'; // Status filter: 'all', 'new', 'production', 'ready', 'paid', 'canceled'
     let viewMode = 'cards'; // 'cards' or 'table'
+    let currentPage = 'live'; // 'live' or 'tables'
+    let selectedTableFilter = 'all'; // Table filter for tables view
+
+    // Table Reference ID to Name mapping
+    // Add your table ID -> name mappings here
+    const TABLE_NAMES = {
+      // Original mappings from eMeni
+      '3086': 'Hotel Gosti',
+      '3087': 'Hotel Zaposleni',
+      '3088': 'Apsekt',
+      '3105': 'Servesia Poli',
+      '3095': 'Telefon',
+      '3097': 'TO Magazin',
+      '3098': 'TO Vozaci',
+      '3100': 'TO Kancelarija',
+      '3090': 'TO Kuhinja',
+      '3092': 'TO Šank 1',
+      '3093': 'Nataša',
+      '3094': 'Ana',
+      // Add more mappings as needed for your actual table IDs
+    };
 
     // E-BAR items map for resolving modifier names (Sifra -> {n: name, p: price})
     const EBAR_ITEMS = {"6985164":{"n":"2X Collina burger+pomfrit+2x Pepsi 0.33","p":1527},"30410":{"n":"2x Pepsi+2xDouble collina SMASH","p":1584},"30411":{"n":"2xPepsi+2xDouble jalapeSMASH+2xPOMFRIT","p":1968},"8642":{"n":"7 Up 0.25 flasica","p":220},"778229":{"n":"7 UP 0.33 l","p":130},"8640":{"n":"7 UP 0.33 limenka","p":280},"10192":{"n":"Am.Nutela plazma visnja+kokta 0,33","p":512},"30413":{"n":"Am.pal.krem plazma+pepsi 0.33","p":572},"6985147":{"n":"Amer.Dubai palacinka","p":960},"10067":{"n":"Amercka palacinka javorov sirup","p":395},"5122":{"n":"Americka beli eurokrem","p":410},"20201":{"n":"Americka beli krem -D","p":575},"65203":{"n":"Americka cipiripi","p":395},"20203":{"n":"Americka cipiripi-D","p":555},"6985149":{"n":"Americka DUBAI pal.","p":790},"65120":{"n":"Americka eurokrem","p":395},"20202":{"n":"Americka eurokrem-D","p":555},"65121":{"n":"Americka nutella","p":445},"20200":{"n":"Americka nutella-D","p":575},"20252":{"n":"dod.banana dos.","p":80},"20224":{"n":"dod.barbique sos dos.","p":80},"20218":{"n":"dod.barbique sos dos.1","p":80},"20225":{"n":"dod.chily sos dos.","p":80},"20230":{"n":"dod.jaje dos.","p":85},"20262":{"n":"dod.kikiriki dos.","p":80},"20254":{"n":"dod.kokos dos.","p":75},"20227":{"n":"dod.krastavcici dos.","p":85},"20255":{"n":"dod.krem bananica dos.","p":90},"20233":{"n":"dod.kukuruz sal.dos.","p":145},"20264":{"n":"dod.lesnik dos.","p":90},"20229":{"n":"dod.majonez dos.","p":80},"20249":{"n":"dod.malina dos.","p":110},"20247":{"n":"dod.meso 120g dos.","p":215},"20246":{"n":"dod.meso 80g dos.","p":145},"20263":{"n":"dod.orah dos.","p":80},"20248":{"n":"dod.panirani kackavalj dos.","p":100},"20228":{"n":"dod.paradajz dos.","p":80},"20231":{"n":"dod.pavlaka dos.","p":80},"20237":{"n":"dod.pecenica dos.","p":100},"20244":{"n":"dod.pecurke dos.","p":85},"20234":{"n":"dod.pileca sal.dos","p":145},"20260":{"n":"dod.plazma dos.","p":80},"20261":{"n":"dod.plazma u mleku dos.","p":100},"20289":{"n":"Dod.polimark kecap dos.","p":85},"20245":{"n":"dod.pomfrit dos.","p":250},"20250":{"n":"dod.pomorandza dos.","p":80},"20256":{"n":"dod.preliv cokolada dos.","p":80},"20257":{"n":"dod.preliv karamela dos.","p":80},"20258":{"n":"dod.preliv sumsko voce dos.","p":80},"20238":{"n":"dod.prsuta dos.","p":120},"20235":{"n":"dod.ruska sal.dos","p":125},"20242":{"n":"dod.senf dos.","p":80},"20226":{"n":"dod.slanina dos.","p":90},"20236":{"n":"dod.sunka dos.","p":100},"20253":{"n":"dod.suvo grozdje dos.","p":85},"20243":{"n":"dod.tartar sos dos","p":80},"20239":{"n":"dod.topljeni sir dos.","p":90},"20232":{"n":"dod.urnebes dos.","p":85},"20251":{"n":"dod.visnja dos.","p":90},"238":{"n":"Dodatak Banana","p":80},"8809":{"n":"Dodatak barbiqu sos","p":80},"222":{"n":"Dodatak chily sos","p":80},"258":{"n":"Dodatak feta sir","p":80},"212":{"n":"Dodatak govedja prsuta","p":120},"8695":{"n":"Dodatak heinz kecap","p":85},"10041":{"n":"Dodatak jaje a","p":85},"8670":{"n":"Dodatak kackavalj 50 gr","p":80},"240":{"n":"Dodatak karamela","p":60},"9690":{"n":"Dodatak kecap bb","p":85},"221":{"n":"Dodatak Kikiriki","p":80},"9653":{"n":"Dodatak kikiriki c","p":80},"233":{"n":"Dodatak Kokos","p":75},"244":{"n":"Dodatak krastavcici kiseli","p":85},"234":{"n":"Dodatak krem bananica","p":90},"246":{"n":"Dodatak kukuruz","p":75},"218":{"n":"Dodatak lesnik","p":90},"8684":{"n":"Dodatak luk","p":20},"202":{"n":"Dodatak majonez","p":80},"237":{"n":"Dodatak malina","p":110},"10036":{"n":"Dodatak malina a","p":110},"9662":{"n":"Dodatak malina c","p":110},"9703":{"n":"Dodatak malo meso","p":145},"10059":{"n":"Dodatak malo meso bb","p":145},"287":{"n":"Dodatak Margarin","p":60},"223":{"n":"Dodatak orah","p":80},"8667":{"n":"Dodatak origano","p":20},"8703":{"n":"Dodatak panirani kackavalj","p":100},"257":{"n":"Dodatak paradajz","p":80},"210":{"n":"Dodatak pecenica","p":100},"283":{"n":"Dodatak pecurke","p":85},"215":{"n":"Dodatak pecurke m","p":85},"10043":{"n":"Dodatak pileca salata a","p":145},"8721":{"n":"Dodatak piletina 70 gr","p":90},"216":{"n":"Dodatak plazma","p":80},"239":{"n":"Dodatak plazma u mleku","p":100},"200":{"n":"Dodatak polimark kecap","p":85},"225":{"n":"Dodatak pomfrit 150 gr","p":200},"232":{"n":"Dodatak pomorandza","p":80},"241":{"n":"Dodatak preliv cokolada","p":80},"242":{"n":"Dodatak preliv sumsko voce","p":80},"259":{"n":"Dodatak ruska salata","p":145},"206":{"n":"Dodatak senf","p":80},"289":{"n":"Dodatak slag","p":70},"286":{"n":"Dodatak slanina","p":90},"208":{"n":"Dodatak sunka","p":100},"236":{"n":"Dodatak suvo grozdje","p":85},"8804":{"n":"Dodatak tartar sos","p":80},"278":{"n":"Dodatak topljeni sir","p":90},"282":{"n":"Dodatak tunjevina","p":80},"245":{"n":"Dodatak urnebes","p":85},"9704":{"n":"Dodatak veliko meso","p":215},"10060":{"n":"Dodatak veliko meso bb","p":215},"235":{"n":"Dodatak visnja","p":90},"8663":{"n":"Dodatak zelena salata","p":60}};
@@ -1680,6 +1923,110 @@
       applyFilters();
     }
 
+    // ============================================
+    // Page Switching (Live View / Tables View)
+    // ============================================
+    function switchPage(page) {
+      currentPage = page;
+      
+      // Update nav tabs
+      document.querySelectorAll('.main-nav-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.page === page);
+      });
+      
+      // Show/hide containers
+      const liveContainer = document.getElementById('liveViewContainer');
+      const tablesContainer = document.getElementById('tablesViewContainer');
+      
+      if (page === 'live') {
+        liveContainer.classList.remove('hidden');
+        tablesContainer.classList.remove('active');
+      } else if (page === 'tables') {
+        liveContainer.classList.add('hidden');
+        tablesContainer.classList.add('active');
+        renderTablesView();
+      }
+    }
+
+    function filterByTable() {
+      selectedTableFilter = document.getElementById('tableFilter').value;
+      renderTablesView();
+    }
+
+    function renderTablesView() {
+      const tableBody = document.getElementById('tablesTableBody');
+      
+      // Filter orders that have a table_id (not table_reference_id!)
+      let tableOrders = allOrders.filter(order => order.table_id);
+      
+      // Apply table filter using table_id
+      if (selectedTableFilter === 'ostalo') {
+        // Show only orders with unknown table IDs
+        tableOrders = tableOrders.filter(order => 
+          TABLE_NAMES[order.table_id] === undefined
+        );
+      } else if (selectedTableFilter !== 'all') {
+        tableOrders = tableOrders.filter(order => 
+          String(order.table_id) === selectedTableFilter
+        );
+      }
+      
+      // Sort by time (newest first)
+      tableOrders.sort((a, b) => new Date(b.datetime) - new Date(a.datetime));
+      
+      // Update stats
+      const totalAmount = tableOrders.reduce((sum, order) => {
+        const items = order.items || order.raw_payload?.items || [];
+        return sum + items.reduce((s, item) => s + (item.price || 0) * (item.quantity || 1), 0);
+      }, 0);
+      
+      document.getElementById('tablesOrderCount').textContent = tableOrders.length;
+      document.getElementById('tablesTotal').textContent = `${totalAmount.toLocaleString('sr-RS')} RSD`;
+      
+      // Render table rows
+      if (tableOrders.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="10" class="table-empty">Nema porudžbina za izabrani sto</td></tr>';
+        return;
+      }
+      
+      tableBody.innerHTML = tableOrders.map(order => {
+        const items = order.items || order.raw_payload?.items || [];
+        const total = items.reduce((sum, item) => sum + (item.price || 0) * (item.quantity || 1), 0);
+        const itemsSummary = items.slice(0, 2).map(i => `${i.quantity}x ${i.name}`).join(', ');
+        const moreItems = items.length > 2 ? ` +${items.length - 2}` : '';
+        
+        const locationName = locations[order.company_id] || `ID: ${order.company_id}`;
+        const tableId = order.table_id;
+        const isKnownTable = TABLE_NAMES[tableId] !== undefined;
+        const tableName = TABLE_NAMES[tableId] || `Nepoznat #${tableId}`;
+        
+        const provider = (order.provider || 'pult').toLowerCase();
+        
+        const statusGroup = getStatusGroup(order);
+        const isPaid = order.is_paid === true || order.is_paid === 'true';
+        
+        const time = new Date(order.datetime).toLocaleTimeString('sr-RS', { 
+          hour: '2-digit', 
+          minute: '2-digit' 
+        });
+        
+        return `
+          <tr onclick="openOrderDetail(${order.order_id})" class="${isKnownTable ? '' : 'unknown-table'}">
+            <td><strong>#${order.order_no}</strong></td>
+            <td><span class="table-id-badge ${isKnownTable ? '' : 'unknown'}">${tableName}</span></td>
+            <td><span class="table-location">${locationName}</span></td>
+            <td><span class="table-provider ${provider}">${order.provider || 'Pult'}</span></td>
+            <td>${order.waiter_name || '-'}</td>
+            <td class="table-items">${itemsSummary}${moreItems}</td>
+            <td class="table-total">${total.toLocaleString('sr-RS')} RSD</td>
+            <td><span class="table-status ${statusGroup}">${statusGroup}</span></td>
+            <td>${isPaid ? '✅ Da' : '❌ Ne'}</td>
+            <td>${time}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
     function getStatusGroup(order) {
       const status = order.status;
       // Check paid first - paid orders should go to paid regardless of status
@@ -1735,6 +2082,11 @@
       });
       
       renderOrders(filteredOrders);
+      
+      // Also update tables view if it's active
+      if (currentPage === 'tables') {
+        renderTablesView();
+      }
     }
 
     // Status groupings
