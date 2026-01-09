@@ -3,10 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Welcome</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <title>Video</title>
     <style>
         * {
             margin: 0;
@@ -15,217 +12,23 @@
         }
 
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 50%, #16213e 100%);
+            background: #ffffff;
             min-height: 100vh;
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 2rem;
-            overflow-x: hidden;
-        }
-
-        .container {
-            max-width: 800px;
-            width: 100%;
-            text-align: center;
-        }
-
-        .headline {
-            color: #ffffff;
-            font-size: clamp(2rem, 5vw, 3.5rem);
-            font-weight: 600;
-            margin-bottom: 1rem;
-            letter-spacing: -0.02em;
-            animation: fadeInUp 0.8s ease-out;
-        }
-
-        .subheadline {
-            color: rgba(255, 255, 255, 0.7);
-            font-size: clamp(1rem, 2.5vw, 1.25rem);
-            font-weight: 300;
-            margin-bottom: 3rem;
-            animation: fadeInUp 0.8s ease-out 0.1s both;
-        }
-
-        .video-wrapper {
-            position: relative;
-            width: 100%;
-            max-width: 500px;
-            margin: 0 auto 3rem;
-            animation: fadeInUp 0.8s ease-out 0.2s both;
-        }
-
-        .video-glow {
-            position: absolute;
-            inset: -20px;
-            background: radial-gradient(circle, rgba(139, 92, 246, 0.3) 0%, transparent 70%);
-            border-radius: 50%;
-            filter: blur(40px);
-            z-index: 0;
-            animation: pulse 4s ease-in-out infinite;
-        }
-
-        .video-container {
-            position: relative;
-            z-index: 1;
-            border-radius: 24px;
-            overflow: hidden;
-            box-shadow: 
-                0 25px 50px -12px rgba(0, 0, 0, 0.5),
-                0 0 0 1px rgba(255, 255, 255, 0.1),
-                inset 0 1px 0 rgba(255, 255, 255, 0.1);
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
         }
 
         video {
-            display: block;
-            width: 100%;
-            height: auto;
-            border-radius: 24px;
-        }
-
-        .cta-section {
-            animation: fadeInUp 0.8s ease-out 0.3s both;
-        }
-
-        .cta-button {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 1rem 2rem;
-            font-size: 1rem;
-            font-weight: 500;
-            color: #ffffff;
-            background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
-            border: none;
+            max-width: 90vw;
+            max-height: 90vh;
             border-radius: 12px;
-            cursor: pointer;
-            text-decoration: none;
-            transition: all 0.3s ease;
-            box-shadow: 
-                0 10px 30px -10px rgba(139, 92, 246, 0.5),
-                0 0 0 1px rgba(255, 255, 255, 0.1);
-        }
-
-        .cta-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 
-                0 15px 40px -10px rgba(139, 92, 246, 0.6),
-                0 0 0 1px rgba(255, 255, 255, 0.2);
-        }
-
-        .cta-button:active {
-            transform: translateY(0);
-        }
-
-        .cta-button svg {
-            width: 20px;
-            height: 20px;
-        }
-
-        .features {
-            display: flex;
-            justify-content: center;
-            gap: 2rem;
-            margin-top: 4rem;
-            flex-wrap: wrap;
-            animation: fadeInUp 0.8s ease-out 0.4s both;
-        }
-
-        .feature {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            color: rgba(255, 255, 255, 0.6);
-            font-size: 0.875rem;
-        }
-
-        .feature svg {
-            width: 16px;
-            height: 16px;
-            color: #8B5CF6;
-        }
-
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        @keyframes pulse {
-            0%, 100% {
-                opacity: 0.5;
-                transform: scale(1);
-            }
-            50% {
-                opacity: 0.8;
-                transform: scale(1.05);
-            }
-        }
-
-        @media (max-width: 600px) {
-            .features {
-                gap: 1rem;
-            }
-            
-            .feature {
-                font-size: 0.75rem;
-            }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1 class="headline">Something Beautiful Awaits</h1>
-        <p class="subheadline">Experience the magic in every moment</p>
-        
-        <div class="video-wrapper">
-            <div class="video-glow"></div>
-            <div class="video-container">
-                <video autoplay loop muted playsinline>
-                    <source src="cat-video.mp4" type="video/mp4">
-                    Your browser does not support the video tag.
-                </video>
-            </div>
-        </div>
-        
-        <div class="cta-section">
-            <a href="#" class="cta-button">
-                Get Started
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                </svg>
-            </a>
-        </div>
-        
-        <div class="features">
-            <div class="feature">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                </svg>
-                Free to use
-            </div>
-            <div class="feature">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                </svg>
-                No signup required
-            </div>
-            <div class="feature">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                </svg>
-                Instant access
-            </div>
-        </div>
-    </div>
+    <video autoplay loop muted playsinline>
+        <source src="cat-video.mp4" type="video/mp4">
+    </video>
 </body>
 </html>
