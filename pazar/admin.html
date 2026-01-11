@@ -1,0 +1,1619 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Predaja Pazara - Admin Panel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Inter', -apple-system, sans-serif; }
+        h1, h2, h3 { font-family: 'Space Grotesk', sans-serif; }
+        .bg-main { background: #0D0B14; }
+        .bg-card { background: #1A1F2E; }
+        .bg-elevated { background: #252232; }
+        .accent { color: #8B5CF6; }
+        .accent-bg { background: #8B5CF6; }
+        .sidebar-item.active { background: rgba(139,92,246,0.2); border-left: 3px solid #8B5CF6; }
+        .sidebar-item:hover { background: rgba(139,92,246,0.1); }
+        .badge { padding: 2px 8px; border-radius: 12px; font-size: 11px; }
+        .badge-success { background: rgba(34,197,94,0.2); color: #22C55E; }
+        .badge-warning { background: rgba(245,158,11,0.2); color: #F59E0B; }
+        .badge-error { background: rgba(239,68,68,0.2); color: #EF4444; }
+        .badge-info { background: rgba(139,92,246,0.2); color: #8B5CF6; }
+        input, select { background: #252232; border: 1px solid rgba(255,255,255,0.1); color: white; }
+        input:focus, select:focus { outline: none; border-color: #8B5CF6; }
+        .table-row:hover { background: rgba(139,92,246,0.05); }
+    </style>
+</head>
+<body class="bg-main text-white min-h-screen">
+    <!-- Login -->
+    <div id="login-screen" class="min-h-screen flex items-center justify-center">
+        <div class="bg-card p-8 rounded-2xl w-full max-w-md">
+            <div class="text-center mb-8">
+                <div class="text-5xl mb-4">🏦</div>
+                <h1 class="text-2xl font-bold">Predaja Pazara</h1>
+                <p class="text-gray-400 mt-2">Admin Panel - Sweet Collina</p>
+            </div>
+            <div class="space-y-6">
+                <div>
+                    <label class="text-gray-400 text-sm text-center block">Unesi svoj PIN</label>
+                    <div class="flex justify-center gap-3 mt-4">
+                        <input type="tel" id="pin-1" class="w-14 h-14 text-center text-2xl rounded-lg bg-elevated border border-white/10 focus:border-purple-500 focus:outline-none" maxlength="1" oninput="pinInput(1)">
+                        <input type="tel" id="pin-2" class="w-14 h-14 text-center text-2xl rounded-lg bg-elevated border border-white/10 focus:border-purple-500 focus:outline-none" maxlength="1" oninput="pinInput(2)">
+                        <input type="tel" id="pin-3" class="w-14 h-14 text-center text-2xl rounded-lg bg-elevated border border-white/10 focus:border-purple-500 focus:outline-none" maxlength="1" oninput="pinInput(3)">
+                        <input type="tel" id="pin-4" class="w-14 h-14 text-center text-2xl rounded-lg bg-elevated border border-white/10 focus:border-purple-500 focus:outline-none" maxlength="1" oninput="pinInput(4)">
+                    </div>
+                </div>
+                <button onclick="login()" class="w-full accent-bg p-3 rounded-lg font-semibold hover:opacity-90">Prijavi se</button>
+                <p id="login-error" class="text-red-500 text-center hidden">PIN nije pronadjen ili nemate pristup</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="main-app" class="hidden flex">
+        <!-- Sidebar -->
+        <div class="w-64 bg-card min-h-screen fixed left-0 top-0 border-r border-white/10">
+            <div class="p-6 border-b border-white/10">
+                <div class="flex items-center gap-3">
+                    <span class="text-3xl">🏦</span>
+                    <div>
+                        <h1 class="font-bold">Predaja Pazara</h1>
+                        <p class="text-gray-500 text-xs">Sweet Collina</p>
+                    </div>
+                </div>
+            </div>
+            <nav class="p-4 space-y-2">
+                <div class="sidebar-item active p-3 rounded-lg cursor-pointer flex items-center gap-3" data-section="dashboard">
+                    📊 Dashboard
+                </div>
+                <div class="sidebar-item p-3 rounded-lg cursor-pointer flex items-center gap-3" data-section="users">
+                    👥 Korisnici
+                </div>
+                <div class="sidebar-item p-3 rounded-lg cursor-pointer flex items-center gap-3" data-section="locations">
+                    🏪 Lokacije
+                </div>
+                <div class="sidebar-item p-3 rounded-lg cursor-pointer flex items-center gap-3" data-section="smene">
+                    🕐 Smene
+                </div>
+                <div class="sidebar-item p-3 rounded-lg cursor-pointer flex items-center gap-3" data-section="pazari">
+                    💰 Pazari
+                </div>
+                <div class="sidebar-item p-3 rounded-lg cursor-pointer flex items-center gap-3" data-section="banka">
+                    🏦 Banka
+                </div>
+                <div class="sidebar-item p-3 rounded-lg cursor-pointer flex items-center gap-3" data-section="razlike">
+                    ⚠️ Razlike
+                </div>
+            </nav>
+            <div class="absolute bottom-0 left-0 right-0 p-4 border-t border-white/10">
+                <div class="flex items-center gap-3 mb-3">
+                    <div class="w-10 h-10 rounded-full accent-bg flex items-center justify-center font-bold" id="user-avatar">MN</div>
+                    <div>
+                        <p class="font-medium" id="user-name">-</p>
+                        <p class="text-gray-500 text-xs" id="user-role">-</p>
+                    </div>
+                </div>
+                <button onclick="logout()" class="text-gray-400 text-sm hover:text-white">Odjavi se →</button>
+            </div>
+        </div>
+
+        <!-- Content -->
+        <div class="ml-64 flex-1 p-8">
+            <!-- Dashboard -->
+            <section id="sec-dashboard">
+                <h2 class="text-2xl font-bold mb-2">Dashboard</h2>
+                <p class="text-gray-400 mb-8">Pregled stanja sistema</p>
+                
+                <div class="grid grid-cols-4 gap-6 mb-8">
+                    <div class="bg-card p-6 rounded-xl">
+                        <p class="text-gray-400 text-sm">Lokacije</p>
+                        <p class="text-3xl font-bold mt-1" id="stat-loc">0</p>
+                    </div>
+                    <div class="bg-card p-6 rounded-xl">
+                        <p class="text-gray-400 text-sm">Korisnici</p>
+                        <p class="text-3xl font-bold mt-1" id="stat-users">0</p>
+                    </div>
+                    <div class="bg-card p-6 rounded-xl">
+                        <p class="text-gray-400 text-sm">Čeka preuzimanje</p>
+                        <p class="text-3xl font-bold mt-1 text-yellow-500" id="stat-pending">0</p>
+                    </div>
+                    <div class="bg-card p-6 rounded-xl">
+                        <p class="text-gray-400 text-sm">Manjkovi danas</p>
+                        <p class="text-3xl font-bold mt-1 text-red-500" id="stat-short">0</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-6">
+                    <div class="bg-card p-6 rounded-xl">
+                        <h3 class="font-semibold mb-4">⚠️ Poslednji manjkovi</h3>
+                        <div id="alerts-list" class="space-y-2 text-gray-400">Učitavanje...</div>
+                    </div>
+                    <div class="bg-card p-6 rounded-xl">
+                        <h3 class="font-semibold mb-4">📊 Poslednje specifikacije</h3>
+                        <div id="specs-list" class="space-y-2 text-gray-400">Učitavanje...</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Users -->
+            <section id="sec-users" class="hidden">
+                <div class="flex justify-between items-center mb-8">
+                    <div>
+                        <h2 class="text-2xl font-bold">Korisnici</h2>
+                        <p class="text-gray-400">Upravljanje korisnicima</p>
+                    </div>
+                    <button onclick="openUserModal()" class="accent-bg px-4 py-2 rounded-lg font-semibold">+ Novi</button>
+                </div>
+                <div class="bg-card p-4 rounded-xl mb-4 flex gap-4">
+                    <input type="text" id="user-search" placeholder="🔍 Pretraga..." class="p-2 rounded-lg w-64" oninput="renderUsers()">
+                    <select id="user-filter-role" class="p-2 rounded-lg" onchange="renderUsers()">
+                        <option value="">Sve uloge</option>
+                        <option value="admin">Admin</option>
+                        <option value="finansije">Finansije</option>
+                        <option value="menadzer">Menadžer</option>
+                        <option value="vozac">Vozač</option>
+                        <option value="konobar">Konobar</option>
+                    </select>
+                </div>
+                <div class="bg-card rounded-xl overflow-hidden">
+                    <table class="w-full">
+                        <thead class="bg-elevated text-gray-400 text-sm text-left">
+                            <tr><th class="p-4">Ime</th><th class="p-4">Uloga</th><th class="p-4">Lokacija</th><th class="p-4">PIN</th><th class="p-4">Status</th><th class="p-4">Akcije</th></tr>
+                        </thead>
+                        <tbody id="users-tbody"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Locations -->
+            <section id="sec-locations" class="hidden">
+                <div class="flex justify-between items-center mb-8">
+                    <div>
+                        <h2 class="text-2xl font-bold">Lokacije</h2>
+                        <p class="text-gray-400">Upravljanje lokacijama i depozitima</p>
+                    </div>
+                    <button onclick="openLocModal()" class="accent-bg px-4 py-2 rounded-lg font-semibold">+ Nova</button>
+                </div>
+                <div class="bg-card rounded-xl overflow-hidden">
+                    <table class="w-full">
+                        <thead class="bg-elevated text-gray-400 text-sm text-left">
+                            <tr><th class="p-4">Kod</th><th class="p-4">Naziv</th><th class="p-4">Adresa</th><th class="p-4">Depozit</th><th class="p-4">Status</th><th class="p-4">Akcije</th></tr>
+                        </thead>
+                        <tbody id="locs-tbody"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Smene -->
+            <section id="sec-smene" class="hidden">
+                <h2 class="text-2xl font-bold mb-2">Smene</h2>
+                <p class="text-gray-400 mb-8">Pregled smena i predaja sa detaljima</p>
+                <div class="bg-card p-4 rounded-xl mb-4 flex gap-4 items-end">
+                    <div><label class="text-gray-400 text-xs">Datum</label><input type="date" id="smene-date" class="p-2 rounded-lg block" onchange="loadSmene()"></div>
+                    <select id="smene-loc" class="p-2 rounded-lg" onchange="loadSmene()"><option value="">Sve lokacije</option></select>
+                    <button onclick="loadSmene()" class="accent-bg px-4 py-2 rounded-lg">🔄 Osveži</button>
+                </div>
+                <div id="smene-container" class="space-y-6"></div>
+            </section>
+
+            <!-- Pazari -->
+            <section id="sec-pazari" class="hidden">
+                <div class="flex justify-between items-start mb-8">
+                    <div>
+                        <h2 class="text-2xl font-bold">Pazari</h2>
+                        <p class="text-gray-400">Pregled svih smena sa detaljima</p>
+                    </div>
+                    <button onclick="resetTestData()" class="bg-red-500/20 text-red-400 px-4 py-2 rounded-lg hover:bg-red-500/30">🔄 Reset Test Data</button>
+                </div>
+                <div class="bg-card p-4 rounded-xl mb-4 flex gap-4 items-end">
+                    <div><label class="text-gray-400 text-xs">Od</label><input type="date" id="pazar-from" class="p-2 rounded-lg block" onchange="loadPazari()"></div>
+                    <div><label class="text-gray-400 text-xs">Do</label><input type="date" id="pazar-to" class="p-2 rounded-lg block" onchange="loadPazari()"></div>
+                    <select id="pazar-loc" class="p-2 rounded-lg" onchange="loadPazari()"><option value="">Sve lokacije</option></select>
+                    <button onclick="loadPazari()" class="accent-bg px-4 py-2 rounded-lg">🔄 Osveži</button>
+                </div>
+                <div id="pazari-container" class="space-y-6"></div>
+                <div class="mt-4 bg-card p-4 rounded-xl flex gap-8">
+                    <div><span class="text-gray-400">Ukupno za sef:</span> <span class="font-bold ml-2" id="pazari-total">0 RSD</span></div>
+                    <div><span class="text-gray-400">Ukupno razlika:</span> <span class="font-bold ml-2" id="pazari-diff">0 RSD</span></div>
+                </div>
+            </section>
+
+            <!-- Banka Depoziti -->
+            <section id="sec-banka" class="hidden">
+                <h2 class="text-2xl font-bold mb-2">Bankarski Depoziti</h2>
+                <p class="text-gray-400 mb-8">Pregled svih depozita u banku</p>
+                <div class="bg-card p-4 rounded-xl mb-4 flex gap-4 items-end">
+                    <div><label class="text-gray-400 text-xs">Od</label><input type="date" id="bank-from" class="p-2 rounded-lg block" onchange="loadBankDeposits()"></div>
+                    <div><label class="text-gray-400 text-xs">Do</label><input type="date" id="bank-to" class="p-2 rounded-lg block" onchange="loadBankDeposits()"></div>
+                    <button onclick="loadBankDeposits()" class="accent-bg px-4 py-2 rounded-lg">🔄 Osveži</button>
+                </div>
+                <div class="grid grid-cols-3 gap-6 mb-6">
+                    <div class="bg-card p-6 rounded-xl">
+                        <p class="text-gray-400 text-sm">Ukupno deponovano</p>
+                        <p class="text-2xl font-bold text-green-400 mt-1" id="bank-total-deposited">0 RSD</p>
+                    </div>
+                    <div class="bg-card p-6 rounded-xl">
+                        <p class="text-gray-400 text-sm">Broj depozita</p>
+                        <p class="text-2xl font-bold text-purple-400 mt-1" id="bank-count">0</p>
+                    </div>
+                    <div class="bg-card p-6 rounded-xl">
+                        <p class="text-gray-400 text-sm">Lokacija ukupno</p>
+                        <p class="text-2xl font-bold text-blue-400 mt-1" id="bank-locations-total">0</p>
+                    </div>
+                </div>
+                <div class="bg-card rounded-xl overflow-hidden">
+                    <table class="w-full">
+                        <thead class="bg-elevated text-gray-400 text-xs">
+                            <tr>
+                                <th class="p-3 text-left">Datum</th>
+                                <th class="p-3 text-left">Vreme</th>
+                                <th class="p-3 text-left">Ko je deponovao</th>
+                                <th class="p-3 text-right">Iznos</th>
+                                <th class="p-3 text-center">Lokacija</th>
+                                <th class="p-3 text-left">Referenca</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bank-deposits-table"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Razlike -->
+            <section id="sec-razlike" class="hidden">
+                <h2 class="text-2xl font-bold mb-2">Razlike</h2>
+                <p class="text-gray-400 mb-8">Manjkovi i viškovi</p>
+                <div class="grid grid-cols-3 gap-6 mb-8">
+                    <div class="bg-card p-6 rounded-xl">
+                        <p class="text-gray-400 text-sm">Ukupno manjkovi</p>
+                        <p class="text-2xl font-bold text-red-500 mt-1" id="razl-short">0 RSD</p>
+                    </div>
+                    <div class="bg-card p-6 rounded-xl">
+                        <p class="text-gray-400 text-sm">Ukupno viškovi</p>
+                        <p class="text-2xl font-bold text-green-500 mt-1" id="razl-surp">0 RSD</p>
+                    </div>
+                    <div class="bg-card p-6 rounded-xl">
+                        <p class="text-gray-400 text-sm">Neto</p>
+                        <p class="text-2xl font-bold mt-1" id="razl-net">0 RSD</p>
+                    </div>
+                </div>
+                <div class="bg-card rounded-xl overflow-hidden">
+                    <table class="w-full">
+                        <thead class="bg-elevated text-gray-400 text-sm text-left">
+                            <tr><th class="p-4">Datum</th><th class="p-4">Lokacija</th><th class="p-4">Konobar</th><th class="p-4">Razlika</th><th class="p-4">Tip</th><th class="p-4">Razlog</th></tr>
+                        </thead>
+                        <tbody id="razlike-tbody"></tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <!-- User Modal -->
+    <div id="user-modal" class="fixed inset-0 bg-black/70 hidden items-center justify-center z-50">
+        <div class="bg-card rounded-2xl w-full max-w-md p-6 m-4">
+            <h3 class="text-xl font-bold mb-6" id="user-modal-title">Novi korisnik</h3>
+            <form onsubmit="saveUser(event)">
+                <input type="hidden" id="edit-user-id">
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div><label class="text-gray-400 text-sm">Ime</label><input type="text" id="edit-fname" class="w-full p-3 rounded-lg mt-1" required></div>
+                    <div><label class="text-gray-400 text-sm">Prezime</label><input type="text" id="edit-lname" class="w-full p-3 rounded-lg mt-1" required></div>
+                </div>
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div><label class="text-gray-400 text-sm">PIN</label><input type="text" id="edit-pin" class="w-full p-3 rounded-lg mt-1" maxlength="4" required></div>
+                    <div><label class="text-gray-400 text-sm">Uloga</label>
+                        <select id="edit-role" class="w-full p-3 rounded-lg mt-1">
+                            <option value="konobar">Konobar</option><option value="vozac">Vozač</option><option value="menadzer">Menadžer</option><option value="finansije">Finansije</option><option value="admin">Admin</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="mb-4"><label class="text-gray-400 text-sm">Default lokacija</label><select id="edit-loc" class="w-full p-3 rounded-lg mt-1"><option value="">-</option></select></div>
+                <div class="mb-6"><label class="flex items-center gap-2"><input type="checkbox" id="edit-active" checked class="w-5 h-5"> Aktivan</label></div>
+                <div class="flex gap-4">
+                    <button type="button" onclick="closeUserModal()" class="flex-1 bg-elevated p-3 rounded-lg">Otkaži</button>
+                    <button type="submit" class="flex-1 accent-bg p-3 rounded-lg font-semibold">Sačuvaj</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Location Modal -->
+    <div id="loc-modal" class="fixed inset-0 bg-black/70 hidden items-center justify-center z-50">
+        <div class="bg-card rounded-2xl w-full max-w-md p-6 m-4">
+            <h3 class="text-xl font-bold mb-6" id="loc-modal-title">Nova lokacija</h3>
+            <form onsubmit="saveLoc(event)">
+                <input type="hidden" id="edit-loc-id">
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div><label class="text-gray-400 text-sm">Kod</label><input type="text" id="edit-loc-code" class="w-full p-3 rounded-lg mt-1" required></div>
+                    <div><label class="text-gray-400 text-sm">Naziv</label><input type="text" id="edit-loc-name" class="w-full p-3 rounded-lg mt-1" required></div>
+                </div>
+                <div class="mb-4"><label class="text-gray-400 text-sm">Adresa</label><input type="text" id="edit-loc-addr" class="w-full p-3 rounded-lg mt-1"></div>
+                <div class="mb-4"><label class="text-gray-400 text-sm">Depozit (RSD)</label><input type="number" id="edit-loc-dep" class="w-full p-3 rounded-lg mt-1" value="10000" required></div>
+                <div class="mb-6"><label class="flex items-center gap-2"><input type="checkbox" id="edit-loc-active" checked class="w-5 h-5"> Aktivna</label></div>
+                <div class="flex gap-4">
+                    <button type="button" onclick="closeLocModal()" class="flex-1 bg-elevated p-3 rounded-lg">Otkaži</button>
+                    <button type="submit" class="flex-1 accent-bg p-3 rounded-lg font-semibold">Sačuvaj</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+<script>
+// Supabase
+const SUPABASE_URL = 'https://bbnbbbpofelbkyuffslj.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJibmJiYnBvZmVsYmt5dWZmc2xqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUwNTI0MzQsImV4cCI6MjA4MDYyODQzNH0.koW44soAB-bEfh8OzqjGBwdgov4Snscw1ITsg5OureU';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let user = null, locations = [], users = [];
+
+// Init
+document.addEventListener('DOMContentLoaded', () => {
+    const saved = localStorage.getItem('pazar_user');
+    if (saved) { user = JSON.parse(saved); showApp(); }
+    
+    // Set dates
+    const today = new Date().toISOString().split('T')[0];
+    const week = new Date(Date.now() - 7*24*60*60*1000).toISOString().split('T')[0];
+    document.getElementById('pazar-from').value = week;
+    document.getElementById('pazar-to').value = today;
+    
+    // Nav clicks
+    document.querySelectorAll('.sidebar-item').forEach(el => {
+        el.onclick = () => showSection(el.dataset.section);
+    });
+});
+
+// Auth
+function pinInput(num) {
+    const current = document.getElementById('pin-' + num);
+    if (current.value.length === 1 && num < 4) {
+        document.getElementById('pin-' + (num + 1)).focus();
+    }
+    // Auto-login when all 4 digits entered
+    const pin = getPin();
+    if (pin.length === 4) {
+        login();
+    }
+}
+
+function getPin() {
+    return document.getElementById('pin-1').value +
+           document.getElementById('pin-2').value +
+           document.getElementById('pin-3').value +
+           document.getElementById('pin-4').value;
+}
+
+function pinInput(n) {
+    const current = document.getElementById(`pin-${n}`);
+    // Only allow numbers
+    current.value = current.value.replace(/[^0-9]/g, '');
+    if (current.value && n < 4) {
+        document.getElementById(`pin-${n + 1}`).focus();
+    }
+}
+
+function clearPin() {
+    for (let i = 1; i <= 4; i++) {
+        document.getElementById('pin-' + i).value = '';
+    }
+    document.getElementById('pin-1').focus();
+}
+
+async function login() {
+    const pin = getPin();
+    if (pin.length !== 4) return;
+    
+    const { data, error } = await sb.from('pazar_users')
+        .select('*, default_location:pazar_locations(name)')
+        .eq('pin', pin)
+        .eq('is_active', true).is('deleted_at', null).single();
+    
+    if (error || !data || !['admin','finansije','menadzer'].includes(data.role)) {
+        document.getElementById('login-error').classList.remove('hidden');
+        setTimeout(() => document.getElementById('login-error').classList.add('hidden'), 3000);
+        clearPin();
+        return;
+    }
+    
+    user = data;
+    localStorage.setItem('pazar_user', JSON.stringify(data));
+    showApp();
+}
+
+function logout() {
+    user = null;
+    localStorage.removeItem('pazar_user');
+    location.reload();
+}
+
+function showApp() {
+    document.getElementById('login-screen').classList.add('hidden');
+    document.getElementById('main-app').classList.remove('hidden');
+    document.getElementById('user-name').textContent = `${user.first_name} ${user.last_name}`;
+    document.getElementById('user-role').textContent = user.role;
+    document.getElementById('user-avatar').textContent = user.first_name[0] + user.last_name[0];
+    loadAll();
+}
+
+function showSection(id) {
+    document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
+    document.getElementById('sec-' + id).classList.remove('hidden');
+    document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
+    document.querySelector(`[data-section="${id}"]`).classList.add('active');
+    
+    if (id === 'smene') loadSmene();
+    if (id === 'pazari') loadPazari();
+    if (id === 'razlike') loadRazlike();
+    if (id === 'banka') {
+        // Init date filters
+        const today = new Date().toISOString().split('T')[0];
+        const weekAgo = new Date(Date.now() - 7*24*60*60*1000).toISOString().split('T')[0];
+        if (!document.getElementById('bank-from').value) document.getElementById('bank-from').value = weekAgo;
+        if (!document.getElementById('bank-to').value) document.getElementById('bank-to').value = today;
+        loadBankDeposits();
+    }
+}
+
+// Load data
+async function loadAll() {
+    await Promise.all([loadLocations(), loadUsers()]);
+    loadDashboard();
+}
+
+async function loadLocations() {
+    const { data } = await sb.from('pazar_locations').select('*').is('deleted_at', null).order('code');
+    locations = data || [];
+    renderLocs();
+    populateLocSelects();
+}
+
+async function loadUsers() {
+    const { data } = await sb.from('pazar_users').select('*, default_location:pazar_locations(name,code)').is('deleted_at', null).order('last_name');
+    users = data || [];
+    renderUsers();
+}
+
+async function loadDashboard() {
+    // Stats
+    document.getElementById('stat-loc').textContent = locations.filter(l => l.is_active).length;
+    document.getElementById('stat-users').textContent = users.filter(u => u.is_active).length;
+    
+    const { data: pending } = await sb.from('pazar_cash_collections').select('amount').eq('status', 'pending');
+    const pendingSum = (pending || []).reduce((s, c) => s + c.amount, 0);
+    document.getElementById('stat-pending').textContent = fmt(pendingSum);
+    
+    const today = new Date().toISOString().split('T')[0];
+    const { data: shorts } = await sb.from('pazar_daily_specifications').select('id').eq('difference_type', 'shortage').gte('date', today);
+    document.getElementById('stat-short').textContent = shorts?.length || 0;
+    
+    // Alerts
+    const { data: alerts } = await sb.from('pazar_daily_specifications')
+        .select('*, location:pazar_locations(name), user:pazar_users(first_name, last_name)')
+        .eq('difference_type', 'shortage').order('date', {ascending: false}).limit(5);
+    
+    document.getElementById('alerts-list').innerHTML = alerts?.length 
+        ? alerts.map(a => `<div class="p-2 bg-elevated rounded">${a.location?.name}: <span class="text-red-500">${fmt(a.difference)}</span> - ${a.user?.first_name} (${fmtDate(a.date)})</div>`).join('')
+        : '<p>✅ Nema manjkova</p>';
+    
+    // Recent specs
+    const { data: specs } = await sb.from('pazar_daily_specifications')
+        .select('*, location:pazar_locations(name,code), user:pazar_users(first_name)')
+        .order('date', {ascending: false}).limit(5);
+    
+    document.getElementById('specs-list').innerHTML = specs?.length
+        ? specs.map(s => `<div class="flex justify-between p-2 bg-elevated rounded"><span>${s.location?.code} - ${fmtDate(s.date)}</span><span class="font-medium">${fmt(s.for_safe_actual)}</span></div>`).join('')
+        : '<p>Nema specifikacija</p>';
+}
+
+// Render tables
+function renderLocs() {
+    const tbody = document.getElementById('locs-tbody');
+    tbody.innerHTML = locations.map(l => `
+        <tr class="table-row border-t border-white/10">
+            <td class="p-4 font-mono">${l.code}</td>
+            <td class="p-4 font-medium">${l.name}</td>
+            <td class="p-4 text-gray-400">${l.address || '-'}</td>
+            <td class="p-4">${fmt(l.current_deposit)}</td>
+            <td class="p-4"><span class="badge ${l.is_active ? 'badge-success' : 'badge-error'}">${l.is_active ? 'Aktivna' : 'Neaktivna'}</span></td>
+            <td class="p-4"><button onclick="editLoc('${l.id}')" class="text-gray-400 hover:text-white">✏️</button></td>
+        </tr>
+    `).join('');
+}
+
+function renderUsers() {
+    const search = document.getElementById('user-search').value.toLowerCase();
+    const role = document.getElementById('user-filter-role').value;
+    
+    const filtered = users.filter(u => {
+        const matchSearch = !search || u.first_name.toLowerCase().includes(search) || u.last_name.toLowerCase().includes(search);
+        const matchRole = !role || u.role === role;
+        return matchSearch && matchRole && u.is_active;
+    });
+    
+    const roles = {admin:'Admin',finansije:'Finansije',menadzer:'Menadžer',vozac:'Vozač',konobar:'Konobar'};
+    const badges = {admin:'badge-error',finansije:'badge-info',menadzer:'badge-warning',vozac:'badge-success',konobar:'badge-info'};
+    
+    document.getElementById('users-tbody').innerHTML = filtered.map(u => `
+        <tr class="table-row border-t border-white/10">
+            <td class="p-4 font-medium">${u.first_name} ${u.last_name}</td>
+            <td class="p-4"><span class="badge ${badges[u.role]}">${roles[u.role]}</span></td>
+            <td class="p-4 text-gray-400">${u.default_location?.code || '-'}</td>
+            <td class="p-4 font-mono text-gray-400">${u.pin}</td>
+            <td class="p-4"><span class="badge ${u.is_active ? 'badge-success' : 'badge-error'}">${u.is_active ? 'Aktivan' : 'Neaktivan'}</span></td>
+            <td class="p-4"><button onclick="editUser('${u.id}')" class="text-gray-400 hover:text-white">✏️</button></td>
+        </tr>
+    `).join('');
+}
+
+function populateLocSelects() {
+    const active = locations.filter(l => l.is_active);
+    ['edit-loc', 'pazar-loc', 'smene-loc'].forEach(id => {
+        const sel = document.getElementById(id);
+        if (!sel) return;
+        const first = sel.options[0];
+        sel.innerHTML = '';
+        sel.appendChild(first);
+        active.forEach(l => {
+            const opt = document.createElement('option');
+            opt.value = l.id;
+            opt.textContent = `${l.code} - ${l.name}`;
+            sel.appendChild(opt);
+        });
+    });
+}
+
+// Smene
+async function loadSmene() {
+    let date = document.getElementById('smene-date').value;
+    if (!date) {
+        date = new Date().toISOString().split('T')[0];
+        document.getElementById('smene-date').value = date;
+    }
+    const loc = document.getElementById('smene-loc').value;
+    
+    // Load shifts for selected date
+    let query = sb.from('pazar_shifts')
+        .select('*, user:pazar_users(first_name, last_name), location:pazar_locations(code, name, current_deposit)')
+        .eq('date', date)
+        .order('location_id')
+        .order('shift_order');
+    
+    if (loc) query = query.eq('location_id', loc);
+    
+    const { data: shifts } = await query;
+    
+    // Load handovers for selected date
+    let hQuery = sb.from('pazar_shift_handovers')
+        .select('*, from_user:pazar_users!pazar_shift_handovers_from_user_id_fkey(first_name, last_name), to_user:pazar_users!pazar_shift_handovers_to_user_id_fkey(first_name, last_name), location:pazar_locations(code)')
+        .eq('date', date)
+        .order('confirmed_at');
+    
+    if (loc) hQuery = hQuery.eq('location_id', loc);
+    
+    const { data: handovers } = await hQuery;
+    
+    // Load specifications for selected date
+    let specQuery = sb.from('pazar_daily_specifications')
+        .select('*, user:pazar_users(first_name, last_name), denominations:pazar_specification_denominations(denomination, quantity)')
+        .eq('date', date);
+    
+    if (loc) specQuery = specQuery.eq('location_id', loc);
+    
+    const { data: specs } = await specQuery;
+    
+    renderSmene(shifts || [], handovers || [], specs || [], date);
+}
+
+function renderSmene(shifts, handovers, specs, date) {
+    const container = document.getElementById('smene-container');
+    
+    if (!shifts.length && !handovers.length) {
+        container.innerHTML = `<div class="bg-card p-8 rounded-xl text-center text-gray-400">Nema smena za ${new Date(date).toLocaleDateString('sr-RS')}</div>`;
+        return;
+    }
+    
+    // Group by location
+    const byLoc = {};
+    shifts.forEach(s => {
+        if (!byLoc[s.location_id]) byLoc[s.location_id] = { location: s.location, shifts: [], handovers: [], spec: null };
+        byLoc[s.location_id].shifts.push(s);
+    });
+    handovers.forEach(h => {
+        if (!byLoc[h.location_id]) byLoc[h.location_id] = { location: h.location, shifts: [], handovers: [], spec: null };
+        byLoc[h.location_id].handovers.push(h);
+    });
+    specs.forEach(sp => {
+        if (byLoc[sp.location_id]) byLoc[sp.location_id].spec = sp;
+    });
+    
+    const statusBadge = (s) => {
+        if (s === 'active') return '<span class="badge badge-success">Aktivna</span>';
+        if (s === 'handed_over') return '<span class="badge badge-warning">Čeka preuzimanje</span>';
+        return '<span class="badge badge-info">Zatvorena</span>';
+    };
+    
+    const handoverType = (t) => {
+        if (t === 'deposit') return '💰 Depozit';
+        if (t === 'colleague') return '🤝 Predaja kolegi';
+        return '🔒 Zatvaranje';
+    };
+    
+    let html = '';
+    Object.values(byLoc).forEach(loc => {
+        const deposit = loc.location?.current_deposit || 10000;
+        const lastShift = loc.shifts[loc.shifts.length - 1];
+        const isClosed = lastShift?.status === 'closed' && lastShift?.is_last_shift;
+        const isPending = lastShift?.status === 'handed_over';
+        
+        html += `
+            <div class="bg-card rounded-xl overflow-hidden">
+                <div class="bg-elevated p-4 border-b border-white/10 flex justify-between items-center">
+                    <div>
+                        <h3 class="font-bold text-lg">${loc.location?.code} - ${loc.location?.name}</h3>
+                        <p class="text-gray-400 text-sm">Depozit: ${fmt(deposit)}</p>
+                    </div>
+                    <div>
+                        ${isClosed ? '<span class="badge badge-success">✓ Dan zatvoren</span>' : 
+                          isPending ? '<span class="badge badge-warning">⏳ Čeka preuzimanje</span>' :
+                          loc.shifts.some(s => s.status === 'active') ? '<span class="badge badge-info">● U toku</span>' : 
+                          '<span class="badge">Nije započeto</span>'}
+                    </div>
+                </div>
+                <div class="p-4">
+                    <!-- Shifts Timeline -->
+                    <h4 class="text-gray-400 text-sm mb-3 flex items-center gap-2">🕐 Smene (${loc.shifts.length})</h4>
+                    <div class="space-y-3 mb-6">
+        `;
+        
+        loc.shifts.forEach((s, i) => {
+            const start = new Date(s.started_at).toLocaleTimeString('sr-RS', {hour:'2-digit', minute:'2-digit'});
+            const end = s.ended_at ? new Date(s.ended_at).toLocaleTimeString('sr-RS', {hour:'2-digit', minute:'2-digit'}) : '-';
+            const duration = s.ended_at ? Math.round((new Date(s.ended_at) - new Date(s.started_at)) / 60000) : Math.round((Date.now() - new Date(s.started_at)) / 60000);
+            const hours = Math.floor(duration / 60);
+            const mins = duration % 60;
+            
+            html += `
+                <div class="p-4 bg-white/5 rounded-lg border-l-4 ${s.status === 'active' ? 'border-green-500' : s.status === 'handed_over' ? 'border-yellow-500' : 'border-purple-500'}">
+                    <div class="flex justify-between items-start mb-3">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center font-bold">${i+1}</div>
+                            <div>
+                                <p class="font-semibold">${s.user?.first_name} ${s.user?.last_name}</p>
+                                <p class="text-gray-400 text-sm">${start} → ${end} (${hours}h ${mins}min)</p>
+                            </div>
+                        </div>
+                        ${statusBadge(s.status)}
+                    </div>
+                    <div class="grid grid-cols-3 gap-4 text-sm">
+                        <div class="bg-black/20 p-2 rounded">
+                            <p class="text-gray-500 text-xs">Preuzeto</p>
+                            <p class="font-medium">${fmt(s.starting_amount)}</p>
+                        </div>
+                        <div class="bg-black/20 p-2 rounded">
+                            <p class="text-gray-500 text-xs">Predato</p>
+                            <p class="font-medium ${s.ending_amount ? '' : 'text-gray-500'}">${s.ending_amount ? fmt(s.ending_amount) : 'U toku...'}</p>
+                        </div>
+                        <div class="bg-black/20 p-2 rounded">
+                            <p class="text-gray-500 text-xs">Promena</p>
+                            <p class="font-medium ${s.ending_amount ? (s.ending_amount - s.starting_amount >= 0 ? 'text-green-400' : 'text-red-400') : 'text-gray-500'}">
+                                ${s.ending_amount ? (s.ending_amount - s.starting_amount >= 0 ? '+' : '') + fmt(s.ending_amount - s.starting_amount) : '-'}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        html += `</div>`;
+        
+        // Handovers
+        if (loc.handovers.length > 0) {
+            html += `<h4 class="text-gray-400 text-sm mb-3 flex items-center gap-2">🔄 Predaje (${loc.handovers.length})</h4><div class="space-y-2 mb-6">`;
+            
+            loc.handovers.forEach(h => {
+                const time = h.confirmed_at ? new Date(h.confirmed_at).toLocaleTimeString('sr-RS', {hour:'2-digit', minute:'2-digit'}) : 'Čeka';
+                html += `
+                    <div class="flex items-center gap-4 p-3 bg-white/5 rounded-lg">
+                        <div class="text-2xl">${h.handover_type === 'deposit' ? '💰' : '🤝'}</div>
+                        <div class="flex-1">
+                            <p class="font-medium">${handoverType(h.handover_type)}</p>
+                            <p class="text-gray-400 text-sm">
+                                ${h.from_user ? `${h.from_user.first_name} ${h.from_user.last_name} → ` : ''}${h.to_user?.first_name || ''} ${h.to_user?.last_name || ''}
+                            </p>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-medium">${fmt(h.reported_amount)}</p>
+                        </div>
+                        <span class="text-gray-500 text-sm">${time}</span>
+                    </div>
+                `;
+            });
+            
+            html += `</div>`;
+        }
+        
+        // Specification (if day is closed)
+        if (loc.spec) {
+            const sp = loc.spec;
+            const expectedCash = sp.ebar_total - sp.terminal_amount;
+            const actualCash = sp.counted_amount;
+            const diff = expectedCash - actualCash;
+            
+            html += `
+                <h4 class="text-gray-400 text-sm mb-3 flex items-center gap-2">📊 Specifikacija zatvaranja</h4>
+                <div class="bg-purple-500/10 border border-purple-500/30 rounded-lg p-4">
+                    <div class="grid grid-cols-2 gap-6">
+                        <div>
+                            <p class="text-gray-400 text-xs mb-2">E-BAR PRESEK</p>
+                            <div class="space-y-1 text-sm">
+                                <div class="flex justify-between"><span class="text-gray-400">Gotovina:</span><span>${fmt(sp.ebar_total)}</span></div>
+                                <div class="flex justify-between"><span class="text-gray-400">Kartice:</span><span>${fmt(sp.terminal_amount)}</span></div>
+                                <div class="flex justify-between border-t border-white/10 pt-1 mt-1"><span class="font-medium">Očekivani keš:</span><span class="text-yellow-400 font-bold">${fmt(expectedCash)}</span></div>
+                            </div>
+                        </div>
+                        <div>
+                            <p class="text-gray-400 text-xs mb-2">PREBROJANO</p>
+                            <div class="space-y-1 text-sm">
+                                <div class="flex justify-between"><span class="text-gray-400">Keš u kasi:</span><span class="text-green-400 font-bold">${fmt(actualCash)}</span></div>
+                                <div class="flex justify-between"><span class="text-gray-400">Depozit:</span><span>${fmt(sp.deposit_amount)}</span></div>
+                                <div class="flex justify-between border-t border-white/10 pt-1 mt-1">
+                                    <span class="font-medium">Razlika:</span>
+                                    <span class="font-bold ${diff > 0 ? 'text-red-400' : diff < 0 ? 'text-green-400' : ''}">${diff > 0 ? '+' : ''}${fmt(diff)}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    ${sp.shortage_reason ? `<div class="mt-3 pt-3 border-t border-white/10 text-sm"><span class="text-gray-400">Razlog:</span> <span class="text-yellow-400">${sp.shortage_reason}</span> ${sp.shortage_comment ? `- ${sp.shortage_comment}` : ''}</div>` : ''}
+                    
+                    ${sp.denominations?.length ? `
+                    <div class="mt-4 pt-3 border-t border-white/10">
+                        <p class="text-gray-400 text-xs mb-2">APOENI</p>
+                        <div class="flex flex-wrap gap-2">
+                            ${sp.denominations.filter(d => d.quantity > 0).map(d => `<span class="bg-white/10 px-2 py-1 rounded text-xs">${d.denomination.toLocaleString()} × ${d.quantity}</span>`).join('')}
+                        </div>
+                    </div>` : ''}
+                </div>
+            `;
+        }
+        
+        html += `</div></div>`;
+    });
+    
+    container.innerHTML = html;
+}
+
+// Pazari - grouped by date/location blocks
+async function loadPazari() {
+    const from = document.getElementById('pazar-from').value;
+    const to = document.getElementById('pazar-to').value;
+    const loc = document.getElementById('pazar-loc').value;
+    
+    // Load all shifts
+    let shiftQuery = sb.from('pazar_shifts')
+        .select('*, user:pazar_users(first_name, last_name), location:pazar_locations(code, name, current_deposit)')
+        .order('date', {ascending: false})
+        .order('location_id')
+        .order('shift_order');
+    
+    if (from) shiftQuery = shiftQuery.gte('date', from);
+    if (to) shiftQuery = shiftQuery.lte('date', to);
+    if (loc) shiftQuery = shiftQuery.eq('location_id', loc);
+    
+    const { data: shifts } = await shiftQuery;
+    
+    // Load specifications with denominations
+    let specQuery = sb.from('pazar_daily_specifications').select('*, denominations:pazar_specification_denominations(denomination, quantity)');
+    if (from) specQuery = specQuery.gte('date', from);
+    if (to) specQuery = specQuery.lte('date', to);
+    if (loc) specQuery = specQuery.eq('location_id', loc);
+    
+    const { data: specs } = await specQuery;
+    
+    // Load cash pickups
+    let pickupQuery = sb.from('pazar_cash_pickups').select('*, driver:pazar_users(first_name, last_name)');
+    if (from) pickupQuery = pickupQuery.gte('date', from);
+    if (to) pickupQuery = pickupQuery.lte('date', to);
+    if (loc) pickupQuery = pickupQuery.eq('location_id', loc);
+    
+    const { data: pickups } = await pickupQuery;
+    
+    // Load finance records
+    // Load finance records (may not exist yet)
+    let financeRecords = [];
+    try {
+        let financeQuery = sb.from('pazar_finance_records').select('*, received_user:pazar_users!received_by(first_name, last_name), verified_user:pazar_users!verified_by(first_name, last_name)');
+        if (from) financeQuery = financeQuery.gte('date', from);
+        if (to) financeQuery = financeQuery.lte('date', to);
+        if (loc) financeQuery = financeQuery.eq('location_id', loc);
+        
+        const { data } = await financeQuery;
+        financeRecords = data || [];
+    } catch (e) { console.log('Finance records table not found'); }
+    
+    // Load bank deposits (may not exist yet)
+    let bankDeposits = [];
+    try {
+        let bankQuery = sb.from('pazar_bank_deposits').select('*, depositor:pazar_users!deposited_by(first_name, last_name)');
+        if (from) bankQuery = bankQuery.gte('date', from);
+        if (to) bankQuery = bankQuery.lte('date', to);
+        
+        const { data } = await bankQuery;
+        bankDeposits = data || [];
+    } catch (e) { console.log('Bank deposits table not found'); }
+    
+    // Create pickup map by location_id + date
+    const pickupMap = {};
+    (pickups || []).forEach(p => {
+        pickupMap[`${p.location_id}-${p.date}`] = p;
+    });
+    
+    // Create finance map by pickup_id
+    const financeMap = {};
+    (financeRecords || []).forEach(f => {
+        financeMap[f.pickup_id] = f;
+    });
+    
+    // Create bank deposit map by id
+    const bankMap = {};
+    (bankDeposits || []).forEach(b => {
+        bankMap[b.id] = b;
+    });
+    
+    // Create spec map by shift_id (one spec per shift)
+    const specMap = {};
+    (specs || []).forEach(sp => {
+        specMap[sp.shift_id] = sp;
+    });
+    
+    // Group by date + location
+    const groups = {};
+    allShiftsData = {}; // Reset global storage for modal
+    
+    (shifts || []).forEach(s => {
+        const key = `${s.date}-${s.location_id}`;
+        if (!groups[key]) {
+            groups[key] = {
+                date: s.date,
+                location: s.location,
+                location_id: s.location_id,
+                shifts: []
+            };
+        }
+        // Attach spec to each shift
+        s.spec = specMap[s.id] || null;
+        groups[key].shifts.push(s);
+        
+        // Store for modal access
+        allShiftsData[s.id] = s;
+    });
+    
+    const container = document.getElementById('pazari-container');
+    
+    if (!Object.keys(groups).length) {
+        container.innerHTML = '<div class="bg-card p-8 rounded-xl text-center text-gray-400">Nema podataka za izabrani period</div>';
+        document.getElementById('pazari-total').textContent = '0 RSD';
+        document.getElementById('pazari-diff').textContent = '0 RSD';
+        return;
+    }
+    
+    let totalForSafe = 0;
+    let totalDiff = 0;
+    
+    // Sort groups by date desc, then location
+    const sortedGroups = Object.values(groups).sort((a, b) => {
+        if (a.date !== b.date) return b.date.localeCompare(a.date);
+        return (a.location?.code || '').localeCompare(b.location?.code || '');
+    });
+    
+    container.innerHTML = sortedGroups.map(g => {
+        const deposit = g.location?.current_deposit || 10000;
+        const lastShift = g.shifts[g.shifts.length - 1];
+        const isClosed = lastShift?.is_last_shift && lastShift?.status === 'closed';
+        const pickup = pickupMap[`${g.location_id}-${g.date}`];
+        
+        let html = `
+            <div class="bg-card rounded-xl overflow-hidden">
+                <div class="bg-elevated p-4 flex justify-between items-center">
+                    <div class="flex items-center gap-4">
+                        <span class="text-lg font-bold">${fmtDate(g.date)}</span>
+                        <span class="text-purple-400 font-medium">${g.location?.code}</span>
+                        <span class="text-gray-400">${g.location?.name}</span>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        ${isClosed ? '<span class="badge badge-success">✓ Zatvoreno</span>' : '<span class="badge badge-warning">U toku</span>'}
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead class="text-gray-500 text-xs border-b border-white/10">
+                            <tr>
+                                <th class="p-2 text-left">Smena</th>
+                                <th class="p-2 text-left">Tip</th>
+                                <th class="p-2 text-left">Konobar</th>
+                                <th class="p-2 text-left">Vreme</th>
+                                <th class="p-2 text-right">Keš</th>
+                                <th class="p-2 text-right">Depozit</th>
+                                <th class="p-2 text-right border-l border-white/10">Prenos</th>
+                                <th class="p-2 text-right">Gotovina</th>
+                                <th class="p-2 text-right">Kartica</th>
+                                <th class="p-2 text-right">Očekivani keš</th>
+                                <th class="p-2 text-right border-l border-white/10">Prebrojano</th>
+                                <th class="p-2 text-right">Razlika</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+        `;
+        
+        // Get first shift to show deposit comparison
+        const firstShift = g.shifts[0];
+        const expectedDeposit = deposit;
+        const actualStartDeposit = firstShift?.starting_amount || 0;
+        const depositDiff = actualStartDeposit - expectedDeposit;
+        const depositDiffClass = depositDiff === 0 ? 'text-green-400' : depositDiff < 0 ? 'text-red-400' : 'text-yellow-400';
+        
+        // ROW 0: Deposit status from previous day
+        html += `
+            <tr class="bg-purple-500/5 border-b border-purple-500/20">
+                <td class="p-2 text-purple-400 font-medium" colspan="4">📦 Depozit (prethodni dan)</td>
+                <td class="p-2 text-right text-gray-400">Očekivano: ${fmt(expectedDeposit)}</td>
+                <td class="p-2 text-right ${depositDiffClass} font-medium">Zatečeno: ${fmt(actualStartDeposit)}</td>
+                <td class="p-2 text-center ${depositDiffClass}" colspan="6">${depositDiff === 0 ? '✅ U redu' : depositDiff < 0 ? `⚠️ Manjak ${fmt(depositDiff)}` : `💰 Višak ${fmt('+' + depositDiff)}`}</td>
+            </tr>
+        `;
+        
+        g.shifts.forEach((s, i) => {
+            const isLast = i === g.shifts.length - 1;
+            const isFirst = i === 0;
+            const start = new Date(s.started_at).toLocaleTimeString('sr-RS', {hour:'2-digit', minute:'2-digit'});
+            const end = s.ended_at ? new Date(s.ended_at).toLocaleTimeString('sr-RS', {hour:'2-digit', minute:'2-digit'}) : '-';
+            
+            // Get spec for THIS shift (end of shift data)
+            const sp = s.spec;
+            
+            // Spec calculations if exists
+            const gotovina = sp?.ebar_total || 0;
+            const kartica = sp?.terminal_amount || 0;
+            const prenos = sp?.ebar_transfer || 0;
+            const kes = sp ? (gotovina - kartica) : 0;
+            const prebrojano = sp?.counted_amount || 0;
+            // Razlika = Prebrojano - Očekivani keš (+ višak, - manjak)
+            const razlika = sp ? (prebrojano - kes) : null;
+            
+            if (sp && s.ending_amount) {
+                totalForSafe += s.ending_amount;
+            }
+            if (razlika !== null) {
+                totalDiff += razlika;
+            }
+            
+            const diffClass = razlika === null ? '' : razlika < -100 ? 'text-red-400' : razlika > 100 ? 'text-green-400' : '';
+            
+            // For first shift: starting_amount IS the deposit they entered
+            // For later shifts: starting_amount = cash + deposit, so cash = starting_amount - deposit
+            const startingCash = isFirst ? '-' : (s.starting_amount - deposit);
+            const actualDeposit = isFirst ? s.starting_amount : deposit;
+            
+            // ROW 1: Početak smene - samo Keš (preuzeto) i Depozit
+            html += `
+                <tr class="border-t border-white/10 bg-green-500/5">
+                    <td class="p-2 font-medium" rowspan="2">${s.shift_order}.</td>
+                    <td class="p-2 text-green-400">▶ Početak</td>
+                    <td class="p-2">${s.user?.first_name} ${s.user?.last_name}</td>
+                    <td class="p-2 text-gray-400">${start}</td>
+                    <td class="p-2 text-right font-medium">${isFirst ? '-' : fmt(startingCash)}</td>
+                    <td class="p-2 text-right text-purple-400">${fmt(actualDeposit)}</td>
+                    <td class="p-2 border-l border-white/10 text-center text-gray-600" colspan="6">—</td>
+                </tr>
+            `;
+            
+            // ROW 2: Kraj smene - sve E-Bar podatke (clickable)
+            html += `
+                <tr class="border-t border-white/5 ${sp ? 'bg-orange-500/5 cursor-pointer hover:bg-orange-500/10' : 'bg-gray-500/5'}" ${sp ? `onclick="showShiftDetail('${s.id}')"` : ''}>
+                    <td class="p-2 text-orange-400">■ Kraj</td>
+                    <td class="p-2">${s.user?.first_name} ${s.user?.last_name}</td>
+                    <td class="p-2 text-gray-400">${end}</td>
+                    <td class="p-2 text-right font-medium">${sp ? fmt(prebrojano) : (s.ending_amount ? fmt(s.ending_amount - deposit) : '-')}</td>
+                    <td class="p-2 text-right text-purple-400">${fmt(deposit)}</td>
+                    ${sp ? `
+                        <td class="p-2 text-right border-l border-white/10 text-gray-400">${prenos ? fmt(prenos) : '-'}</td>
+                        <td class="p-2 text-right">${fmt(gotovina)}</td>
+                        <td class="p-2 text-right text-gray-400">${fmt(kartica)}</td>
+                        <td class="p-2 text-right text-yellow-400 font-medium">${fmt(kes)}</td>
+                        <td class="p-2 text-right border-l border-white/10 text-green-400 font-medium">${fmt(prebrojano)}</td>
+                        <td class="p-2 text-right font-bold ${diffClass}">
+                            ${razlika !== null ? (razlika > 0 ? '+' : '') + fmt(razlika) : '-'}
+                            ${sp.shortage_comment ? ' 💬' : ''}
+                        </td>
+                    ` : `
+                        <td class="p-2 border-l border-white/10 text-center text-gray-600" colspan="6">${s.ending_amount ? '— nema specifikacije —' : '— u toku —'}</td>
+                    `}
+                </tr>
+            `;
+        });
+        
+        // FINAL ROW: Kraj dana (if closed)
+        if (isClosed && lastShift) {
+            const lastSpec = lastShift.spec;
+            const cashForSafe = lastSpec?.counted_amount || (lastShift.ending_amount - deposit);
+            html += `
+                <tr class="border-t-2 border-purple-500 bg-purple-500/10">
+                    <td class="p-3 font-bold text-purple-400" colspan="4">🔒 KRAJ DANA</td>
+                    <td class="p-3 text-right font-bold text-lg">${fmt(cashForSafe)}</td>
+                    <td class="p-3 text-right text-purple-400 font-medium">${fmt(deposit)}</td>
+                    <td class="p-3 border-l border-white/10" colspan="5"></td>
+                    <td class="p-3 text-right font-bold text-green-400">${fmt(cashForSafe)} za sef</td>
+                </tr>
+            `;
+            
+            html += `</tbody></table></div>`;
+            
+            // Cash Flow Summary Card
+            const finRec = pickup ? financeMap[pickup.id] : null;
+            const bankDep = finRec?.bank_deposit_id ? bankMap[finRec.bank_deposit_id] : null;
+            
+            html += `<div class="p-4 border-t border-white/10 bg-black/20">
+                <p class="text-xs text-gray-500 uppercase tracking-wide mb-3">Tok novca</p>
+                <div class="grid grid-cols-3 gap-4">`;
+            
+            // 1. Prikupljanje
+            if (pickup) {
+                const pickupDone = pickup.delivered_at;
+                const pickedTime = pickup.picked_at ? new Date(pickup.picked_at).toLocaleTimeString('sr-RS', {hour:'2-digit', minute:'2-digit'}) : '-';
+                const deliveredTime = pickup.delivered_at ? new Date(pickup.delivered_at).toLocaleTimeString('sr-RS', {hour:'2-digit', minute:'2-digit'}) : '-';
+                
+                html += `<div class="bg-blue-500/10 rounded-lg p-3 border ${pickupDone ? 'border-blue-500/30' : 'border-yellow-500/30'}">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="text-lg">🚗</span>
+                        <span class="font-medium ${pickupDone ? 'text-blue-400' : 'text-yellow-400'}">Prikupljanje</span>
+                        ${pickupDone ? '<span class="ml-auto text-green-400">✓</span>' : '<span class="ml-auto text-yellow-400">⏳</span>'}
+                    </div>
+                    <div class="text-xs space-y-1 text-gray-400">
+                        <div class="flex justify-between"><span>Vozač:</span><span class="text-white">${pickup.driver ? pickup.driver.first_name + ' ' + pickup.driver.last_name : '-'}</span></div>
+                        <div class="flex justify-between"><span>Pokupljeno:</span><span class="text-white">${pickedTime}</span></div>
+                        <div class="flex justify-between"><span>Predato:</span><span class="${pickupDone ? 'text-green-400' : 'text-gray-500'}">${deliveredTime}</span></div>
+                    </div>
+                </div>`;
+            } else {
+                html += `<div class="bg-gray-500/10 rounded-lg p-3 border border-gray-500/30">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="text-lg">🚗</span>
+                        <span class="font-medium text-gray-400">Prikupljanje</span>
+                        <span class="ml-auto text-yellow-400">⏳</span>
+                    </div>
+                    <p class="text-xs text-gray-500">Čeka prikupljanje</p>
+                </div>`;
+            }
+            
+            // 2. Finansije
+            if (finRec) {
+                const isReceived = finRec.received_at;
+                const isVerified = finRec.verified_at;
+                const receivedTime = finRec.received_at ? new Date(finRec.received_at).toLocaleTimeString('sr-RS', {hour:'2-digit', minute:'2-digit'}) : '-';
+                const verifiedTime = finRec.verified_at ? new Date(finRec.verified_at).toLocaleTimeString('sr-RS', {hour:'2-digit', minute:'2-digit'}) : '-';
+                
+                html += `<div class="bg-purple-500/10 rounded-lg p-3 border ${isVerified ? 'border-green-500/30' : 'border-purple-500/30'}">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="text-lg">💰</span>
+                        <span class="font-medium text-purple-400">Finansije</span>
+                        ${isVerified ? '<span class="ml-auto text-green-400">✓</span>' : '<span class="ml-auto text-purple-400">⏳</span>'}
+                    </div>
+                    <div class="text-xs space-y-1 text-gray-400">
+                        <div class="flex justify-between items-center">
+                            <span>1. Primljeno:</span>
+                            <span class="${isReceived ? 'text-green-400' : 'text-gray-500'}">${receivedTime} ${isReceived ? '✓' : ''}</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span>2. Zavedeno:</span>
+                            <span class="${isVerified ? 'text-green-400' : 'text-gray-500'}">${verifiedTime} ${isVerified ? '✓' : ''}</span>
+                        </div>
+                        ${finRec.counted_amount ? `<div class="flex justify-between border-t border-white/10 pt-1 mt-1"><span>Iznos:</span><span class="text-white font-medium">${fmt(finRec.counted_amount)}</span></div>` : ''}
+                        <div class="flex justify-between"><span>Osoba:</span><span class="text-white">${finRec.verified_user?.first_name || finRec.received_user?.first_name || '-'}</span></div>
+                    </div>
+                </div>`;
+            } else if (pickup?.delivered_at) {
+                html += `<div class="bg-yellow-500/10 rounded-lg p-3 border border-yellow-500/30">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="text-lg">💰</span>
+                        <span class="font-medium text-yellow-400">Finansije</span>
+                        <span class="ml-auto text-yellow-400">⏳</span>
+                    </div>
+                    <p class="text-xs text-gray-500">Čeka prijem</p>
+                </div>`;
+            } else {
+                html += `<div class="bg-gray-500/10 rounded-lg p-3 border border-gray-500/30">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="text-lg">💰</span>
+                        <span class="font-medium text-gray-400">Finansije</span>
+                    </div>
+                    <p class="text-xs text-gray-500">Čeka prikupljanje</p>
+                </div>`;
+            }
+            
+            // 3. Banka
+            if (finRec?.banked_at && bankDep) {
+                const bankedTime = finRec.banked_at ? new Date(finRec.banked_at).toLocaleTimeString('sr-RS', {hour:'2-digit', minute:'2-digit'}) : '-';
+                html += `<div class="bg-green-500/10 rounded-lg p-3 border border-green-500/30">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="text-lg">🏦</span>
+                        <span class="font-medium text-green-400">Banka</span>
+                        <span class="ml-auto text-green-400">✓</span>
+                    </div>
+                    <div class="text-xs space-y-1 text-gray-400">
+                        <div class="flex justify-between"><span>Status:</span><span class="text-green-400 font-medium">Deponovano</span></div>
+                        <div class="flex justify-between"><span>Referenca:</span><span class="text-white">${bankDep.reference_number || '-'}</span></div>
+                        <div class="flex justify-between"><span>Osoba:</span><span class="text-white">${bankDep.depositor?.first_name || '-'}</span></div>
+                        <div class="flex justify-between"><span>Vreme:</span><span class="text-white">${bankedTime}</span></div>
+                    </div>
+                </div>`;
+            } else if (finRec?.verified_at) {
+                html += `<div class="bg-yellow-500/10 rounded-lg p-3 border border-yellow-500/30">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="text-lg">🏦</span>
+                        <span class="font-medium text-yellow-400">Banka</span>
+                        <span class="ml-auto text-yellow-400">⏳</span>
+                    </div>
+                    <p class="text-xs text-gray-500">Čeka depozit</p>
+                </div>`;
+            } else {
+                html += `<div class="bg-gray-500/10 rounded-lg p-3 border border-gray-500/30">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="text-lg">🏦</span>
+                        <span class="font-medium text-gray-400">Banka</span>
+                    </div>
+                    <p class="text-xs text-gray-500">Čeka verifikaciju</p>
+                </div>`;
+            }
+            
+            html += `</div></div>`;
+        }
+        
+        html += `</div>`;
+        return html;
+    }).join('');
+    
+    document.getElementById('pazari-total').textContent = fmt(totalForSafe);
+    document.getElementById('pazari-diff').textContent = (totalDiff >= 0 ? '+' : '') + fmt(totalDiff);
+    document.getElementById('pazari-diff').className = `font-bold ml-2 ${totalDiff > 0 ? 'text-red-400' : totalDiff < 0 ? 'text-green-400' : ''}`;
+}
+
+// Load Bank Deposits
+async function loadBankDeposits() {
+    const from = document.getElementById('bank-from')?.value;
+    const to = document.getElementById('bank-to')?.value;
+    
+    let query = sb.from('pazar_bank_deposits')
+        .select('*, depositor:pazar_users!deposited_by(first_name, last_name)')
+        .order('deposited_at', { ascending: false });
+    
+    if (from) query = query.gte('date', from);
+    if (to) query = query.lte('date', to);
+    
+    const { data: deposits, error } = await query;
+    
+    if (error) {
+        console.error('Error loading bank deposits:', error);
+        return;
+    }
+    
+    const tbody = document.getElementById('bank-deposits-table');
+    
+    if (!deposits?.length) {
+        tbody.innerHTML = '<tr><td colspan="6" class="p-8 text-center text-gray-500">Nema depozita za izabrani period</td></tr>';
+        document.getElementById('bank-total-deposited').textContent = '0 RSD';
+        document.getElementById('bank-count').textContent = '0';
+        document.getElementById('bank-locations-total').textContent = '0';
+        return;
+    }
+    
+    let totalAmount = 0;
+    let totalLocations = 0;
+    
+    tbody.innerHTML = deposits.map(d => {
+        totalAmount += d.total_amount || 0;
+        totalLocations += d.locations_count || 0;
+        
+        const date = new Date(d.deposited_at);
+        return `
+            <tr class="border-t border-white/10 hover:bg-white/5">
+                <td class="p-3">${date.toLocaleDateString('sr-RS')}</td>
+                <td class="p-3 text-gray-400">${date.toLocaleTimeString('sr-RS', {hour:'2-digit', minute:'2-digit'})}</td>
+                <td class="p-3">${d.depositor ? d.depositor.first_name + ' ' + d.depositor.last_name : '-'}</td>
+                <td class="p-3 text-right font-bold text-green-400">${fmt(d.total_amount)}</td>
+                <td class="p-3 text-center"><span class="badge" style="background:rgba(139,92,246,0.2);color:#8B5CF6;">${d.locations_count} lok.</span></td>
+                <td class="p-3 text-gray-400">${d.reference_number || '-'}</td>
+            </tr>
+        `;
+    }).join('');
+    
+    document.getElementById('bank-total-deposited').textContent = fmt(totalAmount);
+    document.getElementById('bank-count').textContent = deposits.length;
+    document.getElementById('bank-locations-total').textContent = totalLocations;
+}
+
+// Reset test data
+async function resetTestData() {
+    if (!confirm('Ovo će obrisati sve podatke i napraviti nove test podatke za poslednjih 5 dana (bez danas). Nastaviti?')) return;
+    
+    try {
+        // Delete all existing data
+        await sb.from('pazar_specification_denominations').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        await sb.from('pazar_cash_collections').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        await sb.from('pazar_daily_specifications').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        await sb.from('pazar_shift_handovers').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        await sb.from('pazar_shifts').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        
+        // Get locations and users
+        const { data: locs } = await sb.from('pazar_locations').select('id, code, current_deposit').eq('is_active', true);
+        const { data: usrs } = await sb.from('pazar_users').select('id, first_name').eq('role', 'konobar').eq('is_active', true);
+        
+        if (!locs?.length || !usrs?.length) {
+            alert('Nema aktivnih lokacija ili konobara!');
+            return;
+        }
+        
+        // Generate data for last 5 days (excluding today)
+        for (let dayOffset = 5; dayOffset >= 1; dayOffset--) {
+            const date = new Date();
+            date.setDate(date.getDate() - dayOffset);
+            const dateStr = date.toISOString().split('T')[0];
+            
+            for (const loc of locs) {
+                // Random 1-3 shifts per location per day
+                const numShifts = Math.floor(Math.random() * 3) + 1;
+                const deposit = loc.current_deposit || 10000;
+                let currentAmount = deposit;
+                
+                const dayShifts = [];
+                
+                for (let shiftNum = 1; shiftNum <= numShifts; shiftNum++) {
+                    const randomUser = usrs[Math.floor(Math.random() * usrs.length)];
+                    const startHour = 8 + (shiftNum - 1) * Math.floor(14 / numShifts);
+                    const endHour = startHour + Math.floor(14 / numShifts);
+                    
+                    // Random earnings this shift: 15k - 50k
+                    const earnings = Math.floor(Math.random() * 35000) + 15000;
+                    const endingAmount = currentAmount + earnings;
+                    
+                    const startTime = new Date(date);
+                    startTime.setHours(startHour, 0, 0, 0);
+                    const endTime = new Date(date);
+                    endTime.setHours(endHour, 0, 0, 0);
+                    
+                    const { data: shift } = await sb.from('pazar_shifts').insert({
+                        location_id: loc.id,
+                        date: dateStr,
+                        shift_order: shiftNum,
+                        user_id: randomUser.id,
+                        status: 'closed',
+                        started_at: startTime.toISOString(),
+                        ended_at: endTime.toISOString(),
+                        starting_amount: currentAmount,
+                        ending_amount: endingAmount,
+                        is_first_shift: shiftNum === 1,
+                        is_last_shift: shiftNum === numShifts
+                    }).select().single();
+                    
+                    dayShifts.push(shift);
+                    
+                    // Create handover for first shift (deposit)
+                    if (shiftNum === 1) {
+                        await sb.from('pazar_shift_handovers').insert({
+                            location_id: loc.id,
+                            date: dateStr,
+                            to_shift_id: shift.id,
+                            to_user_id: randomUser.id,
+                            reported_amount: deposit,
+                            received_amount: deposit,
+                            handover_type: 'deposit',
+                            confirmed_at: startTime.toISOString()
+                        });
+                    }
+                    
+                    // Create handover between shifts
+                    if (shiftNum > 1 && dayShifts[shiftNum - 2]) {
+                        await sb.from('pazar_shift_handovers').insert({
+                            location_id: loc.id,
+                            date: dateStr,
+                            from_shift_id: dayShifts[shiftNum - 2].id,
+                            to_shift_id: shift.id,
+                            from_user_id: dayShifts[shiftNum - 2].user_id,
+                            to_user_id: randomUser.id,
+                            reported_amount: currentAmount,
+                            received_amount: currentAmount,
+                            handover_type: 'colleague',
+                            confirmed_at: startTime.toISOString()
+                        });
+                    }
+                    
+                    currentAmount = endingAmount;
+                }
+                
+                // Create specification for the day
+                const lastShift = dayShifts[dayShifts.length - 1];
+                if (lastShift) {
+                    const finalCash = lastShift.ending_amount;
+                    const kartica = Math.floor(Math.random() * 20000) + 5000;
+                    const prenos = Math.floor(Math.random() * 50000);
+                    const gotovina = finalCash - deposit + kartica + Math.floor(Math.random() * 2000) - 1000; // Small random diff
+                    const counted = finalCash - deposit + Math.floor(Math.random() * 1000) - 500;
+                    
+                    await sb.from('pazar_daily_specifications').insert({
+                        location_id: loc.id,
+                        date: dateStr,
+                        shift_id: lastShift.id,
+                        user_id: lastShift.user_id,
+                        ebar_total: gotovina,
+                        ebar_transfer: prenos,
+                        terminal_amount: kartica,
+                        deposit_amount: deposit,
+                        counted_amount: counted,
+                        confirmed_at: lastShift.ended_at
+                    });
+                }
+            }
+        }
+        
+        alert('Test podaci su resetovani!');
+        loadPazari();
+        loadSmene();
+        loadDashboard();
+    } catch (err) {
+        console.error('Reset error:', err);
+        alert('Greška: ' + (err.message || err));
+    }
+}
+
+// Razlike
+async function loadRazlike() {
+    const { data } = await sb.from('pazar_daily_specifications')
+        .select('*, location:pazar_locations(name,code), user:pazar_users(first_name,last_name)')
+        .neq('difference_type', 'none').order('date', {ascending: false}).limit(50);
+    
+    const reasons = {from_own_money:'Iz svog novca',no_money:'Nije imao',change_error:'Greška kusur',other:'Ostalo'};
+    
+    document.getElementById('razlike-tbody').innerHTML = data?.length ? data.map(d => `
+        <tr class="table-row border-t border-white/10">
+            <td class="p-4">${fmtDate(d.date)}</td>
+            <td class="p-4 font-medium">${d.location?.code}</td>
+            <td class="p-4">${d.user?.first_name} ${d.user?.last_name}</td>
+            <td class="p-4 font-medium ${d.difference > 0 ? 'text-green-500' : 'text-red-500'}">${d.difference > 0 ? '+' : ''}${fmt(d.difference)}</td>
+            <td class="p-4"><span class="badge ${d.difference_type === 'surplus' ? 'badge-success' : 'badge-error'}">${d.difference_type === 'surplus' ? 'Višak' : 'Manjak'}</span></td>
+            <td class="p-4 text-gray-400">${d.shortage_reason ? reasons[d.shortage_reason] : (d.difference_type === 'surplus' ? 'Bakšiš' : '-')}</td>
+        </tr>
+    `).join('') : '<tr><td colspan="6" class="p-4 text-center text-gray-400">Nema razlika</td></tr>';
+    
+    const shorts = (data || []).filter(d => d.difference_type === 'shortage');
+    const surps = (data || []).filter(d => d.difference_type === 'surplus');
+    const shortSum = shorts.reduce((s, d) => s + Math.abs(d.difference), 0);
+    const surpSum = surps.reduce((s, d) => s + d.difference, 0);
+    const net = surpSum - shortSum;
+    
+    document.getElementById('razl-short').textContent = '-' + fmt(shortSum);
+    document.getElementById('razl-surp').textContent = '+' + fmt(surpSum);
+    document.getElementById('razl-net').textContent = (net >= 0 ? '+' : '') + fmt(net);
+    document.getElementById('razl-net').className = `text-2xl font-bold mt-1 ${net >= 0 ? 'text-green-500' : 'text-red-500'}`;
+}
+
+// Modals - Users
+function openUserModal(u = null) {
+    document.getElementById('user-modal-title').textContent = u ? 'Izmeni korisnika' : 'Novi korisnik';
+    document.getElementById('edit-user-id').value = u?.id || '';
+    document.getElementById('edit-fname').value = u?.first_name || '';
+    document.getElementById('edit-lname').value = u?.last_name || '';
+    document.getElementById('edit-pin').value = u?.pin || '';
+    document.getElementById('edit-role').value = u?.role || 'konobar';
+    document.getElementById('edit-loc').value = u?.default_location_id || '';
+    document.getElementById('edit-active').checked = u?.is_active ?? true;
+    document.getElementById('user-modal').classList.remove('hidden');
+    document.getElementById('user-modal').classList.add('flex');
+}
+
+function closeUserModal() {
+    document.getElementById('user-modal').classList.add('hidden');
+    document.getElementById('user-modal').classList.remove('flex');
+}
+
+function editUser(id) { openUserModal(users.find(u => u.id === id)); }
+
+async function saveUser(e) {
+    e.preventDefault();
+    const id = document.getElementById('edit-user-id').value;
+    const data = {
+        first_name: document.getElementById('edit-fname').value,
+        last_name: document.getElementById('edit-lname').value,
+        pin: document.getElementById('edit-pin').value,
+        role: document.getElementById('edit-role').value,
+        default_location_id: document.getElementById('edit-loc').value || null,
+        is_active: document.getElementById('edit-active').checked
+    };
+    
+    if (id) await sb.from('pazar_users').update(data).eq('id', id);
+    else { data.created_by = user.id; await sb.from('pazar_users').insert(data); }
+    
+    closeUserModal();
+    loadUsers();
+}
+
+// Modals - Locations
+function openLocModal(l = null) {
+    document.getElementById('loc-modal-title').textContent = l ? 'Izmeni lokaciju' : 'Nova lokacija';
+    document.getElementById('edit-loc-id').value = l?.id || '';
+    document.getElementById('edit-loc-code').value = l?.code || '';
+    document.getElementById('edit-loc-name').value = l?.name || '';
+    document.getElementById('edit-loc-addr').value = l?.address || '';
+    document.getElementById('edit-loc-dep').value = l?.current_deposit || 10000;
+    document.getElementById('edit-loc-active').checked = l?.is_active ?? true;
+    document.getElementById('loc-modal').classList.remove('hidden');
+    document.getElementById('loc-modal').classList.add('flex');
+}
+
+function closeLocModal() {
+    document.getElementById('loc-modal').classList.add('hidden');
+    document.getElementById('loc-modal').classList.remove('flex');
+}
+
+function editLoc(id) { openLocModal(locations.find(l => l.id === id)); }
+
+async function saveLoc(e) {
+    e.preventDefault();
+    const id = document.getElementById('edit-loc-id').value;
+    const data = {
+        code: document.getElementById('edit-loc-code').value.toUpperCase(),
+        name: document.getElementById('edit-loc-name').value,
+        address: document.getElementById('edit-loc-addr').value || null,
+        current_deposit: parseFloat(document.getElementById('edit-loc-dep').value),
+        is_active: document.getElementById('edit-loc-active').checked
+    };
+    
+    if (id) await sb.from('pazar_locations').update(data).eq('id', id);
+    else await sb.from('pazar_locations').insert(data);
+    
+    closeLocModal();
+    loadLocations();
+}
+
+// Shift detail modal
+let allShiftsData = {}; // Store shifts for modal access
+
+function showShiftDetail(shiftId) {
+    const s = allShiftsData[shiftId];
+    if (!s) return;
+    
+    const sp = s.spec;
+    const deposit = s.location?.current_deposit || 10000;
+    const gotovina = sp?.ebar_total || 0;
+    const kartica = sp?.terminal_amount || 0;
+    const prenos = sp?.ebar_transfer || 0;
+    const kes = sp ? (gotovina - kartica) : 0;
+    const prebrojano = sp?.counted_amount || 0;
+    const razlika = sp ? (prebrojano - kes) : null;
+    
+    const start = new Date(s.started_at).toLocaleTimeString('sr-RS', {hour:'2-digit', minute:'2-digit'});
+    const end = s.ended_at ? new Date(s.ended_at).toLocaleTimeString('sr-RS', {hour:'2-digit', minute:'2-digit'}) : '-';
+    
+    let html = `
+        <div class="flex justify-between items-start mb-6">
+            <div>
+                <h2 class="text-xl font-bold">${s.shift_order}. smena</h2>
+                <p class="text-gray-400">${fmtDate(s.date)} | ${start} - ${end}</p>
+            </div>
+            <button onclick="closeShiftModal()" class="text-gray-400 hover:text-white text-2xl">&times;</button>
+        </div>
+        
+        <div class="grid grid-cols-2 gap-4 mb-6">
+            <div class="bg-black/20 p-4 rounded-lg">
+                <p class="text-gray-500 text-xs">Konobar</p>
+                <p class="font-medium">${s.user?.first_name} ${s.user?.last_name}</p>
+            </div>
+            <div class="bg-black/20 p-4 rounded-lg">
+                <p class="text-gray-500 text-xs">Lokacija</p>
+                <p class="font-medium">${s.location?.name || '-'}</p>
+            </div>
+        </div>
+    `;
+    
+    if (sp) {
+        const diffClass = razlika < -100 ? 'text-red-400' : razlika > 100 ? 'text-green-400' : 'text-gray-400';
+        
+        html += `
+            <div class="border-t border-white/10 pt-4 mb-4">
+                <h3 class="text-sm font-medium text-gray-400 mb-3">E-BAR PRESEK STANJA</h3>
+                <div class="grid grid-cols-2 gap-3 text-sm">
+                    <div class="flex justify-between"><span class="text-gray-500">Gotovina:</span><span>${fmt(gotovina)}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-500">Kartice:</span><span>${fmt(kartica)}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-500">Prenos:</span><span>${fmt(prenos)}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-500">Očekivani keš:</span><span class="text-yellow-400 font-medium">${fmt(kes)}</span></div>
+                </div>
+            </div>
+            
+            <div class="border-t border-white/10 pt-4 mb-4">
+                <h3 class="text-sm font-medium text-gray-400 mb-3">PREBROJANO</h3>
+                <div class="grid grid-cols-2 gap-3 text-sm">
+                    <div class="flex justify-between"><span class="text-gray-500">Keš u kasi:</span><span class="text-green-400 font-medium">${fmt(prebrojano)}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-500">Depozit:</span><span class="text-purple-400">${fmt(sp.deposit_amount)}</span></div>
+                </div>
+            </div>
+            
+            <div class="border-t border-white/10 pt-4 mb-4">
+                <h3 class="text-sm font-medium text-gray-400 mb-3">RAZLIKA</h3>
+                <div class="flex items-center gap-4">
+                    <span class="text-3xl font-bold ${diffClass}">${razlika !== null ? (razlika > 0 ? '+' : '') + fmt(razlika) : '-'}</span>
+                    ${razlika < -100 ? '<span class="badge badge-error">Manjak</span>' : razlika > 100 ? '<span class="badge badge-success">Višak</span>' : '<span class="badge badge-info">U redu</span>'}
+                </div>
+            </div>
+        `;
+        
+        // Show shortage/surplus details if exists
+        if (sp.shortage_reason || sp.shortage_comment) {
+            html += `
+                <div class="border-t border-white/10 pt-4 mb-4">
+                    <h3 class="text-sm font-medium text-gray-400 mb-3">📝 DETALJI</h3>
+                    <div class="bg-black/20 p-4 rounded-lg space-y-2">
+                        ${sp.shortage_reason ? `<div class="flex gap-2"><span class="text-gray-500">Razlog:</span><span class="text-yellow-400">${formatReason(sp.shortage_reason)}</span></div>` : ''}
+                        ${sp.shortage_comment ? `<div><span class="text-gray-500">Komentar:</span><p class="mt-1 text-white">${sp.shortage_comment}</p></div>` : ''}
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Show denominations if exists
+        if (sp.denominations?.length) {
+            html += `
+                <div class="border-t border-white/10 pt-4 mb-4">
+                    <h3 class="text-sm font-medium text-gray-400 mb-3">💵 APOENI</h3>
+                    <div class="flex flex-wrap gap-2">
+                        ${sp.denominations.filter(d => d.quantity > 0).map(d => `
+                            <span class="bg-black/30 px-3 py-1 rounded-lg text-sm">
+                                ${d.denomination.toLocaleString()} × <strong>${d.quantity}</strong> = ${fmt(d.denomination * d.quantity)}
+                            </span>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+    } else {
+        html += `
+            <div class="bg-yellow-500/10 border border-yellow-500/30 p-4 rounded-lg text-center">
+                <p class="text-yellow-400">Nema specifikacije za ovu smenu</p>
+            </div>
+        `;
+    }
+    
+    document.getElementById('shift-modal-content').innerHTML = html;
+    document.getElementById('shift-modal').classList.remove('hidden');
+}
+
+function closeShiftModal() {
+    document.getElementById('shift-modal').classList.add('hidden');
+}
+
+function formatReason(reason) {
+    const reasons = {
+        'change_error': 'Greška u kusuru',
+        'tips': 'Napojnice / bakšiš',
+        'from_own_money': 'Dopunjeno iz svog novca',
+        'own_pocket': 'Iz svog džepa',
+        'tip_jar': 'Iz tegle za napojnice',
+        'colleague': 'Od kolege',
+        'rounding': 'Zaokruživanje kusura',
+        'unknown': 'Nepoznato',
+        'other': 'Ostalo'
+    };
+    return reasons[reason] || reason;
+}
+
+// Helpers
+function fmt(n) { return n == null ? '-' : new Intl.NumberFormat('sr-RS').format(Math.round(n)) + ' RSD'; }
+function fmtDate(d) { return d ? new Date(d).toLocaleDateString('sr-RS') : '-'; }
+</script>
+
+<!-- Shift Detail Modal -->
+<div id="shift-modal" class="fixed inset-0 bg-black/70 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-card rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-6" id="shift-modal-content">
+    </div>
+</div>
+
+</body>
+</html>
