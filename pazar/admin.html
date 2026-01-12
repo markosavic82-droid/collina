@@ -1069,8 +1069,8 @@ async function loadPazari() {
     
     const { data: specs } = await specQuery;
     
-    // Load cash pickups
-    let pickupQuery = sb.from('pazar_cash_pickups').select('*, driver:pazar_users(first_name, last_name)');
+    // Load cash pickups with location data
+    let pickupQuery = sb.from('pazar_cash_pickups').select('*, driver:pazar_users(first_name, last_name), location:pazar_locations(code, name)');
     if (from) pickupQuery = pickupQuery.gte('date', from);
     if (to) pickupQuery = pickupQuery.lte('date', to);
     if (loc) pickupQuery = pickupQuery.eq('location_id', loc);
@@ -1103,8 +1103,10 @@ async function loadPazari() {
     
     // Create pickup map by location_id + date
     const pickupMap = {};
+    window.allPickupsData = {}; // Global storage for modal access
     (pickups || []).forEach(p => {
         pickupMap[`${p.location_id}-${p.date}`] = p;
+        window.allPickupsData[p.id] = p;
     });
     
     // Create finance map by pickup_id
@@ -1341,11 +1343,13 @@ async function loadPazari() {
                 const pickupDone = pickup.delivered_at;
                 const pickedTime = pickup.picked_at ? new Date(pickup.picked_at).toLocaleTimeString('sr-RS', {hour:'2-digit', minute:'2-digit'}) : '-';
                 const deliveredTime = pickup.delivered_at ? new Date(pickup.delivered_at).toLocaleTimeString('sr-RS', {hour:'2-digit', minute:'2-digit'}) : '-';
+                const hasPhotos = pickup.pickup_photos && pickup.pickup_photos.length > 0;
                 
-                html += `<div class="bg-blue-500/10 rounded-lg p-3 border ${pickupDone ? 'border-blue-500/30' : 'border-yellow-500/30'}">
+                html += `<div class="bg-blue-500/10 rounded-lg p-3 border ${pickupDone ? 'border-blue-500/30' : 'border-yellow-500/30'} cursor-pointer hover:bg-blue-500/20 transition-colors" onclick="showPickupModal('${pickup.id}')">
                     <div class="flex items-center gap-2 mb-2">
                         <span class="text-lg">🚗</span>
                         <span class="font-medium ${pickupDone ? 'text-blue-400' : 'text-yellow-400'}">Prikupljanje</span>
+                        ${hasPhotos ? '<span class="text-xs bg-purple-500/30 text-purple-300 px-1.5 py-0.5 rounded">📷 ' + pickup.pickup_photos.length + '</span>' : ''}
                         ${pickupDone ? '<span class="ml-auto text-green-400">✓</span>' : '<span class="ml-auto text-yellow-400">⏳</span>'}
                     </div>
                     <div class="text-xs space-y-1 text-gray-400">
@@ -2361,6 +2365,206 @@ async function cancelDelivery(id) {
     <div class="bg-card rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-6" id="shift-modal-content">
     </div>
 </div>
+
+<!-- Pickup Detail Modal -->
+<div id="pickup-modal" class="fixed inset-0 bg-black/70 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-card rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-6">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl font-bold">🚗 Detalji prikupljanja</h2>
+            <button onclick="closePickupModal()" class="text-gray-400 hover:text-white text-2xl">×</button>
+        </div>
+        
+        <div id="pickup-modal-content">
+            <!-- Content will be injected here -->
+        </div>
+    </div>
+</div>
+
+<!-- Image Viewer Modal -->
+<div id="image-viewer-modal" class="fixed inset-0 bg-black/95 z-[60] hidden flex items-center justify-center p-4">
+    <button onclick="closeImageViewer()" class="absolute top-4 right-4 text-white text-3xl hover:text-gray-300">×</button>
+    <img id="viewer-image" src="" class="max-w-full max-h-full object-contain rounded-lg">
+</div>
+
+<script>
+// Pickup Modal Functions
+let currentPickupData = null;
+
+function showPickupModal(pickupId) {
+    // Find pickup from stored data
+    // We need to store pickups globally when loading pazari
+    const pickup = allPickupsData[pickupId];
+    if (!pickup) {
+        console.error('Pickup not found:', pickupId);
+        return;
+    }
+    
+    currentPickupData = pickup;
+    
+    const pickedTime = pickup.picked_at 
+        ? new Date(pickup.picked_at).toLocaleString('sr-RS', {day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit'}) 
+        : '-';
+    const deliveredTime = pickup.delivered_at 
+        ? new Date(pickup.delivered_at).toLocaleString('sr-RS', {day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit'}) 
+        : '-';
+    const driverName = pickup.driver ? `${pickup.driver.first_name} ${pickup.driver.last_name}` : '-';
+    const locationName = pickup.location ? `${pickup.location.code} - ${pickup.location.name}` : '-';
+    
+    let statusBadge = '';
+    if (pickup.delivered_at) {
+        statusBadge = '<span class="badge badge-success">✓ Predato u finansije</span>';
+    } else if (pickup.picked_at) {
+        statusBadge = '<span class="badge badge-warning">📦 Pokupljeno</span>';
+    } else {
+        statusBadge = '<span class="badge badge-info">⏳ Čeka</span>';
+    }
+    
+    // Photos section
+    let photosHtml = '';
+    if (pickup.pickup_photos && pickup.pickup_photos.length > 0) {
+        photosHtml = `
+            <div class="mt-6">
+                <p class="text-gray-400 text-sm mb-3">📸 Fotografije preuzimanja (${pickup.pickup_photos.length})</p>
+                <div class="grid grid-cols-3 gap-2">
+                    ${pickup.pickup_photos.map((photo, i) => `
+                        <img src="${photo}" 
+                             class="w-full aspect-square object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity" 
+                             onclick="viewPickupImage('${photo}')"
+                             alt="Slika ${i + 1}">
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    } else {
+        photosHtml = `
+            <div class="mt-6 p-4 bg-white/5 rounded-lg text-center">
+                <p class="text-gray-500">📷 Nema fotografija</p>
+            </div>
+        `;
+    }
+    
+    const content = `
+        <div class="space-y-4">
+            <!-- Status -->
+            <div class="flex justify-between items-center">
+                <span class="text-gray-400">Status</span>
+                ${statusBadge}
+            </div>
+            
+            <!-- Location -->
+            <div class="bg-white/5 p-4 rounded-lg">
+                <p class="text-gray-400 text-xs mb-1">LOKACIJA</p>
+                <p class="font-medium text-lg">${locationName}</p>
+                <p class="text-gray-400 text-sm">${pickup.date}</p>
+            </div>
+            
+            <!-- Driver -->
+            <div class="bg-white/5 p-4 rounded-lg">
+                <p class="text-gray-400 text-xs mb-1">VOZAČ</p>
+                <p class="font-medium">${driverName}</p>
+            </div>
+            
+            <!-- Timeline -->
+            <div class="bg-white/5 p-4 rounded-lg">
+                <p class="text-gray-400 text-xs mb-3">TIMELINE</p>
+                <div class="space-y-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full ${pickup.picked_at ? 'bg-blue-500' : 'bg-gray-600'} flex items-center justify-center text-sm">📦</div>
+                        <div class="flex-1">
+                            <p class="font-medium ${pickup.picked_at ? 'text-white' : 'text-gray-500'}">Pokupljeno</p>
+                            <p class="text-sm ${pickup.picked_at ? 'text-blue-400' : 'text-gray-600'}">${pickedTime}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full ${pickup.delivered_at ? 'bg-green-500' : 'bg-gray-600'} flex items-center justify-center text-sm">🏢</div>
+                        <div class="flex-1">
+                            <p class="font-medium ${pickup.delivered_at ? 'text-white' : 'text-gray-500'}">Predato u kancelariju</p>
+                            <p class="text-sm ${pickup.delivered_at ? 'text-green-400' : 'text-gray-600'}">${deliveredTime}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Photos -->
+            ${photosHtml}
+            
+            <!-- Delete Button -->
+            <div class="pt-4 border-t border-white/10">
+                <button onclick="deletePickup('${pickup.id}')" class="w-full p-3 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors flex items-center justify-center gap-2">
+                    🗑️ Obriši pickup
+                </button>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('pickup-modal-content').innerHTML = content;
+    document.getElementById('pickup-modal').classList.remove('hidden');
+    document.getElementById('pickup-modal').classList.add('flex');
+}
+
+function closePickupModal() {
+    document.getElementById('pickup-modal').classList.add('hidden');
+    document.getElementById('pickup-modal').classList.remove('flex');
+    currentPickupData = null;
+}
+
+function viewPickupImage(src) {
+    document.getElementById('viewer-image').src = src;
+    document.getElementById('image-viewer-modal').classList.remove('hidden');
+    document.getElementById('image-viewer-modal').classList.add('flex');
+}
+
+function closeImageViewer() {
+    document.getElementById('image-viewer-modal').classList.add('hidden');
+    document.getElementById('image-viewer-modal').classList.remove('flex');
+}
+
+// Close modals on escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closePickupModal();
+        closeImageViewer();
+    }
+});
+
+// Close image viewer on click outside
+document.getElementById('image-viewer-modal')?.addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeImageViewer();
+    }
+});
+
+// Delete pickup function
+async function deletePickup(pickupId) {
+    if (!confirm('Da li ste sigurni da želite da obrišete ovaj pickup?\n\nOva akcija se ne može poništiti.')) {
+        return;
+    }
+    
+    try {
+        const { error } = await sb.from('pazar_cash_pickups')
+            .delete()
+            .eq('id', pickupId);
+        
+        if (error) {
+            alert('Greška pri brisanju: ' + error.message);
+            return;
+        }
+        
+        // Close modal and refresh data
+        closePickupModal();
+        
+        // Remove from global data
+        delete window.allPickupsData[pickupId];
+        
+        // Refresh pazari view
+        loadPazari();
+        
+        alert('Pickup uspešno obrisan!');
+    } catch (e) {
+        alert('Greška: ' + e.message);
+    }
+}
+</script>
 
 </body>
 </html>
