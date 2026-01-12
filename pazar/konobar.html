@@ -1217,13 +1217,27 @@ function goToFinal() {
         document.getElementById('endday-confirmation').classList.add('hidden');
         document.getElementById('confirm-cash-amount').checked = false;
         document.getElementById('confirm-deposit-amount').checked = false;
-        document.getElementById('confirm-cash-label').textContent = fmt(flowData.countedAmount);
+        const finalCashForConfirm = flowData.countedAmount + (flowData.topupAmount || 0);
+        document.getElementById('confirm-cash-label').textContent = fmt(finalCashForConfirm);
         document.getElementById('confirm-deposit-label').textContent = fmt(flowData.deposit);
     }
     
-    // Show cash amount (same for both - just counted cash, without deposit)
-    document.getElementById('final-cash-amount').textContent = fmt(flowData.countedAmount);
+    // Show cash amount - INCLUDE TOPUP if there was shortage
+    const finalCashAmount = flowData.countedAmount + (flowData.topupAmount || 0);
+    document.getElementById('final-cash-amount').textContent = fmt(finalCashAmount);
     document.getElementById('final-deposit').textContent = fmt(flowData.deposit);
+    
+    // If topped up, show breakdown
+    if (flowData.topupAmount > 0) {
+        const breakdownHtml = `
+            <div class="mt-2 text-sm text-gray-400">
+                <div class="flex justify-between"><span>Prebrojano:</span><span>${fmt(flowData.countedAmount)}</span></div>
+                <div class="flex justify-between text-green-400"><span>+ Dodato:</span><span>+${fmt(flowData.topupAmount)}</span></div>
+                <div class="flex justify-between font-bold text-white border-t border-white/10 pt-1 mt-1"><span>Ukupno:</span><span>${fmt(finalCashAmount)}</span></div>
+            </div>
+        `;
+        document.getElementById('final-cash-amount').insertAdjacentHTML('afterend', breakdownHtml);
+    }
     
     show('final');
 }
@@ -1249,14 +1263,17 @@ async function finishFlow() {
     }
     
     const today = new Date().toISOString().split('T')[0];
-    const totalInRegister = flowData.countedAmount + flowData.deposit; // Ukupno u kasi = prebrojano + depozit
+    
+    // FINAL amounts include topup
+    const finalCashAmount = flowData.countedAmount + (flowData.topupAmount || 0);
+    const totalInRegister = finalCashAmount + flowData.deposit;
     
     try {
         // Update shift
         const { error: shiftError } = await sb.from('pazar_shifts').update({
             status: isEndDay ? 'closed' : 'handed_over',
             ended_at: new Date().toISOString(),
-            ending_amount: totalInRegister, // Ukupno u kasi (keš + depozit)
+            ending_amount: totalInRegister, // Ukupno u kasi (finalni keš + depozit)
             is_last_shift: isEndDay
         }).eq('id', curShift.id);
         
@@ -1265,7 +1282,7 @@ async function finishFlow() {
         // Note: Handover record for colleague transfer will be created when the next person accepts
         // This is because to_shift_id is NOT NULL and we don't know who will take over yet
         
-        // Create specification for BOTH handover and end day
+        // Create specification for BOTH handover and end day - NOW WITH TOPUP DATA
         const { data: spec, error: specError } = await sb.from('pazar_daily_specifications').insert({
             location_id: curLoc.id,
             date: today,
@@ -1276,6 +1293,9 @@ async function finishFlow() {
             terminal_amount: flowData.ebarCard,
             deposit_amount: flowData.deposit,
             counted_amount: flowData.countedAmount,
+            topup_amount: flowData.topupAmount || 0,
+            topup_source: flowData.topupSource || null,
+            topup_comment: flowData.topupComment || null,
             shortage_reason: flowData.diffReason || null,
             shortage_comment: flowData.diffComment || null,
             confirmed_at: new Date().toISOString()
@@ -1295,22 +1315,30 @@ async function finishFlow() {
         }
         
         if (isEndDay) {
-            // Create cash collection only for end of day
+            // Create cash collection only for end of day - USE FINAL AMOUNT
             const { error: cashError } = await sb.from('pazar_cash_collections').insert({
                 specification_id: spec.id,
                 location_id: curLoc.id,
                 date: today,
-                amount: flowData.countedAmount, // Keš za sef (bez depozita)
+                amount: finalCashAmount, // Keš za sef (prebrojano + dodato)
                 status: 'pending'
             });
             
             if (cashError) throw cashError;
             
+            let doneMsg = `Za sef: ${fmt(finalCashAmount)} | Depozit ostaje: ${fmt(flowData.deposit)}`;
+            if (flowData.topupAmount > 0) {
+                doneMsg += ` | (Dodato: ${fmt(flowData.topupAmount)})`;
+            }
             document.getElementById('done-title').textContent = 'Dan zavrsen!';
-            document.getElementById('done-sub').textContent = `Za sef: ${fmt(flowData.countedAmount)} | Depozit ostaje: ${fmt(flowData.deposit)}`;
+            document.getElementById('done-sub').textContent = doneMsg;
         } else {
+            let doneMsg = `Ukupno predato: ${fmt(totalInRegister)} (Keš: ${fmt(finalCashAmount)} + Depozit: ${fmt(flowData.deposit)})`;
+            if (flowData.topupAmount > 0) {
+                doneMsg += ` | (Dodato: ${fmt(flowData.topupAmount)})`;
+            }
             document.getElementById('done-title').textContent = 'Kasa predata!';
-            document.getElementById('done-sub').textContent = `Ukupno predato: ${fmt(totalInRegister)} (Keš: ${fmt(flowData.countedAmount)} + Depozit: ${fmt(flowData.deposit)})`;
+            document.getElementById('done-sub').textContent = doneMsg;
         }
         
         show('done');

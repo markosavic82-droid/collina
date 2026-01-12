@@ -25,6 +25,9 @@
         input, select { background: #252232; border: 1px solid rgba(255,255,255,0.1); color: white; }
         input:focus, select:focus { outline: none; border-color: #8B5CF6; }
         .table-row:hover { background: rgba(139,92,246,0.05); }
+        .priority-btn { background: rgba(255,255,255,0.05); border: 2px solid transparent; transition: all 0.2s; }
+        .priority-btn:hover { background: rgba(255,255,255,0.1); }
+        .priority-btn.selected { border-color: #8B5CF6; background: rgba(139,92,246,0.2); }
     </style>
 </head>
 <body class="bg-main text-white min-h-screen">
@@ -86,6 +89,13 @@
                 </div>
                 <div class="sidebar-item p-3 rounded-lg cursor-pointer flex items-center gap-3" data-section="razlike">
                     ⚠️ Razlike
+                </div>
+                <div class="p-3 text-gray-600 text-xs uppercase tracking-wide mt-4">Logistika</div>
+                <div class="sidebar-item p-3 rounded-lg cursor-pointer flex items-center gap-3" data-section="vozila">
+                    🚗 Vozila
+                </div>
+                <div class="sidebar-item p-3 rounded-lg cursor-pointer flex items-center gap-3" data-section="dostave">
+                    📦 Dostave
                 </div>
             </nav>
             <div class="absolute bottom-0 left-0 right-0 p-4 border-t border-white/10">
@@ -288,6 +298,152 @@
                     </table>
                 </div>
             </section>
+
+            <!-- Vozila -->
+            <section id="sec-vozila" class="hidden">
+                <div class="flex justify-between items-center mb-8">
+                    <div>
+                        <h2 class="text-2xl font-bold">Vozila</h2>
+                        <p class="text-gray-400">Upravljanje voznim parkom</p>
+                    </div>
+                    <button onclick="showVehicleModal()" class="accent-bg px-4 py-2 rounded-lg font-medium">+ Novo vozilo</button>
+                </div>
+                <div class="grid grid-cols-4 gap-4 mb-6">
+                    <div class="bg-card p-4 rounded-xl text-center">
+                        <p class="text-3xl font-bold text-green-400" id="v-available">0</p>
+                        <p class="text-gray-400 text-sm">Dostupno</p>
+                    </div>
+                    <div class="bg-card p-4 rounded-xl text-center">
+                        <p class="text-3xl font-bold text-blue-400" id="v-in-use">0</p>
+                        <p class="text-gray-400 text-sm">U upotrebi</p>
+                    </div>
+                    <div class="bg-card p-4 rounded-xl text-center">
+                        <p class="text-3xl font-bold text-yellow-400" id="v-maintenance">0</p>
+                        <p class="text-gray-400 text-sm">Na servisu</p>
+                    </div>
+                    <div class="bg-card p-4 rounded-xl text-center">
+                        <p class="text-3xl font-bold text-gray-400" id="v-out">0</p>
+                        <p class="text-gray-400 text-sm">Van funkcije</p>
+                    </div>
+                </div>
+                <div class="bg-card rounded-xl overflow-hidden">
+                    <table class="w-full">
+                        <thead class="bg-elevated text-gray-400 text-sm text-left">
+                            <tr>
+                                <th class="p-4">Vozilo</th>
+                                <th class="p-4">Registracija</th>
+                                <th class="p-4">Tip</th>
+                                <th class="p-4">Kilometraža</th>
+                                <th class="p-4">Status</th>
+                                <th class="p-4">Trenutni vozač</th>
+                                <th class="p-4">Akcije</th>
+                            </tr>
+                        </thead>
+                        <tbody id="vehicles-tbody"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Dostave -->
+            <section id="sec-dostave" class="hidden">
+                <div class="flex justify-between items-center mb-8">
+                    <div>
+                        <h2 class="text-2xl font-bold">Dostave</h2>
+                        <p class="text-gray-400">Supply Chain - upravljanje dostavama</p>
+                    </div>
+                    <button onclick="showDeliveryModal()" class="accent-bg px-4 py-2 rounded-lg font-medium">+ Nova dostava</button>
+                </div>
+                <div class="bg-card p-4 rounded-xl mb-6 flex gap-4 items-center">
+                    <button onclick="changeDeliveryDate(-1)" class="p-2 rounded-lg bg-white/5 hover:bg-white/10">←</button>
+                    <div class="text-center flex-1">
+                        <p class="text-gray-400 text-xs">Datum</p>
+                        <p class="font-bold text-lg" id="delivery-date">-</p>
+                    </div>
+                    <button onclick="changeDeliveryDate(1)" class="p-2 rounded-lg bg-white/5 hover:bg-white/10">→</button>
+                </div>
+                <div class="grid grid-cols-4 gap-4 mb-6">
+                    <div class="bg-card p-4 rounded-xl text-center">
+                        <p class="text-3xl font-bold text-yellow-400" id="d-scheduled">0</p>
+                        <p class="text-gray-400 text-sm">Zakazano</p>
+                    </div>
+                    <div class="bg-card p-4 rounded-xl text-center">
+                        <p class="text-3xl font-bold text-blue-400" id="d-in-progress">0</p>
+                        <p class="text-gray-400 text-sm">U toku</p>
+                    </div>
+                    <div class="bg-card p-4 rounded-xl text-center">
+                        <p class="text-3xl font-bold text-green-400" id="d-completed">0</p>
+                        <p class="text-gray-400 text-sm">Završeno</p>
+                    </div>
+                    <div class="bg-card p-4 rounded-xl text-center">
+                        <p class="text-3xl font-bold text-red-400" id="d-cancelled">0</p>
+                        <p class="text-gray-400 text-sm">Otkazano</p>
+                    </div>
+                </div>
+                <div id="deliveries-list" class="space-y-3">
+                    <p class="text-gray-400 text-center py-8">Nema dostava za ovaj datum</p>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <!-- Vehicle Modal -->
+    <div id="vehicle-modal" class="fixed inset-0 bg-black/70 hidden items-center justify-center z-50">
+        <div class="bg-card rounded-2xl w-full max-w-md p-6 m-4">
+            <h3 class="text-xl font-bold mb-6" id="vehicle-modal-title">Novo vozilo</h3>
+            <form onsubmit="saveVehicle(event)">
+                <input type="hidden" id="edit-vehicle-id">
+                <div class="space-y-4">
+                    <div>
+                        <label class="text-gray-400 text-sm">Naziv vozila</label>
+                        <input type="text" id="edit-v-name" class="w-full p-3 rounded-lg mt-1" placeholder="Fiat Doblo 1" required>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="text-gray-400 text-sm">Registracija</label>
+                            <input type="text" id="edit-v-plate" class="w-full p-3 rounded-lg mt-1" placeholder="BG-123-AB" required>
+                        </div>
+                        <div>
+                            <label class="text-gray-400 text-sm">Kilometraža</label>
+                            <input type="number" id="edit-v-km" class="w-full p-3 rounded-lg mt-1" placeholder="50000">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="text-gray-400 text-sm">Tip</label>
+                            <select id="edit-v-type" class="w-full p-3 rounded-lg mt-1">
+                                <option value="van">Kombi</option>
+                                <option value="car">Auto</option>
+                                <option value="scooter">Skuter</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-gray-400 text-sm">Gorivo</label>
+                            <select id="edit-v-fuel" class="w-full p-3 rounded-lg mt-1">
+                                <option value="diesel">Dizel</option>
+                                <option value="petrol">Benzin</option>
+                                <option value="lpg">LPG</option>
+                                <option value="electric">Električni</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="text-gray-400 text-sm">Status</label>
+                        <select id="edit-v-status" class="w-full p-3 rounded-lg mt-1">
+                            <option value="available">Dostupno</option>
+                            <option value="maintenance">Na servisu</option>
+                            <option value="out_of_service">Van funkcije</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-gray-400 text-sm">Napomena</label>
+                        <textarea id="edit-v-notes" class="w-full p-3 rounded-lg mt-1" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="flex gap-3 mt-6">
+                    <button type="button" onclick="closeVehicleModal()" class="flex-1 p-3 rounded-lg bg-white/10">Otkaži</button>
+                    <button type="submit" class="flex-1 p-3 rounded-lg accent-bg font-medium">Sačuvaj</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -335,6 +491,102 @@
                 <div class="flex gap-4">
                     <button type="button" onclick="closeLocModal()" class="flex-1 bg-elevated p-3 rounded-lg">Otkaži</button>
                     <button type="submit" class="flex-1 accent-bg p-3 rounded-lg font-semibold">Sačuvaj</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delivery Modal -->
+    <div id="delivery-modal" class="fixed inset-0 bg-black/70 hidden items-center justify-center z-50 overflow-y-auto">
+        <div class="bg-card rounded-2xl w-full max-w-lg p-6 m-4 my-8">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-bold" id="delivery-modal-title">Nova dostava</h3>
+                <button onclick="closeDeliveryModal()" class="text-gray-400 hover:text-white text-2xl">&times;</button>
+            </div>
+            <form onsubmit="saveDelivery(event)" id="delivery-form">
+                <input type="hidden" id="edit-delivery-id">
+                
+                <!-- From -->
+                <div class="mb-4">
+                    <label class="text-gray-400 text-sm block mb-2">ODAKLE</label>
+                    <select id="del-pickup-loc" class="w-full p-3 rounded-lg" onchange="toggleCustomPickup()">
+                        <option value="">-- Izaberi lokaciju --</option>
+                        <option value="custom">✏️ Unesi adresu...</option>
+                    </select>
+                    <input type="text" id="del-pickup-custom" class="w-full p-3 rounded-lg mt-2 hidden" placeholder="Npr. Magacin Zemun, Metro, Dobavljač...">
+                </div>
+                
+                <!-- To -->
+                <div class="mb-4">
+                    <label class="text-gray-400 text-sm block mb-2">KUDA</label>
+                    <select id="del-dropoff-loc" class="w-full p-3 rounded-lg" required>
+                        <option value="">-- Izaberi lokaciju --</option>
+                    </select>
+                </div>
+                
+                <!-- Date & Time -->
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="text-gray-400 text-sm block mb-2">DATUM</label>
+                        <input type="date" id="del-date" class="w-full p-3 rounded-lg" required>
+                    </div>
+                    <div>
+                        <label class="text-gray-400 text-sm block mb-2">VREME</label>
+                        <input type="time" id="del-time" class="w-full p-3 rounded-lg" required>
+                    </div>
+                </div>
+                
+                <!-- Priority -->
+                <div class="mb-4">
+                    <label class="text-gray-400 text-sm block mb-2">PRIORITET</label>
+                    <div class="flex gap-2">
+                        <button type="button" class="flex-1 p-3 rounded-lg priority-btn" data-priority="urgent" onclick="setPriority('urgent')">
+                            <span class="text-red-400">🔴</span> Hitno
+                        </button>
+                        <button type="button" class="flex-1 p-3 rounded-lg priority-btn" data-priority="high" onclick="setPriority('high')">
+                            <span class="text-yellow-400">🟡</span> Visok
+                        </button>
+                        <button type="button" class="flex-1 p-3 rounded-lg priority-btn selected" data-priority="normal" onclick="setPriority('normal')">
+                            <span class="text-blue-400">🔵</span> Normal
+                        </button>
+                        <button type="button" class="flex-1 p-3 rounded-lg priority-btn" data-priority="low" onclick="setPriority('low')">
+                            <span class="text-gray-400">⚪</span> Nizak
+                        </button>
+                    </div>
+                    <input type="hidden" id="del-priority" value="normal">
+                </div>
+                
+                <!-- Driver -->
+                <div class="mb-4">
+                    <label class="text-gray-400 text-sm block mb-2">VOZAČ (opciono)</label>
+                    <select id="del-driver" class="w-full p-3 rounded-lg">
+                        <option value="">-- Bilo koji --</option>
+                    </select>
+                </div>
+                
+                <!-- Items -->
+                <div class="mb-4">
+                    <label class="text-gray-400 text-sm block mb-2">STAVKE (opciono)</label>
+                    <div id="del-items-list" class="space-y-2 mb-2">
+                        <!-- Items will be added here -->
+                    </div>
+                    <div class="flex gap-2">
+                        <input type="text" id="del-item-name" class="flex-1 p-2 rounded-lg text-sm" placeholder="Naziv">
+                        <input type="text" id="del-item-qty" class="w-20 p-2 rounded-lg text-sm" placeholder="Kol.">
+                        <input type="text" id="del-item-unit" class="w-16 p-2 rounded-lg text-sm" placeholder="jed.">
+                        <button type="button" onclick="addDeliveryItem()" class="px-3 py-2 rounded-lg bg-purple-500/20 text-purple-400">+</button>
+                    </div>
+                </div>
+                
+                <!-- Notes -->
+                <div class="mb-6">
+                    <label class="text-gray-400 text-sm block mb-2">NAPOMENA</label>
+                    <textarea id="del-notes" class="w-full p-3 rounded-lg" rows="2" placeholder="Dodatne instrukcije..."></textarea>
+                </div>
+                
+                <div class="flex gap-4">
+                    <button type="button" onclick="closeDeliveryModal()" class="flex-1 p-3 rounded-lg bg-white/10">Otkaži</button>
+                    <button type="submit" class="flex-1 p-3 rounded-lg accent-bg font-semibold">Kreiraj dostavu</button>
                 </div>
             </form>
         </div>
@@ -441,7 +693,7 @@ function showSection(id) {
     document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
     document.getElementById('sec-' + id).classList.remove('hidden');
     document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
-    document.querySelector(`[data-section="${id}"]`).classList.add('active');
+    document.querySelector(`[data-section="${id}"]`)?.classList.add('active');
     
     if (id === 'smene') loadSmene();
     if (id === 'pazari') loadPazari();
@@ -453,6 +705,12 @@ function showSection(id) {
         if (!document.getElementById('bank-from').value) document.getElementById('bank-from').value = weekAgo;
         if (!document.getElementById('bank-to').value) document.getElementById('bank-to').value = today;
         loadBankDeposits();
+    }
+    if (id === 'vozila') loadVehicles();
+    if (id === 'dostave') {
+        if (!window.deliveryDate) window.deliveryDate = new Date();
+        updateDeliveryDateDisplay();
+        loadDeliveries();
     }
 }
 
@@ -978,8 +1236,10 @@ async function loadPazari() {
             const prenos = sp?.ebar_transfer || 0;
             const kes = sp ? (gotovina - kartica) : 0;
             const prebrojano = sp?.counted_amount || 0;
-            // Razlika = Prebrojano - Očekivani keš (+ višak, - manjak)
-            const razlika = sp ? (prebrojano - kes) : null;
+            const topup = sp?.topup_amount || 0;
+            const finalPrebrojano = prebrojano + topup; // Prebrojano + Dodato
+            // Razlika = Finalno prebrojano - Očekivani keš (+ višak, - manjak)
+            const razlika = sp ? (finalPrebrojano - kes) : null;
             
             if (sp && s.ending_amount) {
                 totalForSafe += s.ending_amount;
@@ -1021,10 +1281,13 @@ async function loadPazari() {
                         <td class="p-2 text-right">${fmt(gotovina)}</td>
                         <td class="p-2 text-right text-gray-400">${fmt(kartica)}</td>
                         <td class="p-2 text-right text-yellow-400 font-medium">${fmt(kes)}</td>
-                        <td class="p-2 text-right border-l border-white/10 text-green-400 font-medium">${fmt(prebrojano)}</td>
+                        <td class="p-2 text-right border-l border-white/10 text-green-400 font-medium">
+                            ${fmt(finalPrebrojano)}
+                            ${topup > 0 ? `<div class="text-xs text-blue-400">+${fmt(topup)}</div>` : ''}
+                        </td>
                         <td class="p-2 text-right font-bold ${diffClass}">
                             ${razlika !== null ? (razlika > 0 ? '+' : '') + fmt(razlika) : '-'}
-                            ${sp.shortage_comment ? ' 💬' : ''}
+                            ${sp.shortage_comment || sp.topup_source ? ' 💬' : ''}
                         </td>
                     ` : `
                         <td class="p-2 border-l border-white/10 text-center text-gray-600" colspan="6">${s.ending_amount ? '— nema specifikacije —' : '— u toku —'}</td>
@@ -1036,7 +1299,8 @@ async function loadPazari() {
         // FINAL ROW: Kraj dana (if closed)
         if (isClosed && lastShift) {
             const lastSpec = lastShift.spec;
-            const cashForSafe = lastSpec?.counted_amount || (lastShift.ending_amount - deposit);
+            const lastTopup = lastSpec?.topup_amount || 0;
+            const cashForSafe = lastSpec ? (lastSpec.counted_amount + lastTopup) : (lastShift.ending_amount - deposit);
             html += `
                 <tr class="border-t-2 border-purple-500 bg-purple-500/10">
                     <td class="p-3 font-bold text-purple-400" colspan="4">🔒 KRAJ DANA</td>
@@ -1488,7 +1752,9 @@ function showShiftDetail(shiftId) {
     const prenos = sp?.ebar_transfer || 0;
     const kes = sp ? (gotovina - kartica) : 0;
     const prebrojano = sp?.counted_amount || 0;
-    const razlika = sp ? (prebrojano - kes) : null;
+    const topup = sp?.topup_amount || 0;
+    const finalPrebrojano = prebrojano + topup;
+    const razlika = sp ? (finalPrebrojano - kes) : null;
     
     const start = new Date(s.started_at).toLocaleTimeString('sr-RS', {hour:'2-digit', minute:'2-digit'});
     const end = s.ended_at ? new Date(s.ended_at).toLocaleTimeString('sr-RS', {hour:'2-digit', minute:'2-digit'}) : '-';
@@ -1532,6 +1798,8 @@ function showShiftDetail(shiftId) {
                 <h3 class="text-sm font-medium text-gray-400 mb-3">PREBROJANO</h3>
                 <div class="grid grid-cols-2 gap-3 text-sm">
                     <div class="flex justify-between"><span class="text-gray-500">Keš u kasi:</span><span class="text-green-400 font-medium">${fmt(prebrojano)}</span></div>
+                    ${topup > 0 ? `<div class="flex justify-between"><span class="text-gray-500">Dodato:</span><span class="text-blue-400 font-medium">+${fmt(topup)}</span></div>` : ''}
+                    ${topup > 0 ? `<div class="flex justify-between col-span-2 border-t border-white/10 pt-2 mt-2"><span class="text-gray-500">Ukupno keš:</span><span class="text-green-400 font-bold">${fmt(finalPrebrojano)}</span></div>` : ''}
                     <div class="flex justify-between"><span class="text-gray-500">Depozit:</span><span class="text-purple-400">${fmt(sp.deposit_amount)}</span></div>
                 </div>
             </div>
@@ -1553,6 +1821,32 @@ function showShiftDetail(shiftId) {
                     <div class="bg-black/20 p-4 rounded-lg space-y-2">
                         ${sp.shortage_reason ? `<div class="flex gap-2"><span class="text-gray-500">Razlog:</span><span class="text-yellow-400">${formatReason(sp.shortage_reason)}</span></div>` : ''}
                         ${sp.shortage_comment ? `<div><span class="text-gray-500">Komentar:</span><p class="mt-1 text-white">${sp.shortage_comment}</p></div>` : ''}
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Show topup info if exists
+        if (sp.topup_amount > 0) {
+            const topupSources = {
+                'own_pocket': '💵 Iz svog džepa',
+                'tip_jar': '🫙 Iz tegle za napojnice',
+                'colleague': '🤝 Od kolege',
+                'other': '❓ Drugo'
+            };
+            html += `
+                <div class="border-t border-white/10 pt-4 mb-4">
+                    <h3 class="text-sm font-medium text-gray-400 mb-3">💰 DOPUNA KASE</h3>
+                    <div class="bg-blue-500/10 border border-blue-500/30 p-4 rounded-lg">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-gray-400">Iznos dopune:</span>
+                            <span class="text-xl font-bold text-blue-400">+${fmt(sp.topup_amount)}</span>
+                        </div>
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-gray-400">Izvor:</span>
+                            <span class="text-white">${topupSources[sp.topup_source] || sp.topup_source}</span>
+                        </div>
+                        ${sp.topup_comment ? `<div class="mt-2 pt-2 border-t border-white/10"><span class="text-gray-500">Komentar:</span><p class="text-white mt-1">${sp.topup_comment}</p></div>` : ''}
                     </div>
                 </div>
             `;
@@ -1607,6 +1901,444 @@ function formatReason(reason) {
 // Helpers
 function fmt(n) { return n == null ? '-' : new Intl.NumberFormat('sr-RS').format(Math.round(n)) + ' RSD'; }
 function fmtDate(d) { return d ? new Date(d).toLocaleDateString('sr-RS') : '-'; }
+
+// ============================================
+// VEHICLES
+// ============================================
+let vehicles = [];
+
+async function loadVehicles() {
+    const { data, error } = await sb.from('pazar_vehicles')
+        .select('*, current_shift:pazar_vehicle_shifts(*, driver:pazar_users(first_name, last_name))')
+        .eq('is_active', true)
+        .order('name');
+    
+    if (error) {
+        console.error('Error loading vehicles:', error);
+        vehicles = [];
+    } else {
+        vehicles = data || [];
+    }
+    
+    renderVehicles();
+}
+
+function renderVehicles() {
+    const tbody = document.getElementById('vehicles-tbody');
+    
+    let available = 0, inUse = 0, maintenance = 0, outOfService = 0;
+    
+    const typeLabels = { van: '🚐 Kombi', car: '🚗 Auto', scooter: '🛵 Skuter', personal: '👤 Lično' };
+    const statusLabels = { available: 'Dostupno', in_use: 'U upotrebi', maintenance: 'Na servisu', out_of_service: 'Van funkcije' };
+    const statusClasses = { available: 'text-green-400', in_use: 'text-blue-400', maintenance: 'text-yellow-400', out_of_service: 'text-gray-400' };
+    
+    tbody.innerHTML = vehicles.map(v => {
+        // Count by status
+        if (v.status === 'available') available++;
+        else if (v.status === 'in_use') inUse++;
+        else if (v.status === 'maintenance') maintenance++;
+        else outOfService++;
+        
+        // Find active shift
+        const activeShift = v.current_shift?.find(s => s.status === 'active');
+        const driverName = activeShift?.driver ? `${activeShift.driver.first_name} ${activeShift.driver.last_name}` : '-';
+        
+        return `
+            <tr class="border-t border-white/10 hover:bg-white/5">
+                <td class="p-4">
+                    <div class="font-medium">${v.name}</div>
+                    ${v.notes ? `<div class="text-gray-500 text-xs">${v.notes}</div>` : ''}
+                </td>
+                <td class="p-4 font-mono">${v.license_plate}</td>
+                <td class="p-4">${typeLabels[v.type] || v.type}</td>
+                <td class="p-4">${v.current_km?.toLocaleString() || 0} km</td>
+                <td class="p-4"><span class="${statusClasses[v.status]}">${statusLabels[v.status]}</span></td>
+                <td class="p-4">${driverName}</td>
+                <td class="p-4">
+                    <button onclick="editVehicle('${v.id}')" class="text-purple-400 hover:text-purple-300 mr-2">✏️</button>
+                    <button onclick="deleteVehicle('${v.id}')" class="text-red-400 hover:text-red-300">🗑️</button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+    
+    if (!vehicles.length) {
+        tbody.innerHTML = '<tr><td colspan="7" class="p-8 text-center text-gray-500">Nema vozila. Dodajte prvo vozilo.</td></tr>';
+    }
+    
+    document.getElementById('v-available').textContent = available;
+    document.getElementById('v-in-use').textContent = inUse;
+    document.getElementById('v-maintenance').textContent = maintenance;
+    document.getElementById('v-out').textContent = outOfService;
+}
+
+function showVehicleModal(vehicle = null) {
+    document.getElementById('vehicle-modal-title').textContent = vehicle ? 'Izmeni vozilo' : 'Novo vozilo';
+    document.getElementById('edit-vehicle-id').value = vehicle?.id || '';
+    document.getElementById('edit-v-name').value = vehicle?.name || '';
+    document.getElementById('edit-v-plate').value = vehicle?.license_plate || '';
+    document.getElementById('edit-v-km').value = vehicle?.current_km || '';
+    document.getElementById('edit-v-type').value = vehicle?.type || 'van';
+    document.getElementById('edit-v-fuel').value = vehicle?.fuel_type || 'diesel';
+    document.getElementById('edit-v-status').value = vehicle?.status || 'available';
+    document.getElementById('edit-v-notes').value = vehicle?.notes || '';
+    document.getElementById('vehicle-modal').classList.remove('hidden');
+    document.getElementById('vehicle-modal').classList.add('flex');
+}
+
+function closeVehicleModal() {
+    document.getElementById('vehicle-modal').classList.add('hidden');
+    document.getElementById('vehicle-modal').classList.remove('flex');
+}
+
+async function saveVehicle(e) {
+    e.preventDefault();
+    const id = document.getElementById('edit-vehicle-id').value;
+    const data = {
+        name: document.getElementById('edit-v-name').value,
+        license_plate: document.getElementById('edit-v-plate').value,
+        current_km: parseInt(document.getElementById('edit-v-km').value) || 0,
+        type: document.getElementById('edit-v-type').value,
+        fuel_type: document.getElementById('edit-v-fuel').value,
+        status: document.getElementById('edit-v-status').value,
+        notes: document.getElementById('edit-v-notes').value || null
+    };
+    
+    let error;
+    if (id) {
+        ({ error } = await sb.from('pazar_vehicles').update(data).eq('id', id));
+    } else {
+        ({ error } = await sb.from('pazar_vehicles').insert(data));
+    }
+    
+    if (error) {
+        alert('Greška: ' + error.message);
+    } else {
+        closeVehicleModal();
+        loadVehicles();
+    }
+}
+
+function editVehicle(id) {
+    const v = vehicles.find(x => x.id === id);
+    if (v) showVehicleModal(v);
+}
+
+async function deleteVehicle(id) {
+    if (!confirm('Da li ste sigurni da želite da obrišete ovo vozilo?')) return;
+    const { error } = await sb.from('pazar_vehicles').update({ is_active: false }).eq('id', id);
+    if (error) alert('Greška: ' + error.message);
+    else loadVehicles();
+}
+
+// ============================================
+// DELIVERIES
+// ============================================
+let deliveries = [];
+
+function changeDeliveryDate(delta) {
+    if (!window.deliveryDate) window.deliveryDate = new Date();
+    window.deliveryDate.setDate(window.deliveryDate.getDate() + delta);
+    updateDeliveryDateDisplay();
+    loadDeliveries();
+}
+
+function updateDeliveryDateDisplay() {
+    const d = window.deliveryDate || new Date();
+    document.getElementById('delivery-date').textContent = d.toLocaleDateString('sr-RS', { weekday: 'short', day: 'numeric', month: 'numeric', year: 'numeric' });
+}
+
+async function loadDeliveries() {
+    const dateStr = (window.deliveryDate || new Date()).toISOString().split('T')[0];
+    
+    const { data, error } = await sb.from('pazar_deliveries')
+        .select('*, dropoff:pazar_locations!dropoff_location_id(name, code), pickup_loc:pazar_locations!pickup_location_id(name, code), driver:pazar_users!assigned_driver_id(first_name, last_name)')
+        .eq('date', dateStr)
+        .order('scheduled_time');
+    
+    if (error) {
+        console.error('Error loading deliveries:', error);
+        deliveries = [];
+    } else {
+        deliveries = data || [];
+    }
+    
+    renderDeliveries();
+}
+
+function renderDeliveries() {
+    const container = document.getElementById('deliveries-list');
+    
+    let scheduled = 0, inProgress = 0, completed = 0, cancelled = 0;
+    
+    const priorityColors = { urgent: 'border-red-500 bg-red-500/10', high: 'border-yellow-500 bg-yellow-500/10', normal: 'border-blue-500 bg-blue-500/10', low: 'border-gray-500 bg-gray-500/10' };
+    const priorityLabels = { urgent: '🔴 HITNO', high: '🟡 VISOK', normal: '🔵 NORMAL', low: '⚪ NIZAK' };
+    const statusBadge = { scheduled: 'badge-warning', in_progress: 'badge-info', completed: 'badge-success', cancelled: 'badge-error' };
+    const statusLabels = { scheduled: 'Zakazano', in_progress: 'U toku', completed: 'Završeno', cancelled: 'Otkazano' };
+    
+    deliveries.forEach(d => {
+        if (d.status === 'scheduled') scheduled++;
+        else if (d.status === 'in_progress') inProgress++;
+        else if (d.status === 'completed') completed++;
+        else if (d.status === 'cancelled') cancelled++;
+    });
+    
+    if (!deliveries.length) {
+        container.innerHTML = '<p class="text-gray-400 text-center py-8">Nema dostava za ovaj datum</p>';
+    } else {
+        container.innerHTML = deliveries.map(d => {
+            const time = d.scheduled_time ? new Date(d.scheduled_time).toLocaleTimeString('sr-RS', {hour:'2-digit', minute:'2-digit'}) : '--:--';
+            const driverName = d.driver ? `👤 ${d.driver.first_name} ${d.driver.last_name}` : '⚠️ Nije dodeljeno';
+            const items = d.items && Array.isArray(d.items) ? d.items.map(i => `${i.name} ${i.quantity || ''}${i.unit || ''}`).join(', ') : '';
+            const pickupName = d.pickup_loc ? d.pickup_loc.name : (d.pickup_address || 'Nepoznato');
+            const dropoffName = d.dropoff ? d.dropoff.name : '-';
+            
+            // Timeline progress
+            let timeline = '';
+            if (d.status !== 'cancelled') {
+                const steps = [
+                    { done: true, label: 'Kreirano' },
+                    { done: !!d.picked_up_at, label: 'Preuzeto', time: d.picked_up_at },
+                    { done: !!d.delivered_at, label: 'Isporučeno', time: d.delivered_at }
+                ];
+                timeline = `<div class="flex gap-1 mt-3">${steps.map(s => `
+                    <div class="flex-1 h-1.5 rounded ${s.done ? 'bg-green-500' : 'bg-gray-700'}"></div>
+                `).join('')}</div>
+                <div class="flex justify-between text-xs mt-1 text-gray-500">
+                    ${steps.map(s => `<span class="${s.done ? 'text-green-400' : ''}">${s.label}${s.time ? ' ' + new Date(s.time).toLocaleTimeString('sr-RS', {hour:'2-digit', minute:'2-digit'}) : ''}</span>`).join('')}
+                </div>`;
+            }
+            
+            return `
+                <div class="bg-card rounded-xl p-4 border-l-4 ${priorityColors[d.priority] || priorityColors.normal}">
+                    <div class="flex justify-between items-start mb-2">
+                        <div class="flex items-center gap-3">
+                            <span class="text-2xl font-bold">${time}</span>
+                            <span class="text-xs px-2 py-1 rounded ${priorityColors[d.priority]}">${priorityLabels[d.priority] || d.priority}</span>
+                        </div>
+                        <span class="badge ${statusBadge[d.status] || 'badge-warning'}">${statusLabels[d.status] || d.status}</span>
+                    </div>
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="text-gray-400">📍 ${pickupName}</span>
+                        <span class="text-gray-600">→</span>
+                        <span class="font-medium">🏁 ${dropoffName}</span>
+                    </div>
+                    ${items ? `<div class="text-sm text-gray-400 mb-2">📦 ${items}</div>` : ''}
+                    ${d.notes ? `<div class="text-sm text-gray-500 italic mb-2">💬 ${d.notes}</div>` : ''}
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm ${d.driver ? 'text-purple-400' : 'text-yellow-400'}">${driverName}</span>
+                        <div class="flex gap-2">
+                            ${d.status === 'scheduled' ? `<button onclick="cancelDelivery('${d.id}')" class="text-red-400 hover:text-red-300 text-sm">Otkaži</button>` : ''}
+                            <button onclick="editDelivery('${d.id}')" class="text-purple-400 hover:text-purple-300 text-sm">Izmeni</button>
+                        </div>
+                    </div>
+                    ${timeline}
+                </div>
+            `;
+        }).join('');
+    }
+    
+    document.getElementById('d-scheduled').textContent = scheduled;
+    document.getElementById('d-in-progress').textContent = inProgress;
+    document.getElementById('d-completed').textContent = completed;
+    document.getElementById('d-cancelled').textContent = cancelled;
+}
+
+// Delivery modal
+let deliveryItems = [];
+
+async function showDeliveryModal(delivery = null) {
+    // Reset form
+    document.getElementById('edit-delivery-id').value = '';
+    document.getElementById('del-pickup-loc').value = '';
+    document.getElementById('del-pickup-custom').value = '';
+    document.getElementById('del-pickup-custom').classList.add('hidden');
+    document.getElementById('del-dropoff-loc').value = '';
+    document.getElementById('del-date').value = (window.deliveryDate || new Date()).toISOString().split('T')[0];
+    document.getElementById('del-time').value = '09:00';
+    document.getElementById('del-priority').value = 'normal';
+    document.getElementById('del-driver').value = '';
+    document.getElementById('del-notes').value = '';
+    deliveryItems = [];
+    renderDeliveryItems();
+    setPriority('normal');
+    
+    // Populate location dropdowns
+    const pickupSelect = document.getElementById('del-pickup-loc');
+    const dropoffSelect = document.getElementById('del-dropoff-loc');
+    
+    // Clear existing options except first two for pickup
+    pickupSelect.innerHTML = '<option value="">-- Izaberi lokaciju --</option><option value="custom">✏️ Unesi adresu...</option>';
+    dropoffSelect.innerHTML = '<option value="">-- Izaberi lokaciju --</option>';
+    
+    locations.forEach(loc => {
+        pickupSelect.innerHTML += `<option value="${loc.id}">${loc.name} (${loc.code})</option>`;
+        dropoffSelect.innerHTML += `<option value="${loc.id}">${loc.name} (${loc.code})</option>`;
+    });
+    
+    // Populate drivers dropdown
+    const driverSelect = document.getElementById('del-driver');
+    driverSelect.innerHTML = '<option value="">-- Bilo koji --</option>';
+    const drivers = users.filter(u => u.role === 'vozac' && u.is_active);
+    drivers.forEach(d => {
+        driverSelect.innerHTML += `<option value="${d.id}">${d.first_name} ${d.last_name}</option>`;
+    });
+    
+    // If editing existing delivery
+    if (delivery) {
+        document.getElementById('delivery-modal-title').textContent = 'Izmeni dostavu';
+        document.getElementById('edit-delivery-id').value = delivery.id;
+        
+        if (delivery.pickup_location_id) {
+            document.getElementById('del-pickup-loc').value = delivery.pickup_location_id;
+        } else if (delivery.pickup_address) {
+            document.getElementById('del-pickup-loc').value = 'custom';
+            document.getElementById('del-pickup-custom').value = delivery.pickup_address;
+            document.getElementById('del-pickup-custom').classList.remove('hidden');
+        }
+        
+        document.getElementById('del-dropoff-loc').value = delivery.dropoff_location_id || '';
+        document.getElementById('del-date').value = delivery.date;
+        if (delivery.scheduled_time) {
+            document.getElementById('del-time').value = new Date(delivery.scheduled_time).toLocaleTimeString('sr-RS', {hour:'2-digit', minute:'2-digit'});
+        }
+        setPriority(delivery.priority || 'normal');
+        document.getElementById('del-driver').value = delivery.assigned_driver_id || '';
+        document.getElementById('del-notes').value = delivery.notes || '';
+        
+        if (delivery.items && Array.isArray(delivery.items)) {
+            deliveryItems = [...delivery.items];
+            renderDeliveryItems();
+        }
+    } else {
+        document.getElementById('delivery-modal-title').textContent = 'Nova dostava';
+    }
+    
+    document.getElementById('delivery-modal').classList.remove('hidden');
+    document.getElementById('delivery-modal').classList.add('flex');
+}
+
+function closeDeliveryModal() {
+    document.getElementById('delivery-modal').classList.add('hidden');
+    document.getElementById('delivery-modal').classList.remove('flex');
+}
+
+function toggleCustomPickup() {
+    const select = document.getElementById('del-pickup-loc');
+    const custom = document.getElementById('del-pickup-custom');
+    if (select.value === 'custom') {
+        custom.classList.remove('hidden');
+        custom.focus();
+    } else {
+        custom.classList.add('hidden');
+    }
+}
+
+function setPriority(p) {
+    document.getElementById('del-priority').value = p;
+    document.querySelectorAll('.priority-btn').forEach(btn => {
+        btn.classList.toggle('selected', btn.dataset.priority === p);
+    });
+}
+
+function addDeliveryItem() {
+    const name = document.getElementById('del-item-name').value.trim();
+    const qty = document.getElementById('del-item-qty').value.trim();
+    const unit = document.getElementById('del-item-unit').value.trim();
+    
+    if (!name) return;
+    
+    deliveryItems.push({ name, quantity: qty, unit });
+    renderDeliveryItems();
+    
+    document.getElementById('del-item-name').value = '';
+    document.getElementById('del-item-qty').value = '';
+    document.getElementById('del-item-unit').value = '';
+    document.getElementById('del-item-name').focus();
+}
+
+function removeDeliveryItem(index) {
+    deliveryItems.splice(index, 1);
+    renderDeliveryItems();
+}
+
+function renderDeliveryItems() {
+    const container = document.getElementById('del-items-list');
+    if (!deliveryItems.length) {
+        container.innerHTML = '';
+        return;
+    }
+    container.innerHTML = deliveryItems.map((item, i) => `
+        <div class="flex items-center gap-2 bg-white/5 p-2 rounded-lg">
+            <span class="flex-1">${item.name}</span>
+            <span class="text-gray-400">${item.quantity || ''} ${item.unit || ''}</span>
+            <button type="button" onclick="removeDeliveryItem(${i})" class="text-red-400 hover:text-red-300">×</button>
+        </div>
+    `).join('');
+}
+
+async function saveDelivery(e) {
+    e.preventDefault();
+    
+    const id = document.getElementById('edit-delivery-id').value;
+    const pickupLoc = document.getElementById('del-pickup-loc').value;
+    const pickupCustom = document.getElementById('del-pickup-custom').value;
+    const dropoffLoc = document.getElementById('del-dropoff-loc').value;
+    const date = document.getElementById('del-date').value;
+    const time = document.getElementById('del-time').value;
+    const priority = document.getElementById('del-priority').value;
+    const driverId = document.getElementById('del-driver').value;
+    const notes = document.getElementById('del-notes').value;
+    
+    const data = {
+        date,
+        scheduled_time: `${date}T${time}:00`,
+        pickup_location_id: pickupLoc && pickupLoc !== 'custom' ? pickupLoc : null,
+        pickup_address: pickupLoc === 'custom' ? pickupCustom : null,
+        dropoff_location_id: dropoffLoc,
+        priority,
+        assigned_driver_id: driverId || null,
+        items: deliveryItems.length ? deliveryItems : null,
+        notes: notes || null
+    };
+    
+    let error;
+    if (id) {
+        ({ error } = await sb.from('pazar_deliveries').update(data).eq('id', id));
+    } else {
+        data.created_by = currentUser.id;
+        ({ error } = await sb.from('pazar_deliveries').insert(data));
+    }
+    
+    if (error) {
+        alert('Greška: ' + error.message);
+        return;
+    }
+    
+    closeDeliveryModal();
+    loadDeliveries();
+}
+
+async function editDelivery(id) {
+    const delivery = deliveries.find(d => d.id === id);
+    if (delivery) {
+        showDeliveryModal(delivery);
+    }
+}
+
+async function cancelDelivery(id) {
+    if (!confirm('Otkazati dostavu?')) return;
+    
+    const { error } = await sb.from('pazar_deliveries')
+        .update({ status: 'cancelled', cancelled_at: new Date().toISOString() })
+        .eq('id', id);
+    
+    if (error) {
+        alert('Greška: ' + error.message);
+    } else {
+        loadDeliveries();
+    }
+}
 </script>
 
 <!-- Shift Detail Modal -->
