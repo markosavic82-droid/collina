@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Finansije - Predaja Pazara</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        * { font-family: -apple-system, BlinkMacSystemFont, sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background: #0D0B14; color: white; min-height: 100vh; }
+        .btn:active { transform: scale(0.98); opacity: 0.9; }
+        .card { background: #1A1F2E; border-radius: 16px; }
+        .bg-card { background: #1A1F2E; }
+        .bg-elevated { background: #252232; }
+        .accent { background: #8B5CF6; }
+        input, select { background: #252232; border: 1px solid rgba(255,255,255,0.1); color: white; padding: 12px; border-radius: 8px; }
+        input:focus, select:focus { outline: none; border-color: #8B5CF6; }
+        .btn { border: none; cursor: pointer; transition: all 0.2s; padding: 12px 24px; border-radius: 8px; font-weight: 500; }
+        .badge { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+        .badge-success { background: rgba(34,197,94,0.2); color: #22C55E; }
+        .badge-warning { background: rgba(245,158,11,0.2); color: #F59E0B; }
+        .badge-info { background: rgba(139,92,246,0.2); color: #8B5CF6; }
+        .badge-blue { background: rgba(59,130,246,0.2); color: #3B82F6; }
+    </style>
+</head>
+<body>
+    <!-- Login -->
+    <div id="login-screen" class="min-h-screen flex flex-col justify-center p-6">
+        <div class="text-center mb-8">
+            <div class="w-20 h-20 mx-auto mb-4 rounded-full bg-purple-500/20 flex items-center justify-center">
+                <span class="text-4xl">🏦</span>
+            </div>
+            <h1 class="text-2xl font-bold">Finansije</h1>
+            <p class="text-gray-400 mt-2">Prijem i verifikacija pazara</p>
+        </div>
+        <div class="max-w-xs mx-auto w-full">
+            <!-- PIN Display -->
+            <div class="flex justify-center gap-4 mb-8">
+                <div class="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-xl" id="dot-1"></div>
+                <div class="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-xl" id="dot-2"></div>
+                <div class="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-xl" id="dot-3"></div>
+                <div class="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-xl" id="dot-4"></div>
+            </div>
+            <!-- Numpad -->
+            <div class="grid grid-cols-3 gap-3">
+                <button onclick="numPress(1)" class="h-16 rounded-xl bg-white/5 text-xl font-semibold active:bg-white/10">1</button>
+                <button onclick="numPress(2)" class="h-16 rounded-xl bg-white/5 text-xl font-semibold active:bg-white/10">2</button>
+                <button onclick="numPress(3)" class="h-16 rounded-xl bg-white/5 text-xl font-semibold active:bg-white/10">3</button>
+                <button onclick="numPress(4)" class="h-16 rounded-xl bg-white/5 text-xl font-semibold active:bg-white/10">4</button>
+                <button onclick="numPress(5)" class="h-16 rounded-xl bg-white/5 text-xl font-semibold active:bg-white/10">5</button>
+                <button onclick="numPress(6)" class="h-16 rounded-xl bg-white/5 text-xl font-semibold active:bg-white/10">6</button>
+                <button onclick="numPress(7)" class="h-16 rounded-xl bg-white/5 text-xl font-semibold active:bg-white/10">7</button>
+                <button onclick="numPress(8)" class="h-16 rounded-xl bg-white/5 text-xl font-semibold active:bg-white/10">8</button>
+                <button onclick="numPress(9)" class="h-16 rounded-xl bg-white/5 text-xl font-semibold active:bg-white/10">9</button>
+                <div></div>
+                <button onclick="numPress(0)" class="h-16 rounded-xl bg-white/5 text-xl font-semibold active:bg-white/10">0</button>
+                <button onclick="numDelete()" class="h-16 rounded-xl bg-white/5 text-xl font-semibold active:bg-white/10">⌫</button>
+            </div>
+            <button onclick="login()" class="btn w-full accent text-white p-4 rounded-xl font-semibold text-lg mt-6">Prijava</button>
+            <p id="login-error" class="text-red-500 text-center mt-4 hidden">PIN nije pronađen</p>
+        </div>
+    </div>
+
+    <div id="main-app" class="hidden">
+        <div class="bg-card border-b border-white/10 p-4">
+            <div class="max-w-7xl mx-auto flex justify-between items-center">
+                <div class="flex items-center gap-4">
+                    <span class="text-2xl">🏦</span>
+                    <div>
+                        <h1 class="text-xl font-bold">Finansije</h1>
+                        <p class="text-gray-400 text-sm" id="user-display">-</p>
+                    </div>
+                </div>
+                <button onclick="logout()" class="text-gray-400 hover:text-white">Odjava</button>
+            </div>
+        </div>
+
+        <div class="max-w-7xl mx-auto p-6">
+            <div class="bg-card rounded-xl p-4 mb-6">
+                <div class="flex flex-wrap gap-4 items-end">
+                    <div>
+                        <label class="text-gray-400 text-sm block mb-1">Od</label>
+                        <input type="date" id="filter-from" class="w-40" onchange="loadData()">
+                    </div>
+                    <div>
+                        <label class="text-gray-400 text-sm block mb-1">Do</label>
+                        <input type="date" id="filter-to" class="w-40" onchange="loadData()">
+                    </div>
+                    <div>
+                        <label class="text-gray-400 text-sm block mb-1">Lokacija</label>
+                        <select id="filter-loc" class="w-48" onchange="loadData()"><option value="">Sve lokacije</option></select>
+                    </div>
+                    <button onclick="loadData()" class="btn accent text-white">🔄 Osveži</button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+                <div class="bg-card rounded-xl p-4 text-center">
+                    <p class="text-3xl font-bold text-yellow-400" id="sum-pending">0</p>
+                    <p class="text-gray-400 text-sm mt-1">Čeka prijem</p>
+                </div>
+                <div class="bg-card rounded-xl p-4 text-center">
+                    <p class="text-3xl font-bold text-blue-400" id="sum-received">0</p>
+                    <p class="text-gray-400 text-sm mt-1">Primljeno</p>
+                </div>
+                <div class="bg-card rounded-xl p-4 text-center">
+                    <p class="text-3xl font-bold text-purple-400" id="sum-counted">0</p>
+                    <p class="text-gray-400 text-sm mt-1">Prebrojano</p>
+                </div>
+                <div class="bg-card rounded-xl p-4 text-center">
+                    <p class="text-3xl font-bold text-green-400" id="sum-verified">0</p>
+                    <p class="text-gray-400 text-sm mt-1">Verifikovano</p>
+                </div>
+                <div class="bg-card rounded-xl p-4 text-center">
+                    <p class="text-3xl font-bold text-green-500" id="sum-banked">0</p>
+                    <p class="text-gray-400 text-sm mt-1">U banci</p>
+                </div>
+            </div>
+
+            <div id="bank-action" class="bg-green-500/10 border border-green-500/30 rounded-xl p-4 mb-6 hidden">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <p class="text-green-400 font-medium">💰 Spremno za depozit u banku</p>
+                        <p class="text-2xl font-bold text-white mt-1" id="bank-total">0 RSD</p>
+                    </div>
+                    <button onclick="showBankModal()" class="btn bg-green-500 text-white text-lg px-6">🏦 Deponuj u banku</button>
+                </div>
+            </div>
+
+            <div id="data-container"><p class="text-gray-400 text-center py-8">Učitavanje...</p></div>
+        </div>
+    </div>
+
+    <div id="receive-modal" class="fixed inset-0 bg-black/70 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-card rounded-2xl w-full max-w-md p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold">📥 Prijem novca</h2>
+                <button onclick="closeModal('receive')" class="text-gray-400 text-2xl">&times;</button>
+            </div>
+            <div class="mb-4"><p class="text-gray-400 text-sm">Lokacija</p><p class="text-xl font-bold" id="receive-location">-</p></div>
+            <div class="mb-4"><p class="text-gray-400 text-sm">Vozač</p><p class="font-medium" id="receive-driver">-</p></div>
+            <div class="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4 mb-6">
+                <p class="text-yellow-400 text-sm">⚠️ Potvrdi prijem koverte/kese sa novcem od vozača.</p>
+            </div>
+            <button onclick="confirmReceive()" class="w-full btn bg-blue-500 text-white text-lg">✓ Potvrdi prijem</button>
+        </div>
+    </div>
+
+    <div id="count-modal" class="fixed inset-0 bg-black/70 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-card rounded-2xl w-full max-w-md p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold" id="count-title">💵 Brojanje novca</h2>
+                <button onclick="closeModal('count')" class="text-gray-400 text-2xl">&times;</button>
+            </div>
+            <div class="mb-4"><p class="text-gray-400 text-sm">Lokacija</p><p class="text-xl font-bold" id="count-location">-</p></div>
+            <div class="mb-4"><p class="text-gray-400 text-sm">Očekivani iznos</p><p class="text-2xl font-bold text-yellow-400" id="count-expected">-</p></div>
+            <div class="mb-6">
+                <label class="text-gray-400 text-sm block mb-2">Prebrojani iznos (RSD)</label>
+                <input type="number" id="count-amount" class="w-full text-2xl text-center" placeholder="0" inputmode="numeric">
+            </div>
+            <div id="count-diff" class="mb-4 hidden">
+                <div class="bg-black/20 rounded-lg p-4 flex justify-between">
+                    <span class="text-gray-400">Razlika:</span>
+                    <span class="font-bold text-xl" id="count-diff-value">0 RSD</span>
+                </div>
+            </div>
+            <div id="count-discrepancy" class="mb-4 hidden">
+                <div class="bg-red-500/10 border border-red-500/30 rounded-lg p-4">
+                    <p class="text-red-400 text-sm mb-3">⚠️ Razlika - unesi razlog:</p>
+                    <select id="count-reason" class="w-full mb-2">
+                        <option value="">-- Izaberi razlog --</option>
+                        <option value="counting_error">Greška pri brojanju na lokaciji</option>
+                        <option value="missing_cash">Nedostaje novac</option>
+                        <option value="extra_cash">Višak novca</option>
+                        <option value="other">Ostalo</option>
+                    </select>
+                    <input type="text" id="count-comment" class="w-full" placeholder="Komentar...">
+                </div>
+            </div>
+            <button onclick="confirmCount()" class="w-full btn bg-purple-500 text-white text-lg" id="count-btn">✓ Potvrdi</button>
+        </div>
+    </div>
+
+    <div id="bank-modal" class="fixed inset-0 bg-black/70 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-card rounded-2xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold">🏦 Depozit u banku</h2>
+                <button onclick="closeModal('bank')" class="text-gray-400 text-2xl">&times;</button>
+            </div>
+            <div class="text-center mb-4">
+                <p class="text-gray-400">Izabrani iznos</p>
+                <p class="text-4xl font-bold text-green-400 mt-2" id="bank-modal-total">0 RSD</p>
+                <p class="text-gray-500 text-sm mt-1" id="bank-modal-count">0 lokacija</p>
+            </div>
+            <div class="mb-4">
+                <div class="flex justify-between items-center mb-2">
+                    <p class="text-gray-400 text-sm">Izaberi lokacije za depozit:</p>
+                    <button onclick="toggleAllBankItems()" class="text-purple-400 text-xs hover:text-purple-300">Izaberi sve / Ništa</button>
+                </div>
+                <div id="bank-locations-list" class="bg-black/20 rounded-lg p-3 max-h-60 overflow-y-auto space-y-2"></div>
+            </div>
+            <div class="mb-6">
+                <label class="text-gray-400 text-sm block mb-2">Broj uplatnice</label>
+                <input type="text" id="bank-reference" class="w-full" placeholder="Unesi broj uplatnice...">
+            </div>
+            <button onclick="confirmBankDeposit()" class="w-full btn bg-green-500 text-white text-lg">✓ Potvrdi depozit</button>
+        </div>
+    </div>
+
+<script>
+const SUPABASE_URL = 'https://bbnbbbpofelbkyuffslj.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJibmJiYnBvZmVsYmt5dWZmc2xqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUwNTI0MzQsImV4cCI6MjA4MDYyODQzNH0.koW44soAB-bEfh8OzqjGBwdgov4Snscw1ITsg5OureU';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let user = null, allData = {}, selectedPickup = null, expectedAmounts = {};
+let pinCode = '';
+
+// PIN Input
+function numPress(num) {
+    if (pinCode.length >= 4) return;
+    pinCode += num;
+    updatePinDisplay();
+    if (pinCode.length === 4) {
+        setTimeout(() => login(), 200);
+    }
+}
+
+function numDelete() {
+    pinCode = pinCode.slice(0, -1);
+    updatePinDisplay();
+}
+
+function updatePinDisplay() {
+    for (let i = 1; i <= 4; i++) {
+        document.getElementById('dot-' + i).textContent = i <= pinCode.length ? '●' : '';
+    }
+}
+
+function clearPin() {
+    pinCode = '';
+    updatePinDisplay();
+    document.getElementById('login-error').classList.add('hidden');
+}
+
+async function login() {
+    if (pinCode.length !== 4) return;
+    
+    const { data } = await sb.from('pazar_users').select('*').eq('pin', pinCode).eq('is_active', true);
+    const validUser = data?.find(u => ['finansije', 'admin'].includes(u.role));
+    
+    if (!validUser) { 
+        document.getElementById('login-error').classList.remove('hidden');
+        clearPin();
+        return; 
+    }
+    
+    user = validUser;
+    document.getElementById('user-display').textContent = `${user.first_name} ${user.last_name}`;
+    document.getElementById('login-screen').classList.add('hidden');
+    document.getElementById('main-app').classList.remove('hidden');
+    initFilters(); loadLocations(); loadData();
+}
+
+function logout() {
+    user = null;
+    clearPin();
+    document.getElementById('login-screen').classList.remove('hidden');
+    document.getElementById('main-app').classList.add('hidden');
+}
+
+function initFilters() {
+    const today = new Date().toISOString().split('T')[0];
+    const weekAgo = new Date(Date.now() - 7*24*60*60*1000).toISOString().split('T')[0];
+    document.getElementById('filter-from').value = weekAgo;
+    document.getElementById('filter-to').value = today;
+}
+
+async function loadLocations() {
+    const { data } = await sb.from('pazar_locations').select('*').eq('is_active', true).order('code');
+    allData.locations = data || [];
+    document.getElementById('filter-loc').innerHTML = '<option value="">Sve lokacije</option>' + 
+        allData.locations.map(l => `<option value="${l.id}">${l.code} - ${l.name}</option>`).join('');
+}
+
+async function loadData() {
+    const from = document.getElementById('filter-from').value;
+    const to = document.getElementById('filter-to').value;
+    const loc = document.getElementById('filter-loc').value;
+    
+    let q1 = sb.from('pazar_shifts').select('*, user:pazar_users(first_name, last_name), location:pazar_locations(code, name, current_deposit), spec:pazar_daily_specifications(*)').order('date', {ascending: false}).order('shift_order');
+    if (from) q1 = q1.gte('date', from); if (to) q1 = q1.lte('date', to); if (loc) q1 = q1.eq('location_id', loc);
+    const { data: shifts } = await q1;
+    allData.shifts = shifts || [];
+    
+    let q2 = sb.from('pazar_cash_pickups').select('*, driver:pazar_users(first_name, last_name), location:pazar_locations(code, name, current_deposit)');
+    if (from) q2 = q2.gte('date', from); if (to) q2 = q2.lte('date', to); if (loc) q2 = q2.eq('location_id', loc);
+    const { data: pickups } = await q2;
+    allData.pickups = pickups || [];
+    
+    let q3 = sb.from('pazar_finance_records').select('*, received_user:pazar_users!received_by(first_name, last_name), verified_user:pazar_users!verified_by(first_name, last_name)');
+    if (from) q3 = q3.gte('date', from); if (to) q3 = q3.lte('date', to); if (loc) q3 = q3.eq('location_id', loc);
+    const { data: finRecs } = await q3;
+    allData.financeRecords = finRecs || [];
+    
+    let q4 = sb.from('pazar_bank_deposits').select('*, depositor:pazar_users!deposited_by(first_name, last_name)');
+    if (from) q4 = q4.gte('date', from); if (to) q4 = q4.lte('date', to);
+    const { data: bankDeps } = await q4;
+    allData.bankDeposits = bankDeps || [];
+    
+    expectedAmounts = {};
+    allData.shifts.filter(s => s.is_last_shift).forEach(s => {
+        const dep = s.location?.current_deposit || 10000;
+        expectedAmounts[`${s.location_id}-${s.date}`] = s.spec?.counted_amount || (s.ending_amount ? s.ending_amount - dep : 0);
+    });
+    
+    renderData();
+}
+
+function fmt(n) { return n == null ? '-' : new Intl.NumberFormat('sr-RS').format(Math.round(n)) + ' RSD'; }
+function fmtTime(d) { return d ? new Date(d).toLocaleTimeString('sr-RS', {hour:'2-digit', minute:'2-digit'}) : '-'; }
+function fmtDate(d) { return d ? new Date(d).toLocaleDateString('sr-RS') : '-'; }
+
+function renderData() {
+    const groups = {};
+    allData.shifts.forEach(s => {
+        const key = `${s.date}-${s.location_id}`;
+        if (!groups[key]) groups[key] = { date: s.date, location: s.location, location_id: s.location_id, shifts: [] };
+        groups[key].shifts.push(s);
+    });
+    
+    const pickupMap = {}, financeMap = {}, bankMap = {};
+    allData.pickups.forEach(p => { pickupMap[`${p.location_id}-${p.date}`] = p; });
+    allData.financeRecords.forEach(f => { financeMap[f.pickup_id] = f; });
+    allData.bankDeposits.forEach(b => { bankMap[b.id] = b; });
+    
+    let pending=0, received=0, counted=0, verified=0, banked=0, totalForBank=0;
+    const forBankList = [];
+    
+    const sorted = Object.values(groups).sort((a,b) => b.date.localeCompare(a.date));
+    
+    const html = sorted.map(g => {
+        const deposit = g.location?.current_deposit || 10000;
+        const lastShift = g.shifts.find(s => s.is_last_shift);
+        const isClosed = lastShift?.status === 'closed';
+        const pickup = pickupMap[`${g.location_id}-${g.date}`];
+        const finRec = pickup ? financeMap[pickup.id] : null;
+        const bankDep = finRec?.bank_deposit_id ? bankMap[finRec.bank_deposit_id] : null;
+        
+        if (pickup?.delivered_at && !finRec) pending++;
+        else if (finRec?.received_at && !finRec?.counted_at) received++;
+        else if (finRec?.counted_at && !finRec?.verified_at) counted++;
+        else if (finRec?.verified_at && !finRec?.banked_at) { verified++; totalForBank += finRec.counted_amount || 0; forBankList.push({ finRec, pickup, location: g.location }); }
+        else if (finRec?.banked_at) banked++;
+        
+        let tbl = `<div class="bg-card rounded-xl overflow-hidden mb-4">
+            <div class="bg-elevated p-4 flex justify-between items-center">
+                <div class="flex items-center gap-4">
+                    <span class="text-lg font-bold">${fmtDate(g.date)}</span>
+                    <span class="text-purple-400 font-medium">${g.location?.code || '-'}</span>
+                    <span class="text-gray-400">${g.location?.name || '-'}</span>
+                </div>
+                <div>${isClosed ? '<span class="badge badge-success">✓ Zatvoreno</span>' : '<span class="badge badge-warning">U toku</span>'}</div>
+            </div>
+            <div class="overflow-x-auto"><table class="w-full text-sm">
+            <thead class="text-gray-500 text-xs border-b border-white/10"><tr>
+                <th class="p-2 text-left">Smena</th><th class="p-2 text-left">Tip</th><th class="p-2 text-left">Konobar</th><th class="p-2 text-left">Vreme</th>
+                <th class="p-2 text-right">Keš</th><th class="p-2 text-right">Depozit</th>
+                <th class="p-2 text-right border-l border-white/10">Gotovina</th><th class="p-2 text-right">Kartica</th><th class="p-2 text-right">Očekivani keš</th>
+                <th class="p-2 text-right border-l border-white/10">Prebrojano</th><th class="p-2 text-right">Razlika</th>
+            </tr></thead><tbody>`;
+        
+        g.shifts.sort((a,b) => a.shift_order - b.shift_order).forEach((s, i) => {
+            const sp = s.spec, isFirst = i === 0;
+            const gotovina = sp?.ebar_total || 0, kartica = sp?.terminal_amount || 0, kes = sp ? gotovina - kartica : 0;
+            const prebrojano = sp?.counted_amount || 0, razlika = sp ? prebrojano - kes : null;
+            const diffClass = razlika === null ? '' : razlika < -100 ? 'text-red-400' : razlika > 100 ? 'text-green-400' : '';
+            
+            tbl += `<tr class="border-t border-white/10 bg-green-500/5">
+                <td class="p-2 font-medium" rowspan="2">${s.shift_order}.</td>
+                <td class="p-2 text-green-400">▶ Početak</td>
+                <td class="p-2">${s.user?.first_name || ''} ${s.user?.last_name || ''}</td>
+                <td class="p-2 text-gray-400">${fmtTime(s.started_at)}</td>
+                <td class="p-2 text-right">${isFirst ? '-' : fmt(s.starting_amount - deposit)}</td>
+                <td class="p-2 text-right text-purple-400">${fmt(isFirst ? s.starting_amount : deposit)}</td>
+                <td class="p-2 border-l border-white/10 text-center text-gray-600" colspan="5">—</td>
+            </tr>
+            <tr class="border-t border-white/5 ${sp ? 'bg-orange-500/5' : 'bg-gray-500/5'}">
+                <td class="p-2 text-orange-400">■ Kraj</td>
+                <td class="p-2">${s.user?.first_name || ''} ${s.user?.last_name || ''}</td>
+                <td class="p-2 text-gray-400">${fmtTime(s.ended_at)}</td>
+                <td class="p-2 text-right">${sp ? fmt(prebrojano) : '-'}</td>
+                <td class="p-2 text-right text-purple-400">${fmt(deposit)}</td>
+                ${sp ? `<td class="p-2 text-right border-l border-white/10">${fmt(gotovina)}</td>
+                    <td class="p-2 text-right text-gray-400">${fmt(kartica)}</td>
+                    <td class="p-2 text-right text-yellow-400">${fmt(kes)}</td>
+                    <td class="p-2 text-right border-l border-white/10 text-green-400">${fmt(prebrojano)}</td>
+                    <td class="p-2 text-right font-bold ${diffClass}">${razlika !== null ? (razlika > 0 ? '+' : '') + fmt(razlika) : '-'}</td>` 
+                    : `<td class="p-2 border-l border-white/10 text-center text-gray-600" colspan="5">— u toku —</td>`}
+            </tr>`;
+        });
+        
+        if (isClosed && lastShift) {
+            const cashForSafe = lastShift.spec?.counted_amount || (lastShift.ending_amount - deposit);
+            tbl += `<tr class="border-t-2 border-purple-500 bg-purple-500/10">
+                <td class="p-3 font-bold text-purple-400" colspan="4">🔒 KRAJ DANA</td>
+                <td class="p-3 text-right font-bold text-lg">${fmt(cashForSafe)}</td>
+                <td class="p-3 text-right text-purple-400">${fmt(deposit)}</td>
+                <td class="p-3 border-l border-white/10" colspan="4"></td>
+                <td class="p-3 text-right font-bold text-green-400">${fmt(cashForSafe)} za sef</td>
+            </tr>`;
+            
+            tbl += `</tbody></table></div>`;
+            
+            // Cash Flow Summary Card
+            tbl += `<div class="p-4 border-t border-white/10 bg-black/20">
+                <p class="text-xs text-gray-500 uppercase tracking-wide mb-3">Tok novca</p>
+                <div class="grid grid-cols-3 gap-4">`;
+            
+            // 1. Prikupljanje
+            if (pickup) {
+                const pickupDone = pickup.delivered_at;
+                tbl += `<div class="bg-blue-500/10 rounded-lg p-3 border ${pickupDone ? 'border-blue-500/30' : 'border-yellow-500/30'}">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="text-lg">🚗</span>
+                        <span class="font-medium ${pickupDone ? 'text-blue-400' : 'text-yellow-400'}">Prikupljanje</span>
+                        ${pickupDone ? '<span class="ml-auto text-green-400">✓</span>' : '<span class="ml-auto text-yellow-400">⏳</span>'}
+                    </div>
+                    <div class="text-xs space-y-1 text-gray-400">
+                        <div class="flex justify-between"><span>Vozač:</span><span class="text-white">${pickup.driver?.first_name || '-'} ${pickup.driver?.last_name || ''}</span></div>
+                        <div class="flex justify-between"><span>Pokupljeno:</span><span class="text-white">${fmtTime(pickup.picked_at)}</span></div>
+                        <div class="flex justify-between"><span>Predato:</span><span class="${pickupDone ? 'text-green-400' : 'text-gray-500'}">${fmtTime(pickup.delivered_at)}</span></div>
+                    </div>
+                </div>`;
+            } else {
+                tbl += `<div class="bg-gray-500/10 rounded-lg p-3 border border-gray-500/30">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="text-lg">🚗</span>
+                        <span class="font-medium text-gray-400">Prikupljanje</span>
+                        <span class="ml-auto text-yellow-400">⏳</span>
+                    </div>
+                    <p class="text-xs text-gray-500">Čeka prikupljanje</p>
+                </div>`;
+            }
+            
+            // 2. Finansije
+            if (finRec) {
+                const isReceived = finRec.received_at;
+                const isVerified = finRec.verified_at;
+                const receivedTime = finRec.received_at ? new Date(finRec.received_at).toLocaleTimeString('sr-RS', {hour:'2-digit', minute:'2-digit'}) : '-';
+                const verifiedTime = finRec.verified_at ? new Date(finRec.verified_at).toLocaleTimeString('sr-RS', {hour:'2-digit', minute:'2-digit'}) : '-';
+                
+                tbl += `<div class="bg-purple-500/10 rounded-lg p-3 border ${isVerified ? 'border-green-500/30' : 'border-purple-500/30'}">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="text-lg">💰</span>
+                        <span class="font-medium text-purple-400">Finansije</span>
+                        ${isVerified ? '<span class="ml-auto text-green-400">✓</span>' : '<span class="ml-auto text-purple-400">⏳</span>'}
+                    </div>
+                    <div class="text-xs space-y-1 text-gray-400">
+                        <div class="flex justify-between items-center">
+                            <span>1. Primljeno:</span>
+                            <span class="${isReceived ? 'text-green-400' : 'text-gray-500'}">${receivedTime} ${isReceived ? '✓' : ''}</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span>2. Zavedeno:</span>
+                            <span class="${isVerified ? 'text-green-400' : 'text-gray-500'}">${verifiedTime} ${isVerified ? '✓' : ''}</span>
+                        </div>
+                        ${finRec.counted_amount ? `<div class="flex justify-between border-t border-white/10 pt-1 mt-1"><span>Iznos:</span><span class="text-white font-medium">${fmt(finRec.counted_amount)}</span></div>` : ''}
+                        <div class="flex justify-between"><span>Osoba:</span><span class="text-white">${finRec.verified_user?.first_name || finRec.received_user?.first_name || '-'}</span></div>
+                    </div>
+                    ${!isVerified ? `<button onclick="showCountModal('${pickup?.id}', false)" class="mt-2 w-full btn bg-purple-500 text-white text-xs py-2">💵 Zavedi</button>` : ''}
+                </div>`;
+            } else if (pickup?.delivered_at) {
+                tbl += `<div class="bg-yellow-500/10 rounded-lg p-3 border border-yellow-500/30">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="text-lg">💰</span>
+                        <span class="font-medium text-yellow-400">Finansije</span>
+                        <span class="ml-auto text-yellow-400">⏳</span>
+                    </div>
+                    <p class="text-xs text-gray-500 mb-2">Čeka prijem</p>
+                    <button onclick="showReceiveModal('${pickup.id}')" class="w-full btn bg-blue-500 text-white text-xs py-2">📥 Primi novac</button>
+                </div>`;
+            } else {
+                tbl += `<div class="bg-gray-500/10 rounded-lg p-3 border border-gray-500/30">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="text-lg">💰</span>
+                        <span class="font-medium text-gray-400">Finansije</span>
+                    </div>
+                    <p class="text-xs text-gray-500">Čeka prikupljanje</p>
+                </div>`;
+            }
+            
+            // 3. Banka
+            if (finRec?.banked_at && bankDep) {
+                tbl += `<div class="bg-green-500/10 rounded-lg p-3 border border-green-500/30">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="text-lg">🏦</span>
+                        <span class="font-medium text-green-400">Banka</span>
+                        <span class="ml-auto text-green-400">✓</span>
+                    </div>
+                    <div class="text-xs space-y-1 text-gray-400">
+                        <div class="flex justify-between"><span>Status:</span><span class="text-green-400 font-medium">Deponovano</span></div>
+                        <div class="flex justify-between"><span>Referenca:</span><span class="text-white">${bankDep.reference_number || '-'}</span></div>
+                        <div class="flex justify-between"><span>Osoba:</span><span class="text-white">${bankDep.depositor?.first_name || '-'}</span></div>
+                        <div class="flex justify-between"><span>Vreme:</span><span class="text-white">${fmtTime(finRec.banked_at)}</span></div>
+                    </div>
+                </div>`;
+            } else if (finRec?.verified_at) {
+                tbl += `<div class="bg-yellow-500/10 rounded-lg p-3 border border-yellow-500/30">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="text-lg">🏦</span>
+                        <span class="font-medium text-yellow-400">Banka</span>
+                        <span class="ml-auto text-yellow-400">⏳</span>
+                    </div>
+                    <p class="text-xs text-gray-500">Čeka depozit</p>
+                </div>`;
+            } else {
+                tbl += `<div class="bg-gray-500/10 rounded-lg p-3 border border-gray-500/30">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="text-lg">🏦</span>
+                        <span class="font-medium text-gray-400">Banka</span>
+                    </div>
+                    <p class="text-xs text-gray-500">Čeka verifikaciju</p>
+                </div>`;
+            }
+            
+            tbl += `</div></div>`;
+        }
+        
+        tbl += `</div>`;
+        return tbl;
+    }).join('');
+    
+    document.getElementById('data-container').innerHTML = html || '<p class="text-gray-400 text-center py-8">Nema podataka</p>';
+    document.getElementById('sum-pending').textContent = pending;
+    document.getElementById('sum-received').textContent = received;
+    document.getElementById('sum-counted').textContent = counted;
+    document.getElementById('sum-verified').textContent = verified;
+    document.getElementById('sum-banked').textContent = banked;
+    
+    if (verified > 0) {
+        document.getElementById('bank-action').classList.remove('hidden');
+        document.getElementById('bank-total').textContent = fmt(totalForBank);
+        window.forBankList = forBankList;
+    } else document.getElementById('bank-action').classList.add('hidden');
+}
+
+function closeModal(name) { document.getElementById(`${name}-modal`).classList.add('hidden'); }
+
+function showReceiveModal(pickupId) {
+    selectedPickup = allData.pickups.find(p => p.id === pickupId);
+    document.getElementById('receive-location').textContent = `${selectedPickup.location?.code} - ${selectedPickup.location?.name}`;
+    document.getElementById('receive-driver').textContent = selectedPickup.driver ? `${selectedPickup.driver.first_name} ${selectedPickup.driver.last_name}` : '-';
+    document.getElementById('receive-modal').classList.remove('hidden');
+}
+
+async function confirmReceive() {
+    await sb.from('pazar_finance_records').insert({ pickup_id: selectedPickup.id, location_id: selectedPickup.location_id, date: selectedPickup.date, received_by: user.id, received_at: new Date().toISOString() });
+    closeModal('receive'); loadData();
+}
+
+function showCountModal(pickupId, isVerify) {
+    selectedPickup = allData.pickups.find(p => p.id === pickupId);
+    const finRec = allData.financeRecords.find(f => f.pickup_id === pickupId);
+    const expected = expectedAmounts[`${selectedPickup.location_id}-${selectedPickup.date}`] || 0;
+    
+    document.getElementById('count-title').textContent = isVerify ? '✓ Verifikacija' : '💵 Brojanje';
+    document.getElementById('count-location').textContent = `${selectedPickup.location?.code} - ${selectedPickup.location?.name}`;
+    document.getElementById('count-expected').textContent = fmt(expected);
+    document.getElementById('count-amount').value = finRec?.counted_amount || '';
+    document.getElementById('count-diff').classList.add('hidden');
+    document.getElementById('count-discrepancy').classList.add('hidden');
+    document.getElementById('count-btn').textContent = isVerify ? '✓ Verifikuj' : '✓ Potvrdi iznos';
+    
+    window.countExpected = expected;
+    window.isVerifyMode = isVerify;
+    window.currentFinRec = finRec;
+    
+    document.getElementById('count-amount').oninput = function() {
+        const diff = (parseFloat(this.value) || 0) - window.countExpected;
+        document.getElementById('count-diff').classList.remove('hidden');
+        document.getElementById('count-diff-value').textContent = (diff >= 0 ? '+' : '') + fmt(diff);
+        document.getElementById('count-diff-value').className = `font-bold text-xl ${Math.abs(diff) <= 100 ? 'text-green-400' : 'text-red-400'}`;
+        document.getElementById('count-discrepancy').classList.toggle('hidden', Math.abs(diff) <= 100);
+    };
+    
+    document.getElementById('count-modal').classList.remove('hidden');
+}
+
+async function confirmCount() {
+    const amount = parseFloat(document.getElementById('count-amount').value) || 0;
+    if (amount <= 0) { alert('Unesi iznos'); return; }
+    const diff = amount - window.countExpected;
+    let reason = null, comment = null;
+    if (Math.abs(diff) > 100) {
+        reason = document.getElementById('count-reason').value;
+        comment = document.getElementById('count-comment').value;
+        if (!reason) { alert('Izaberi razlog'); return; }
+    }
+    
+    const finRec = window.currentFinRec;
+    if (window.isVerifyMode) {
+        await sb.from('pazar_finance_records').update({ verified_at: new Date().toISOString(), verified_by: user.id, discrepancy_reason: reason, discrepancy_comment: comment }).eq('id', finRec.id);
+    } else {
+        await sb.from('pazar_finance_records').update({ counted_amount: amount, counted_at: new Date().toISOString(), verified_at: new Date().toISOString(), verified_by: user.id, discrepancy_reason: reason, discrepancy_comment: comment }).eq('id', finRec.id);
+    }
+    closeModal('count'); loadData();
+}
+
+function showBankModal() {
+    const list = window.forBankList || [];
+    
+    // Generate checkboxes for each location/date
+    document.getElementById('bank-locations-list').innerHTML = list.map((item, idx) => {
+        const dateStr = item.finRec.date ? new Date(item.finRec.date).toLocaleDateString('sr-RS', {day:'2-digit', month:'2-digit'}) : '-';
+        return `
+            <label class="flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 cursor-pointer border border-transparent hover:border-white/10">
+                <input type="checkbox" class="bank-item-check w-5 h-5 accent-green-500" data-idx="${idx}" checked onchange="updateBankTotal()">
+                <div class="flex-1">
+                    <div class="font-medium text-white">${item.location?.name || '-'}</div>
+                    <div class="text-xs text-gray-500">${dateStr}</div>
+                </div>
+                <span class="font-bold text-green-400">${fmt(item.finRec.counted_amount)}</span>
+            </label>
+        `;
+    }).join('');
+    
+    document.getElementById('bank-reference').value = '';
+    updateBankTotal();
+    document.getElementById('bank-modal').classList.remove('hidden');
+}
+
+function updateBankTotal() {
+    const list = window.forBankList || [];
+    const checks = document.querySelectorAll('.bank-item-check');
+    let total = 0;
+    let count = 0;
+    
+    checks.forEach(chk => {
+        if (chk.checked) {
+            const idx = parseInt(chk.dataset.idx);
+            total += list[idx]?.finRec?.counted_amount || 0;
+            count++;
+        }
+    });
+    
+    document.getElementById('bank-modal-total').textContent = fmt(total);
+    document.getElementById('bank-modal-count').textContent = `${count} lokacija`;
+}
+
+function toggleAllBankItems() {
+    const checks = document.querySelectorAll('.bank-item-check');
+    const allChecked = Array.from(checks).every(c => c.checked);
+    checks.forEach(c => c.checked = !allChecked);
+    updateBankTotal();
+}
+
+async function confirmBankDeposit() {
+    const list = window.forBankList || [];
+    const checks = document.querySelectorAll('.bank-item-check');
+    
+    // Get selected items
+    const selectedItems = [];
+    checks.forEach(chk => {
+        if (chk.checked) {
+            const idx = parseInt(chk.dataset.idx);
+            selectedItems.push(list[idx]);
+        }
+    });
+    
+    if (!selectedItems.length) { 
+        alert('Izaberi bar jednu lokaciju'); 
+        return; 
+    }
+    
+    const total = selectedItems.reduce((sum, i) => sum + (i.finRec.counted_amount || 0), 0);
+    const ref = document.getElementById('bank-reference').value.trim();
+    
+    try {
+        const { data: bankDep, error: bankErr } = await sb.from('pazar_bank_deposits').insert({ 
+            total_amount: total, 
+            locations_count: selectedItems.length, 
+            reference_number: ref || null, 
+            deposited_by: user.id, 
+            deposited_at: new Date().toISOString() 
+        }).select().single();
+        
+        if (bankErr) throw bankErr;
+        
+        for (const item of selectedItems) {
+            const { error: updErr } = await sb.from('pazar_finance_records').update({ 
+                banked_at: new Date().toISOString(), 
+                bank_deposit_id: bankDep.id 
+            }).eq('id', item.finRec.id);
+            if (updErr) console.error('Update error:', updErr);
+        }
+        
+        closeModal('bank'); 
+        loadData(); 
+        alert('✅ Depozit završen!');
+    } catch (err) {
+        console.error('Bank deposit error:', err);
+        alert('Greška: ' + (err.message || JSON.stringify(err)));
+    }
+}
+</script>
+</body>
+</html>
