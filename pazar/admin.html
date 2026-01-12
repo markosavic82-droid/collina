@@ -1285,8 +1285,23 @@ async function loadPazari() {
                             ${fmt(finalPrebrojano)}
                             ${topup > 0 ? `<div class="text-xs text-blue-400">+${fmt(topup)}</div>` : ''}
                         </td>
-                        <td class="p-2 text-right font-bold ${diffClass}">
-                            ${razlika !== null ? (razlika > 0 ? '+' : '') + fmt(razlika) : '-'}
+                        <td class="p-2 text-right">
+                            ${(() => {
+                                // Original razlika (pre topup-a) = prebrojano - očekivani keš
+                                const originalRazlika = prebrojano - kes;
+                                
+                                if (topup > 0) {
+                                    // Imao manjak, dopunio
+                                    return `
+                                        <div class="text-red-400 text-xs">${fmt(originalRazlika)}</div>
+                                        <div class="text-blue-400 text-xs">+${fmt(topup)}</div>
+                                        <div class="font-bold ${diffClass}">${razlika !== null ? (razlika >= 0 ? (razlika > 0 ? '+' : '') + fmt(razlika) : fmt(razlika)) : '-'}</div>
+                                    `;
+                                } else {
+                                    // Bez dopune - samo razlika
+                                    return `<div class="font-bold ${diffClass}">${razlika !== null ? (razlika > 0 ? '+' : '') + fmt(razlika) : '-'}</div>`;
+                                }
+                            })()}
                             ${sp.shortage_comment || sp.topup_source ? ' 💬' : ''}
                         </td>
                     ` : `
