@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Kupac Pazara - Collina</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        * { font-family: -apple-system, BlinkMacSystemFont, sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background: #0D0B14; min-height: 100vh; }
+        .card { background: #1A1F2E; border-radius: 16px; }
+        .accent { background: #8B5CF6; }
+        .btn { border: none; cursor: pointer; transition: all 0.15s; }
+        .btn:active { transform: scale(0.97); }
+        .screen { display: none; min-height: 100vh; }
+        .screen.active { display: flex; flex-direction: column; }
+        .badge { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+        .status-pending { background: rgba(245,158,11,0.2); color: #F59E0B; }
+        .status-picked { background: rgba(59,130,246,0.2); color: #3B82F6; }
+        .status-delivered { background: rgba(34,197,94,0.2); color: #22C55E; }
+        .photo-thumb { width: 70px; height: 70px; border-radius: 8px; object-fit: cover; }
+    </style>
+</head>
+<body class="text-white">
+    <!-- LOGIN -->
+    <div id="screen-login" class="screen active items-center justify-center p-6">
+        <div class="w-full max-w-sm">
+            <div class="text-center mb-8">
+                <div class="w-20 h-20 mx-auto mb-4 rounded-full bg-purple-500/20 flex items-center justify-center text-4xl">💰</div>
+                <h1 class="text-2xl font-bold">Kupac Pazara</h1>
+                <p class="text-gray-400 mt-2">Collina sistem</p>
+            </div>
+            <div class="flex justify-center gap-4 mb-8">
+                <div class="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-xl" id="dot-1"></div>
+                <div class="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-xl" id="dot-2"></div>
+                <div class="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-xl" id="dot-3"></div>
+                <div class="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-xl" id="dot-4"></div>
+            </div>
+            <div class="grid grid-cols-3 gap-3 mb-6">
+                <button onclick="numPress(1)" class="h-16 rounded-xl bg-white/5 text-xl font-semibold active:bg-purple-500/50 transition-colors">1</button>
+                <button onclick="numPress(2)" class="h-16 rounded-xl bg-white/5 text-xl font-semibold active:bg-purple-500/50 transition-colors">2</button>
+                <button onclick="numPress(3)" class="h-16 rounded-xl bg-white/5 text-xl font-semibold active:bg-purple-500/50 transition-colors">3</button>
+                <button onclick="numPress(4)" class="h-16 rounded-xl bg-white/5 text-xl font-semibold active:bg-purple-500/50 transition-colors">4</button>
+                <button onclick="numPress(5)" class="h-16 rounded-xl bg-white/5 text-xl font-semibold active:bg-purple-500/50 transition-colors">5</button>
+                <button onclick="numPress(6)" class="h-16 rounded-xl bg-white/5 text-xl font-semibold active:bg-purple-500/50 transition-colors">6</button>
+                <button onclick="numPress(7)" class="h-16 rounded-xl bg-white/5 text-xl font-semibold active:bg-purple-500/50 transition-colors">7</button>
+                <button onclick="numPress(8)" class="h-16 rounded-xl bg-white/5 text-xl font-semibold active:bg-purple-500/50 transition-colors">8</button>
+                <button onclick="numPress(9)" class="h-16 rounded-xl bg-white/5 text-xl font-semibold active:bg-purple-500/50 transition-colors">9</button>
+                <div></div>
+                <button onclick="numPress(0)" class="h-16 rounded-xl bg-white/5 text-xl font-semibold active:bg-purple-500/50 transition-colors">0</button>
+                <button onclick="numDelete()" class="h-16 rounded-xl bg-white/5 text-xl font-semibold active:bg-red-500/50 transition-colors">⌫</button>
+            </div>
+            <button onclick="login()" class="btn w-full accent text-white p-4 rounded-xl font-semibold text-lg">Prijava</button>
+            <p id="login-error" class="text-red-500 text-center mt-4 hidden">Nemate dozvolu za ovu funkciju</p>
+        </div>
+    </div>
+
+    <!-- HOME - Lista pazara za kupljenje -->
+    <div id="screen-home" class="screen">
+        <div class="p-4 border-b border-white/10">
+            <div class="flex justify-between items-center">
+                <div>
+                    <p class="text-gray-400 text-sm">Dobrodošao,</p>
+                    <h1 class="text-xl font-bold" id="home-name">-</h1>
+                </div>
+                <button onclick="logout()" class="text-sm px-3 py-2 rounded-lg bg-white/5 text-gray-400">Odjava</button>
+            </div>
+        </div>
+        
+        <!-- Date selector -->
+        <div class="card mx-4 mt-4 p-3 flex items-center justify-between">
+            <button onclick="chgDate(-1)" class="text-xl px-3 py-1 rounded-lg hover:bg-white/5">←</button>
+            <div class="text-center">
+                <p class="text-gray-400 text-xs">Datum</p>
+                <p class="font-bold" id="cur-date">-</p>
+            </div>
+            <button onclick="chgDate(1)" class="text-xl px-3 py-1 rounded-lg hover:bg-white/5">→</button>
+        </div>
+        
+        <!-- Stats -->
+        <div class="grid grid-cols-3 gap-3 px-4 mt-4">
+            <div class="card p-3 text-center">
+                <p class="text-2xl font-bold text-yellow-400" id="stat-pending">0</p>
+                <p class="text-gray-400 text-xs">Čeka</p>
+            </div>
+            <div class="card p-3 text-center">
+                <p class="text-2xl font-bold text-blue-400" id="stat-picked">0</p>
+                <p class="text-gray-400 text-xs">Pokupljeno</p>
+            </div>
+            <div class="card p-3 text-center">
+                <p class="text-2xl font-bold text-green-400" id="stat-delivered">0</p>
+                <p class="text-gray-400 text-xs">Predato</p>
+            </div>
+        </div>
+        
+        <!-- Location list -->
+        <div class="flex-1 overflow-y-auto px-4 py-4 pb-24">
+            <p class="text-gray-500 text-xs uppercase tracking-wide mb-3">Lokacije sa završenim smenama</p>
+            <div id="locations-list" class="space-y-3">
+                <p class="text-gray-400 text-center py-8">Učitavanje...</p>
+            </div>
+        </div>
+        
+        <!-- Bottom action - Predaj sve -->
+        <div id="deliver-all-section" class="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-[#0D0B14] to-transparent hidden">
+            <button onclick="showDeliverAll()" class="btn w-full bg-green-500 text-white p-4 rounded-xl font-semibold text-lg">
+                ✓ Predaj sve pokupljeno
+            </button>
+        </div>
+    </div>
+
+    <!-- LOCATION DETAIL -->
+    <div id="screen-location" class="screen p-6">
+        <div class="flex items-center gap-4 mb-6">
+            <button onclick="show('home'); loadData()" class="text-2xl">←</button>
+            <div class="flex-1">
+                <p class="text-sm text-gray-400" id="loc-code">-</p>
+                <h1 class="text-xl font-bold" id="loc-name">-</h1>
+            </div>
+            <span class="badge" id="loc-status-badge">-</span>
+        </div>
+        
+        <!-- Route info -->
+        <div class="card p-4 mb-4">
+            <div class="flex items-center gap-3 mb-3">
+                <div class="w-10 h-10 rounded-full bg-yellow-500/20 flex items-center justify-center">💰</div>
+                <div class="flex-1">
+                    <p class="text-gray-400 text-xs">ODAKLE</p>
+                    <p class="font-medium" id="loc-from">-</p>
+                </div>
+            </div>
+            <div class="border-l-2 border-dashed border-white/20 h-6 ml-5"></div>
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">🏢</div>
+                <div class="flex-1">
+                    <p class="text-gray-400 text-xs">KUDA</p>
+                    <p class="font-medium">Kancelarija</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Timeline -->
+        <div class="card p-4 mb-6">
+            <p class="text-gray-400 text-xs mb-4">TIMELINE</p>
+            <div id="loc-timeline" class="space-y-0"></div>
+        </div>
+        
+        <!-- Action buttons based on status -->
+        <div id="loc-actions"></div>
+    </div>
+
+    <!-- DELIVER ALL MODAL -->
+    <div id="deliver-modal" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center p-6">
+        <div class="bg-[#1A1F2E] rounded-2xl w-full max-w-sm p-6">
+            <h2 class="text-xl font-bold mb-4">Predaja u kancelariju</h2>
+            <div class="card p-6 mb-4 text-center">
+                <div class="text-5xl mb-4">🏢</div>
+                <p class="text-gray-400">Ukupno lokacija za predaju:</p>
+                <p class="text-4xl font-bold text-green-400 mt-2" id="deliver-count">0</p>
+            </div>
+            <div class="mb-4">
+                <p class="text-gray-400 text-sm mb-2">Lokacije:</p>
+                <div id="deliver-list" class="text-sm space-y-1 max-h-32 overflow-y-auto"></div>
+            </div>
+            <div class="flex gap-3">
+                <button onclick="closeDeliverModal()" class="flex-1 p-4 rounded-xl bg-white/10">Otkaži</button>
+                <button onclick="confirmDeliverAll()" class="flex-1 p-4 rounded-xl bg-green-500 font-semibold">✓ Predaj</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PHOTO PICKUP MODAL -->
+    <div id="photo-modal" class="fixed inset-0 bg-black/80 z-50 hidden flex items-end">
+        <div class="bg-[#1A1F2E] rounded-t-3xl w-full p-6 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold">📸 Preuzimanje pazara</h2>
+                <button onclick="closePhotoModal()" class="text-2xl text-gray-400">×</button>
+            </div>
+            
+            <div class="card p-4 mb-4">
+                <p class="text-gray-400 text-sm">Lokacija</p>
+                <p class="text-lg font-bold" id="photo-loc-name">-</p>
+            </div>
+            
+            <div class="mb-4">
+                <p class="text-gray-400 text-sm mb-2">Dodaj fotografije (opciono)</p>
+                <input type="file" id="pickup-photos" accept="image/*" multiple class="hidden" onchange="handlePhotos(this)">
+                <button onclick="document.getElementById('pickup-photos').click()" class="w-full p-4 rounded-xl border-2 border-dashed border-white/20 text-center hover:border-purple-500/50 transition-colors">
+                    <span class="text-3xl block mb-2">📷</span>
+                    <span class="text-gray-400">Dodaj slike koverte/kese</span>
+                </button>
+            </div>
+            
+            <div id="photo-preview" class="flex flex-wrap gap-2 mb-4"></div>
+            
+            <div class="bg-blue-500/10 border border-blue-500/30 rounded-xl p-3 mb-6">
+                <p class="text-blue-400 text-sm">💡 Slike pomažu da se dokumentuje stanje pazara pri preuzimanju</p>
+            </div>
+            
+            <div class="flex gap-3">
+                <button onclick="closePhotoModal()" class="flex-1 p-4 rounded-xl bg-white/10">Otkaži</button>
+                <button onclick="confirmPickupWithPhotos()" class="flex-1 p-4 rounded-xl accent font-semibold">📦 Pokupi</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- IMAGE VIEWER MODAL -->
+    <div id="image-viewer" class="fixed inset-0 bg-black/95 z-50 hidden flex items-center justify-center p-4">
+        <button onclick="closeImageViewer()" class="absolute top-4 right-4 text-3xl text-white">×</button>
+        <img id="viewer-image" src="" class="max-w-full max-h-full object-contain rounded-lg">
+    </div>
+
+<script>
+const SB_URL = 'https://bbnbbbpofelbkyuffslj.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJibmJiYnBvZmVsYmt5dWZmc2xqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUwNTI0MzQsImV4cCI6MjA4MDYyODQzNH0.koW44soAB-bEfh8OzqjGBwdgov4Snscw1ITsg5OureU';
+const sb = supabase.createClient(SB_URL, SB_KEY);
+
+let user = null;
+let pinCode = '';
+let curDate = new Date();
+let locations = [];
+let closedShifts = [];
+let pickups = [];
+let selLocation = null;
+let pickupPhotos = []; // Base64 encoded photos
+
+// ============ PIN LOGIN ============
+function numPress(n) {
+    if (pinCode.length >= 4) return;
+    pinCode += n;
+    updPin();
+    if (pinCode.length === 4) setTimeout(login, 200);
+}
+
+function numDelete() {
+    pinCode = pinCode.slice(0, -1);
+    updPin();
+}
+
+function updPin() {
+    for (let i = 1; i <= 4; i++) {
+        document.getElementById('dot-' + i).textContent = i <= pinCode.length ? '●' : '';
+    }
+}
+
+async function login() {
+    if (pinCode.length !== 4) return;
+    
+    const { data } = await sb.from('pazar_users')
+        .select('*')
+        .eq('pin', pinCode)
+        .eq('is_active', true);
+    
+    // Dozvoljeni: vozac, admin, ili bilo ko sa can_collect_cash = true
+    const u = data?.find(x => 
+        x.role === 'admin' || 
+        x.role === 'vozac' || 
+        x.can_collect_cash === true
+    );
+    
+    if (!u) {
+        document.getElementById('login-error').classList.remove('hidden');
+        pinCode = '';
+        updPin();
+        return;
+    }
+    
+    user = u;
+    document.getElementById('login-error').classList.add('hidden');
+    showHome();
+}
+
+function logout() {
+    user = null;
+    pinCode = '';
+    updPin();
+    show('login');
+}
+
+// ============ HOME ============
+function showHome() {
+    document.getElementById('home-name').textContent = `${user.first_name} ${user.last_name}`;
+    loadData();
+    show('home');
+}
+
+function chgDate(d) {
+    curDate.setDate(curDate.getDate() + d);
+    loadData();
+}
+
+// Format date in Serbian Latin
+function formatDate(date) {
+    const days = ['ned', 'pon', 'uto', 'sre', 'čet', 'pet', 'sub'];
+    const day = days[date.getDay()];
+    const d = date.getDate();
+    const m = date.getMonth() + 1;
+    const y = date.getFullYear();
+    return `${day}, ${d}. ${m}. ${y}.`;
+}
+
+async function loadData() {
+    const ds = curDate.toISOString().split('T')[0];
+    document.getElementById('cur-date').textContent = formatDate(curDate);
+    
+    // Load all locations
+    const { data: locs } = await sb.from('pazar_locations')
+        .select('*')
+        .eq('is_active', true);
+    locations = locs || [];
+    
+    // Load closed shifts for this date
+    const { data: shifts } = await sb.from('pazar_shifts')
+        .select('*')
+        .eq('date', ds)
+        .eq('is_last_shift', true)
+        .eq('status', 'closed');
+    closedShifts = shifts || [];
+    
+    // Load pickups for this date
+    const { data: picks } = await sb.from('pazar_cash_pickups')
+        .select('*')
+        .eq('date', ds);
+    pickups = picks || [];
+    
+    renderLocations();
+}
+
+function renderLocations() {
+    const container = document.getElementById('locations-list');
+    let pending = 0, picked = 0, delivered = 0;
+    
+    // Only show locations that have closed shifts
+    const readyLocations = locations.filter(loc => 
+        closedShifts.some(s => s.location_id === loc.id)
+    );
+    
+    if (!readyLocations.length) {
+        container.innerHTML = '<p class="text-gray-400 text-center py-8">Nema završenih smena za danas</p>';
+        document.getElementById('stat-pending').textContent = 0;
+        document.getElementById('stat-picked').textContent = 0;
+        document.getElementById('stat-delivered').textContent = 0;
+        document.getElementById('deliver-all-section').classList.add('hidden');
+        return;
+    }
+    
+    const html = readyLocations.map(loc => {
+        const pickup = pickups.find(p => p.location_id === loc.id);
+        let status = 'pending';
+        let statusText = 'Čeka';
+        let statusClass = 'status-pending';
+        let icon = '⏳';
+        
+        if (pickup?.delivered_at) {
+            status = 'delivered';
+            statusText = 'Predato';
+            statusClass = 'status-delivered';
+            icon = '✅';
+            delivered++;
+        } else if (pickup?.picked_at) {
+            status = 'picked';
+            statusText = 'Pokupljeno';
+            statusClass = 'status-picked';
+            icon = '📦';
+            picked++;
+        } else {
+            pending++;
+        }
+        
+        const shift = closedShifts.find(s => s.location_id === loc.id);
+        const closedTime = shift?.ended_at 
+            ? new Date(shift.ended_at).toLocaleTimeString('sr-RS', { hour: '2-digit', minute: '2-digit' })
+            : '--:--';
+        
+        return `
+            <div class="card p-4 cursor-pointer active:scale-[0.98] transition-transform" onclick="showLocation('${loc.id}')">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center text-xl">${icon}</div>
+                        <div>
+                            <p class="font-semibold">${loc.name}</p>
+                            <p class="text-gray-400 text-sm">${loc.code} • Zatvoreno ${closedTime}</p>
+                        </div>
+                    </div>
+                    <span class="badge ${statusClass}">${statusText}</span>
+                </div>
+            </div>
+        `;
+    }).join('');
+    
+    container.innerHTML = html;
+    
+    // Update counters
+    document.getElementById('stat-pending').textContent = pending;
+    document.getElementById('stat-picked').textContent = picked;
+    document.getElementById('stat-delivered').textContent = delivered;
+    
+    // Show deliver all button if there are picked items
+    const deliverSection = document.getElementById('deliver-all-section');
+    if (picked > 0) {
+        deliverSection.classList.remove('hidden');
+    } else {
+        deliverSection.classList.add('hidden');
+    }
+}
+
+// ============ LOCATION DETAIL ============
+function showLocation(locId) {
+    selLocation = locations.find(l => l.id === locId);
+    if (!selLocation) return;
+    
+    document.getElementById('loc-code').textContent = selLocation.code;
+    document.getElementById('loc-name').textContent = selLocation.name;
+    document.getElementById('loc-from').textContent = selLocation.name;
+    
+    const pickup = pickups.find(p => p.location_id === locId);
+    const shift = closedShifts.find(s => s.location_id === locId);
+    
+    // Determine status
+    let status = 'pending';
+    let statusText = 'Čeka';
+    let statusClass = 'status-pending';
+    
+    if (pickup?.delivered_at) {
+        status = 'delivered';
+        statusText = 'Predato';
+        statusClass = 'status-delivered';
+    } else if (pickup?.picked_at) {
+        status = 'picked';
+        statusText = 'Pokupljeno';
+        statusClass = 'status-picked';
+    }
+    
+    document.getElementById('loc-status-badge').className = 'badge ' + statusClass;
+    document.getElementById('loc-status-badge').textContent = statusText;
+    
+    // Render timeline
+    renderTimeline(shift, pickup);
+    
+    // Render actions
+    renderActions(status, pickup);
+    
+    show('location');
+}
+
+function renderTimeline(shift, pickup) {
+    const container = document.getElementById('loc-timeline');
+    
+    const shiftClosed = shift?.ended_at ? new Date(shift.ended_at) : null;
+    const pickedUp = pickup?.picked_at ? new Date(pickup.picked_at) : null;
+    const delivered = pickup?.delivered_at ? new Date(pickup.delivered_at) : null;
+    
+    const steps = [
+        {
+            done: true,
+            icon: '🔒',
+            title: 'Smena zatvorena',
+            subtitle: `${selLocation.name} - pazar spreman`,
+            time: shiftClosed
+        },
+        {
+            done: !!pickedUp,
+            active: !pickedUp,
+            icon: pickedUp ? '✅' : '📦',
+            title: 'Pokupljeno',
+            subtitle: pickedUp ? 'Pazar preuzet' : 'Čeka preuzimanje',
+            time: pickedUp
+        },
+        {
+            done: !!delivered,
+            active: pickedUp && !delivered,
+            icon: delivered ? '✅' : '🏢',
+            title: 'Predato u kancelariju',
+            subtitle: delivered ? 'Pazar isporučen' : 'Čeka predaju',
+            time: delivered
+        }
+    ];
+    
+    container.innerHTML = steps.map((step, i) => {
+        const isLast = i === steps.length - 1;
+        const timeStr = step.time 
+            ? step.time.toLocaleTimeString('sr-RS', { hour: '2-digit', minute: '2-digit' }) 
+            : '--:--';
+        const dateStr = step.time 
+            ? step.time.toLocaleDateString('sr-RS', { day: 'numeric', month: 'short' }) 
+            : '';
+        
+        let dotClass = 'bg-gray-600';
+        let lineClass = 'bg-gray-600';
+        if (step.done) {
+            dotClass = 'bg-green-500';
+            lineClass = 'bg-green-500';
+        } else if (step.active) {
+            dotClass = 'bg-yellow-500 animate-pulse';
+        }
+        
+        return `
+            <div class="flex gap-4">
+                <div class="flex flex-col items-center">
+                    <div class="w-10 h-10 rounded-full ${dotClass} flex items-center justify-center text-lg">${step.icon}</div>
+                    ${!isLast ? `<div class="w-0.5 h-12 ${step.done ? lineClass : 'bg-gray-700'}"></div>` : ''}
+                </div>
+                <div class="flex-1 ${!isLast ? 'pb-4' : ''}">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="font-medium ${step.done ? 'text-white' : step.active ? 'text-yellow-400' : 'text-gray-500'}">${step.title}</p>
+                            <p class="text-sm ${step.done ? 'text-gray-400' : 'text-gray-600'}">${step.subtitle}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-bold ${step.done ? 'text-white' : step.active ? 'text-yellow-400' : 'text-gray-600'}">${timeStr}</p>
+                            ${dateStr ? `<p class="text-xs text-gray-500">${dateStr}</p>` : ''}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function renderActions(status, pickup) {
+    const actions = document.getElementById('loc-actions');
+    
+    // Photo gallery if photos exist
+    let photoGallery = '';
+    if (pickup?.pickup_photos && pickup.pickup_photos.length > 0) {
+        photoGallery = `
+            <div class="card p-4 mb-4">
+                <p class="text-gray-400 text-xs mb-3">FOTOGRAFIJE PREUZIMANJA</p>
+                <div class="flex flex-wrap gap-2">
+                    ${pickup.pickup_photos.map(photo => `
+                        <img src="${photo}" class="photo-thumb cursor-pointer" onclick="viewImage('${photo}')">
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }
+    
+    if (status === 'delivered') {
+        actions.innerHTML = `
+            ${photoGallery}
+            <div class="card p-6 text-center">
+                <div class="text-5xl mb-4">✅</div>
+                <p class="text-green-400 font-bold text-xl">Završeno</p>
+            </div>
+        `;
+    } else if (status === 'picked') {
+        actions.innerHTML = `
+            ${photoGallery}
+            <button onclick="deliverSingle()" class="btn w-full bg-green-500 text-white p-4 rounded-xl font-semibold text-lg">
+                ✓ Predaj u kancelariju
+            </button>
+        `;
+    } else {
+        actions.innerHTML = `
+            <button onclick="pickupCash()" class="btn w-full accent text-white p-4 rounded-xl font-semibold text-lg">
+                📦 Pokupi pazar
+            </button>
+        `;
+    }
+}
+
+// ============ ACTIONS ============
+
+// Open photo modal instead of direct pickup
+function pickupCash() {
+    pickupPhotos = [];
+    document.getElementById('photo-preview').innerHTML = '';
+    document.getElementById('photo-loc-name').textContent = selLocation.name;
+    document.getElementById('photo-modal').classList.remove('hidden');
+}
+
+// Handle photo selection
+function handlePhotos(input) {
+    const files = Array.from(input.files);
+    const preview = document.getElementById('photo-preview');
+    
+    files.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            pickupPhotos.push(e.target.result);
+            renderPhotoPreview();
+        };
+        reader.readAsDataURL(file);
+    });
+    
+    // Reset input so same file can be selected again
+    input.value = '';
+}
+
+function renderPhotoPreview() {
+    const preview = document.getElementById('photo-preview');
+    preview.innerHTML = pickupPhotos.map((photo, i) => `
+        <div class="relative">
+            <img src="${photo}" class="photo-thumb cursor-pointer" onclick="viewImage('${photo}')">
+            <button onclick="removePhoto(${i})" class="absolute -top-2 -right-2 w-6 h-6 bg-red-500 rounded-full text-white text-sm">×</button>
+        </div>
+    `).join('');
+}
+
+function removePhoto(index) {
+    pickupPhotos.splice(index, 1);
+    renderPhotoPreview();
+}
+
+function viewImage(src) {
+    document.getElementById('viewer-image').src = src;
+    document.getElementById('image-viewer').classList.remove('hidden');
+}
+
+function closeImageViewer() {
+    document.getElementById('image-viewer').classList.add('hidden');
+}
+
+function closePhotoModal() {
+    document.getElementById('photo-modal').classList.add('hidden');
+    pickupPhotos = [];
+}
+
+// Confirm pickup with photos
+async function confirmPickupWithPhotos() {
+    const ds = curDate.toISOString().split('T')[0];
+    const now = new Date().toISOString();
+    
+    const { data, error } = await sb.from('pazar_cash_pickups')
+        .insert({
+            date: ds,
+            location_id: selLocation.id,
+            driver_id: user.id,
+            picked_at: now,
+            pickup_photos: pickupPhotos.length > 0 ? pickupPhotos : null
+        })
+        .select()
+        .single();
+    
+    if (error) {
+        alert('Greška: ' + error.message);
+        return;
+    }
+    
+    // Update local state
+    pickups.push(data);
+    
+    closePhotoModal();
+    
+    // Re-render
+    const shift = closedShifts.find(s => s.location_id === selLocation.id);
+    renderTimeline(shift, data);
+    renderActions('picked', data);
+    
+    document.getElementById('loc-status-badge').className = 'badge status-picked';
+    document.getElementById('loc-status-badge').textContent = 'Pokupljeno';
+}
+
+async function deliverSingle() {
+    const pickup = pickups.find(p => p.location_id === selLocation.id);
+    if (!pickup) return;
+    
+    const now = new Date().toISOString();
+    
+    const { error } = await sb.from('pazar_cash_pickups')
+        .update({ delivered_at: now })
+        .eq('id', pickup.id);
+    
+    if (error) {
+        alert('Greška: ' + error.message);
+        return;
+    }
+    
+    // Update local state
+    pickup.delivered_at = now;
+    
+    // Re-render
+    const shift = closedShifts.find(s => s.location_id === selLocation.id);
+    renderTimeline(shift, pickup);
+    renderActions('delivered', pickup);
+    
+    document.getElementById('loc-status-badge').className = 'badge status-delivered';
+    document.getElementById('loc-status-badge').textContent = 'Predato';
+}
+
+// ============ DELIVER ALL ============
+function showDeliverAll() {
+    const pickedLocations = locations.filter(loc => {
+        const pickup = pickups.find(p => p.location_id === loc.id);
+        return pickup?.picked_at && !pickup?.delivered_at;
+    });
+    
+    document.getElementById('deliver-count').textContent = pickedLocations.length;
+    document.getElementById('deliver-list').innerHTML = pickedLocations
+        .map(loc => `<div class="flex items-center gap-2"><span>📦</span><span>${loc.name}</span></div>`)
+        .join('');
+    
+    document.getElementById('deliver-modal').classList.remove('hidden');
+}
+
+function closeDeliverModal() {
+    document.getElementById('deliver-modal').classList.add('hidden');
+}
+
+async function confirmDeliverAll() {
+    const now = new Date().toISOString();
+    
+    const pickedPickups = pickups.filter(p => p.picked_at && !p.delivered_at);
+    
+    for (const pickup of pickedPickups) {
+        await sb.from('pazar_cash_pickups')
+            .update({ delivered_at: now })
+            .eq('id', pickup.id);
+        
+        pickup.delivered_at = now;
+    }
+    
+    closeDeliverModal();
+    renderLocations();
+}
+
+// ============ NAV ============
+function show(s) {
+    document.querySelectorAll('.screen').forEach(x => x.classList.remove('active'));
+    document.getElementById('screen-' + s).classList.add('active');
+}
+</script>
+</body>
+</html>
