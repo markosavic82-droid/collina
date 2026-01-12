@@ -17,6 +17,7 @@
         .screen { min-height: 100vh; padding: 24px; padding-bottom: 100px; }
         .bottom-btn { position: fixed; bottom: 0; left: 0; right: 0; padding: 16px 24px; background: linear-gradient(transparent, #0D0B14 30%); }
         .apoen-input { width: 70px; text-align: center; font-size: 18px; font-weight: bold; padding: 8px; }
+        .tabular-nums { font-variant-numeric: tabular-nums; }
     </style>
 </head>
 <body>
@@ -263,7 +264,11 @@
             <button onclick="show('check-deposit')" class="text-2xl">←</button>
             <h1 class="text-xl font-bold">Brojanje novca</h1>
         </div>
-        <p class="text-gray-400 text-sm mb-4">Prebroj sve novcanice u kasi</p>
+        <p class="text-gray-400 text-sm mb-2">Prebroj sve novcanice u kasi</p>
+        <div class="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-3 mb-4 flex items-center gap-3">
+            <span class="text-2xl">📹</span>
+            <p class="text-yellow-400 text-sm font-medium">Obavezno brojati novac ispred kamere!</p>
+        </div>
         <div class="card p-4 mb-4">
             <table class="w-full">
                 <thead><tr class="text-gray-400 text-sm"><th class="text-left pb-2">Apoen</th><th class="text-center pb-2">Komada</th><th class="text-right pb-2">Iznos</th></tr></thead>
@@ -285,6 +290,17 @@
         <div class="text-center mb-6">
             <div class="text-5xl mb-4">🔒</div>
             <h2 class="text-red-400 font-semibold">PAZNJA!</h2>
+        </div>
+        <!-- Date and Time -->
+        <div class="card p-4 mb-4 flex justify-between items-center">
+            <div>
+                <p class="text-gray-500 text-xs">Datum</p>
+                <p class="font-medium" id="confirm-date">-</p>
+            </div>
+            <div class="text-right">
+                <p class="text-gray-500 text-xs">Vreme</p>
+                <p class="font-medium" id="confirm-time">-</p>
+            </div>
         </div>
         <div class="card p-6 mb-4 border border-red-500/50">
             <p class="text-gray-400 text-sm">Prebrojano ukupno:</p>
@@ -328,6 +344,15 @@
         <div class="card p-4 mb-4">
             <label class="text-gray-400 text-sm">🏦 PRENOS NA RACUN</label>
             <input type="number" id="ebar-transfer" class="input mt-2" placeholder="0" inputmode="numeric">
+        </div>
+        <!-- Date and Time of E-Bar printout -->
+        <div class="card p-4 mb-4">
+            <label class="text-gray-400 text-sm">🕐 VREME ŠTAMPE PRESEKA</label>
+            <p class="text-gray-500 text-xs mt-1 mb-2">Unesi datum i vreme sa odštampane priznanice</p>
+            <div class="flex gap-3">
+                <input type="date" id="ebar-date" class="input flex-1">
+                <input type="time" id="ebar-time" class="input w-28">
+            </div>
         </div>
         <div class="bottom-btn">
             <button onclick="calculateResult()" class="btn w-full accent text-white p-4 rounded-xl font-semibold text-lg">Izracunaj →</button>
@@ -456,23 +481,31 @@
             <div class="card p-4 mb-3">
                 <label class="flex items-center gap-3">
                     <input type="checkbox" id="confirm-cash-amount" class="w-6 h-6 rounded">
-                    <span>Potvrdio sam iznos u kasi: <strong id="confirm-cash-label">0 RSD</strong></span>
+                    <span>Potvrđujem da je novac na predviđenom mestu za kasu: <strong id="confirm-cash-label">0 RSD</strong></span>
                 </label>
             </div>
             <div class="card p-4 mb-6">
                 <label class="flex items-center gap-3">
                     <input type="checkbox" id="confirm-deposit-amount" class="w-6 h-6 rounded">
-                    <span>Potvrdio sam depozit: <strong id="confirm-deposit-label">0 RSD</strong></span>
+                    <span>Potvrđujem da je novac na predviđenom mestu za depozit: <strong id="confirm-deposit-label">0 RSD</strong></span>
                 </label>
             </div>
         </div>
 
-        <!-- Single confirmation for end of day -->
-        <div id="endday-confirmation" class="card p-4 mb-6 hidden">
-            <label class="flex items-center gap-3">
-                <input type="checkbox" id="confirm-final" class="w-6 h-6 rounded">
-                <span id="final-confirm-label">Potvrdio sam - novac je u sefu</span>
-            </label>
+        <!-- Two confirmations for end of day -->
+        <div id="endday-confirmation" class="hidden">
+            <div class="card p-4 mb-3">
+                <label class="flex items-center gap-3">
+                    <input type="checkbox" id="confirm-final-cash" class="w-6 h-6 rounded">
+                    <span>Potvrđujem da je novac za sef na predviđenom mestu: <strong id="confirm-final-cash-label">0 RSD</strong></span>
+                </label>
+            </div>
+            <div class="card p-4 mb-6">
+                <label class="flex items-center gap-3">
+                    <input type="checkbox" id="confirm-final-deposit" class="w-6 h-6 rounded">
+                    <span>Potvrđujem da je depozit na predviđenom mestu: <strong id="confirm-final-deposit-label">0 RSD</strong></span>
+                </label>
+            </div>
         </div>
 
         <div class="bottom-btn">
@@ -485,8 +518,9 @@
         <div class="flex flex-col items-center justify-center min-h-[80vh] text-center">
             <div class="text-6xl mb-6">✅</div>
             <h1 class="text-2xl font-bold mb-2" id="done-title">Smena zavrsena!</h1>
-            <p class="text-gray-400 mb-8" id="done-sub">-</p>
-            <button onclick="logout()" class="btn accent text-white px-8 py-3 rounded-xl font-semibold">Odjavi se</button>
+            <p class="text-gray-400 mb-4" id="done-sub">-</p>
+            <div class="text-sm text-gray-500 mb-8" id="done-times"></div>
+            <button onclick="goToHomeAfterDone()" class="btn accent text-white px-8 py-3 rounded-xl font-semibold">🏠 Početna</button>
         </div>
     </div>
 
@@ -556,6 +590,20 @@ async function login() {
 
 function logout() { user = null; curLoc = null; curShift = null; localStorage.removeItem('pazar_konobar'); location.reload(); }
 
+async function goToHomeAfterDone() {
+    // Reset flow data
+    flowData = {};
+    flowType = null;
+    countLocked = false;
+    apoeni.forEach(a => apoenCnt[a] = 0);
+    curShift = null;
+    prevShift = null;
+    
+    // Reload shift status and then show home
+    await checkShift();
+    showHome();
+}
+
 let shiftInfo = { todayShifts: [], yesterdayLast: null, activeShift: null };
 
 async function checkShift() {
@@ -611,15 +659,15 @@ function renderShiftInfo() {
     const btn = document.getElementById('main-btn');
     
     const now = new Date();
-    const todayDate = now.toLocaleDateString('sr-RS', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-    const yesterdayDate = new Date(now - 86400000).toLocaleDateString('sr-RS', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-    const currentTime = now.toLocaleTimeString('sr-RS', { hour: '2-digit', minute: '2-digit' });
+    const todayDate = now.toLocaleDateString('sr-Latn-RS', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    const yesterdayDate = new Date(now - 86400000).toLocaleDateString('sr-Latn-RS', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    const currentTime = now.toLocaleTimeString('sr-Latn-RS', { hour: '2-digit', minute: '2-digit' });
     
     // Yesterday's closing info - show if this is first shift today
     if (shiftInfo.todayShifts.length === 0) {
         if (shiftInfo.yesterdayLast) {
             const yl = shiftInfo.yesterdayLast;
-            const closeTime = new Date(yl.ended_at).toLocaleTimeString('sr-RS', {hour:'2-digit', minute:'2-digit'});
+            const closeTime = new Date(yl.ended_at).toLocaleTimeString('sr-Latn-RS', {hour:'2-digit', minute:'2-digit'});
             yesterdayEl.innerHTML = `
                 <div class="flex items-center justify-between mb-3 pb-2 border-b border-white/10">
                     <span class="text-gray-400 text-sm">${yesterdayDate}</span>
@@ -661,7 +709,7 @@ function renderShiftInfo() {
     if (shiftInfo.todayShifts.length > 0) {
         // Check if I have active shift - show big card
         if (curShift?.status === 'active') {
-            const startTime = new Date(curShift.started_at).toLocaleTimeString('sr-RS', {hour:'2-digit', minute:'2-digit'});
+            const startTime = new Date(curShift.started_at).toLocaleTimeString('sr-Latn-RS', {hour:'2-digit', minute:'2-digit'});
             html += `
                 <div class="p-4 bg-green-500/20 border-2 border-green-500 rounded-xl mb-4">
                     <div class="flex items-center gap-3 mb-3">
@@ -681,6 +729,29 @@ function renderShiftInfo() {
                 <button onclick="mainAction()" class="btn w-full bg-red-500 text-white p-4 rounded-xl font-semibold text-lg">🔴 Zavrsi smenu</button>
             `;
             btn.classList.add('hidden');
+        } else if (shiftInfo.activeShift && shiftInfo.activeShift.user_id !== user.id) {
+            // Someone ELSE has active shift - show waiting card
+            const activeUser = shiftInfo.activeShift.user;
+            const startTime = new Date(shiftInfo.activeShift.started_at).toLocaleTimeString('sr-Latn-RS', {hour:'2-digit', minute:'2-digit'});
+            html += `
+                <div class="p-4 bg-blue-500/10 border border-blue-500/30 rounded-xl mb-4">
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center text-2xl">👤</div>
+                        <div>
+                            <p class="text-blue-400 font-bold text-lg">Smena u toku</p>
+                            <p class="text-gray-400 text-sm">${activeUser?.first_name} ${activeUser?.last_name}</p>
+                        </div>
+                    </div>
+                    <div class="bg-black/20 rounded-lg p-3">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-400">Pocetak:</span>
+                            <span class="font-medium text-blue-400">${startTime}</span>
+                        </div>
+                    </div>
+                </div>
+                <p class="text-center text-gray-500 text-sm">Sačekaj da ${activeUser?.first_name} završi smenu</p>
+            `;
+            btn.classList.add('hidden');
         } else {
             // Show past shifts smaller
             shiftInfo.todayShifts.forEach((s, i) => {
@@ -696,8 +767,8 @@ function renderShiftInfo() {
                     bgClass = 'bg-yellow-500/10 border border-yellow-500/30';
                 }
                 
-                const startTime = new Date(s.started_at).toLocaleTimeString('sr-RS', {hour:'2-digit', minute:'2-digit'});
-                const endTime = s.ended_at ? new Date(s.ended_at).toLocaleTimeString('sr-RS', {hour:'2-digit', minute:'2-digit'}) : '-';
+                const startTime = new Date(s.started_at).toLocaleTimeString('sr-Latn-RS', {hour:'2-digit', minute:'2-digit'});
+                const endTime = s.ended_at ? new Date(s.ended_at).toLocaleTimeString('sr-Latn-RS', {hour:'2-digit', minute:'2-digit'}) : '-';
                 
                 html += `
                     <div class="flex items-center gap-3 p-3 ${bgClass} rounded-lg ${i > 0 ? 'mt-2' : ''}">
@@ -775,8 +846,37 @@ function showStartFirst() { show('start-first'); document.getElementById('exp-de
 async function startFirst() {
     const amt = parseFloat(document.getElementById('actual-deposit').value) || 0;
     if (amt <= 0) { alert('Unesi iznos depozita'); return; }
+    
+    // Check if there's already an active shift on this location (by anyone)
     const today = new Date().toISOString().split('T')[0];
-    const { data: shift } = await sb.from('pazar_shifts').insert({ location_id: curLoc.id, date: today, shift_order: 1, user_id: user.id, status: 'active', started_at: new Date().toISOString(), is_first_shift: true, starting_amount: amt }).select().single();
+    const { data: existingActive } = await sb.from('pazar_shifts')
+        .select('*, user:pazar_users(first_name, last_name)')
+        .eq('location_id', curLoc.id)
+        .eq('date', today)
+        .eq('status', 'active')
+        .single();
+    
+    if (existingActive) {
+        if (existingActive.user_id === user.id) {
+            // It's my own active shift - just go to it
+            curShift = existingActive;
+            await checkShift();
+            showHome();
+            return;
+        } else {
+            // Someone else has active shift
+            alert(`Smena je već otvorena!\n${existingActive.user?.first_name} ${existingActive.user?.last_name} ima aktivnu smenu.`);
+            await checkShift();
+            showHome();
+            return;
+        }
+    }
+    
+    const { data: shift, error } = await sb.from('pazar_shifts').insert({ location_id: curLoc.id, date: today, shift_order: 1, user_id: user.id, status: 'active', started_at: new Date().toISOString(), is_first_shift: true, starting_amount: amt }).select().single();
+    if (error) {
+        alert('Greška pri otvaranju smene: ' + error.message);
+        return;
+    }
     await sb.from('pazar_shift_handovers').insert({ location_id: curLoc.id, date: today, to_shift_id: shift.id, to_user_id: user.id, reported_amount: curLoc.current_deposit, received_amount: amt, handover_type: 'deposit', confirmed_at: new Date().toISOString() });
     curShift = shift; 
     await checkShift(); // Refresh shift info
@@ -864,8 +964,31 @@ async function startTake() {
     }
     
     const startingAmount = countedCash + countedDeposit; // Total in register
-    
     const today = new Date().toISOString().split('T')[0];
+    
+    // Check if there's already an active shift on this location (by anyone)
+    const { data: existingActive } = await sb.from('pazar_shifts')
+        .select('*, user:pazar_users(first_name, last_name)')
+        .eq('location_id', curLoc.id)
+        .eq('date', today)
+        .eq('status', 'active')
+        .single();
+    
+    if (existingActive) {
+        if (existingActive.user_id === user.id) {
+            // It's my own active shift - just go to it
+            curShift = existingActive;
+            await checkShift();
+            showHome();
+            return;
+        } else {
+            // Someone else has active shift
+            alert(`Smena je već otvorena!\n${existingActive.user?.first_name} ${existingActive.user?.last_name} ima aktivnu smenu.`);
+            await checkShift();
+            showHome();
+            return;
+        }
+    }
     
     try {
         // Close previous shift
@@ -976,18 +1099,25 @@ function goToCounting() {
 function renderApoeni() { 
     document.getElementById('apoen-tbl').innerHTML = apoeni.map(a => `
         <tr>
-            <td class="py-2 font-medium">${a.toLocaleString()}</td>
+            <td class="py-2 font-medium w-20">${a.toLocaleString()}</td>
             <td class="text-center">
                 <div class="flex items-center justify-center gap-2">
-                    <button onclick="updApoen(${a}, -1)" class="w-10 h-10 rounded-lg bg-red-500/20 text-red-400 text-xl font-bold active:bg-red-500/40" ${countLocked ? 'disabled' : ''}>−</button>
-                    <input type="number" id="inp-${a}" class="w-16 h-10 text-center text-lg font-bold rounded-lg bg-white/10 border border-white/20" value="${apoenCnt[a]}" oninput="setApoen(${a}, this.value)" inputmode="numeric" ${countLocked ? 'disabled' : ''}>
-                    <button onclick="updApoen(${a}, 1)" class="w-10 h-10 rounded-lg bg-green-500/20 text-green-400 text-xl font-bold active:bg-green-500/40" ${countLocked ? 'disabled' : ''}>+</button>
+                    <button onclick="updApoen(${a}, -1)" class="w-10 h-10 rounded-lg bg-red-500/20 text-red-400 text-xl font-bold active:bg-red-500/40 flex-shrink-0" ${countLocked ? 'disabled' : ''}>−</button>
+                    <input type="number" id="inp-${a}" class="w-16 h-10 text-center text-lg font-bold rounded-lg bg-white/10 border border-white/20 flex-shrink-0" value="${apoenCnt[a]}" oninput="setApoen(${a}, this.value)" onfocus="clearZero(this)" inputmode="numeric" ${countLocked ? 'disabled' : ''}>
+                    <button onclick="updApoen(${a}, 1)" class="w-10 h-10 rounded-lg bg-green-500/20 text-green-400 text-xl font-bold active:bg-green-500/40 flex-shrink-0" ${countLocked ? 'disabled' : ''}>+</button>
                 </div>
             </td>
-            <td class="text-right font-medium" id="ap-${a}">${fmt(apoenCnt[a] * a)}</td>
+            <td class="text-right font-medium w-28 tabular-nums" id="ap-${a}">${fmt(apoenCnt[a] * a)}</td>
         </tr>
     `).join(''); 
     updTotal(); 
+}
+
+function clearZero(input) {
+    if (input.value === '0') {
+        input.value = '';
+    }
+    input.select();
 }
 
 function updApoen(a, delta) { 
@@ -1016,6 +1146,12 @@ function showCountConfirm() {
     }
     document.getElementById('confirm-count-amount').textContent = fmt(total);
     document.getElementById('confirm-count-final').checked = false;
+    
+    // Set current date and time (Latin script)
+    const now = new Date();
+    document.getElementById('confirm-date').textContent = now.toLocaleDateString('sr-Latn-RS', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    document.getElementById('confirm-time').textContent = now.toLocaleTimeString('sr-Latn-RS', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    
     show('count-confirm');
 }
 
@@ -1033,6 +1169,11 @@ function lockCountAndContinue() {
     document.getElementById('ebar-card').value = '';
     document.getElementById('ebar-transfer').value = '';
     
+    // Set default date/time to now
+    const now = new Date();
+    document.getElementById('ebar-date').value = now.toISOString().split('T')[0];
+    document.getElementById('ebar-time').value = now.toTimeString().slice(0, 5);
+    
     show('ebar-data');
 }
 
@@ -1042,10 +1183,22 @@ function calculateResult() {
     const kartica = parseFloat(document.getElementById('ebar-card').value) || 0;
     const prenos = parseFloat(document.getElementById('ebar-transfer').value) || 0;
     
+    // Read date/time of printout
+    const ebarDate = document.getElementById('ebar-date').value;
+    const ebarTime = document.getElementById('ebar-time').value;
+    
     if (gotovina <= 0 && kartica <= 0) {
         alert('Unesi iznos sa preseka stanja!');
         return;
     }
+    
+    if (!ebarDate || !ebarTime) {
+        alert('Unesi datum i vreme sa priznanice!');
+        return;
+    }
+    
+    // Save to flowData
+    flowData.ebarPrintedAt = `${ebarDate}T${ebarTime}:00`;
     
     // Save E-Bar data
     flowData.ebarCash = gotovina;
@@ -1117,18 +1270,18 @@ function calculateResult() {
         document.getElementById('topup-amount').value = '';
         document.querySelectorAll('input[name="topup-source"]').forEach(r => r.checked = false);
         document.getElementById('topup-comment').value = '';
+        
+        // Show additional reason section only for large shortage (>1000)
+        if (diff < -1000) {
+            reasonSection.classList.remove('hidden');
+            document.querySelectorAll('input[name="diff-reason"]').forEach(r => r.checked = false);
+            document.getElementById('diff-comment').value = '';
+        }
     } else if (diff > 100) {
-        // Višak - show surplus section
+        // Višak - show surplus section (includes reason options already)
         surplusSection.classList.remove('hidden');
         document.querySelectorAll('input[name="surplus-source"]').forEach(r => r.checked = false);
         document.getElementById('surplus-comment').value = '';
-    }
-    
-    // Show reason section only for large differences (either direction)
-    if (Math.abs(diff) > 1000) {
-        reasonSection.classList.remove('hidden');
-        document.querySelectorAll('input[name="diff-reason"]').forEach(r => r.checked = false);
-        document.getElementById('diff-comment').value = '';
     }
     
     show('result');
@@ -1176,11 +1329,11 @@ function goToFinal() {
         flowData.diffComment = document.getElementById('surplus-comment').value || null;
     }
     
-    // Check if additional reason required for large differences
-    if (Math.abs(flowData.diff) > 1000) {
+    // Check if additional reason required for large SHORTAGE only (not surplus)
+    if (flowData.diff < -1000) {
         const reason = document.querySelector('input[name="diff-reason"]:checked');
         if (!reason) {
-            alert('Izaberi razlog za razliku veću od 1.000 RSD!');
+            alert('Izaberi razlog za manjak veći od 1.000 RSD!');
             return;
         }
         flowData.diffReason = reason.value;
@@ -1192,38 +1345,42 @@ function goToFinal() {
     // Setup final screen
     const isEndDay = flowType === 'endday';
     
+    // Calculate final cash amount (including topup) - needed for both end day and handover
+    const finalCashAmount = flowData.countedAmount + (flowData.topupAmount || 0);
+    
     if (isEndDay) {
         document.getElementById('final-title').textContent = 'Zatvaranje dana';
         document.getElementById('final-icon').textContent = '🔒';
         document.getElementById('final-action-label').textContent = 'Novac za sef:';
         document.getElementById('final-instruction-title').textContent = '📦 Stavi novac u sef';
         document.getElementById('final-instruction-text').textContent = 'Odvoji depozit i stavi ostatak u sef.';
-        document.getElementById('final-btn').textContent = '✓ Zavrsi dan';
+        document.getElementById('final-btn').textContent = '✓ Završi smenu';
         
-        // Show single confirmation
+        // Show double confirmation for end day
         document.getElementById('handover-confirmations').classList.add('hidden');
         document.getElementById('endday-confirmation').classList.remove('hidden');
-        document.getElementById('confirm-final').checked = false;
+        document.getElementById('confirm-final-cash').checked = false;
+        document.getElementById('confirm-final-deposit').checked = false;
+        document.getElementById('confirm-final-cash-label').textContent = fmt(finalCashAmount);
+        document.getElementById('confirm-final-deposit-label').textContent = fmt(flowData.deposit);
     } else {
         document.getElementById('final-title').textContent = 'Predaja kase';
         document.getElementById('final-icon').textContent = '🤝';
         document.getElementById('final-action-label').textContent = 'Keš u kasi:';
         document.getElementById('final-instruction-title').textContent = '👥 Predaj kasu kolegi';
         document.getElementById('final-instruction-text').textContent = 'Prebroj novac zajedno sa kolegom koji preuzima.';
-        document.getElementById('final-btn').textContent = '✓ Zavrsi predaju';
+        document.getElementById('final-btn').textContent = '✓ Završi smenu';
         
         // Show double confirmation for handover
         document.getElementById('handover-confirmations').classList.remove('hidden');
         document.getElementById('endday-confirmation').classList.add('hidden');
         document.getElementById('confirm-cash-amount').checked = false;
         document.getElementById('confirm-deposit-amount').checked = false;
-        const finalCashForConfirm = flowData.countedAmount + (flowData.topupAmount || 0);
-        document.getElementById('confirm-cash-label').textContent = fmt(finalCashForConfirm);
+        document.getElementById('confirm-cash-label').textContent = fmt(finalCashAmount);
         document.getElementById('confirm-deposit-label').textContent = fmt(flowData.deposit);
     }
     
     // Show cash amount - INCLUDE TOPUP if there was shortage
-    const finalCashAmount = flowData.countedAmount + (flowData.topupAmount || 0);
     document.getElementById('final-cash-amount').textContent = fmt(finalCashAmount);
     document.getElementById('final-deposit').textContent = fmt(flowData.deposit);
     
@@ -1247,8 +1404,12 @@ async function finishFlow() {
     
     // Check confirmations
     if (isEndDay) {
-        if (!document.getElementById('confirm-final').checked) {
-            alert('Moras potvrditi!');
+        if (!document.getElementById('confirm-final-cash').checked) {
+            alert('Moraš potvrditi da je novac za sef na mestu!');
+            return;
+        }
+        if (!document.getElementById('confirm-final-deposit').checked) {
+            alert('Moraš potvrditi da je depozit na mestu!');
             return;
         }
     } else {
@@ -1298,6 +1459,7 @@ async function finishFlow() {
             topup_comment: flowData.topupComment || null,
             shortage_reason: flowData.diffReason || null,
             shortage_comment: flowData.diffComment || null,
+            ebar_printed_at: flowData.ebarPrintedAt || null,
             confirmed_at: new Date().toISOString()
         }).select().single();
         
@@ -1330,7 +1492,7 @@ async function finishFlow() {
             if (flowData.topupAmount > 0) {
                 doneMsg += ` | (Dodato: ${fmt(flowData.topupAmount)})`;
             }
-            document.getElementById('done-title').textContent = 'Dan zavrsen!';
+            document.getElementById('done-title').textContent = 'Dan završen!';
             document.getElementById('done-sub').textContent = doneMsg;
         } else {
             let doneMsg = `Ukupno predato: ${fmt(totalInRegister)} (Keš: ${fmt(finalCashAmount)} + Depozit: ${fmt(flowData.deposit)})`;
@@ -1340,6 +1502,16 @@ async function finishFlow() {
             document.getElementById('done-title').textContent = 'Kasa predata!';
             document.getElementById('done-sub').textContent = doneMsg;
         }
+        
+        // Show shift start and end times
+        const startTime = curShift ? new Date(curShift.started_at).toLocaleTimeString('sr-Latn-RS', {hour:'2-digit', minute:'2-digit'}) : '-';
+        const endTime = new Date().toLocaleTimeString('sr-Latn-RS', {hour:'2-digit', minute:'2-digit'});
+        document.getElementById('done-times').innerHTML = `
+            <div class="flex justify-center gap-8">
+                <div><span class="text-gray-600">Početak:</span> <span class="text-white">${startTime}</span></div>
+                <div><span class="text-gray-600">Kraj:</span> <span class="text-white">${endTime}</span></div>
+            </div>
+        `;
         
         show('done');
     } catch (err) {
