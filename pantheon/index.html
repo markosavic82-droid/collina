@@ -1,1 +1,1009 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Collina Trebovanje</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0b;
+            --bg-secondary: #141416;
+            --bg-card: #1a1a1f;
+            --bg-hover: #252530;
+            --accent: #8B5CF6;
+            --accent-glow: rgba(139, 92, 246, 0.3);
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #3b82f6;
+            --text-primary: #fafafa;
+            --text-secondary: #a1a1aa;
+            --text-muted: #71717a;
+            --border: #27272a;
+            --border-light: #3f3f46;
+        }
 
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 30px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--accent), #a78bfa);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 18px;
+        }
+
+        .logo h1 {
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .logo span {
+            color: var(--text-muted);
+            font-size: 14px;
+            font-weight: 400;
+        }
+
+        /* Stats Bar */
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .stat-card .number {
+            font-size: 28px;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .stat-card .label {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 4px;
+        }
+
+        .stat-card.zatrazeno .number { color: var(--info); }
+        .stat-card.poslato .number { color: var(--warning); }
+        .stat-card.na-putu .number { color: var(--accent); }
+        .stat-card.primljeno .number { color: var(--success); }
+
+        /* Main Grid */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 24px;
+        }
+
+        @media (max-width: 900px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* New Request Form */
+        .form-panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            height: fit-content;
+            position: sticky;
+            top: 20px;
+        }
+
+        .form-panel h2 {
+            font-size: 18px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .form-panel h2::before {
+            content: '+';
+            width: 28px;
+            height: 28px;
+            background: var(--accent);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        select, input {
+            width: 100%;
+            padding: 12px 16px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        select:focus, input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        select option {
+            background: var(--bg-secondary);
+            padding: 10px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px 20px;
+            border: none;
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent), #a78bfa);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px var(--accent-glow);
+        }
+
+        /* Requests List */
+        .requests-panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+        }
+
+        .requests-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .requests-header h2 {
+            font-size: 18px;
+        }
+
+        .filter-tabs {
+            display: flex;
+            gap: 8px;
+        }
+
+        .filter-tab {
+            padding: 8px 16px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .filter-tab:hover {
+            border-color: var(--border-light);
+        }
+
+        .filter-tab.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+
+        /* Request Card */
+        .request-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            transition: all 0.2s;
+        }
+
+        .request-card:hover {
+            border-color: var(--border-light);
+            transform: translateX(4px);
+        }
+
+        .request-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+
+        .request-artikal {
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .request-kolicina {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--accent);
+        }
+
+        .request-route {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+        }
+
+        .request-route .arrow {
+            color: var(--text-muted);
+        }
+
+        .request-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .request-time {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-zatrazeno {
+            background: rgba(59, 130, 246, 0.15);
+            color: var(--info);
+        }
+
+        .status-poslato {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--warning);
+        }
+
+        .status-na-putu {
+            background: rgba(139, 92, 246, 0.15);
+            color: var(--accent);
+        }
+
+        .status-primljeno {
+            background: rgba(34, 197, 94, 0.15);
+            color: var(--success);
+        }
+
+        .request-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+        }
+
+        .btn-action {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-card);
+            color: var(--text-secondary);
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-action:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .btn-action.next-status {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+
+        .btn-action.next-status:hover {
+            background: #7c4ddb;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-muted);
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        /* Scanner Button */
+        .scanner-toggle {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--accent), #a78bfa);
+            border: none;
+            border-radius: 16px;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 8px 30px var(--accent-glow);
+            transition: all 0.2s;
+            z-index: 100;
+        }
+
+        .scanner-toggle:hover {
+            transform: scale(1.1);
+        }
+
+        /* Scanner Modal */
+        .scanner-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .scanner-modal.active {
+            display: flex;
+        }
+
+        .scanner-container {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 24px;
+            width: 90%;
+            max-width: 500px;
+        }
+
+        .scanner-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .scanner-header h3 {
+            font-size: 18px;
+        }
+
+        .btn-close {
+            width: 36px;
+            height: 36px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text-secondary);
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        #scanner-video {
+            width: 100%;
+            aspect-ratio: 4/3;
+            background: var(--bg-primary);
+            border-radius: 12px;
+            object-fit: cover;
+        }
+
+        .scanner-result {
+            margin-top: 16px;
+            padding: 16px;
+            background: var(--bg-secondary);
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            bottom: 100px;
+            right: 24px;
+            background: var(--bg-card);
+            border: 1px solid var(--success);
+            border-radius: 12px;
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            transform: translateX(150%);
+            transition: transform 0.3s ease;
+            z-index: 200;
+        }
+
+        .toast.show {
+            transform: translateX(0);
+        }
+
+        .toast-icon {
+            width: 32px;
+            height: 32px;
+            background: var(--success);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Mapping Info */
+        .mapping-section {
+            margin-top: 24px;
+            padding: 20px;
+            background: var(--bg-secondary);
+            border: 1px dashed var(--border);
+            border-radius: 12px;
+        }
+
+        .mapping-section h4 {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+        }
+
+        .mapping-code {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--text-muted);
+            background: var(--bg-primary);
+            padding: 12px;
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <div class="logo-icon">C</div>
+                <div>
+                    <h1>Collina</h1>
+                    <span>Trebovanje Prototype</span>
+                </div>
+            </div>
+        </header>
+
+        <div class="stats-bar">
+            <div class="stat-card zatrazeno">
+                <div class="number" id="stat-zatrazeno">0</div>
+                <div class="label">Zatraženo</div>
+            </div>
+            <div class="stat-card poslato">
+                <div class="number" id="stat-poslato">0</div>
+                <div class="label">Poslato</div>
+            </div>
+            <div class="stat-card na-putu">
+                <div class="number" id="stat-na-putu">0</div>
+                <div class="label">Na putu</div>
+            </div>
+            <div class="stat-card primljeno">
+                <div class="number" id="stat-primljeno">0</div>
+                <div class="label">Primljeno</div>
+            </div>
+        </div>
+
+        <div class="main-grid">
+            <div class="form-panel">
+                <h2>Novo Trebovanje</h2>
+                
+                <div class="form-group">
+                    <label>Artikal</label>
+                    <select id="artikal-select">
+                        <option value="">-- Izaberi artikal --</option>
+                    </select>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Iz magacina</label>
+                        <select id="iz-magacin">
+                            <option value="">-- Odakle --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>U magacin</label>
+                        <select id="u-magacin">
+                            <option value="">-- Gde --</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Količina</label>
+                    <input type="number" id="kolicina" placeholder="0" min="1">
+                </div>
+
+                <button class="btn btn-primary" onclick="createRequest()">
+                    <span>📦</span> Kreiraj Trebovanje
+                </button>
+
+                <div class="mapping-section">
+                    <h4>📋 Mapiranje (za Pantheon)</h4>
+                    <div class="mapping-code">
+                        <strong>Artikli:</strong><br>
+                        coca_cola → PANTHEON_ID: ???<br>
+                        hamburger → PANTHEON_ID: ???<br>
+                        ...<br><br>
+                        <strong>Magacini:</strong><br>
+                        centrala → PANTHEON_WH: ???<br>
+                        vracar → PANTHEON_WH: ???
+                    </div>
+                </div>
+            </div>
+
+            <div class="requests-panel">
+                <div class="requests-header">
+                    <h2>Aktivna Trebovanja</h2>
+                    <div class="filter-tabs">
+                        <button class="filter-tab active" data-filter="all">Sva</button>
+                        <button class="filter-tab" data-filter="zatrazeno">Zatraženo</button>
+                        <button class="filter-tab" data-filter="poslato">Poslato</button>
+                        <button class="filter-tab" data-filter="na-putu">Na putu</button>
+                        <button class="filter-tab" data-filter="primljeno">Primljeno</button>
+                    </div>
+                </div>
+
+                <div id="requests-list">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📦</div>
+                        <p>Nema aktivnih trebovanja</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scanner Button -->
+    <button class="scanner-toggle" onclick="openScanner()">📷</button>
+
+    <!-- Scanner Modal -->
+    <div class="scanner-modal" id="scanner-modal">
+        <div class="scanner-container">
+            <div class="scanner-header">
+                <h3>Skeniraj Barkod</h3>
+                <button class="btn-close" onclick="closeScanner()">×</button>
+            </div>
+            <video id="scanner-video" autoplay playsinline></video>
+            <div class="scanner-result" id="scanner-result">
+                Usmerite kameru na barkod
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast">
+        <div class="toast-icon">✓</div>
+        <span id="toast-message">Trebovanje kreirano!</span>
+    </div>
+
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <script>
+        // ============================================
+        // TEST DATA - OVO ZAMENITI SA PANTHEON PODACIMA
+        // ============================================
+        
+        const artikli = [
+            { id: 'ART001', naziv: 'Coca Cola 0.5L', barcode: '5449000000996', pantheon_id: '???' },
+            { id: 'ART002', naziv: 'Fanta 0.5L', barcode: '5449000011527', pantheon_id: '???' },
+            { id: 'ART003', naziv: 'Sprite 0.5L', barcode: '5449000014535', pantheon_id: '???' },
+            { id: 'ART004', naziv: 'Hamburger bun', barcode: '8600000000001', pantheon_id: '???' },
+            { id: 'ART005', naziv: 'Govedji burger 200g', barcode: '8600000000002', pantheon_id: '???' },
+            { id: 'ART006', naziv: 'Cheddar sir', barcode: '8600000000003', pantheon_id: '???' },
+            { id: 'ART007', naziv: 'Slanina', barcode: '8600000000004', pantheon_id: '???' },
+            { id: 'ART008', naziv: 'Pomfrit 2.5kg', barcode: '8600000000005', pantheon_id: '???' },
+            { id: 'ART009', naziv: 'Kečap 1L', barcode: '8600000000006', pantheon_id: '???' },
+            { id: 'ART010', naziv: 'Majonez 1L', barcode: '8600000000007', pantheon_id: '???' }
+        ];
+
+        const magacini = [
+            { id: 'MAG01', naziv: 'Centralni magacin', pantheon_id: '???' },
+            { id: 'MAG02', naziv: 'Vračar', pantheon_id: '???' },
+            { id: 'MAG03', naziv: 'Banovo Brdo', pantheon_id: '???' },
+            { id: 'MAG04', naziv: 'Novi Beograd', pantheon_id: '???' },
+            { id: 'MAG05', naziv: 'SMASH Centar', pantheon_id: '???' }
+        ];
+
+        // ============================================
+        // STATE
+        // ============================================
+        
+        let trebovanja = JSON.parse(localStorage.getItem('trebovanja') || '[]');
+        let currentFilter = 'all';
+
+        // ============================================
+        // INIT
+        // ============================================
+        
+        function init() {
+            populateSelects();
+            renderRequests();
+            updateStats();
+            setupFilterTabs();
+        }
+
+        function populateSelects() {
+            const artikalSelect = document.getElementById('artikal-select');
+            const izMagacin = document.getElementById('iz-magacin');
+            const uMagacin = document.getElementById('u-magacin');
+
+            artikli.forEach(a => {
+                artikalSelect.innerHTML += `<option value="${a.id}">${a.naziv}</option>`;
+            });
+
+            magacini.forEach(m => {
+                izMagacin.innerHTML += `<option value="${m.id}">${m.naziv}</option>`;
+                uMagacin.innerHTML += `<option value="${m.id}">${m.naziv}</option>`;
+            });
+        }
+
+        function setupFilterTabs() {
+            document.querySelectorAll('.filter-tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    currentFilter = tab.dataset.filter;
+                    renderRequests();
+                });
+            });
+        }
+
+        // ============================================
+        // CRUD OPERATIONS
+        // ============================================
+        
+        function createRequest() {
+            const artikalId = document.getElementById('artikal-select').value;
+            const izId = document.getElementById('iz-magacin').value;
+            const uId = document.getElementById('u-magacin').value;
+            const kolicina = parseInt(document.getElementById('kolicina').value);
+
+            if (!artikalId || !izId || !uId || !kolicina) {
+                alert('Popuni sva polja!');
+                return;
+            }
+
+            if (izId === uId) {
+                alert('Iz i U magacin ne mogu biti isti!');
+                return;
+            }
+
+            const artikal = artikli.find(a => a.id === artikalId);
+            const izMag = magacini.find(m => m.id === izId);
+            const uMag = magacini.find(m => m.id === uId);
+
+            const trebovanje = {
+                id: Date.now(),
+                artikal: artikal,
+                iz: izMag,
+                u: uMag,
+                kolicina: kolicina,
+                status: 'zatrazeno',
+                kreirano: new Date().toISOString(),
+                istorija: [
+                    { status: 'zatrazeno', vreme: new Date().toISOString() }
+                ]
+            };
+
+            trebovanja.unshift(trebovanje);
+            saveAndRender();
+            resetForm();
+            showToast('Trebovanje kreirano!');
+        }
+
+        function updateStatus(id, newStatus) {
+            const treb = trebovanja.find(t => t.id === id);
+            if (treb) {
+                treb.status = newStatus;
+                treb.istorija.push({ status: newStatus, vreme: new Date().toISOString() });
+                
+                // Simulacija upisa u Pantheon kad je primljeno
+                if (newStatus === 'primljeno') {
+                    console.log('=== PANTHEON UPIS ===');
+                    console.log(`Artikal: ${treb.artikal.naziv} (${treb.artikal.pantheon_id})`);
+                    console.log(`Količina: ${treb.kolicina}`);
+                    console.log(`Iz: ${treb.iz.naziv} (${treb.iz.pantheon_id}) → -${treb.kolicina}`);
+                    console.log(`U: ${treb.u.naziv} (${treb.u.pantheon_id}) → +${treb.kolicina}`);
+                    console.log('====================');
+                }
+                
+                saveAndRender();
+                showToast(`Status: ${newStatus.toUpperCase()}`);
+            }
+        }
+
+        function deleteRequest(id) {
+            if (confirm('Obriši trebovanje?')) {
+                trebovanja = trebovanja.filter(t => t.id !== id);
+                saveAndRender();
+                showToast('Trebovanje obrisano');
+            }
+        }
+
+        // ============================================
+        // RENDERING
+        // ============================================
+        
+        function renderRequests() {
+            const container = document.getElementById('requests-list');
+            
+            let filtered = trebovanja;
+            if (currentFilter !== 'all') {
+                filtered = trebovanja.filter(t => t.status === currentFilter);
+            }
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📦</div>
+                        <p>Nema ${currentFilter === 'all' ? 'aktivnih' : currentFilter} trebovanja</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = filtered.map(t => `
+                <div class="request-card">
+                    <div class="request-card-header">
+                        <div class="request-artikal">${t.artikal.naziv}</div>
+                        <div class="request-kolicina">×${t.kolicina}</div>
+                    </div>
+                    <div class="request-route">
+                        <span>${t.iz.naziv}</span>
+                        <span class="arrow">→</span>
+                        <span>${t.u.naziv}</span>
+                    </div>
+                    <div class="request-meta">
+                        <span class="request-time">${formatTime(t.kreirano)}</span>
+                        <span class="status-badge status-${t.status}">${formatStatus(t.status)}</span>
+                    </div>
+                    <div class="request-actions">
+                        ${getActionButtons(t)}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function getActionButtons(t) {
+            const statusFlow = ['zatrazeno', 'poslato', 'na-putu', 'primljeno'];
+            const currentIndex = statusFlow.indexOf(t.status);
+            const nextStatus = statusFlow[currentIndex + 1];
+
+            let buttons = '';
+            
+            if (nextStatus) {
+                buttons += `<button class="btn-action next-status" onclick="updateStatus(${t.id}, '${nextStatus}')">
+                    ${getNextStatusLabel(nextStatus)}
+                </button>`;
+            }
+            
+            buttons += `<button class="btn-action" onclick="deleteRequest(${t.id})">Obriši</button>`;
+            
+            return buttons;
+        }
+
+        function getNextStatusLabel(status) {
+            const labels = {
+                'poslato': '📤 Poslato',
+                'na-putu': '🚚 Na putu',
+                'primljeno': '✅ Primljeno'
+            };
+            return labels[status] || status;
+        }
+
+        function formatStatus(status) {
+            const labels = {
+                'zatrazeno': 'Zatraženo',
+                'poslato': 'Poslato',
+                'na-putu': 'Na putu',
+                'primljeno': 'Primljeno'
+            };
+            return labels[status] || status;
+        }
+
+        function formatTime(iso) {
+            const d = new Date(iso);
+            return d.toLocaleString('sr-RS', { 
+                day: '2-digit',
+                month: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        function updateStats() {
+            const stats = {
+                zatrazeno: trebovanja.filter(t => t.status === 'zatrazeno').length,
+                poslato: trebovanja.filter(t => t.status === 'poslato').length,
+                'na-putu': trebovanja.filter(t => t.status === 'na-putu').length,
+                primljeno: trebovanja.filter(t => t.status === 'primljeno').length
+            };
+
+            document.getElementById('stat-zatrazeno').textContent = stats.zatrazeno;
+            document.getElementById('stat-poslato').textContent = stats.poslato;
+            document.getElementById('stat-na-putu').textContent = stats['na-putu'];
+            document.getElementById('stat-primljeno').textContent = stats.primljeno;
+        }
+
+        // ============================================
+        // UTILITIES
+        // ============================================
+        
+        function saveAndRender() {
+            localStorage.setItem('trebovanja', JSON.stringify(trebovanja));
+            renderRequests();
+            updateStats();
+        }
+
+        function resetForm() {
+            document.getElementById('artikal-select').value = '';
+            document.getElementById('iz-magacin').value = '';
+            document.getElementById('u-magacin').value = '';
+            document.getElementById('kolicina').value = '';
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-message').textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        // ============================================
+        // BARCODE SCANNER
+        // ============================================
+        
+        let html5QrCode = null;
+
+        function openScanner() {
+            document.getElementById('scanner-modal').classList.add('active');
+            
+            html5QrCode = new Html5Qrcode("scanner-video");
+            
+            html5QrCode.start(
+                { facingMode: "environment" },
+                { fps: 10, qrbox: { width: 250, height: 250 } },
+                onScanSuccess,
+                onScanFailure
+            ).catch(err => {
+                document.getElementById('scanner-result').textContent = 'Greška: ' + err;
+            });
+        }
+
+        function closeScanner() {
+            if (html5QrCode) {
+                html5QrCode.stop().then(() => {
+                    html5QrCode = null;
+                });
+            }
+            document.getElementById('scanner-modal').classList.remove('active');
+        }
+
+        function onScanSuccess(decodedText) {
+            const artikal = artikli.find(a => a.barcode === decodedText);
+            
+            if (artikal) {
+                document.getElementById('scanner-result').innerHTML = 
+                    `<strong style="color: var(--success)">✓ ${artikal.naziv}</strong>`;
+                document.getElementById('artikal-select').value = artikal.id;
+                
+                setTimeout(closeScanner, 1500);
+            } else {
+                document.getElementById('scanner-result').innerHTML = 
+                    `<span style="color: var(--danger)">Nepoznat barkod: ${decodedText}</span>`;
+            }
+        }
+
+        function onScanFailure(error) {
+            // Ignorišemo greške skeniranja
+        }
+
+        // ============================================
+        // START
+        // ============================================
+        
+        init();
+    </script>
+</body>
+</html>
