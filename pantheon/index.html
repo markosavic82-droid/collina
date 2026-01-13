@@ -11,6 +11,7 @@
             --bg-secondary: #141416;
             --bg-card: #1a1a1f;
             --bg-hover: #252530;
+            --bg-input: #0d0d0e;
             --accent: #8B5CF6;
             --accent-glow: rgba(139, 92, 246, 0.3);
             --success: #22c55e;
@@ -39,7 +40,7 @@
         }
 
         .container {
-            max-width: 1400px;
+            max-width: 1000px;
             margin: 0 auto;
             padding: 20px;
         }
@@ -49,9 +50,9 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 20px 0;
+            padding: 16px 0;
             border-bottom: 1px solid var(--border);
-            margin-bottom: 30px;
+            margin-bottom: 24px;
         }
 
         .logo {
@@ -73,140 +74,237 @@
         }
 
         .logo h1 {
-            font-size: 24px;
+            font-size: 22px;
             font-weight: 600;
         }
 
-        .logo span {
-            color: var(--text-muted);
-            font-size: 14px;
-            font-weight: 400;
-        }
-
-        /* Stats Bar */
-        .stats-bar {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 16px;
-            margin-bottom: 30px;
-        }
-
-        .stat-card {
+        /* Store Selector */
+        .store-selector {
             background: var(--bg-card);
             border: 1px solid var(--border);
             border-radius: 12px;
-            padding: 16px;
-            text-align: center;
-        }
-
-        .stat-card .number {
-            font-size: 28px;
-            font-weight: 700;
-            font-family: 'JetBrains Mono', monospace;
-        }
-
-        .stat-card .label {
-            font-size: 12px;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-top: 4px;
-        }
-
-        .stat-card.zatrazeno .number { color: var(--info); }
-        .stat-card.poslato .number { color: var(--warning); }
-        .stat-card.na-putu .number { color: var(--accent); }
-        .stat-card.primljeno .number { color: var(--success); }
-
-        /* Main Grid */
-        .main-grid {
-            display: grid;
-            grid-template-columns: 350px 1fr;
-            gap: 24px;
-        }
-
-        @media (max-width: 900px) {
-            .main-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        /* New Request Form */
-        .form-panel {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 24px;
-            height: fit-content;
-            position: sticky;
-            top: 20px;
-        }
-
-        .form-panel h2 {
-            font-size: 18px;
+            padding: 16px 20px;
             margin-bottom: 20px;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 16px;
         }
 
-        .form-panel h2::before {
-            content: '+';
-            width: 28px;
-            height: 28px;
-            background: var(--accent);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-        }
-
-        .form-group {
-            margin-bottom: 16px;
-        }
-
-        .form-group label {
-            display: block;
-            font-size: 12px;
+        .store-selector label {
+            font-size: 14px;
             color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 8px;
+            white-space: nowrap;
         }
 
-        select, input {
-            width: 100%;
+        .store-selector select {
+            flex: 1;
+            max-width: 300px;
             padding: 12px 16px;
-            background: var(--bg-secondary);
+            background: var(--bg-input);
             border: 1px solid var(--border);
             border-radius: 10px;
             color: var(--text-primary);
             font-family: inherit;
-            font-size: 14px;
-            transition: all 0.2s;
+            font-size: 15px;
+            font-weight: 500;
         }
 
-        select:focus, input:focus {
+        .store-selector select:focus {
             outline: none;
             border-color: var(--accent);
             box-shadow: 0 0 0 3px var(--accent-glow);
         }
 
-        select option {
-            background: var(--bg-secondary);
-            padding: 10px;
+        .store-info {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--text-muted);
         }
 
-        .form-row {
+        .store-info .dot {
+            width: 8px;
+            height: 8px;
+            background: var(--success);
+            border-radius: 50%;
+        }
+
+        /* Products Table */
+        .products-panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        .table-header {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 2fr 100px 120px 100px;
             gap: 12px;
+            padding: 14px 20px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+        }
+
+        .table-header .col-center {
+            text-align: center;
+        }
+
+        .product-row {
+            display: grid;
+            grid-template-columns: 2fr 100px 120px 100px;
+            gap: 12px;
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--border);
+            align-items: center;
+            transition: background 0.15s;
+        }
+
+        .product-row:last-child {
+            border-bottom: none;
+        }
+
+        .product-row:hover {
+            background: var(--bg-hover);
+        }
+
+        .product-row.has-request {
+            background: rgba(139, 92, 246, 0.08);
+        }
+
+        .product-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .product-name {
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .product-sku {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .stock-cell {
+            text-align: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        .stock-low {
+            color: var(--warning);
+        }
+
+        .stock-critical {
+            color: var(--danger);
+        }
+
+        .stock-ok {
+            color: var(--text-primary);
+        }
+
+        .stock-empty {
+            color: var(--danger);
+            opacity: 0.7;
+        }
+
+        .stock-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .stock-indicator .icon {
+            font-size: 12px;
+        }
+
+        .request-input-wrap {
+            position: relative;
+        }
+
+        .request-input {
+            width: 100%;
+            padding: 10px 12px;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .request-input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        .request-input:not(:placeholder-shown) {
+            background: rgba(139, 92, 246, 0.15);
+            border-color: var(--accent);
+        }
+
+        .request-input::placeholder {
+            color: var(--text-muted);
+            opacity: 0.5;
+        }
+
+        .central-stock {
+            text-align: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .central-stock.insufficient {
+            color: var(--danger);
+        }
+
+        /* Summary Footer */
+        .summary-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border);
+        }
+
+        .summary-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .summary-stat {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .summary-stat strong {
+            color: var(--accent);
+            font-family: 'JetBrains Mono', monospace;
         }
 
         .btn {
-            width: 100%;
-            padding: 14px 20px;
+            padding: 12px 24px;
             border: none;
             border-radius: 10px;
             font-family: inherit;
@@ -216,7 +314,6 @@
             transition: all 0.2s;
             display: flex;
             align-items: center;
-            justify-content: center;
             gap: 8px;
         }
 
@@ -225,44 +322,63 @@
             color: white;
         }
 
-        .btn-primary:hover {
+        .btn-primary:hover:not(:disabled) {
             transform: translateY(-2px);
             box-shadow: 0 8px 20px var(--accent-glow);
         }
 
-        /* Requests List */
-        .requests-panel {
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Active Orders Panel */
+        .orders-panel {
+            margin-top: 24px;
             background: var(--bg-card);
             border: 1px solid var(--border);
             border-radius: 16px;
-            padding: 24px;
+            overflow: hidden;
         }
 
-        .requests-header {
+        .orders-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
         }
 
-        .requests-header h2 {
-            font-size: 18px;
+        .orders-header h2 {
+            font-size: 16px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .orders-header h2 .badge {
+            background: var(--accent);
+            color: white;
+            font-size: 11px;
+            padding: 4px 10px;
+            border-radius: 20px;
         }
 
         .filter-tabs {
             display: flex;
-            gap: 8px;
+            gap: 6px;
         }
 
         .filter-tab {
-            padding: 8px 16px;
-            background: var(--bg-secondary);
+            padding: 6px 14px;
+            background: transparent;
             border: 1px solid var(--border);
-            border-radius: 8px;
-            font-size: 13px;
+            border-radius: 6px;
+            font-size: 12px;
             color: var(--text-secondary);
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.15s;
         }
 
         .filter-tab:hover {
@@ -275,238 +391,112 @@
             color: white;
         }
 
-        /* Request Card */
-        .request-card {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 12px;
-            transition: all 0.2s;
-        }
-
-        .request-card:hover {
-            border-color: var(--border-light);
-            transform: translateX(4px);
-        }
-
-        .request-card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 12px;
-        }
-
-        .request-artikal {
-            font-weight: 600;
-            font-size: 16px;
-        }
-
-        .request-kolicina {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 18px;
-            font-weight: 600;
-            color: var(--accent);
-        }
-
-        .request-route {
+        .order-card {
             display: flex;
             align-items: center;
-            gap: 10px;
-            font-size: 13px;
-            color: var(--text-secondary);
-            margin-bottom: 12px;
+            gap: 16px;
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--border);
+            transition: background 0.15s;
         }
 
-        .request-route .arrow {
-            color: var(--text-muted);
+        .order-card:last-child {
+            border-bottom: none;
         }
 
-        .request-meta {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        .order-card:hover {
+            background: var(--bg-hover);
         }
 
-        .request-time {
+        .order-artikal {
+            flex: 1;
+            font-weight: 500;
+        }
+
+        .order-route {
             font-size: 12px;
             color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .order-qty {
             font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            color: var(--accent);
+            min-width: 60px;
+            text-align: center;
+        }
+
+        .order-time {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--text-muted);
+            min-width: 100px;
         }
 
         .status-badge {
-            padding: 6px 12px;
+            padding: 5px 12px;
             border-radius: 20px;
-            font-size: 11px;
+            font-size: 10px;
             font-weight: 600;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.3px;
+            min-width: 80px;
+            text-align: center;
         }
 
-        .status-zatrazeno {
-            background: rgba(59, 130, 246, 0.15);
-            color: var(--info);
-        }
+        .status-zatrazeno { background: rgba(59, 130, 246, 0.15); color: var(--info); }
+        .status-poslato { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
+        .status-na-putu { background: rgba(139, 92, 246, 0.15); color: var(--accent); }
+        .status-primljeno { background: rgba(34, 197, 94, 0.15); color: var(--success); }
 
-        .status-poslato {
-            background: rgba(245, 158, 11, 0.15);
-            color: var(--warning);
-        }
-
-        .status-na-putu {
-            background: rgba(139, 92, 246, 0.15);
-            color: var(--accent);
-        }
-
-        .status-primljeno {
-            background: rgba(34, 197, 94, 0.15);
-            color: var(--success);
-        }
-
-        .request-actions {
+        .order-actions {
             display: flex;
-            gap: 8px;
-            margin-top: 12px;
-            padding-top: 12px;
-            border-top: 1px solid var(--border);
+            gap: 6px;
         }
 
-        .btn-action {
-            flex: 1;
-            padding: 10px;
+        .btn-sm {
+            padding: 6px 12px;
             border: 1px solid var(--border);
-            border-radius: 8px;
-            background: var(--bg-card);
+            border-radius: 6px;
+            background: var(--bg-secondary);
             color: var(--text-secondary);
-            font-size: 12px;
-            font-weight: 500;
+            font-size: 11px;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.15s;
         }
 
-        .btn-action:hover {
+        .btn-sm:hover {
             border-color: var(--accent);
             color: var(--accent);
         }
 
-        .btn-action.next-status {
+        .btn-sm.primary {
             background: var(--accent);
             border-color: var(--accent);
             color: white;
         }
 
-        .btn-action.next-status:hover {
-            background: #7c4ddb;
-        }
-
-        /* Empty State */
-        .empty-state {
+        .empty-orders {
+            padding: 40px;
             text-align: center;
-            padding: 60px 20px;
             color: var(--text-muted);
         }
 
-        .empty-state-icon {
-            font-size: 48px;
-            margin-bottom: 16px;
-            opacity: 0.5;
-        }
-
-        /* Scanner Button */
-        .scanner-toggle {
-            position: fixed;
-            bottom: 24px;
-            right: 24px;
-            width: 60px;
-            height: 60px;
-            background: linear-gradient(135deg, var(--accent), #a78bfa);
-            border: none;
-            border-radius: 16px;
-            color: white;
-            font-size: 24px;
-            cursor: pointer;
-            box-shadow: 0 8px 30px var(--accent-glow);
-            transition: all 0.2s;
-            z-index: 100;
-        }
-
-        .scanner-toggle:hover {
-            transform: scale(1.1);
-        }
-
-        /* Scanner Modal */
-        .scanner-modal {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.9);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .scanner-modal.active {
-            display: flex;
-        }
-
-        .scanner-container {
-            background: var(--bg-card);
-            border-radius: 20px;
-            padding: 24px;
-            width: 90%;
-            max-width: 500px;
-        }
-
-        .scanner-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .scanner-header h3 {
-            font-size: 18px;
-        }
-
-        .btn-close {
-            width: 36px;
-            height: 36px;
-            background: var(--bg-secondary);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            color: var(--text-secondary);
-            font-size: 20px;
-            cursor: pointer;
-        }
-
-        #scanner-video {
-            width: 100%;
-            aspect-ratio: 4/3;
-            background: var(--bg-primary);
-            border-radius: 12px;
-            object-fit: cover;
-        }
-
-        .scanner-result {
-            margin-top: 16px;
-            padding: 16px;
-            background: var(--bg-secondary);
-            border-radius: 10px;
-            text-align: center;
-        }
-
-        /* Toast Notification */
+        /* Toast */
         .toast {
             position: fixed;
-            bottom: 100px;
+            bottom: 24px;
             right: 24px;
             background: var(--bg-card);
             border: 1px solid var(--success);
             border-radius: 12px;
-            padding: 16px 24px;
+            padding: 14px 20px;
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
             transform: translateX(150%);
             transition: transform 0.3s ease;
@@ -517,39 +507,85 @@
             transform: translateX(0);
         }
 
-        .toast-icon {
-            width: 32px;
-            height: 32px;
-            background: var(--success);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 12px;
+            }
 
-        /* Mapping Info */
-        .mapping-section {
-            margin-top: 24px;
-            padding: 20px;
-            background: var(--bg-secondary);
-            border: 1px dashed var(--border);
-            border-radius: 12px;
-        }
+            .store-selector {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 12px;
+            }
 
-        .mapping-section h4 {
-            font-size: 14px;
-            color: var(--text-secondary);
-            margin-bottom: 12px;
-        }
+            .store-selector select {
+                max-width: none;
+            }
 
-        .mapping-code {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 11px;
-            color: var(--text-muted);
-            background: var(--bg-primary);
-            padding: 12px;
-            border-radius: 8px;
-            overflow-x: auto;
+            .store-info {
+                margin-left: 0;
+                justify-content: center;
+            }
+
+            .table-header {
+                display: none;
+            }
+
+            .product-row {
+                grid-template-columns: 1fr;
+                gap: 8px;
+                padding: 16px;
+            }
+
+            .product-info {
+                margin-bottom: 8px;
+            }
+
+            .product-row > div:not(.product-info) {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            .product-row > div:not(.product-info)::before {
+                font-size: 11px;
+                color: var(--text-muted);
+                text-transform: uppercase;
+            }
+
+            .stock-cell::before { content: 'Stanje u radnji'; }
+            .request-input-wrap::before { content: 'Naruči'; }
+            .central-stock::before { content: 'Centrala'; }
+
+            .summary-footer {
+                flex-direction: column;
+                gap: 16px;
+            }
+
+            .summary-info {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .orders-header {
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .order-card {
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+
+            .order-artikal {
+                width: 100%;
+            }
         }
     </style>
 </head>
@@ -558,157 +594,120 @@
         <header>
             <div class="logo">
                 <div class="logo-icon">C</div>
-                <div>
-                    <h1>Collina</h1>
-                    <span>Trebovanje Prototype</span>
-                </div>
+                <h1>Trebovanje</h1>
             </div>
         </header>
 
-        <div class="stats-bar">
-            <div class="stat-card zatrazeno">
-                <div class="number" id="stat-zatrazeno">0</div>
-                <div class="label">Zatraženo</div>
-            </div>
-            <div class="stat-card poslato">
-                <div class="number" id="stat-poslato">0</div>
-                <div class="label">Poslato</div>
-            </div>
-            <div class="stat-card na-putu">
-                <div class="number" id="stat-na-putu">0</div>
-                <div class="label">Na putu</div>
-            </div>
-            <div class="stat-card primljeno">
-                <div class="number" id="stat-primljeno">0</div>
-                <div class="label">Primljeno</div>
+        <!-- Store Selector -->
+        <div class="store-selector">
+            <label>Radnja:</label>
+            <select id="store-select" onchange="changeStore()">
+                <!-- Populated by JS -->
+            </select>
+            <div class="store-info">
+                <span class="dot"></span>
+                <span>Povezano sa Pantheon</span>
             </div>
         </div>
 
-        <div class="main-grid">
-            <div class="form-panel">
-                <h2>Novo Trebovanje</h2>
-                
-                <div class="form-group">
-                    <label>Artikal</label>
-                    <select id="artikal-select">
-                        <option value="">-- Izaberi artikal --</option>
-                    </select>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Iz magacina</label>
-                        <select id="iz-magacin">
-                            <option value="">-- Odakle --</option>
-                        </select>
+        <!-- Products Table -->
+        <div class="products-panel">
+            <div class="table-header">
+                <div>Artikal</div>
+                <div class="col-center">Radnja</div>
+                <div class="col-center">Naruči</div>
+                <div class="col-center">Centrala</div>
+            </div>
+            <div id="products-list">
+                <!-- Populated by JS -->
+            </div>
+            <div class="summary-footer">
+                <div class="summary-info">
+                    <div class="summary-stat">
+                        Artikala: <strong id="summary-items">0</strong>
                     </div>
-                    <div class="form-group">
-                        <label>U magacin</label>
-                        <select id="u-magacin">
-                            <option value="">-- Gde --</option>
-                        </select>
+                    <div class="summary-stat">
+                        Ukupno kom: <strong id="summary-qty">0</strong>
                     </div>
                 </div>
-
-                <div class="form-group">
-                    <label>Količina</label>
-                    <input type="number" id="kolicina" placeholder="0" min="1">
-                </div>
-
-                <button class="btn btn-primary" onclick="createRequest()">
-                    <span>📦</span> Kreiraj Trebovanje
+                <button class="btn btn-primary" id="submit-btn" onclick="submitRequest()" disabled>
+                    📦 Pošalji Trebovanje
                 </button>
-
-                <div class="mapping-section">
-                    <h4>📋 Mapiranje (za Pantheon)</h4>
-                    <div class="mapping-code">
-                        <strong>Artikli:</strong><br>
-                        coca_cola → PANTHEON_ID: ???<br>
-                        hamburger → PANTHEON_ID: ???<br>
-                        ...<br><br>
-                        <strong>Magacini:</strong><br>
-                        centrala → PANTHEON_WH: ???<br>
-                        vracar → PANTHEON_WH: ???
-                    </div>
-                </div>
-            </div>
-
-            <div class="requests-panel">
-                <div class="requests-header">
-                    <h2>Aktivna Trebovanja</h2>
-                    <div class="filter-tabs">
-                        <button class="filter-tab active" data-filter="all">Sva</button>
-                        <button class="filter-tab" data-filter="zatrazeno">Zatraženo</button>
-                        <button class="filter-tab" data-filter="poslato">Poslato</button>
-                        <button class="filter-tab" data-filter="na-putu">Na putu</button>
-                        <button class="filter-tab" data-filter="primljeno">Primljeno</button>
-                    </div>
-                </div>
-
-                <div id="requests-list">
-                    <div class="empty-state">
-                        <div class="empty-state-icon">📦</div>
-                        <p>Nema aktivnih trebovanja</p>
-                    </div>
-                </div>
             </div>
         </div>
-    </div>
 
-    <!-- Scanner Button -->
-    <button class="scanner-toggle" onclick="openScanner()">📷</button>
-
-    <!-- Scanner Modal -->
-    <div class="scanner-modal" id="scanner-modal">
-        <div class="scanner-container">
-            <div class="scanner-header">
-                <h3>Skeniraj Barkod</h3>
-                <button class="btn-close" onclick="closeScanner()">×</button>
+        <!-- Active Orders -->
+        <div class="orders-panel">
+            <div class="orders-header">
+                <h2>
+                    Aktivna Trebovanja 
+                    <span class="badge" id="orders-count">0</span>
+                </h2>
+                <div class="filter-tabs">
+                    <button class="filter-tab active" data-filter="all">Sva</button>
+                    <button class="filter-tab" data-filter="zatrazeno">Zatraženo</button>
+                    <button class="filter-tab" data-filter="poslato">Poslato</button>
+                    <button class="filter-tab" data-filter="na-putu">Na putu</button>
+                </div>
             </div>
-            <video id="scanner-video" autoplay playsinline></video>
-            <div class="scanner-result" id="scanner-result">
-                Usmerite kameru na barkod
+            <div id="orders-list">
+                <div class="empty-orders">Nema aktivnih trebovanja</div>
             </div>
         </div>
     </div>
 
     <!-- Toast -->
     <div class="toast" id="toast">
-        <div class="toast-icon">✓</div>
-        <span id="toast-message">Trebovanje kreirano!</span>
+        <span>✓</span>
+        <span id="toast-message">Uspešno!</span>
     </div>
 
-    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <script>
         // ============================================
-        // TEST DATA - OVO ZAMENITI SA PANTHEON PODACIMA
+        // TEST DATA - ZAMENI SA PANTHEON PODACIMA
         // ============================================
         
         const artikli = [
-            { id: 'ART001', naziv: 'Coca Cola 0.5L', barcode: '5449000000996', pantheon_id: '???' },
-            { id: 'ART002', naziv: 'Fanta 0.5L', barcode: '5449000011527', pantheon_id: '???' },
-            { id: 'ART003', naziv: 'Sprite 0.5L', barcode: '5449000014535', pantheon_id: '???' },
-            { id: 'ART004', naziv: 'Hamburger bun', barcode: '8600000000001', pantheon_id: '???' },
-            { id: 'ART005', naziv: 'Govedji burger 200g', barcode: '8600000000002', pantheon_id: '???' },
-            { id: 'ART006', naziv: 'Cheddar sir', barcode: '8600000000003', pantheon_id: '???' },
-            { id: 'ART007', naziv: 'Slanina', barcode: '8600000000004', pantheon_id: '???' },
-            { id: 'ART008', naziv: 'Pomfrit 2.5kg', barcode: '8600000000005', pantheon_id: '???' },
-            { id: 'ART009', naziv: 'Kečap 1L', barcode: '8600000000006', pantheon_id: '???' },
-            { id: 'ART010', naziv: 'Majonez 1L', barcode: '8600000000007', pantheon_id: '???' }
+            { id: 'ART001', sifra: 'CC05', naziv: 'Coca Cola 0.5L', barcode: '5449000000996' },
+            { id: 'ART002', sifra: 'FN05', naziv: 'Fanta 0.5L', barcode: '5449000011527' },
+            { id: 'ART003', sifra: 'SP05', naziv: 'Sprite 0.5L', barcode: '5449000014535' },
+            { id: 'ART004', sifra: 'HBN1', naziv: 'Hamburger bun', barcode: '8600000000001' },
+            { id: 'ART005', sifra: 'BRG2', naziv: 'Goveđi burger 200g', barcode: '8600000000002' },
+            { id: 'ART006', sifra: 'CHD1', naziv: 'Cheddar sir', barcode: '8600000000003' },
+            { id: 'ART007', sifra: 'SLN1', naziv: 'Slanina', barcode: '8600000000004' },
+            { id: 'ART008', sifra: 'PMF2', naziv: 'Pomfrit 2.5kg', barcode: '8600000000005' },
+            { id: 'ART009', sifra: 'KCP1', naziv: 'Kečap 1L', barcode: '8600000000006' },
+            { id: 'ART010', sifra: 'MJN1', naziv: 'Majonez 1L', barcode: '8600000000007' }
         ];
 
         const magacini = [
-            { id: 'MAG01', naziv: 'Centralni magacin', pantheon_id: '???' },
-            { id: 'MAG02', naziv: 'Vračar', pantheon_id: '???' },
-            { id: 'MAG03', naziv: 'Banovo Brdo', pantheon_id: '???' },
-            { id: 'MAG04', naziv: 'Novi Beograd', pantheon_id: '???' },
-            { id: 'MAG05', naziv: 'SMASH Centar', pantheon_id: '???' }
+            { id: 'centrala', naziv: 'Centralni magacin' },
+            { id: 'vracar', naziv: 'Vračar' },
+            { id: 'banovo', naziv: 'Banovo Brdo' },
+            { id: 'nbg', naziv: 'Novi Beograd' },
+            { id: 'smash', naziv: 'SMASH Centar' }
         ];
+
+        // Simulirano stanje - U PRODUKCIJI OVO DOLAZI IZ PANTHEONA
+        const stpitrovanja = {
+            centrala: { ART001: 340, ART002: 120, ART003: 89, ART004: 250, ART005: 180, ART006: 95, ART007: 60, ART008: 45, ART009: 30, ART010: 55 },
+            vracar: { ART001: 12, ART002: 3, ART003: 45, ART004: 8, ART005: 15, ART006: 4, ART007: 2, ART008: 6, ART009: 8, ART010: 3 },
+            banovo: { ART001: 25, ART002: 18, ART003: 12, ART004: 30, ART005: 22, ART006: 10, ART007: 8, ART008: 4, ART009: 5, ART010: 7 },
+            nbg: { ART001: 8, ART002: 5, ART003: 20, ART004: 15, ART005: 10, ART006: 6, ART007: 3, ART008: 2, ART009: 4, ART010: 2 },
+            smash: { ART001: 30, ART002: 22, ART003: 35, ART004: 40, ART005: 28, ART006: 15, ART007: 12, ART008: 8, ART009: 10, ART010: 9 }
+        };
+
+        // Minimalne količine za upozorenje
+        const minStanje = {
+            ART001: 15, ART002: 10, ART003: 15, ART004: 20, ART005: 15, 
+            ART006: 8, ART007: 5, ART008: 5, ART009: 5, ART010: 5
+        };
 
         // ============================================
         // STATE
         // ============================================
         
+        let currentStore = 'vracar';
         let trebovanja = JSON.parse(localStorage.getItem('trebovanja') || '[]');
         let currentFilter = 'all';
 
@@ -717,25 +716,25 @@
         // ============================================
         
         function init() {
-            populateSelects();
-            renderRequests();
-            updateStats();
+            populateStoreSelect();
+            renderProducts();
+            renderOrders();
             setupFilterTabs();
         }
 
-        function populateSelects() {
-            const artikalSelect = document.getElementById('artikal-select');
-            const izMagacin = document.getElementById('iz-magacin');
-            const uMagacin = document.getElementById('u-magacin');
+        function populateStoreSelect() {
+            const select = document.getElementById('store-select');
+            magacini
+                .filter(m => m.id !== 'centrala')
+                .forEach(m => {
+                    select.innerHTML += `<option value="${m.id}">${m.naziv}</option>`;
+                });
+            select.value = currentStore;
+        }
 
-            artikli.forEach(a => {
-                artikalSelect.innerHTML += `<option value="${a.id}">${a.naziv}</option>`;
-            });
-
-            magacini.forEach(m => {
-                izMagacin.innerHTML += `<option value="${m.id}">${m.naziv}</option>`;
-                uMagacin.innerHTML += `<option value="${m.id}">${m.naziv}</option>`;
-            });
+        function changeStore() {
+            currentStore = document.getElementById('store-select').value;
+            renderProducts();
         }
 
         function setupFilterTabs() {
@@ -744,265 +743,243 @@
                     document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
                     tab.classList.add('active');
                     currentFilter = tab.dataset.filter;
-                    renderRequests();
+                    renderOrders();
                 });
             });
         }
 
         // ============================================
-        // CRUD OPERATIONS
+        // RENDER PRODUCTS
         // ============================================
         
-        function createRequest() {
-            const artikalId = document.getElementById('artikal-select').value;
-            const izId = document.getElementById('iz-magacin').value;
-            const uId = document.getElementById('u-magacin').value;
-            const kolicina = parseInt(document.getElementById('kolicina').value);
+        function renderProducts() {
+            const container = document.getElementById('products-list');
+            const storeStock = stpitrovanja[currentStore];
+            const centralStock = stpitrovanja.centrala;
 
-            if (!artikalId || !izId || !uId || !kolicina) {
-                alert('Popuni sva polja!');
-                return;
-            }
-
-            if (izId === uId) {
-                alert('Iz i U magacin ne mogu biti isti!');
-                return;
-            }
-
-            const artikal = artikli.find(a => a.id === artikalId);
-            const izMag = magacini.find(m => m.id === izId);
-            const uMag = magacini.find(m => m.id === uId);
-
-            const trebovanje = {
-                id: Date.now(),
-                artikal: artikal,
-                iz: izMag,
-                u: uMag,
-                kolicina: kolicina,
-                status: 'zatrazeno',
-                kreirano: new Date().toISOString(),
-                istorija: [
-                    { status: 'zatrazeno', vreme: new Date().toISOString() }
-                ]
-            };
-
-            trebovanja.unshift(trebovanje);
-            saveAndRender();
-            resetForm();
-            showToast('Trebovanje kreirano!');
-        }
-
-        function updateStatus(id, newStatus) {
-            const treb = trebovanja.find(t => t.id === id);
-            if (treb) {
-                treb.status = newStatus;
-                treb.istorija.push({ status: newStatus, vreme: new Date().toISOString() });
+            container.innerHTML = artikli.map(art => {
+                const sStock = storeStock[art.id] || 0;
+                const cStock = centralStock[art.id] || 0;
+                const minQty = minStanje[art.id] || 10;
                 
-                // Simulacija upisa u Pantheon kad je primljeno
-                if (newStatus === 'primljeno') {
-                    console.log('=== PANTHEON UPIS ===');
-                    console.log(`Artikal: ${treb.artikal.naziv} (${treb.artikal.pantheon_id})`);
-                    console.log(`Količina: ${treb.kolicina}`);
-                    console.log(`Iz: ${treb.iz.naziv} (${treb.iz.pantheon_id}) → -${treb.kolicina}`);
-                    console.log(`U: ${treb.u.naziv} (${treb.u.pantheon_id}) → +${treb.kolicina}`);
-                    console.log('====================');
+                let stockClass = 'stock-ok';
+                let stockIcon = '';
+                if (sStock === 0) {
+                    stockClass = 'stock-critical';
+                    stockIcon = '🔴';
+                } else if (sStock <= minQty) {
+                    stockClass = 'stock-low';
+                    stockIcon = '⚠️';
                 }
-                
-                saveAndRender();
-                showToast(`Status: ${newStatus.toUpperCase()}`);
-            }
-        }
 
-        function deleteRequest(id) {
-            if (confirm('Obriši trebovanje?')) {
-                trebovanja = trebovanja.filter(t => t.id !== id);
-                saveAndRender();
-                showToast('Trebovanje obrisano');
-            }
-        }
-
-        // ============================================
-        // RENDERING
-        // ============================================
-        
-        function renderRequests() {
-            const container = document.getElementById('requests-list');
-            
-            let filtered = trebovanja;
-            if (currentFilter !== 'all') {
-                filtered = trebovanja.filter(t => t.status === currentFilter);
-            }
-
-            if (filtered.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-state-icon">📦</div>
-                        <p>Nema ${currentFilter === 'all' ? 'aktivnih' : currentFilter} trebovanja</p>
+                return `
+                    <div class="product-row" id="row-${art.id}">
+                        <div class="product-info">
+                            <span class="product-name">${art.naziv}</span>
+                            <span class="product-sku">${art.sifra}</span>
+                        </div>
+                        <div class="stock-cell ${stockClass}">
+                            <span class="stock-indicator">
+                                <span>${sStock}</span>
+                                ${stockIcon ? `<span class="icon">${stockIcon}</span>` : ''}
+                            </span>
+                        </div>
+                        <div class="request-input-wrap">
+                            <input type="number" 
+                                   class="request-input" 
+                                   id="req-${art.id}"
+                                   placeholder="0" 
+                                   min="0"
+                                   data-art-id="${art.id}"
+                                   data-central="${cStock}"
+                                   onchange="updateSummary()"
+                                   oninput="checkAvailability(this)">
+                        </div>
+                        <div class="central-stock" id="central-${art.id}">${cStock}</div>
                     </div>
                 `;
+            }).join('');
+
+            updateSummary();
+        }
+
+        function checkAvailability(input) {
+            const artId = input.dataset.artId;
+            const centralStock = parseInt(input.dataset.central);
+            const requested = parseInt(input.value) || 0;
+            const centralCell = document.getElementById(`central-${artId}`);
+            const row = document.getElementById(`row-${artId}`);
+
+            if (requested > centralStock) {
+                centralCell.classList.add('insufficient');
+                centralCell.innerHTML = `${centralStock} ❌`;
+            } else {
+                centralCell.classList.remove('insufficient');
+                centralCell.textContent = centralStock;
+            }
+
+            row.classList.toggle('has-request', requested > 0);
+            updateSummary();
+        }
+
+        function updateSummary() {
+            let totalItems = 0;
+            let totalQty = 0;
+
+            document.querySelectorAll('.request-input').forEach(input => {
+                const qty = parseInt(input.value) || 0;
+                if (qty > 0) {
+                    totalItems++;
+                    totalQty += qty;
+                }
+            });
+
+            document.getElementById('summary-items').textContent = totalItems;
+            document.getElementById('summary-qty').textContent = totalQty;
+            document.getElementById('submit-btn').disabled = totalItems === 0;
+        }
+
+        // ============================================
+        // SUBMIT REQUEST
+        // ============================================
+        
+        function submitRequest() {
+            const storeName = magacini.find(m => m.id === currentStore).naziv;
+            let hasInsufficientStock = false;
+
+            document.querySelectorAll('.request-input').forEach(input => {
+                const qty = parseInt(input.value) || 0;
+                if (qty > 0) {
+                    const artId = input.dataset.artId;
+                    const centralStock = parseInt(input.dataset.central);
+                    
+                    if (qty > centralStock) {
+                        hasInsufficientStock = true;
+                        return;
+                    }
+
+                    const artikal = artikli.find(a => a.id === artId);
+                    
+                    const trebovanje = {
+                        id: Date.now() + Math.random(),
+                        artikal: artikal,
+                        iz: { id: 'centrala', naziv: 'Centralni magacin' },
+                        u: { id: currentStore, naziv: storeName },
+                        kolicina: qty,
+                        status: 'zatrazeno',
+                        kreirano: new Date().toISOString()
+                    };
+
+                    trebovanja.unshift(trebovanje);
+                    input.value = '';
+                }
+            });
+
+            if (hasInsufficientStock) {
+                alert('Neka trebovanja premašuju stanje u centrali! Ispravite količine.');
+                return;
+            }
+
+            localStorage.setItem('trebovanja', JSON.stringify(trebovanja));
+            renderProducts();
+            renderOrders();
+            showToast('Trebovanje poslato!');
+        }
+
+        // ============================================
+        // ORDERS
+        // ============================================
+        
+        function renderOrders() {
+            const container = document.getElementById('orders-list');
+            
+            let filtered = trebovanja.filter(t => t.status !== 'primljeno');
+            if (currentFilter !== 'all') {
+                filtered = filtered.filter(t => t.status === currentFilter);
+            }
+
+            document.getElementById('orders-count').textContent = 
+                trebovanja.filter(t => t.status !== 'primljeno').length;
+
+            if (filtered.length === 0) {
+                container.innerHTML = '<div class="empty-orders">Nema aktivnih trebovanja</div>';
                 return;
             }
 
             container.innerHTML = filtered.map(t => `
-                <div class="request-card">
-                    <div class="request-card-header">
-                        <div class="request-artikal">${t.artikal.naziv}</div>
-                        <div class="request-kolicina">×${t.kolicina}</div>
+                <div class="order-card">
+                    <div class="order-artikal">
+                        <div>${t.artikal.naziv}</div>
+                        <div class="order-route">
+                            ${t.iz.naziv} <span>→</span> ${t.u.naziv}
+                        </div>
                     </div>
-                    <div class="request-route">
-                        <span>${t.iz.naziv}</span>
-                        <span class="arrow">→</span>
-                        <span>${t.u.naziv}</span>
-                    </div>
-                    <div class="request-meta">
-                        <span class="request-time">${formatTime(t.kreirano)}</span>
-                        <span class="status-badge status-${t.status}">${formatStatus(t.status)}</span>
-                    </div>
-                    <div class="request-actions">
-                        ${getActionButtons(t)}
+                    <div class="order-qty">×${t.kolicina}</div>
+                    <div class="order-time">${formatTime(t.kreirano)}</div>
+                    <span class="status-badge status-${t.status}">${formatStatus(t.status)}</span>
+                    <div class="order-actions">
+                        ${getNextButton(t)}
+                        <button class="btn-sm" onclick="deleteOrder('${t.id}')">✕</button>
                     </div>
                 </div>
             `).join('');
         }
 
-        function getActionButtons(t) {
-            const statusFlow = ['zatrazeno', 'poslato', 'na-putu', 'primljeno'];
-            const currentIndex = statusFlow.indexOf(t.status);
-            const nextStatus = statusFlow[currentIndex + 1];
-
-            let buttons = '';
+        function getNextButton(t) {
+            const flow = { 'zatrazeno': 'poslato', 'poslato': 'na-putu', 'na-putu': 'primljeno' };
+            const next = flow[t.status];
+            if (!next) return '';
             
-            if (nextStatus) {
-                buttons += `<button class="btn-action next-status" onclick="updateStatus(${t.id}, '${nextStatus}')">
-                    ${getNextStatusLabel(nextStatus)}
-                </button>`;
+            const labels = { 'poslato': 'Poslato', 'na-putu': 'Na putu', 'primljeno': 'Primljeno' };
+            return `<button class="btn-sm primary" onclick="updateStatus('${t.id}', '${next}')">${labels[next]}</button>`;
+        }
+
+        function updateStatus(id, newStatus) {
+            const t = trebovanja.find(t => t.id == id);
+            if (t) {
+                t.status = newStatus;
+                
+                if (newStatus === 'primljeno') {
+                    // Simulacija upisa u Pantheon
+                    console.log('=== PANTHEON UPIS ===');
+                    console.log(`${t.artikal.naziv}: ${t.iz.naziv} -${t.kolicina} → ${t.u.naziv} +${t.kolicina}`);
+                    
+                    // Update lokalnog stanja za demo
+                    stpitrovanja[t.iz.id][t.artikal.id] -= t.kolicina;
+                    stpitrovanja[t.u.id][t.artikal.id] += t.kolicina;
+                    renderProducts();
+                }
+                
+                localStorage.setItem('trebovanja', JSON.stringify(trebovanja));
+                renderOrders();
+                showToast(`Status: ${formatStatus(newStatus)}`);
             }
-            
-            buttons += `<button class="btn-action" onclick="deleteRequest(${t.id})">Obriši</button>`;
-            
-            return buttons;
         }
 
-        function getNextStatusLabel(status) {
-            const labels = {
-                'poslato': '📤 Poslato',
-                'na-putu': '🚚 Na putu',
-                'primljeno': '✅ Primljeno'
-            };
-            return labels[status] || status;
+        function deleteOrder(id) {
+            if (confirm('Obriši trebovanje?')) {
+                trebovanja = trebovanja.filter(t => t.id != id);
+                localStorage.setItem('trebovanja', JSON.stringify(trebovanja));
+                renderOrders();
+            }
         }
 
-        function formatStatus(status) {
-            const labels = {
-                'zatrazeno': 'Zatraženo',
-                'poslato': 'Poslato',
-                'na-putu': 'Na putu',
-                'primljeno': 'Primljeno'
-            };
-            return labels[status] || status;
+        function formatStatus(s) {
+            return { 'zatrazeno': 'Zatraženo', 'poslato': 'Poslato', 'na-putu': 'Na putu', 'primljeno': 'Primljeno' }[s];
         }
 
         function formatTime(iso) {
-            const d = new Date(iso);
-            return d.toLocaleString('sr-RS', { 
-                day: '2-digit',
-                month: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit'
-            });
+            return new Date(iso).toLocaleString('sr-RS', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
         }
 
-        function updateStats() {
-            const stats = {
-                zatrazeno: trebovanja.filter(t => t.status === 'zatrazeno').length,
-                poslato: trebovanja.filter(t => t.status === 'poslato').length,
-                'na-putu': trebovanja.filter(t => t.status === 'na-putu').length,
-                primljeno: trebovanja.filter(t => t.status === 'primljeno').length
-            };
-
-            document.getElementById('stat-zatrazeno').textContent = stats.zatrazeno;
-            document.getElementById('stat-poslato').textContent = stats.poslato;
-            document.getElementById('stat-na-putu').textContent = stats['na-putu'];
-            document.getElementById('stat-primljeno').textContent = stats.primljeno;
-        }
-
-        // ============================================
-        // UTILITIES
-        // ============================================
-        
-        function saveAndRender() {
-            localStorage.setItem('trebovanja', JSON.stringify(trebovanja));
-            renderRequests();
-            updateStats();
-        }
-
-        function resetForm() {
-            document.getElementById('artikal-select').value = '';
-            document.getElementById('iz-magacin').value = '';
-            document.getElementById('u-magacin').value = '';
-            document.getElementById('kolicina').value = '';
-        }
-
-        function showToast(message) {
+        function showToast(msg) {
             const toast = document.getElementById('toast');
-            document.getElementById('toast-message').textContent = message;
+            document.getElementById('toast-message').textContent = msg;
             toast.classList.add('show');
             setTimeout(() => toast.classList.remove('show'), 3000);
         }
 
-        // ============================================
-        // BARCODE SCANNER
-        // ============================================
-        
-        let html5QrCode = null;
-
-        function openScanner() {
-            document.getElementById('scanner-modal').classList.add('active');
-            
-            html5QrCode = new Html5Qrcode("scanner-video");
-            
-            html5QrCode.start(
-                { facingMode: "environment" },
-                { fps: 10, qrbox: { width: 250, height: 250 } },
-                onScanSuccess,
-                onScanFailure
-            ).catch(err => {
-                document.getElementById('scanner-result').textContent = 'Greška: ' + err;
-            });
-        }
-
-        function closeScanner() {
-            if (html5QrCode) {
-                html5QrCode.stop().then(() => {
-                    html5QrCode = null;
-                });
-            }
-            document.getElementById('scanner-modal').classList.remove('active');
-        }
-
-        function onScanSuccess(decodedText) {
-            const artikal = artikli.find(a => a.barcode === decodedText);
-            
-            if (artikal) {
-                document.getElementById('scanner-result').innerHTML = 
-                    `<strong style="color: var(--success)">✓ ${artikal.naziv}</strong>`;
-                document.getElementById('artikal-select').value = artikal.id;
-                
-                setTimeout(closeScanner, 1500);
-            } else {
-                document.getElementById('scanner-result').innerHTML = 
-                    `<span style="color: var(--danger)">Nepoznat barkod: ${decodedText}</span>`;
-            }
-        }
-
-        function onScanFailure(error) {
-            // Ignorišemo greške skeniranja
-        }
-
-        // ============================================
-        // START
-        // ============================================
-        
+        // Start
         init();
     </script>
 </body>
