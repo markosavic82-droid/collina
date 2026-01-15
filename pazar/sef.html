@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Collina Interni Sef</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        dark: { bg: '#0D0B14', card: '#1A1F2E', border: '#2D3748' },
+                        accent: { purple: '#8B5CF6', blue: '#3B82F6' },
+                        state: { success: '#22C55E', error: '#EF4444', warning: '#F59E0B' }
+                    },
+                    fontFamily: { space: ['Space Grotesk', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Space Grotesk', sans-serif; }
+        .pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+        input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
+    </style>
+</head>
+<body class="bg-dark-bg text-gray-100 min-h-screen">
+    <!-- Header -->
+    <header class="bg-dark-card border-b border-dark-border px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-accent-purple rounded-lg flex items-center justify-center text-xl">🔐</div>
+            <div>
+                <h1 class="text-xl font-bold">Collina Interni Sef</h1>
+                <p class="text-xs text-gray-400">Evidencija gotovine</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-6">
+            <div class="text-right">
+                <p class="text-xs text-gray-400">Stanje RSD</p>
+                <p id="headerBalRSD" class="text-2xl font-bold text-state-success">0</p>
+            </div>
+            <div class="text-right">
+                <p class="text-xs text-gray-400">Stanje EUR</p>
+                <p id="headerBalEUR" class="text-xl font-bold text-blue-400">0</p>
+            </div>
+        </div>
+    </header>
+
+    <div class="flex">
+        <!-- Sidebar -->
+        <aside class="w-60 bg-dark-card border-r border-dark-border fixed left-0 top-[73px] bottom-0 p-4 flex flex-col">
+            <nav class="space-y-2 flex-1">
+                <button onclick="showView('dashboard')" data-view="dashboard" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-accent-purple text-white transition-colors">
+                    <span>📊</span> Pregled
+                </button>
+                <button onclick="showView('pending')" data-view="pending" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400 hover:bg-dark-bg transition-colors relative">
+                    <span>⏰</span> Potvrda predaje
+                    <span id="pendingBadge" class="hidden absolute right-3 w-6 h-6 bg-state-warning text-black text-xs font-bold rounded-full flex items-center justify-center pulse">0</span>
+                </button>
+                <button onclick="showView('transactions')" data-view="transactions" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400 hover:bg-dark-bg transition-colors">
+                    <span>📋</span> Transakcije
+                </button>
+                <button onclick="showView('categories')" data-view="categories" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400 hover:bg-dark-bg transition-colors">
+                    <span>🏷️</span> Predmeti troškova
+                </button>
+                <button onclick="showView('audit')" data-view="audit" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400 hover:bg-dark-bg transition-colors">
+                    <span>🔢</span> Kontrola sefa
+                </button>
+                <button onclick="showView('reports')" data-view="reports" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400 hover:bg-dark-bg transition-colors">
+                    <span>📈</span> Izveštaji
+                </button>
+            </nav>
+            <div class="space-y-2 pt-4 border-t border-dark-border">
+                <button onclick="openModal('deposit')" class="w-full px-4 py-3 bg-state-success hover:bg-green-600 text-white rounded-lg font-medium transition-colors">
+                    + Novi ulaz
+                </button>
+                <button onclick="openModal('withdrawal')" class="w-full px-4 py-3 bg-state-error hover:bg-red-600 text-white rounded-lg font-medium transition-colors">
+                    − Novi izlaz
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-6 ml-60">
+            <!-- Loading -->
+            <div id="loading" class="flex items-center justify-center h-64">
+                <div class="text-center">
+                    <div class="w-12 h-12 border-4 border-accent-purple border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                    <p class="text-gray-400">Učitavanje...</p>
+                </div>
+            </div>
+
+            <!-- Dashboard View -->
+            <div id="view-dashboard" class="view hidden space-y-6">
+                <!-- Flow -->
+                <div class="bg-dark-card rounded-xl border border-dark-border p-6">
+                    <h3 class="text-sm text-gray-400 uppercase tracking-wider mb-4">Flow gotovine</h3>
+                    <div class="flex items-center justify-between text-center">
+                        <div class="flex-1"><div class="w-14 h-14 mx-auto rounded-full bg-blue-500/20 flex items-center justify-center text-2xl mb-2">🚗</div><p class="text-sm font-medium">Vozač</p><p class="text-xs text-gray-500">Donese keš</p></div>
+                        <div class="text-gray-600 text-2xl">→</div>
+                        <div class="flex-1"><div class="w-14 h-14 mx-auto rounded-full bg-purple-500/20 flex items-center justify-center text-2xl mb-2">💰</div><p class="text-sm font-medium">Finansije</p><p class="text-xs text-gray-500">Prebroji</p></div>
+                        <div class="text-gray-600 text-2xl">→</div>
+                        <div class="flex-1"><div id="flowSafe" class="w-14 h-14 mx-auto rounded-full bg-green-500/20 flex items-center justify-center text-2xl mb-2">🔐</div><p class="text-sm font-medium">Interni Sef</p><p class="text-xs text-gray-500">Potvrdi ulaz</p></div>
+                        <div class="text-gray-600 text-2xl">→</div>
+                        <div class="flex-1"><div class="w-14 h-14 mx-auto rounded-full bg-amber-500/20 flex items-center justify-center text-2xl mb-2">🏦</div><p class="text-sm font-medium">Banka</p><p class="text-xs text-gray-500">Depozit</p></div>
+                    </div>
+                </div>
+
+                <!-- Pending Alert -->
+                <div id="pendingAlert" class="hidden bg-amber-500/10 border border-amber-500/30 rounded-xl p-5">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-amber-500/20 rounded-full flex items-center justify-center pulse text-xl">⏰</div>
+                            <div>
+                                <p class="font-medium text-amber-400"><span id="pendingCount">0</span> predaja čeka potvrdu za sef</p>
+                                <p class="text-sm text-gray-400">Ukupno: <span id="pendingTotal">0</span> RSD</p>
+                            </div>
+                        </div>
+                        <button onclick="showView('pending')" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-black font-medium rounded-lg transition-colors">
+                            Pregledaj
+                        </button>
+                    </div>
+                    <div id="pendingQuickList" class="space-y-2"></div>
+                </div>
+
+                <!-- Stats -->
+                <div class="grid grid-cols-4 gap-4">
+                    <div class="bg-dark-card rounded-xl p-5 border border-dark-border">
+                        <p class="text-gray-400 text-sm mb-1">Stanje RSD</p>
+                        <p id="statRSD" class="text-2xl font-bold text-state-success">0</p>
+                    </div>
+                    <div class="bg-dark-card rounded-xl p-5 border border-dark-border">
+                        <p class="text-gray-400 text-sm mb-1">Stanje EUR</p>
+                        <p id="statEUR" class="text-2xl font-bold text-blue-400">0</p>
+                    </div>
+                    <div class="bg-dark-card rounded-xl p-5 border border-dark-border">
+                        <p class="text-gray-400 text-sm mb-1">Danas ulaz</p>
+                        <p id="statTodayIn" class="text-2xl font-bold text-green-400">+0</p>
+                        <p id="statTodayInCount" class="text-xs text-gray-500">0 transakcija</p>
+                    </div>
+                    <div class="bg-dark-card rounded-xl p-5 border border-dark-border">
+                        <p class="text-gray-400 text-sm mb-1">Danas izlaz</p>
+                        <p id="statTodayOut" class="text-2xl font-bold text-red-400">-0</p>
+                        <p id="statTodayOutCount" class="text-xs text-gray-500">0 transakcija</p>
+                    </div>
+                </div>
+
+                <!-- Recent Transactions -->
+                <div class="bg-dark-card rounded-xl border border-dark-border">
+                    <div class="p-4 border-b border-dark-border flex items-center justify-between">
+                        <h2 class="font-semibold text-lg">Poslednje transakcije</h2>
+                        <button onclick="showView('transactions')" class="text-accent-purple hover:text-purple-400 text-sm">Prikaži sve →</button>
+                    </div>
+                    <div id="recentTransactions" class="divide-y divide-dark-border"></div>
+                </div>
+            </div>
+
+            <!-- Pending View -->
+            <div id="view-pending" class="view hidden space-y-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-2xl font-bold">Potvrda predaje</h2>
+                        <p class="text-gray-400">Verifikovane predaje koje čekaju ulaz u sef</p>
+                    </div>
+                    <button onclick="loadData()" class="px-4 py-2 bg-dark-bg hover:bg-dark-border text-white rounded-lg transition-colors flex items-center gap-2">
+                        🔄 Osveži
+                    </button>
+                </div>
+                <div id="pendingList" class="space-y-4"></div>
+            </div>
+
+            <!-- Transactions View -->
+            <div id="view-transactions" class="view hidden space-y-6">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-2xl font-bold">Sve transakcije</h2>
+                    <div class="flex gap-2">
+                        <button onclick="openModal('deposit')" class="px-4 py-2 bg-state-success hover:bg-green-600 text-white rounded-lg font-medium transition-colors">+ Ulaz</button>
+                        <button onclick="openModal('withdrawal')" class="px-4 py-2 bg-state-error hover:bg-red-600 text-white rounded-lg font-medium transition-colors">− Izlaz</button>
+                    </div>
+                </div>
+                <!-- Filters -->
+                <div class="bg-dark-card rounded-xl border border-dark-border p-4">
+                    <div class="grid grid-cols-4 gap-4">
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-1">Od datuma</label>
+                            <input type="date" id="filterFrom" onchange="renderTransactions()" class="w-full bg-dark-bg border border-dark-border rounded-lg px-3 py-2 text-white">
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-1">Do datuma</label>
+                            <input type="date" id="filterTo" onchange="renderTransactions()" class="w-full bg-dark-bg border border-dark-border rounded-lg px-3 py-2 text-white">
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-1">Tip</label>
+                            <select id="filterType" onchange="renderTransactions()" class="w-full bg-dark-bg border border-dark-border rounded-lg px-3 py-2 text-white">
+                                <option value="all">Svi</option>
+                                <option value="deposit">Ulazi</option>
+                                <option value="withdrawal">Izlazi</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-1">Valuta</label>
+                            <select id="filterCurrency" onchange="renderTransactions()" class="w-full bg-dark-bg border border-dark-border rounded-lg px-3 py-2 text-white">
+                                <option value="all">Sve</option>
+                                <option value="RSD">RSD</option>
+                                <option value="EUR">EUR</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-dark-card rounded-xl border border-dark-border overflow-hidden">
+                    <table class="w-full">
+                        <thead class="bg-dark-bg">
+                            <tr>
+                                <th class="text-left px-4 py-3 text-sm font-medium text-gray-400">Datum</th>
+                                <th class="text-left px-4 py-3 text-sm font-medium text-gray-400">Tip</th>
+                                <th class="text-left px-4 py-3 text-sm font-medium text-gray-400">Opis</th>
+                                <th class="text-right px-4 py-3 text-sm font-medium text-gray-400">Iznos</th>
+                            </tr>
+                        </thead>
+                        <tbody id="transactionsTable" class="divide-y divide-dark-border"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Categories View -->
+            <div id="view-categories" class="view hidden space-y-6">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-2xl font-bold">Predmeti troškova</h2>
+                    <button onclick="openModal('category')" class="px-4 py-2 bg-accent-purple hover:bg-purple-600 text-white rounded-lg font-medium transition-colors">+ Nova kategorija</button>
+                </div>
+                <div class="bg-dark-card rounded-xl border border-dark-border overflow-hidden">
+                    <table class="w-full">
+                        <thead class="bg-dark-bg">
+                            <tr>
+                                <th class="text-left px-4 py-3 text-sm font-medium text-gray-400">Naziv</th>
+                                <th class="text-center px-4 py-3 text-sm font-medium text-gray-400">Status</th>
+                                <th class="text-right px-4 py-3 text-sm font-medium text-gray-400">Ukupno trošeno</th>
+                            </tr>
+                        </thead>
+                        <tbody id="categoriesTable" class="divide-y divide-dark-border"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Audit View -->
+            <div id="view-audit" class="view hidden space-y-6">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-2xl font-bold">Kontrola sefa</h2>
+                    <button onclick="openModal('audit')" class="px-4 py-2 bg-accent-purple hover:bg-purple-600 text-white rounded-lg font-medium transition-colors">+ Nova kontrola</button>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-dark-card rounded-xl border border-dark-border p-6">
+                        <h3 class="font-semibold mb-4">Sistemsko stanje</h3>
+                        <p class="text-2xl font-bold text-state-success"><span id="auditRSD">0</span> RSD</p>
+                        <p class="text-lg font-bold text-blue-400 mt-2"><span id="auditEUR">0</span> EUR</p>
+                    </div>
+                    <div class="bg-dark-card rounded-xl border border-dark-border p-6">
+                        <h3 class="font-semibold mb-4">Poslednja kontrola</h3>
+                        <div id="lastAudit" class="text-gray-400">Nema prethodnih kontrola</div>
+                    </div>
+                </div>
+                <div class="bg-dark-card rounded-xl border border-dark-border">
+                    <div class="p-4 border-b border-dark-border"><h3 class="font-semibold">Istorija kontrola</h3></div>
+                    <div id="auditHistory" class="divide-y divide-dark-border"></div>
+                </div>
+            </div>
+
+            <!-- Reports View -->
+            <div id="view-reports" class="view hidden space-y-6">
+                <h2 class="text-2xl font-bold">Izveštaji</h2>
+                <div class="grid grid-cols-2 gap-6">
+                    <div class="bg-dark-card rounded-xl border border-dark-border p-6">
+                        <h3 class="font-semibold mb-4">Troškovi po kategoriji (RSD)</h3>
+                        <div id="reportByCategory" class="space-y-3"></div>
+                    </div>
+                    <div class="bg-dark-card rounded-xl border border-dark-border p-6">
+                        <h3 class="font-semibold mb-4">Ulazi po lokaciji (RSD)</h3>
+                        <div id="reportByLocation" class="space-y-3"></div>
+                    </div>
+                </div>
+                <div class="bg-dark-card rounded-xl border border-dark-border p-6">
+                    <h3 class="font-semibold mb-4">Sumarni pregled</h3>
+                    <div class="grid grid-cols-4 gap-4">
+                        <div class="bg-dark-bg rounded-lg p-4">
+                            <p class="text-sm text-gray-400 mb-1">Ukupno ulaza (RSD)</p>
+                            <p id="reportTotalInRSD" class="text-xl font-bold text-green-400">+0</p>
+                        </div>
+                        <div class="bg-dark-bg rounded-lg p-4">
+                            <p class="text-sm text-gray-400 mb-1">Ukupno izlaza (RSD)</p>
+                            <p id="reportTotalOutRSD" class="text-xl font-bold text-red-400">-0</p>
+                        </div>
+                        <div class="bg-dark-bg rounded-lg p-4">
+                            <p class="text-sm text-gray-400 mb-1">Ukupno ulaza (EUR)</p>
+                            <p id="reportTotalInEUR" class="text-xl font-bold text-green-400">+0</p>
+                        </div>
+                        <div class="bg-dark-bg rounded-lg p-4">
+                            <p class="text-sm text-gray-400 mb-1">Ukupno izlaza (EUR)</p>
+                            <p id="reportTotalOutEUR" class="text-xl font-bold text-red-400">-0</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal -->
+    <div id="modal" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+        <div class="bg-dark-card rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto m-4">
+            <div class="p-6 border-b border-dark-border flex items-center justify-between">
+                <h3 id="modalTitle" class="text-xl font-bold">Modal</h3>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-white text-2xl">&times;</button>
+            </div>
+            <div id="modalContent" class="p-6"></div>
+            <div class="p-6 border-t border-dark-border flex justify-end gap-3">
+                <button onclick="closeModal()" class="px-4 py-2 bg-dark-bg hover:bg-dark-border text-white rounded-lg transition-colors">Otkaži</button>
+                <button onclick="submitModal()" class="px-6 py-2 bg-accent-purple hover:bg-purple-600 text-white rounded-lg font-medium transition-colors">Sačuvaj</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // SUPABASE CONFIG
+        // ============================================
+        const SUPABASE_URL = 'https://bbnbbbpofelbkyuffslj.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJibmJiYnBvZmVsYmt5dWZmc2xqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUwNTI0MzQsImV4cCI6MjA4MDYyODQzNH0.koW44soAB-bEfh8OzqjGBwdgov4Snscw1ITsg5OureU';
+        const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // ============================================
+        // STATE
+        // ============================================
+        let state = {
+            balance: { RSD: 0, EUR: 0 },
+            pending: [],
+            transactions: [],
+            categories: [],
+            audits: [],
+            modalType: null
+        };
+
+        const fmt = (n) => new Intl.NumberFormat('sr-RS').format(n || 0);
+        const fmtDate = (d) => d ? new Date(d).toLocaleDateString('sr-RS') : '-';
+        const fmtTime = (d) => d ? new Date(d).toLocaleTimeString('sr-RS', { hour: '2-digit', minute: '2-digit' }) : '-';
+        const fmtDateTime = (d) => d ? `${fmtDate(d)} ${fmtTime(d)}` : '-';
+
+        // ============================================
+        // DATA LOADING
+        // ============================================
+        async function loadData() {
+            document.getElementById('loading').classList.remove('hidden');
+            document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
+
+            // 1. Load pending deposits from pazar_finance_records (optional - may not exist)
+            try {
+                const { data: pending, error: pendingErr } = await sb
+                    .from('pazar_finance_records')
+                    .select(`
+                        *,
+                        pickup:pazar_cash_pickups(*, location:pazar_locations(*))
+                    `)
+                    .not('verified_at', 'is', null)
+                    .is('in_safe_at', null)
+                    .order('verified_at', { ascending: false });
+
+                if (!pendingErr) {
+                    state.pending = pending || [];
+                    console.log('Pending deposits:', state.pending);
+                } else {
+                    console.log('pazar_finance_records not available:', pendingErr.message);
+                    state.pending = [];
+                }
+            } catch (e) {
+                console.log('Pending query skipped:', e.message);
+                state.pending = [];
+            }
+
+            // 2. Load safe transactions
+            try {
+                const { data: tx, error: txErr } = await sb
+                    .from('safe_transactions')
+                    .select('*, expense_categories(name)')
+                    .order('created_at', { ascending: false });
+
+                if (!txErr) {
+                    state.transactions = tx || [];
+                    console.log('Transactions loaded:', state.transactions.length);
+                } else {
+                    console.error('Transactions error:', txErr);
+                    state.transactions = [];
+                }
+            } catch (e) {
+                console.error('Transactions query failed:', e);
+                state.transactions = [];
+            }
+
+            // 3. Load expense categories
+            try {
+                const { data: cats, error: catsErr } = await sb
+                    .from('expense_categories')
+                    .select('*')
+                    .order('name');
+
+                if (!catsErr) {
+                    state.categories = cats || [];
+                    console.log('Categories loaded:', state.categories.length);
+                } else {
+                    console.error('Categories error:', catsErr);
+                    state.categories = [];
+                }
+            } catch (e) {
+                console.error('Categories query failed:', e);
+                state.categories = [];
+            }
+
+            // 4. Load audits
+            try {
+                const { data: audits, error: auditsErr } = await sb
+                    .from('safe_audits')
+                    .select('*')
+                    .order('audit_date', { ascending: false })
+                    .limit(20);
+
+                if (!auditsErr) {
+                    state.audits = audits || [];
+                }
+            } catch (e) {
+                state.audits = [];
+            }
+
+            // 5. Calculate balance from transactions
+            calculateBalance();
+
+            document.getElementById('loading').classList.add('hidden');
+            showView('dashboard');
+            render();
+            
+            console.log('Data loaded - Balance:', state.balance, 'Transactions:', state.transactions.length);
+        }
+
+        function calculateBalance() {
+            state.balance = { RSD: 0, EUR: 0 };
+            state.transactions.forEach(t => {
+                const amount = t.type === 'deposit' ? t.amount : -t.amount;
+                state.balance[t.currency] = (state.balance[t.currency] || 0) + amount;
+            });
+        }
+
+        // ============================================
+        // RENDER
+        // ============================================
+        function render() {
+            const today = new Date().toISOString().split('T')[0];
+
+            // Header balance
+            document.getElementById('headerBalRSD').textContent = fmt(state.balance.RSD);
+            document.getElementById('headerBalEUR').textContent = fmt(state.balance.EUR);
+
+            // Stats
+            document.getElementById('statRSD').textContent = fmt(state.balance.RSD);
+            document.getElementById('statEUR').textContent = fmt(state.balance.EUR);
+            document.getElementById('auditRSD').textContent = fmt(state.balance.RSD);
+            document.getElementById('auditEUR').textContent = fmt(state.balance.EUR);
+
+            // Today stats
+            const todayTx = state.transactions.filter(t => t.transaction_date === today);
+            const todayIn = todayTx.filter(t => t.type === 'deposit' && t.currency === 'RSD');
+            const todayOut = todayTx.filter(t => t.type === 'withdrawal' && t.currency === 'RSD');
+            document.getElementById('statTodayIn').textContent = '+' + fmt(todayIn.reduce((s, t) => s + t.amount, 0));
+            document.getElementById('statTodayInCount').textContent = todayIn.length + ' transakcija';
+            document.getElementById('statTodayOut').textContent = '-' + fmt(todayOut.reduce((s, t) => s + t.amount, 0));
+            document.getElementById('statTodayOutCount').textContent = todayOut.length + ' transakcija';
+
+            // Pending
+            renderPending();
+
+            // Transactions
+            renderTransactions();
+
+            // Categories
+            renderCategories();
+
+            // Audits
+            renderAudits();
+
+            // Reports
+            renderReports();
+        }
+
+        function renderPending() {
+            const count = state.pending.length;
+            const total = state.pending.reduce((s, p) => s + (p.counted_amount || 0), 0);
+
+            // Badge
+            const badge = document.getElementById('pendingBadge');
+            badge.textContent = count;
+            badge.classList.toggle('hidden', count === 0);
+
+            // Alert
+            const alert = document.getElementById('pendingAlert');
+            alert.classList.toggle('hidden', count === 0);
+            document.getElementById('pendingCount').textContent = count;
+            document.getElementById('pendingTotal').textContent = fmt(total);
+
+            // Flow icon pulse
+            document.getElementById('flowSafe').classList.toggle('pulse', count > 0);
+
+            // Quick list (top 2)
+            document.getElementById('pendingQuickList').innerHTML = state.pending.slice(0, 2).map(p => {
+                const locName = p.pickup?.location?.name || 'Lokacija';
+                return `
+                    <div class="bg-dark-bg/50 rounded-lg p-3 flex items-center justify-between">
+                        <div>
+                            <p class="font-medium text-sm">${locName}</p>
+                            <p class="text-xs text-gray-500">${fmtTime(p.verified_at)}</p>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="font-bold text-green-400">${fmt(p.counted_amount)} RSD</span>
+                            <button onclick="confirmToSafe('${p.id}')" class="px-3 py-1 bg-green-500 hover:bg-green-600 text-white rounded text-sm font-medium transition-colors">U sef ✓</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // Full pending list
+            const pendingList = document.getElementById('pendingList');
+            if (count === 0) {
+                pendingList.innerHTML = `
+                    <div class="bg-dark-card rounded-xl border border-dark-border p-12 text-center">
+                        <div class="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">✓</div>
+                        <p class="text-lg font-medium text-gray-300">Sve predaje su u sefu</p>
+                        <p class="text-gray-500">Nema verifikovanih predaja na čekanju</p>
+                    </div>
+                `;
+            } else {
+                pendingList.innerHTML = state.pending.map(p => {
+                    const locName = p.pickup?.location?.name || 'Lokacija';
+                    const diff = (p.counted_amount || 0) - (p.original_amount || 0);
+                    return `
+                        <div class="bg-dark-card rounded-xl border border-dark-border overflow-hidden">
+                            <div class="p-4 bg-dark-bg/50 flex items-center justify-between">
+                                <div>
+                                    <h3 class="font-semibold text-lg">${locName}</h3>
+                                    <p class="text-sm text-gray-400">${fmtDate(p.date)}</p>
+                                </div>
+                                <span class="px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-sm font-medium">✓ Verifikovano</span>
+                            </div>
+                            <div class="p-4">
+                                <div class="bg-dark-bg rounded-lg p-4 mb-4">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <span class="text-gray-400">Prebrojani iznos</span>
+                                        <span class="text-2xl font-bold text-green-400">${fmt(p.counted_amount)} RSD</span>
+                                    </div>
+                                    <div class="flex justify-between items-center text-sm">
+                                        <span class="text-gray-500">Originalni iznos</span>
+                                        <span>${fmt(p.original_amount)} RSD</span>
+                                    </div>
+                                    ${diff !== 0 ? `
+                                        <div class="flex justify-between items-center text-sm mt-1">
+                                            <span class="text-gray-500">Razlika</span>
+                                            <span class="${diff < 0 ? 'text-red-400' : 'text-green-400'}">${diff > 0 ? '+' : ''}${fmt(diff)} RSD</span>
+                                        </div>
+                                    ` : ''}
+                                </div>
+                                ${p.modification_reason || p.discrepancy_reason ? `
+                                    <div class="bg-red-500/10 border border-red-500/30 rounded-lg p-3 mb-4">
+                                        <p class="text-red-400 text-sm">⚠️ Razlog: ${p.modification_reason || p.discrepancy_reason}</p>
+                                    </div>
+                                ` : ''}
+                                <p class="text-sm text-gray-500">Verifikovano: ${fmtDateTime(p.verified_at)}</p>
+                            </div>
+                            <div class="p-4 border-t border-dark-border flex justify-end">
+                                <button onclick="confirmToSafe('${p.id}')" class="px-6 py-2 bg-state-success hover:bg-green-600 text-white rounded-lg font-medium transition-colors flex items-center gap-2">
+                                    🔐 Potvrdi ulaz u sef
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+
+        function renderTransactions() {
+            // Get filter values
+            const filterFrom = document.getElementById('filterFrom')?.value || '';
+            const filterTo = document.getElementById('filterTo')?.value || '';
+            const filterType = document.getElementById('filterType')?.value || 'all';
+            const filterCurrency = document.getElementById('filterCurrency')?.value || 'all';
+
+            // Apply filters
+            let filtered = [...state.transactions];
+            if (filterFrom) filtered = filtered.filter(t => t.transaction_date >= filterFrom);
+            if (filterTo) filtered = filtered.filter(t => t.transaction_date <= filterTo);
+            if (filterType !== 'all') filtered = filtered.filter(t => t.type === filterType);
+            if (filterCurrency !== 'all') filtered = filtered.filter(t => t.currency === filterCurrency);
+
+            // Recent (for dashboard)
+            document.getElementById('recentTransactions').innerHTML = state.transactions.slice(0, 5).map(t => `
+                <div class="p-4 flex items-center justify-between hover:bg-dark-bg/50 transition-colors">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full ${t.type === 'deposit' ? 'bg-green-500/20' : 'bg-red-500/20'} flex items-center justify-center text-lg">
+                            ${t.type === 'deposit' ? '↑' : '↓'}
+                        </div>
+                        <div>
+                            <p class="font-medium">${t.type === 'deposit' ? (t.driver_name || 'Ulaz') : (t.expense_categories?.name || 'Izlaz')}</p>
+                            <p class="text-sm text-gray-400">${t.notes || t.expense_description || t.source_location || '-'}</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p class="font-bold ${t.type === 'deposit' ? 'text-green-400' : 'text-red-400'}">
+                            ${t.type === 'deposit' ? '+' : '-'}${fmt(t.amount)} ${t.currency}
+                        </p>
+                        <p class="text-xs text-gray-500">${fmtDateTime(t.created_at)}</p>
+                    </div>
+                </div>
+            `).join('') || '<p class="p-4 text-gray-500 text-center">Nema transakcija</p>';
+
+            // Full table
+            document.getElementById('transactionsTable').innerHTML = filtered.map(t => `
+                <tr class="hover:bg-dark-bg/50 transition-colors">
+                    <td class="px-4 py-3">${fmtDate(t.transaction_date)}</td>
+                    <td class="px-4 py-3">
+                        <span class="px-2 py-1 rounded-full text-xs font-medium ${t.type === 'deposit' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}">
+                            ${t.type === 'deposit' ? 'Ulaz' : 'Izlaz'}
+                        </span>
+                    </td>
+                    <td class="px-4 py-3 text-gray-400">
+                        ${t.type === 'deposit' 
+                            ? `${t.driver_name || ''} ${t.source_location ? '- ' + t.source_location : ''} ${t.notes || ''}` 
+                            : `${t.expense_categories?.name || ''} - ${t.expense_description || ''}`}
+                    </td>
+                    <td class="px-4 py-3 text-right font-bold ${t.type === 'deposit' ? 'text-green-400' : 'text-red-400'}">
+                        ${t.type === 'deposit' ? '+' : '-'}${fmt(t.amount)} ${t.currency}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function renderCategories() {
+            document.getElementById('categoriesTable').innerHTML = state.categories.map(c => {
+                const total = state.transactions
+                    .filter(t => t.type === 'withdrawal' && t.expense_category_id === c.id && t.currency === 'RSD')
+                    .reduce((s, t) => s + t.amount, 0);
+                return `
+                    <tr class="hover:bg-dark-bg/50 transition-colors">
+                        <td class="px-4 py-3 font-medium">${c.name}</td>
+                        <td class="px-4 py-3 text-center">
+                            <span class="px-2 py-1 rounded-full text-xs font-medium ${c.is_active ? 'bg-green-500/20 text-green-400' : 'bg-gray-500/20 text-gray-400'}">
+                                ${c.is_active ? 'Aktivna' : 'Neaktivna'}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 text-right font-mono text-red-400">-${fmt(total)} RSD</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function renderAudits() {
+            if (state.audits.length > 0) {
+                const last = state.audits[0];
+                document.getElementById('lastAudit').innerHTML = `
+                    <p>Datum: <span class="text-white">${fmtDate(last.audit_date)}</span></p>
+                    <p>Valuta: <span class="text-white">${last.currency}</span></p>
+                    <p>Razlika: <span class="${last.difference > 0 ? 'text-green-400' : last.difference < 0 ? 'text-red-400' : 'text-gray-400'}">
+                        ${last.difference > 0 ? '+' : ''}${fmt(last.difference)} ${last.currency}
+                    </span></p>
+                `;
+            }
+
+            document.getElementById('auditHistory').innerHTML = state.audits.map(a => `
+                <div class="p-4 grid grid-cols-5 gap-4">
+                    <span>${fmtDate(a.audit_date)}</span>
+                    <span class="text-center">${a.currency}</span>
+                    <span class="text-right">${fmt(a.system_balance)}</span>
+                    <span class="text-right">${fmt(a.physical_balance)}</span>
+                    <span class="text-right font-bold ${a.difference > 0 ? 'text-green-400' : a.difference < 0 ? 'text-red-400' : 'text-gray-400'}">
+                        ${a.difference > 0 ? '+' : ''}${fmt(a.difference)}
+                    </span>
+                </div>
+            `).join('') || '<p class="p-4 text-gray-500 text-center">Nema kontrola</p>';
+        }
+
+        function renderReports() {
+            // By category
+            const catTotals = {};
+            state.categories.forEach(c => {
+                catTotals[c.name] = state.transactions
+                    .filter(t => t.type === 'withdrawal' && t.expense_category_id === c.id && t.currency === 'RSD')
+                    .reduce((s, t) => s + t.amount, 0);
+            });
+            document.getElementById('reportByCategory').innerHTML = Object.entries(catTotals)
+                .filter(([_, v]) => v > 0)
+                .sort((a, b) => b[1] - a[1])
+                .map(([name, total]) => `
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-400">${name}</span>
+                        <span class="font-mono font-bold text-red-400">-${fmt(total)}</span>
+                    </div>
+                `).join('') || '<p class="text-gray-500">Nema troškova</p>';
+
+            // By location
+            const locTotals = {};
+            state.transactions.filter(t => t.type === 'deposit' && t.source_location && t.currency === 'RSD').forEach(t => {
+                locTotals[t.source_location] = (locTotals[t.source_location] || 0) + t.amount;
+            });
+            document.getElementById('reportByLocation').innerHTML = Object.entries(locTotals)
+                .sort((a, b) => b[1] - a[1])
+                .map(([loc, total]) => `
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-400">${loc}</span>
+                        <span class="font-mono font-bold text-green-400">+${fmt(total)}</span>
+                    </div>
+                `).join('') || '<p class="text-gray-500">Nema ulaza</p>';
+
+            // Totals
+            const inRSD = state.transactions.filter(t => t.type === 'deposit' && t.currency === 'RSD').reduce((s, t) => s + t.amount, 0);
+            const outRSD = state.transactions.filter(t => t.type === 'withdrawal' && t.currency === 'RSD').reduce((s, t) => s + t.amount, 0);
+            const inEUR = state.transactions.filter(t => t.type === 'deposit' && t.currency === 'EUR').reduce((s, t) => s + t.amount, 0);
+            const outEUR = state.transactions.filter(t => t.type === 'withdrawal' && t.currency === 'EUR').reduce((s, t) => s + t.amount, 0);
+
+            document.getElementById('reportTotalInRSD').textContent = '+' + fmt(inRSD);
+            document.getElementById('reportTotalOutRSD').textContent = '-' + fmt(outRSD);
+            document.getElementById('reportTotalInEUR').textContent = '+' + fmt(inEUR);
+            document.getElementById('reportTotalOutEUR').textContent = '-' + fmt(outEUR);
+        }
+
+        // ============================================
+        // ACTIONS
+        // ============================================
+        async function confirmToSafe(finRecId) {
+            const pending = state.pending.find(p => p.id === finRecId);
+            if (!pending) return;
+
+            const locName = pending.pickup?.location?.name || 'Lokacija';
+
+            if (!confirm(`Potvrdi ulaz u sef?\n\n${locName}\n${fmt(pending.counted_amount)} RSD`)) return;
+
+            try {
+                // 1. Create safe transaction
+                const txData = {
+                    type: 'deposit',
+                    amount: pending.counted_amount,
+                    currency: 'RSD',
+                    driver_name: pending.pickup?.driver_name || null,
+                    source_location: locName,
+                    linked_finance_record_id: finRecId,
+                    transaction_date: pending.date || new Date().toISOString().split('T')[0],
+                    notes: `Pazar ${locName} - ${fmtDate(pending.date)}`,
+                    original_amount: pending.original_amount,
+                    difference: (pending.counted_amount || 0) - (pending.original_amount || 0),
+                    difference_reason: pending.modification_reason || pending.discrepancy_reason
+                };
+
+                const { data: newTx, error: txErr } = await sb
+                    .from('safe_transactions')
+                    .insert(txData)
+                    .select()
+                    .single();
+
+                if (txErr) throw txErr;
+
+                // 2. Update pazar_finance_records
+                const { error: updateErr } = await sb
+                    .from('pazar_finance_records')
+                    .update({
+                        in_safe_at: new Date().toISOString(),
+                        safe_transaction_id: newTx.id
+                    })
+                    .eq('id', finRecId);
+
+                if (updateErr) throw updateErr;
+
+                showNotification('✓ Uspešno potvrđen ulaz u sef!', 'success');
+                await loadData();
+
+            } catch (err) {
+                console.error('Error confirming deposit:', err);
+                showNotification('Greška: ' + err.message, 'error');
+            }
+        }
+
+        // ============================================
+        // VIEW SWITCHING
+        // ============================================
+        function showView(name) {
+            document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
+            document.getElementById('view-' + name)?.classList.remove('hidden');
+
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                const isActive = btn.dataset.view === name;
+                btn.classList.toggle('bg-accent-purple', isActive);
+                btn.classList.toggle('text-white', isActive);
+                btn.classList.toggle('text-gray-400', !isActive);
+            });
+        }
+
+        // ============================================
+        // MODAL
+        // ============================================
+        function openModal(type) {
+            state.modalType = type;
+            const modal = document.getElementById('modal');
+            const title = document.getElementById('modalTitle');
+            const content = document.getElementById('modalContent');
+
+            if (type === 'deposit') {
+                title.textContent = 'Novi ulaz';
+                content.innerHTML = `
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-1">Iznos *</label>
+                            <input type="number" id="m_amount" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-white text-lg" placeholder="0">
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-1">Valuta</label>
+                            <select id="m_currency" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-white">
+                                <option value="RSD">RSD</option>
+                                <option value="EUR">EUR</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-1">Vozač / Izvor</label>
+                            <input type="text" id="m_driver" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-white" placeholder="Ime">
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-1">Lokacija / Opis</label>
+                            <input type="text" id="m_notes" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-white" placeholder="Opis">
+                        </div>
+                    </div>
+                `;
+            } else if (type === 'withdrawal') {
+                title.textContent = 'Novi izlaz (trošak)';
+                content.innerHTML = `
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-1">Iznos *</label>
+                            <input type="number" id="m_amount" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-white text-lg" placeholder="0">
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-1">Valuta</label>
+                            <select id="m_currency" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-white">
+                                <option value="RSD">RSD</option>
+                                <option value="EUR">EUR</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-1">Kategorija *</label>
+                            <select id="m_category" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-white">
+                                <option value="">Izaberi...</option>
+                                ${state.categories.filter(c => c.is_active).map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-1">Opis *</label>
+                            <input type="text" id="m_desc" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-white" placeholder="Detalji troška">
+                        </div>
+                    </div>
+                `;
+            } else if (type === 'category') {
+                title.textContent = 'Nova kategorija';
+                content.innerHTML = `
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-1">Naziv *</label>
+                            <input type="text" id="m_name" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-white" placeholder="Naziv kategorije">
+                        </div>
+                    </div>
+                `;
+            } else if (type === 'audit') {
+                title.textContent = 'Kontrola sefa';
+                const denoms = [5000, 2000, 1000, 500, 200, 100, 50, 20, 10];
+                content.innerHTML = `
+                    <div class="space-y-4">
+                        <div class="bg-dark-bg rounded-lg p-4">
+                            <p class="text-sm text-gray-400">Sistemsko stanje</p>
+                            <p class="text-2xl font-bold text-accent-purple">${fmt(state.balance.RSD)} RSD</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-2">Brojanje apoena (RSD)</label>
+                            <div class="grid grid-cols-3 gap-2">
+                                ${denoms.map(d => `
+                                    <div class="bg-dark-bg rounded p-2">
+                                        <label class="text-xs text-gray-500">${fmt(d)}</label>
+                                        <input type="number" id="d_${d}" value="0" min="0" onchange="calcAudit()" class="w-full bg-dark-card border border-dark-border rounded px-2 py-1 text-white text-center">
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                        <div class="bg-dark-bg rounded-lg p-4 flex justify-between">
+                            <div>
+                                <p class="text-sm text-gray-400">Izbrojano</p>
+                                <p id="auditTotal" class="text-xl font-bold">0 RSD</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-sm text-gray-400">Razlika</p>
+                                <p id="auditDiff" class="text-xl font-bold">0 RSD</p>
+                            </div>
+                        </div>
+                        <div id="auditNoteDiv" class="hidden">
+                            <label class="block text-sm text-red-400 mb-1">Napomena (obavezna) *</label>
+                            <input type="text" id="m_note" class="w-full bg-dark-bg border border-red-500 rounded-lg px-4 py-3 text-white" placeholder="Objasni razliku">
+                        </div>
+                    </div>
+                `;
+            }
+
+            modal.classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.add('hidden');
+            state.modalType = null;
+        }
+
+        function calcAudit() {
+            const denoms = [5000, 2000, 1000, 500, 200, 100, 50, 20, 10];
+            let total = 0;
+            denoms.forEach(d => {
+                total += d * (parseInt(document.getElementById('d_' + d)?.value) || 0);
+            });
+            const diff = total - state.balance.RSD;
+            document.getElementById('auditTotal').textContent = fmt(total) + ' RSD';
+            document.getElementById('auditDiff').textContent = (diff > 0 ? '+' : '') + fmt(diff) + ' RSD';
+            document.getElementById('auditDiff').className = 'text-xl font-bold ' + (diff > 0 ? 'text-green-400' : diff < 0 ? 'text-red-400' : '');
+            document.getElementById('auditNoteDiv').classList.toggle('hidden', diff === 0);
+        }
+
+        async function submitModal() {
+            const type = state.modalType;
+
+            try {
+                if (type === 'deposit') {
+                    const amount = parseFloat(document.getElementById('m_amount').value);
+                    if (!amount) { alert('Unesi iznos'); return; }
+
+                    const { error } = await sb.from('safe_transactions').insert({
+                        type: 'deposit',
+                        amount,
+                        currency: document.getElementById('m_currency').value,
+                        driver_name: document.getElementById('m_driver').value || null,
+                        notes: document.getElementById('m_notes').value || null,
+                        transaction_date: new Date().toISOString().split('T')[0]
+                    });
+                    if (error) throw error;
+
+                } else if (type === 'withdrawal') {
+                    const amount = parseFloat(document.getElementById('m_amount').value);
+                    const categoryId = document.getElementById('m_category').value;
+                    const desc = document.getElementById('m_desc').value;
+                    if (!amount || !categoryId || !desc) { alert('Popuni sva obavezna polja'); return; }
+
+                    const { error } = await sb.from('safe_transactions').insert({
+                        type: 'withdrawal',
+                        amount,
+                        currency: document.getElementById('m_currency').value,
+                        expense_category_id: categoryId,
+                        expense_description: desc,
+                        transaction_date: new Date().toISOString().split('T')[0]
+                    });
+                    if (error) throw error;
+
+                } else if (type === 'category') {
+                    const name = document.getElementById('m_name').value;
+                    if (!name) { alert('Unesi naziv'); return; }
+
+                    const { error } = await sb.from('expense_categories').insert({ name, is_active: true });
+                    if (error) throw error;
+
+                } else if (type === 'audit') {
+                    const denoms = [5000, 2000, 1000, 500, 200, 100, 50, 20, 10];
+                    let total = 0;
+                    const counts = {};
+                    denoms.forEach(d => {
+                        const c = parseInt(document.getElementById('d_' + d)?.value) || 0;
+                        if (c > 0) counts[d] = c;
+                        total += d * c;
+                    });
+                    const diff = total - state.balance.RSD;
+                    const note = document.getElementById('m_note')?.value;
+
+                    if (diff !== 0 && !note) { alert('Unesi napomenu za razliku'); return; }
+
+                    const { error } = await sb.from('safe_audits').insert({
+                        audit_date: new Date().toISOString().split('T')[0],
+                        currency: 'RSD',
+                        system_balance: state.balance.RSD,
+                        denomination_counts: counts,
+                        physical_balance: total,
+                        difference: diff,
+                        difference_note: note || null
+                    });
+                    if (error) throw error;
+                }
+
+                showNotification('✓ Sačuvano!', 'success');
+                closeModal();
+                await loadData();
+
+            } catch (err) {
+                console.error('Error saving:', err);
+                showNotification('Greška: ' + err.message, 'error');
+            }
+        }
+
+        // ============================================
+        // NOTIFICATIONS
+        // ============================================
+        function showNotification(msg, type = 'info') {
+            const colors = { success: 'bg-green-500', error: 'bg-red-500', warning: 'bg-amber-500', info: 'bg-blue-500' };
+            const n = document.createElement('div');
+            n.className = `fixed top-4 right-4 ${colors[type]} text-white px-6 py-3 rounded-lg shadow-lg z-50 font-medium`;
+            n.textContent = msg;
+            document.body.appendChild(n);
+            setTimeout(() => n.remove(), 4000);
+        }
+
+        // ============================================
+        // GLOBAL SCOPE (for onclick handlers)
+        // ============================================
+        window.showView = showView;
+        window.openModal = openModal;
+        window.closeModal = closeModal;
+        window.submitModal = submitModal;
+        window.confirmToSafe = confirmToSafe;
+        window.calcAudit = calcAudit;
+        window.loadData = loadData;
+        window.renderTransactions = renderTransactions;
+
+        // ============================================
+        // INIT
+        // ============================================
+        loadData();
+    </script>
+</body>
+</html>

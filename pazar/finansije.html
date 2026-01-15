@@ -6,6 +6,7 @@
     <title>Finansije - Predaja Pazara</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         * { font-family: -apple-system, BlinkMacSystemFont, sans-serif; -webkit-tap-highlight-color: transparent; }
         body { background: #0D0B14; color: white; min-height: 100vh; }
@@ -92,6 +93,7 @@
                         <select id="filter-loc" class="w-48" onchange="loadData()"><option value="">Sve lokacije</option></select>
                     </div>
                     <button onclick="loadData()" class="btn accent text-white">🔄 Osveži</button>
+                    <button onclick="exportPDF()" class="btn bg-red-500 text-white">📄 Export PDF</button>
                 </div>
             </div>
 
@@ -132,79 +134,226 @@
         </div>
     </div>
 
-    <div id="receive-modal" class="fixed inset-0 bg-black/70 z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-card rounded-2xl w-full max-w-md p-6">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-xl font-bold">📥 Prijem novca</h2>
-                <button onclick="closeModal('receive')" class="text-gray-400 text-2xl">&times;</button>
+    <div id="receive-modal" class="fixed inset-0 bg-black/70 z-50 hidden overflow-y-auto" onclick="if(event.target === this) closeModal('receive')">
+        <div class="min-h-full flex items-center justify-center p-4">
+            <div class="bg-card rounded-2xl w-full max-w-md p-6" onclick="event.stopPropagation()">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold">📥 Prijem novca</h2>
+                    <button onclick="closeModal('receive')" class="text-gray-400 text-2xl">&times;</button>
+                </div>
+                <div class="mb-4"><p class="text-gray-400 text-sm">Lokacija</p><p class="text-xl font-bold" id="receive-location">-</p></div>
+                <div class="mb-4"><p class="text-gray-400 text-sm">Vozač</p><p class="font-medium" id="receive-driver">-</p></div>
+                <div class="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4 mb-6">
+                    <p class="text-yellow-400 text-sm">⚠️ Potvrdi prijem koverte/kese sa novcem od vozača.</p>
+                </div>
+                <button onclick="confirmReceive()" class="w-full btn bg-blue-500 text-white text-lg">✓ Potvrdi prijem</button>
             </div>
-            <div class="mb-4"><p class="text-gray-400 text-sm">Lokacija</p><p class="text-xl font-bold" id="receive-location">-</p></div>
-            <div class="mb-4"><p class="text-gray-400 text-sm">Vozač</p><p class="font-medium" id="receive-driver">-</p></div>
-            <div class="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4 mb-6">
-                <p class="text-yellow-400 text-sm">⚠️ Potvrdi prijem koverte/kese sa novcem od vozača.</p>
-            </div>
-            <button onclick="confirmReceive()" class="w-full btn bg-blue-500 text-white text-lg">✓ Potvrdi prijem</button>
         </div>
     </div>
 
-    <div id="count-modal" class="fixed inset-0 bg-black/70 z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-card rounded-2xl w-full max-w-md p-6">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-xl font-bold" id="count-title">💵 Brojanje novca</h2>
-                <button onclick="closeModal('count')" class="text-gray-400 text-2xl">&times;</button>
-            </div>
-            <div class="mb-4"><p class="text-gray-400 text-sm">Lokacija</p><p class="text-xl font-bold" id="count-location">-</p></div>
-            <div class="mb-4"><p class="text-gray-400 text-sm">Očekivani iznos</p><p class="text-2xl font-bold text-yellow-400" id="count-expected">-</p></div>
-            <div class="mb-6">
-                <label class="text-gray-400 text-sm block mb-2">Prebrojani iznos (RSD)</label>
-                <input type="number" id="count-amount" class="w-full text-2xl text-center" placeholder="0" inputmode="numeric">
-            </div>
-            <div id="count-diff" class="mb-4 hidden">
-                <div class="bg-black/20 rounded-lg p-4 flex justify-between">
-                    <span class="text-gray-400">Razlika:</span>
-                    <span class="font-bold text-xl" id="count-diff-value">0 RSD</span>
+    <div id="count-modal" class="fixed inset-0 bg-black/70 z-50 hidden overflow-y-auto" onclick="if(event.target === this) closeModal('count')">
+        <div class="min-h-full flex items-start justify-center p-4">
+            <div class="bg-card rounded-2xl w-full max-w-lg p-6 my-8" onclick="event.stopPropagation()">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold" id="count-title">💵 Brojanje</h2>
+                    <button onclick="closeModal('count')" class="text-gray-400 text-2xl">&times;</button>
                 </div>
+                <div class="mb-3"><p class="text-gray-400 text-sm">Lokacija</p><p class="text-lg font-bold" id="count-location">-</p></div>
+                <div class="mb-4"><p class="text-gray-400 text-sm">Očekivani iznos</p><p class="text-2xl font-bold text-yellow-400" id="count-expected">-</p></div>
+                
+                <!-- Specifikacija iz objekta -->
+                <div id="spec-section" class="mb-4 hidden">
+                    <div class="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <p class="text-blue-400 font-medium">📋 Specifikacija iz objekta</p>
+                            <span class="badge badge-blue" id="spec-user">-</span>
+                        </div>
+                        <div id="spec-denominations" class="space-y-1 text-sm"></div>
+                        <div class="border-t border-blue-500/20 mt-3 pt-3 flex justify-between items-center">
+                            <span class="text-gray-400">Ukupno:</span>
+                            <span class="font-bold text-xl text-blue-400" id="spec-total">-</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Mode Selection -->
+                <div id="mode-section" class="mb-4 hidden">
+                    <p class="text-gray-400 text-sm mb-2">Akcija:</p>
+                    <div class="flex gap-2">
+                        <button onclick="setMode('confirm')" id="btn-mode-confirm" class="flex-1 btn bg-green-500/20 text-green-400 border-2 border-green-500/50">✓ Potvrdi</button>
+                        <button onclick="setMode('edit')" id="btn-mode-edit" class="flex-1 btn bg-orange-500/20 text-orange-400 border-2 border-transparent">✏️ Izmeni</button>
+                    </div>
+                </div>
+                
+                <!-- Edit Section -->
+                <div id="edit-section" class="hidden mb-4">
+                    <div class="bg-orange-500/10 border border-orange-500/30 rounded-lg p-4">
+                        <p class="text-orange-400 font-medium mb-1">✏️ Izmena apoena</p>
+                        <p class="text-xs text-gray-500 mb-3">Original ostaje sačuvan za audit.</p>
+                        <div id="edit-denominations" class="space-y-1"></div>
+                        <div class="border-t border-orange-500/20 mt-3 pt-3 flex justify-between items-center">
+                            <span class="text-gray-400">Novi iznos:</span>
+                            <span class="font-bold text-xl text-orange-400" id="edit-total">0 RSD</span>
+                        </div>
+                    </div>
+                    <div class="mt-3 bg-black/30 rounded-lg p-3">
+                        <p class="text-xs text-gray-500 mb-2">Razlika od originala:</p>
+                        <div id="diff-by-denom" class="text-xs space-y-1"></div>
+                        <div class="border-t border-white/10 mt-2 pt-2 flex justify-between">
+                            <span class="text-gray-400">Ukupno:</span>
+                            <span class="font-bold" id="diff-total">0 RSD</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Discrepancy section - shown when there's any difference -->
+                <div id="count-discrepancy" class="mb-4 hidden">
+                    <div class="bg-red-500/10 border border-red-500/30 rounded-lg p-4">
+                        <p class="text-red-400 text-sm mb-2">⚠️ Razlika od očekivanog > 100 RSD</p>
+                        <div class="flex justify-between mb-3">
+                            <span class="text-gray-400">Razlika:</span>
+                            <span class="font-bold text-xl" id="count-diff-value">0 RSD</span>
+                        </div>
+                        <label class="text-gray-400 text-sm block mb-2">Razlog *</label>
+                        <select id="count-reason" class="w-full mb-2">
+                            <option value="">-- Izaberi razlog --</option>
+                            <option value="counting_error">Greška pri brojanju</option>
+                            <option value="missing_cash">Nedostaje novac</option>
+                            <option value="extra_cash">Višak novca</option>
+                            <option value="denomination_error">Pogrešni apoeni</option>
+                            <option value="change_error">Greška u kusuru</option>
+                            <option value="other">Ostalo</option>
+                        </select>
+                        <input type="text" id="count-comment" class="w-full" placeholder="Komentar (opciono)">
+                    </div>
+                </div>
+                
+                <button onclick="confirmCount()" class="w-full btn bg-purple-500 text-white text-lg" id="count-btn">✓ Potvrdi</button>
             </div>
-            <div id="count-discrepancy" class="mb-4 hidden">
-                <div class="bg-red-500/10 border border-red-500/30 rounded-lg p-4">
-                    <p class="text-red-400 text-sm mb-3">⚠️ Razlika - unesi razlog:</p>
-                    <select id="count-reason" class="w-full mb-2">
-                        <option value="">-- Izaberi razlog --</option>
-                        <option value="counting_error">Greška pri brojanju na lokaciji</option>
-                        <option value="missing_cash">Nedostaje novac</option>
-                        <option value="extra_cash">Višak novca</option>
-                        <option value="other">Ostalo</option>
+        </div>
+    </div>
+    
+    <!-- Audit Modal -->
+    <div id="audit-modal" class="fixed inset-0 bg-black/70 z-50 hidden overflow-y-auto" onclick="if(event.target === this) closeModal('audit')">
+        <div class="min-h-full flex items-center justify-center p-4">
+            <div class="bg-card rounded-2xl w-full max-w-2xl p-6 my-8" onclick="event.stopPropagation()">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold">📜 Detalji izmene</h2>
+                    <button onclick="closeModal('audit')" class="text-gray-400 text-2xl">&times;</button>
+                </div>
+                <div id="audit-content"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Shift Detail Modal -->
+    <div id="shift-modal" class="fixed inset-0 bg-black/70 z-50 hidden overflow-y-auto" onclick="if(event.target === this) closeModal('shift')">
+        <div class="min-h-full flex items-center justify-center p-4">
+            <div class="bg-card rounded-2xl w-full max-w-xl p-6 my-8" onclick="event.stopPropagation()">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold">📋 Detalji smene</h2>
+                    <button onclick="closeModal('shift')" class="text-gray-400 text-2xl">&times;</button>
+                </div>
+                <div id="shift-detail-content"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Pickup Detail Modal -->
+    <div id="pickup-detail-modal" class="fixed inset-0 bg-black/70 z-50 hidden overflow-y-auto" onclick="if(event.target === this) closeModal('pickup-detail')">
+        <div class="min-h-full flex items-center justify-center p-4">
+            <div class="bg-card rounded-2xl w-full max-w-lg p-6 my-8" onclick="event.stopPropagation()">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold">🚗 Detalji prikupljanja</h2>
+                    <button onclick="closeModal('pickup-detail')" class="text-gray-400 text-2xl">&times;</button>
+                </div>
+                <div id="pickup-detail-content"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Finansije Detail Modal -->
+    <div id="finansije-modal" class="fixed inset-0 bg-black/70 z-50 hidden overflow-y-auto" onclick="if(event.target === this) closeModal('finansije')">
+        <div class="min-h-full flex items-center justify-center p-4">
+            <div class="bg-card rounded-2xl w-full max-w-lg p-6 my-8" onclick="event.stopPropagation()">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold">💰 Detalji finansija</h2>
+                    <button onclick="closeModal('finansije')" class="text-gray-400 text-2xl">&times;</button>
+                </div>
+                <div id="finansije-detail-content"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Banka Detail Modal -->
+    <div id="banka-modal" class="fixed inset-0 bg-black/70 z-50 hidden overflow-y-auto" onclick="if(event.target === this) closeModal('banka')">
+        <div class="min-h-full flex items-center justify-center p-4">
+            <div class="bg-card rounded-2xl w-full max-w-lg p-6 my-8" onclick="event.stopPropagation()">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold">🏦 Detalji depozita</h2>
+                    <button onclick="closeModal('banka')" class="text-gray-400 text-2xl">&times;</button>
+                </div>
+                <div id="banka-detail-content"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="bank-modal" class="fixed inset-0 bg-black/70 z-50 hidden overflow-y-auto" onclick="if(event.target === this) closeModal('bank')">
+        <div class="min-h-full flex items-center justify-center p-4">
+            <div class="bg-card rounded-2xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold">🏦 Depozit u banku</h2>
+                    <button onclick="closeModal('bank')" class="text-gray-400 text-2xl">&times;</button>
+                </div>
+                <div class="text-center mb-4">
+                    <p class="text-gray-400">Izabrani iznos</p>
+                    <p class="text-4xl font-bold text-green-400 mt-2" id="bank-modal-total">0 RSD</p>
+                    <p class="text-gray-500 text-sm mt-1" id="bank-modal-count">0 lokacija</p>
+                </div>
+                <div class="mb-4">
+                    <div class="flex justify-between items-center mb-2">
+                        <p class="text-gray-400 text-sm">Izaberi lokacije za depozit:</p>
+                        <button onclick="toggleAllBankItems()" class="text-purple-400 text-xs hover:text-purple-300">Izaberi sve / Ništa</button>
+                    </div>
+                    <div id="bank-locations-list" class="bg-black/20 rounded-lg p-3 max-h-60 overflow-y-auto space-y-2"></div>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="text-gray-400 text-sm block mb-2">Banka / Račun</label>
+                    <select id="bank-account-select" class="w-full">
+                        <option value="intesa-1">Banca Intesa - 160-0000012345678-90</option>
+                        <option value="raiffeisen-1">Raiffeisen - 265-0000098765432-10</option>
+                        <option value="unicredit-1">UniCredit - 170-0000011223344-55</option>
                     </select>
-                    <input type="text" id="count-comment" class="w-full" placeholder="Komentar...">
+                </div>
+                
+                <div class="mb-6">
+                    <label class="text-gray-400 text-sm block mb-2">Broj uplatnice (opciono)</label>
+                    <input type="text" id="bank-reference" class="w-full" placeholder="Unesi broj uplatnice...">
+                </div>
+                
+                <div class="flex gap-3">
+                    <button onclick="confirmBankDeposit()" class="flex-1 btn bg-green-500 text-white text-lg">✓ Potvrdi</button>
+                    <button onclick="printUplatnica()" class="flex-1 btn bg-blue-500 text-white text-lg">🖨️ Štampaj uplatnicu</button>
                 </div>
             </div>
-            <button onclick="confirmCount()" class="w-full btn bg-purple-500 text-white text-lg" id="count-btn">✓ Potvrdi</button>
         </div>
     </div>
-
-    <div id="bank-modal" class="fixed inset-0 bg-black/70 z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-card rounded-2xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-xl font-bold">🏦 Depozit u banku</h2>
-                <button onclick="closeModal('bank')" class="text-gray-400 text-2xl">&times;</button>
-            </div>
-            <div class="text-center mb-4">
-                <p class="text-gray-400">Izabrani iznos</p>
-                <p class="text-4xl font-bold text-green-400 mt-2" id="bank-modal-total">0 RSD</p>
-                <p class="text-gray-500 text-sm mt-1" id="bank-modal-count">0 lokacija</p>
-            </div>
-            <div class="mb-4">
-                <div class="flex justify-between items-center mb-2">
-                    <p class="text-gray-400 text-sm">Izaberi lokacije za depozit:</p>
-                    <button onclick="toggleAllBankItems()" class="text-purple-400 text-xs hover:text-purple-300">Izaberi sve / Ništa</button>
+    
+    <!-- Uplatnica Print Modal -->
+    <div id="uplatnica-modal" class="fixed inset-0 bg-black/70 z-50 hidden overflow-y-auto" onclick="if(event.target === this) closeModal('uplatnica')">
+        <div class="min-h-full flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl w-full max-w-2xl p-6" onclick="event.stopPropagation()">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold text-gray-800">🧾 Uplatnica - Pregled</h2>
+                    <button onclick="closeModal('uplatnica')" class="text-gray-400 text-2xl">&times;</button>
                 </div>
-                <div id="bank-locations-list" class="bg-black/20 rounded-lg p-3 max-h-60 overflow-y-auto space-y-2"></div>
+                <div id="uplatnica-content"></div>
+                <div class="flex gap-3 mt-4">
+                    <button onclick="doPrintUplatnica()" class="flex-1 btn bg-blue-500 text-white text-lg">🖨️ Štampaj</button>
+                    <button onclick="closeModal('uplatnica')" class="flex-1 btn bg-gray-500 text-white text-lg">Zatvori</button>
+                </div>
             </div>
-            <div class="mb-6">
-                <label class="text-gray-400 text-sm block mb-2">Broj uplatnice</label>
-                <input type="text" id="bank-reference" class="w-full" placeholder="Unesi broj uplatnice...">
-            </div>
-            <button onclick="confirmBankDeposit()" class="w-full btn bg-green-500 text-white text-lg">✓ Potvrdi depozit</button>
         </div>
     </div>
 
@@ -213,8 +362,57 @@ const SUPABASE_URL = 'https://bbnbbbpofelbkyuffslj.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJibmJiYnBvZmVsYmt5dWZmc2xqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUwNTI0MzQsImV4cCI6MjA4MDYyODQzNH0.koW44soAB-bEfh8OzqjGBwdgov4Snscw1ITsg5OureU';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+const DENOMINATIONS = [5000, 2000, 1000, 500, 200, 100, 50, 20, 10];
+const ALL_MODALS = ['receive', 'count', 'audit', 'shift', 'pickup-detail', 'finansije', 'banka', 'bank', 'uplatnica'];
+
+// Bank accounts configuration (will be from database later)
+const BANK_ACCOUNTS = {
+    'intesa-1': {
+        bankName: 'Banca Intesa',
+        accountNumber: '160-0000012345678-90',
+        sifraPlacanja: '189',
+        model: '97'
+    },
+    'raiffeisen-1': {
+        bankName: 'Raiffeisen Banka',
+        accountNumber: '265-0000098765432-10',
+        sifraPlacanja: '189',
+        model: '97'
+    },
+    'unicredit-1': {
+        bankName: 'UniCredit Bank',
+        accountNumber: '170-0000011223344-55',
+        sifraPlacanja: '189',
+        model: '97'
+    }
+};
+
+// Company info (will be from database later)
+const COMPANY_INFO = {
+    name: 'SWEET COLLINA DOO BEOGRAD',
+    address: 'Beogradska 123, Beograd',
+    pib: '123456789'
+};
+
 let user = null, allData = {}, selectedPickup = null, expectedAmounts = {};
 let pinCode = '';
+let currentMode = 'confirm';
+let originalDenoms = {};
+let editDenoms = {};
+let currentSpec = null;
+let currentFinRec = null;
+
+// ESC key to close modals
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        ALL_MODALS.forEach(name => {
+            const modal = document.getElementById(name + '-modal');
+            if (modal && !modal.classList.contains('hidden')) {
+                closeModal(name);
+            }
+        });
+    }
+});
 
 // PIN Input
 function numPress(num) {
@@ -288,10 +486,39 @@ async function loadData() {
     const to = document.getElementById('filter-to').value;
     const loc = document.getElementById('filter-loc').value;
     
-    let q1 = sb.from('pazar_shifts').select('*, user:pazar_users(first_name, last_name), location:pazar_locations(code, name, current_deposit), spec:pazar_daily_specifications(*)').order('date', {ascending: false}).order('shift_order');
+    // Load shifts
+    let q1 = sb.from('pazar_shifts').select('*, user:pazar_users(first_name, last_name), location:pazar_locations(code, name, current_deposit)').order('date', {ascending: false}).order('shift_order');
     if (from) q1 = q1.gte('date', from); if (to) q1 = q1.lte('date', to); if (loc) q1 = q1.eq('location_id', loc);
     const { data: shifts } = await q1;
     allData.shifts = shifts || [];
+    
+    // Load specifications separately and map by shift_id
+    let q1b = sb.from('pazar_daily_specifications').select('*');
+    if (from) q1b = q1b.gte('date', from); if (to) q1b = q1b.lte('date', to); if (loc) q1b = q1b.eq('location_id', loc);
+    const { data: specs } = await q1b;
+    const specByShift = {};
+    (specs || []).forEach(sp => { specByShift[sp.shift_id] = sp; });
+    
+    // Attach spec to each shift
+    allData.shifts.forEach(s => { s.spec = specByShift[s.id] || null; });
+    
+    // Load denominations
+    const specIds = (specs || []).map(s => s.id);
+    if (specIds.length > 0) {
+        const { data: denoms } = await sb.from('pazar_specification_denominations').select('*').in('specification_id', specIds);
+        allData.denominations = denoms || [];
+    } else {
+        allData.denominations = [];
+    }
+    
+    // Load spec users
+    const specUserIds = [...new Set((specs || []).filter(s => s.user_id).map(s => s.user_id))];
+    if (specUserIds.length > 0) {
+        const { data: specUsers } = await sb.from('pazar_users').select('id, first_name, last_name').in('id', specUserIds);
+        allData.specUsers = specUsers || [];
+    } else {
+        allData.specUsers = [];
+    }
     
     let q2 = sb.from('pazar_cash_pickups').select('*, driver:pazar_users(first_name, last_name), location:pazar_locations(code, name, current_deposit)');
     if (from) q2 = q2.gte('date', from); if (to) q2 = q2.lte('date', to); if (loc) q2 = q2.eq('location_id', loc);
@@ -309,7 +536,7 @@ async function loadData() {
     allData.bankDeposits = bankDeps || [];
     
     expectedAmounts = {};
-    allData.shifts.filter(s => s.is_last_shift).forEach(s => {
+    allData.shifts.filter(s => s.is_last_shift && s.spec).forEach(s => {
         const dep = s.location?.current_deposit || 10000;
         expectedAmounts[`${s.location_id}-${s.date}`] = s.spec?.counted_amount || (s.ending_amount ? s.ending_amount - dep : 0);
     });
@@ -366,15 +593,21 @@ function renderData() {
             <thead class="text-gray-500 text-xs border-b border-white/10"><tr>
                 <th class="p-2 text-left">Smena</th><th class="p-2 text-left">Tip</th><th class="p-2 text-left">Konobar</th><th class="p-2 text-left">Vreme</th>
                 <th class="p-2 text-right">Keš</th><th class="p-2 text-right">Depozit</th>
-                <th class="p-2 text-right border-l border-white/10">Gotovina</th><th class="p-2 text-right">Kartica</th><th class="p-2 text-right">Očekivani keš</th>
-                <th class="p-2 text-right border-l border-white/10">Prebrojano</th><th class="p-2 text-right">Razlika</th>
+                <th class="p-2 text-right border-l border-white/10">Gotovina</th><th class="p-2 text-right">Kartica</th><th class="p-2 text-right">Prenos</th><th class="p-2 text-right">Očekivani keš</th>
+                <th class="p-2 text-right border-l border-white/10">Prebrojano</th><th class="p-2 text-right">Dopuna</th><th class="p-2 text-right">Razlika</th>
             </tr></thead><tbody>`;
         
         g.shifts.sort((a,b) => a.shift_order - b.shift_order).forEach((s, i) => {
             const sp = s.spec, isFirst = i === 0;
-            const gotovina = sp?.ebar_total || 0, kartica = sp?.terminal_amount || 0, kes = sp ? gotovina - kartica : 0;
-            const prebrojano = sp?.counted_amount || 0, razlika = sp ? prebrojano - kes : null;
+            const gotovina = sp?.ebar_total || 0, kartica = sp?.terminal_amount || 0, prenos = sp?.ebar_transfer || 0;
+            const kes = sp ? gotovina - kartica : 0;  // Očekivani keš = Gotovina - Kartica
+            const prebrojano = sp?.counted_amount || 0;
+            const razlika = sp ? prebrojano - kes : null;  // Razlika = Prebrojano - Očekivani keš
             const diffClass = razlika === null ? '' : razlika < -100 ? 'text-red-400' : razlika > 100 ? 'text-green-400' : '';
+            const topup = sp?.topup_amount || 0;
+            const topupSrc = sp?.topup_source;
+            const topupLabel = topup > 0 ? (topupSrc === 'own_pocket' ? '💰' : topupSrc === 'tip_jar' ? '🫙' : '📦') : '';
+            const topupClass = topup > 0 ? 'text-cyan-400' : topup < 0 ? 'text-pink-400' : '';
             
             tbl += `<tr class="border-t border-white/10 bg-green-500/5">
                 <td class="p-2 font-medium" rowspan="2">${s.shift_order}.</td>
@@ -383,9 +616,9 @@ function renderData() {
                 <td class="p-2 text-gray-400">${fmtTime(s.started_at)}</td>
                 <td class="p-2 text-right">${isFirst ? '-' : fmt(s.starting_amount - deposit)}</td>
                 <td class="p-2 text-right text-purple-400">${fmt(isFirst ? s.starting_amount : deposit)}</td>
-                <td class="p-2 border-l border-white/10 text-center text-gray-600" colspan="5">—</td>
+                <td class="p-2 border-l border-white/10 text-center text-gray-600" colspan="7">—</td>
             </tr>
-            <tr class="border-t border-white/5 ${sp ? 'bg-orange-500/5' : 'bg-gray-500/5'}">
+            <tr class="border-t border-white/5 ${sp ? 'bg-orange-500/5 hover:bg-orange-500/10 cursor-pointer' : 'bg-gray-500/5'}" ${sp ? `onclick="showShiftDetail('${s.id}')"` : ''}>
                 <td class="p-2 text-orange-400">■ Kraj</td>
                 <td class="p-2">${s.user?.first_name || ''} ${s.user?.last_name || ''}</td>
                 <td class="p-2 text-gray-400">${fmtTime(s.ended_at)}</td>
@@ -393,10 +626,12 @@ function renderData() {
                 <td class="p-2 text-right text-purple-400">${fmt(deposit)}</td>
                 ${sp ? `<td class="p-2 text-right border-l border-white/10">${fmt(gotovina)}</td>
                     <td class="p-2 text-right text-gray-400">${fmt(kartica)}</td>
+                    <td class="p-2 text-right text-blue-400">${prenos > 0 ? fmt(prenos) : '-'}</td>
                     <td class="p-2 text-right text-yellow-400">${fmt(kes)}</td>
                     <td class="p-2 text-right border-l border-white/10 text-green-400">${fmt(prebrojano)}</td>
+                    <td class="p-2 text-right ${topupClass}">${topup !== 0 ? topupLabel + ' ' + (topup > 0 ? '+' : '') + fmt(topup) : '-'}</td>
                     <td class="p-2 text-right font-bold ${diffClass}">${razlika !== null ? (razlika > 0 ? '+' : '') + fmt(razlika) : '-'}</td>` 
-                    : `<td class="p-2 border-l border-white/10 text-center text-gray-600" colspan="5">— u toku —</td>`}
+                    : `<td class="p-2 border-l border-white/10 text-center text-gray-600" colspan="7">— u toku —</td>`}
             </tr>`;
         });
         
@@ -406,8 +641,8 @@ function renderData() {
                 <td class="p-3 font-bold text-purple-400" colspan="4">🔒 KRAJ DANA</td>
                 <td class="p-3 text-right font-bold text-lg">${fmt(cashForSafe)}</td>
                 <td class="p-3 text-right text-purple-400">${fmt(deposit)}</td>
-                <td class="p-3 border-l border-white/10" colspan="4"></td>
-                <td class="p-3 text-right font-bold text-green-400">${fmt(cashForSafe)} za sef</td>
+                <td class="p-3 border-l border-white/10" colspan="5"></td>
+                <td class="p-3" colspan="2"></td>
             </tr>`;
             
             tbl += `</tbody></table></div>`;
@@ -415,12 +650,12 @@ function renderData() {
             // Cash Flow Summary Card
             tbl += `<div class="p-4 border-t border-white/10 bg-black/20">
                 <p class="text-xs text-gray-500 uppercase tracking-wide mb-3">Tok novca</p>
-                <div class="grid grid-cols-3 gap-4">`;
+                <div class="grid grid-cols-4 gap-3">`;
             
             // 1. Prikupljanje
             if (pickup) {
                 const pickupDone = pickup.delivered_at;
-                tbl += `<div class="bg-blue-500/10 rounded-lg p-3 border ${pickupDone ? 'border-blue-500/30' : 'border-yellow-500/30'}">
+                tbl += `<div onclick="showPickupModal('${pickup.id}')" class="bg-blue-500/10 rounded-lg p-3 border ${pickupDone ? 'border-blue-500/30' : 'border-yellow-500/30'} cursor-pointer hover:bg-blue-500/20 transition-all">
                     <div class="flex items-center gap-2 mb-2">
                         <span class="text-lg">🚗</span>
                         <span class="font-medium ${pickupDone ? 'text-blue-400' : 'text-yellow-400'}">Prikupljanje</span>
@@ -449,11 +684,13 @@ function renderData() {
                 const isVerified = finRec.verified_at;
                 const receivedTime = finRec.received_at ? new Date(finRec.received_at).toLocaleTimeString('sr-RS', {hour:'2-digit', minute:'2-digit'}) : '-';
                 const verifiedTime = finRec.verified_at ? new Date(finRec.verified_at).toLocaleTimeString('sr-RS', {hour:'2-digit', minute:'2-digit'}) : '-';
+                const wasModified = finRec.spec_modified;
                 
-                tbl += `<div class="bg-purple-500/10 rounded-lg p-3 border ${isVerified ? 'border-green-500/30' : 'border-purple-500/30'}">
+                tbl += `<div onclick="showFinansijeModal('${finRec.id}')" class="bg-purple-500/10 rounded-lg p-3 border ${isVerified ? 'border-green-500/30' : 'border-purple-500/30'} cursor-pointer hover:bg-purple-500/20 transition-all">
                     <div class="flex items-center gap-2 mb-2">
                         <span class="text-lg">💰</span>
                         <span class="font-medium text-purple-400">Finansije</span>
+                        ${wasModified ? '<span class="badge badge-warning text-xs">Izmenjeno</span>' : ''}
                         ${isVerified ? '<span class="ml-auto text-green-400">✓</span>' : '<span class="ml-auto text-purple-400">⏳</span>'}
                     </div>
                     <div class="text-xs space-y-1 text-gray-400">
@@ -466,9 +703,11 @@ function renderData() {
                             <span class="${isVerified ? 'text-green-400' : 'text-gray-500'}">${verifiedTime} ${isVerified ? '✓' : ''}</span>
                         </div>
                         ${finRec.counted_amount ? `<div class="flex justify-between border-t border-white/10 pt-1 mt-1"><span>Iznos:</span><span class="text-white font-medium">${fmt(finRec.counted_amount)}</span></div>` : ''}
+                        ${wasModified && finRec.original_amount ? `<div class="flex justify-between"><span>Original:</span><span class="text-orange-400">${fmt(finRec.original_amount)}</span></div>` : ''}
                         <div class="flex justify-between"><span>Osoba:</span><span class="text-white">${finRec.verified_user?.first_name || finRec.received_user?.first_name || '-'}</span></div>
                     </div>
-                    ${!isVerified ? `<button onclick="showCountModal('${pickup?.id}', false)" class="mt-2 w-full btn bg-purple-500 text-white text-xs py-2">💵 Zavedi</button>` : ''}
+                    ${wasModified ? `<button onclick="event.stopPropagation(); showAuditModal('${finRec.id}')" class="mt-2 w-full btn bg-orange-500/20 text-orange-400 text-xs py-1">📜 Vidi izmene</button>` : ''}
+                    ${!isVerified ? `<button onclick="event.stopPropagation(); showCountModal('${pickup?.id}', false)" class="mt-2 w-full btn bg-purple-500 text-white text-xs py-2">💵 Zavedi</button>` : ''}
                 </div>`;
             } else if (pickup?.delivered_at) {
                 tbl += `<div class="bg-yellow-500/10 rounded-lg p-3 border border-yellow-500/30">
@@ -490,9 +729,44 @@ function renderData() {
                 </div>`;
             }
             
-            // 3. Banka
+            // 3. Sef
+            if (finRec?.in_safe_at) {
+                const safeTime = new Date(finRec.in_safe_at).toLocaleTimeString('sr-RS', {hour:'2-digit', minute:'2-digit'});
+                tbl += `<div class="bg-cyan-500/10 rounded-lg p-3 border border-cyan-500/30">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="text-lg">🔒</span>
+                        <span class="font-medium text-cyan-400">Sef</span>
+                        <span class="ml-auto text-green-400">✓</span>
+                    </div>
+                    <div class="text-xs space-y-1 text-gray-400">
+                        <div class="flex justify-between"><span>Status:</span><span class="text-cyan-400 font-medium">U sefu</span></div>
+                        <div class="flex justify-between"><span>Vreme:</span><span class="text-white">${safeTime}</span></div>
+                        <div class="flex justify-between"><span>Iznos:</span><span class="text-cyan-400">${fmt(finRec.counted_amount)}</span></div>
+                    </div>
+                </div>`;
+            } else if (finRec?.verified_at) {
+                tbl += `<div onclick="depositToSafe('${finRec.id}')" class="bg-yellow-500/10 rounded-lg p-3 border border-yellow-500/30 cursor-pointer hover:bg-yellow-500/20 transition-all">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="text-lg">🔒</span>
+                        <span class="font-medium text-yellow-400">Sef</span>
+                        <span class="ml-auto text-yellow-400">⏳</span>
+                    </div>
+                    <p class="text-xs text-gray-500 mb-2">Čeka depozit</p>
+                    <button class="w-full btn bg-cyan-500 text-white text-xs py-1">U sef</button>
+                </div>`;
+            } else {
+                tbl += `<div class="bg-gray-500/10 rounded-lg p-3 border border-gray-500/30">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="text-lg">🔒</span>
+                        <span class="font-medium text-gray-400">Sef</span>
+                    </div>
+                    <p class="text-xs text-gray-500">Čeka verifikaciju</p>
+                </div>`;
+            }
+            
+            // 4. Banka (renamed)
             if (finRec?.banked_at && bankDep) {
-                tbl += `<div class="bg-green-500/10 rounded-lg p-3 border border-green-500/30">
+                tbl += `<div onclick="showBankaModal('${finRec.id}')" class="bg-green-500/10 rounded-lg p-3 border border-green-500/30 cursor-pointer hover:bg-green-500/20 transition-all">
                     <div class="flex items-center gap-2 mb-2">
                         <span class="text-lg">🏦</span>
                         <span class="font-medium text-green-400">Banka</span>
@@ -561,50 +835,748 @@ async function confirmReceive() {
 
 function showCountModal(pickupId, isVerify) {
     selectedPickup = allData.pickups.find(p => p.id === pickupId);
-    const finRec = allData.financeRecords.find(f => f.pickup_id === pickupId);
+    currentFinRec = allData.financeRecords.find(f => f.pickup_id === pickupId);
     const expected = expectedAmounts[`${selectedPickup.location_id}-${selectedPickup.date}`] || 0;
+    
+    // Find spec for this location/date
+    const lastShift = allData.shifts.find(s => s.location_id === selectedPickup.location_id && s.date === selectedPickup.date && s.is_last_shift);
+    currentSpec = lastShift?.spec;
     
     document.getElementById('count-title').textContent = isVerify ? '✓ Verifikacija' : '💵 Brojanje';
     document.getElementById('count-location').textContent = `${selectedPickup.location?.code} - ${selectedPickup.location?.name}`;
     document.getElementById('count-expected').textContent = fmt(expected);
-    document.getElementById('count-amount').value = finRec?.counted_amount || '';
-    document.getElementById('count-diff').classList.add('hidden');
-    document.getElementById('count-discrepancy').classList.add('hidden');
-    document.getElementById('count-btn').textContent = isVerify ? '✓ Verifikuj' : '✓ Potvrdi iznos';
-    
     window.countExpected = expected;
     window.isVerifyMode = isVerify;
-    window.currentFinRec = finRec;
     
-    document.getElementById('count-amount').oninput = function() {
-        const diff = (parseFloat(this.value) || 0) - window.countExpected;
-        document.getElementById('count-diff').classList.remove('hidden');
-        document.getElementById('count-diff-value').textContent = (diff >= 0 ? '+' : '') + fmt(diff);
-        document.getElementById('count-diff-value').className = `font-bold text-xl ${Math.abs(diff) <= 100 ? 'text-green-400' : 'text-red-400'}`;
-        document.getElementById('count-discrepancy').classList.toggle('hidden', Math.abs(diff) <= 100);
-    };
+    // Load denominations
+    originalDenoms = {};
+    DENOMINATIONS.forEach(d => originalDenoms[d] = 0);
     
+    if (currentSpec) {
+        const specDenoms = allData.denominations.filter(d => d.specification_id === currentSpec.id);
+        specDenoms.forEach(d => { originalDenoms[d.denomination] = d.quantity; });
+        
+        const specUser = allData.specUsers?.find(u => u.id === currentSpec.user_id);
+        document.getElementById('spec-user').textContent = specUser ? `${specUser.first_name} ${specUser.last_name}` : '-';
+        document.getElementById('spec-section').classList.remove('hidden');
+        document.getElementById('mode-section').classList.remove('hidden');
+        renderSpecDenoms();
+    } else {
+        document.getElementById('spec-section').classList.add('hidden');
+        document.getElementById('mode-section').classList.add('hidden');
+    }
+    
+    editDenoms = { ...originalDenoms };
+    currentMode = 'confirm';
+    setMode('confirm');
+    document.getElementById('count-discrepancy').classList.add('hidden');
+    document.getElementById('edit-section').classList.add('hidden');
     document.getElementById('count-modal').classList.remove('hidden');
 }
 
+function renderSpecDenoms() {
+    const total = DENOMINATIONS.reduce((s, d) => s + (originalDenoms[d] * d), 0);
+    let html = '';
+    DENOMINATIONS.forEach(d => {
+        if (originalDenoms[d] > 0) {
+            html += `<div class="flex justify-between"><span class="text-gray-400">${fmt(d).replace(' RSD','')} × ${originalDenoms[d]}</span><span class="text-blue-400">${fmt(d * originalDenoms[d])}</span></div>`;
+        }
+    });
+    document.getElementById('spec-denominations').innerHTML = html || '<p class="text-gray-500">Nema apoena</p>';
+    document.getElementById('spec-total').textContent = fmt(total);
+}
+
+function renderEditDenoms() {
+    let html = '';
+    DENOMINATIONS.forEach(d => {
+        const qty = editDenoms[d] || 0;
+        html += `<div class="flex items-center justify-between py-1">
+            <span class="text-gray-400 w-20">${fmt(d).replace(' RSD','')}</span>
+            <div class="flex items-center gap-1">
+                <button onclick="adjDenom(${d},-1)" class="w-7 h-7 rounded bg-red-500/20 text-red-400 text-lg">−</button>
+                <input type="number" value="${qty}" min="0" onchange="setDenom(${d},this.value)" class="w-14 text-center p-1 text-sm">
+                <button onclick="adjDenom(${d},1)" class="w-7 h-7 rounded bg-green-500/20 text-green-400 text-lg">+</button>
+            </div>
+            <span class="text-orange-400 w-24 text-right">${fmt(d * qty)}</span>
+        </div>`;
+    });
+    document.getElementById('edit-denominations').innerHTML = html;
+    updateEditTotals();
+}
+
+function adjDenom(d, delta) {
+    editDenoms[d] = Math.max(0, (editDenoms[d] || 0) + delta);
+    renderEditDenoms();
+}
+
+function setDenom(d, val) {
+    editDenoms[d] = Math.max(0, parseInt(val) || 0);
+    updateEditTotals();
+}
+
+function updateEditTotals() {
+    const editTotal = DENOMINATIONS.reduce((s, d) => s + (editDenoms[d] * d), 0);
+    const origTotal = DENOMINATIONS.reduce((s, d) => s + (originalDenoms[d] * d), 0);
+    const diff = editTotal - origTotal;
+    
+    document.getElementById('edit-total').textContent = fmt(editTotal);
+    
+    let diffHtml = '';
+    DENOMINATIONS.forEach(d => {
+        const qDiff = (editDenoms[d] || 0) - (originalDenoms[d] || 0);
+        if (qDiff !== 0) {
+            const cls = qDiff > 0 ? 'text-green-400' : 'text-red-400';
+            diffHtml += `<div class="flex justify-between"><span class="text-gray-500">${fmt(d).replace(' RSD','')}</span><span class="${cls}">${qDiff > 0 ? '+' : ''}${qDiff}</span></div>`;
+        }
+    });
+    document.getElementById('diff-by-denom').innerHTML = diffHtml || '<span class="text-gray-600">Bez promena</span>';
+    
+    const diffCls = diff > 0 ? 'text-green-400' : diff < 0 ? 'text-red-400' : 'text-gray-400';
+    document.getElementById('diff-total').textContent = (diff > 0 ? '+' : '') + fmt(diff);
+    document.getElementById('diff-total').className = `font-bold ${diffCls}`;
+    
+    checkDiscrepancy();
+}
+
+function setMode(mode) {
+    currentMode = mode;
+    document.getElementById('btn-mode-confirm').className = `flex-1 btn ${mode === 'confirm' ? 'bg-green-500/20 text-green-400 border-2 border-green-500/50' : 'bg-green-500/10 text-green-400/50 border-2 border-transparent'}`;
+    document.getElementById('btn-mode-edit').className = `flex-1 btn ${mode === 'edit' ? 'bg-orange-500/20 text-orange-400 border-2 border-orange-500/50' : 'bg-orange-500/10 text-orange-400/50 border-2 border-transparent'}`;
+    
+    if (mode === 'edit') {
+        document.getElementById('edit-section').classList.remove('hidden');
+        renderEditDenoms();
+    } else {
+        document.getElementById('edit-section').classList.add('hidden');
+    }
+    document.getElementById('count-btn').textContent = mode === 'confirm' ? '✓ Potvrdi iznos' : '✓ Sačuvaj izmenu';
+    checkDiscrepancy();
+}
+
+function checkDiscrepancy() {
+    const finalAmt = currentMode === 'confirm' 
+        ? DENOMINATIONS.reduce((s, d) => s + (originalDenoms[d] * d), 0)
+        : DENOMINATIONS.reduce((s, d) => s + (editDenoms[d] * d), 0);
+    const diff = finalAmt - window.countExpected;
+    
+    // Show discrepancy section if difference > 100 OR if in edit mode (apoeni changed)
+    const hasSignificantDiff = Math.abs(diff) > 100;
+    const hasEditChanges = currentMode === 'edit' && DENOMINATIONS.some(d => (editDenoms[d] || 0) !== (originalDenoms[d] || 0));
+    
+    if (hasSignificantDiff || hasEditChanges) {
+        document.getElementById('count-discrepancy').classList.remove('hidden');
+        const cls = diff > 0 ? 'text-green-400' : 'text-red-400';
+        document.getElementById('count-diff-value').textContent = (diff > 0 ? '+' : '') + fmt(diff);
+        document.getElementById('count-diff-value').className = `font-bold text-xl ${cls}`;
+    } else {
+        document.getElementById('count-discrepancy').classList.add('hidden');
+    }
+}
+
 async function confirmCount() {
-    const amount = parseFloat(document.getElementById('count-amount').value) || 0;
-    if (amount <= 0) { alert('Unesi iznos'); return; }
-    const diff = amount - window.countExpected;
-    let reason = null, comment = null;
-    if (Math.abs(diff) > 100) {
-        reason = document.getElementById('count-reason').value;
-        comment = document.getElementById('count-comment').value;
-        if (!reason) { alert('Izaberi razlog'); return; }
+    const origTotal = DENOMINATIONS.reduce((s, d) => s + (originalDenoms[d] * d), 0);
+    const editTotal = DENOMINATIONS.reduce((s, d) => s + (editDenoms[d] * d), 0);
+    const finalAmt = currentMode === 'confirm' ? origTotal : editTotal;
+    const diff = finalAmt - window.countExpected;
+    
+    // Require reason only when there's a significant difference
+    if (Math.abs(diff) > 100 && !document.getElementById('count-reason').value) {
+        alert('Izaberi razlog za razliku!'); return;
     }
     
-    const finRec = window.currentFinRec;
-    if (window.isVerifyMode) {
-        await sb.from('pazar_finance_records').update({ verified_at: new Date().toISOString(), verified_by: user.id, discrepancy_reason: reason, discrepancy_comment: comment }).eq('id', finRec.id);
-    } else {
-        await sb.from('pazar_finance_records').update({ counted_amount: amount, counted_at: new Date().toISOString(), verified_at: new Date().toISOString(), verified_by: user.id, discrepancy_reason: reason, discrepancy_comment: comment }).eq('id', finRec.id);
+    const updateData = {
+        counted_amount: finalAmt,
+        counted_at: new Date().toISOString(),
+        verified_at: new Date().toISOString(),
+        verified_by: user.id,
+        original_amount: origTotal,
+        original_denominations: originalDenoms,
+        spec_modified: currentMode === 'edit'
+    };
+    
+    // Use single reason for both modification and discrepancy
+    const reason = document.getElementById('count-reason').value || null;
+    const comment = document.getElementById('count-comment').value || null;
+    
+    if (currentMode === 'edit') {
+        updateData.modified_denominations = editDenoms;
+        updateData.modification_reason = reason;
+        updateData.modification_comment = comment;
     }
+    if (Math.abs(diff) > 100) {
+        updateData.discrepancy_reason = reason;
+        updateData.discrepancy_comment = comment;
+    }
+    
+    const { error } = await sb.from('pazar_finance_records').update(updateData).eq('id', currentFinRec.id);
+    if (error) { alert('Greška: ' + error.message); return; }
+    
     closeModal('count'); loadData();
+}
+
+function showAuditModal(finRecId) {
+    const fr = allData.financeRecords.find(f => f.id === finRecId);
+    if (!fr) return;
+    
+    const orig = fr.original_denominations || {};
+    const mod = fr.modified_denominations || {};
+    
+    let html = `<div class="grid grid-cols-2 gap-4 mb-4">
+        <div class="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
+            <p class="text-blue-400 font-medium mb-2">📋 Original</p>
+            <div class="space-y-1 text-sm">
+                ${DENOMINATIONS.map(d => orig[d] > 0 ? `<div class="flex justify-between"><span class="text-gray-400">${d} × ${orig[d]}</span><span class="text-blue-400">${fmt(d * orig[d])}</span></div>` : '').join('')}
+            </div>
+            <div class="border-t border-blue-500/20 mt-2 pt-2 flex justify-between">
+                <span>Ukupno:</span><span class="font-bold text-blue-400">${fmt(fr.original_amount)}</span>
+            </div>
+        </div>
+        <div class="bg-orange-500/10 border border-orange-500/30 rounded-lg p-4">
+            <p class="text-orange-400 font-medium mb-2">✏️ Izmenjeno</p>
+            <div class="space-y-1 text-sm">
+                ${DENOMINATIONS.map(d => mod[d] > 0 ? `<div class="flex justify-between"><span class="text-gray-400">${d} × ${mod[d]}</span><span class="text-orange-400">${fmt(d * mod[d])}</span></div>` : '').join('')}
+            </div>
+            <div class="border-t border-orange-500/20 mt-2 pt-2 flex justify-between">
+                <span>Ukupno:</span><span class="font-bold text-orange-400">${fmt(fr.counted_amount)}</span>
+            </div>
+        </div>
+    </div>
+    <div class="bg-black/30 rounded-lg p-4 mb-4">
+        <p class="text-xs text-gray-500 mb-2">Razlike:</p>
+        ${DENOMINATIONS.map(d => {
+            const qd = (mod[d] || 0) - (orig[d] || 0);
+            return qd !== 0 ? `<div class="flex justify-between text-sm"><span>${d}</span><span class="${qd > 0 ? 'text-green-400' : 'text-red-400'}">${qd > 0 ? '+' : ''}${qd}</span></div>` : '';
+        }).join('')}
+        <div class="border-t border-white/10 mt-2 pt-2 flex justify-between font-bold">
+            <span>Ukupna razlika:</span>
+            <span class="${fr.counted_amount - fr.original_amount > 0 ? 'text-green-400' : 'text-red-400'}">${fr.counted_amount - fr.original_amount > 0 ? '+' : ''}${fmt(fr.counted_amount - fr.original_amount)}</span>
+        </div>
+    </div>
+    <div class="bg-gray-500/10 rounded-lg p-4 text-sm">
+        <div class="grid grid-cols-2 gap-4">
+            <div><p class="text-gray-500">Razlog:</p><p>${fr.modification_reason || '-'}</p></div>
+            <div><p class="text-gray-500">Komentar:</p><p>${fr.modification_comment || '-'}</p></div>
+            <div><p class="text-gray-500">Izmenio:</p><p>${fr.verified_user?.first_name || '-'}</p></div>
+            <div><p class="text-gray-500">Vreme:</p><p>${fmtTime(fr.verified_at)}</p></div>
+        </div>
+    </div>`;
+    
+    document.getElementById('audit-content').innerHTML = html;
+    document.getElementById('audit-modal').classList.remove('hidden');
+}
+
+function showShiftDetail(shiftId) {
+    const shift = allData.shifts.find(s => s.id === shiftId);
+    if (!shift || !shift.spec) return;
+    
+    const sp = shift.spec;
+    const deposit = shift.location?.current_deposit || 10000;
+    const specUser = allData.specUsers?.find(u => u.id === sp.user_id);
+    const denoms = allData.denominations.filter(d => d.specification_id === sp.id);
+    
+    // Calculate values
+    const gotovina = parseFloat(sp.ebar_total) || 0;
+    const kartica = parseFloat(sp.terminal_amount) || 0;
+    const prenos = parseFloat(sp.ebar_transfer) || 0;
+    const ocekivaniKes = gotovina - kartica;  // Očekivani keš = Gotovina - Kartica
+    const prebrojano = parseFloat(sp.counted_amount) || 0;
+    const razlika = parseFloat(sp.difference) || 0;
+    const topup = sp.topup_amount || 0;
+    
+    const topupSourceLabel = {
+        'own_pocket': '💰 Sopstveni novac',
+        'tip_jar': '🫙 Bakšiš tegla',
+        'safe': '🔒 Sef',
+        'other': '📦 Ostalo'
+    };
+    
+    const diffTypeLabel = {
+        'shortage': '⚠️ Manjak',
+        'surplus': '💰 Višak',
+        'none': '✅ U redu'
+    };
+    
+    const shortageReasonLabel = {
+        'change_error': 'Greška u kusuru',
+        'counting_error': 'Greška pri brojanju',
+        'missing_cash': 'Nedostaje novac',
+        'extra_cash': 'Višak novca',
+        'from_own_money': 'Dopunjeno iz svog',
+        'no_money': 'Nije imao novac',
+        'other': 'Ostalo'
+    };
+    
+    let html = `
+        <div class="mb-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-400 text-sm">Lokacija</p>
+                    <p class="text-lg font-bold">${shift.location?.code} - ${shift.location?.name}</p>
+                </div>
+                <div class="text-right">
+                    <p class="text-gray-400 text-sm">Smena ${shift.shift_order}</p>
+                    <p class="text-lg font-bold">${fmtDate(sp.date)}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="grid grid-cols-2 gap-3 mb-4">
+            <div class="bg-white/5 rounded-lg p-3">
+                <p class="text-gray-500 text-xs">Konobar</p>
+                <p class="font-medium">${shift.user?.first_name} ${shift.user?.last_name}</p>
+            </div>
+            <div class="bg-white/5 rounded-lg p-3">
+                <p class="text-gray-500 text-xs">Vreme</p>
+                <p class="font-medium">${fmtTime(shift.started_at)} - ${fmtTime(shift.ended_at)}</p>
+            </div>
+        </div>
+        
+        <div class="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4 mb-4">
+            <p class="text-blue-400 font-medium mb-3">📊 E-Bar presek</p>
+            <div class="space-y-2 text-sm">
+                <div class="flex justify-between"><span class="text-gray-400">Gotovina (ukupno):</span><span class="text-white">${fmt(gotovina)}</span></div>
+                <div class="flex justify-between"><span class="text-gray-400">Kartica (terminal):</span><span class="text-gray-300">${fmt(kartica)}</span></div>
+                <div class="flex justify-between"><span class="text-gray-400">Prenos na račun:</span><span class="text-blue-400">${prenos > 0 ? fmt(prenos) : '-'}</span></div>
+                <div class="flex justify-between border-t border-blue-500/20 pt-2"><span class="text-gray-400">Depozit:</span><span class="text-purple-400">${fmt(deposit)}</span></div>
+                <div class="flex justify-between font-medium"><span class="text-yellow-400">Očekivani keš:</span><span class="text-yellow-400">${fmt(ocekivaniKes)}</span></div>
+            </div>
+        </div>
+        
+        <div class="bg-green-500/10 border border-green-500/30 rounded-lg p-4 mb-4">
+            <p class="text-green-400 font-medium mb-3">💵 Prebrojano</p>
+            <div class="space-y-1 text-sm mb-3">
+                ${denoms.length > 0 ? denoms.sort((a,b) => b.denomination - a.denomination).map(d => 
+                    `<div class="flex justify-between"><span class="text-gray-400">${fmt(d.denomination).replace(' RSD','')} × ${d.quantity}</span><span class="text-green-400">${fmt(d.amount)}</span></div>`
+                ).join('') : '<p class="text-gray-500">Nema apoena</p>'}
+            </div>
+            <div class="border-t border-green-500/20 pt-2 flex justify-between font-medium">
+                <span class="text-gray-400">Ukupno prebrojano:</span>
+                <span class="text-green-400 text-lg">${fmt(prebrojano)}</span>
+            </div>
+        </div>
+        
+        <div class="bg-${sp.difference_type === 'shortage' ? 'red' : sp.difference_type === 'surplus' ? 'yellow' : 'gray'}-500/10 border border-${sp.difference_type === 'shortage' ? 'red' : sp.difference_type === 'surplus' ? 'yellow' : 'gray'}-500/30 rounded-lg p-4 mb-4">
+            <p class="font-medium mb-3">${diffTypeLabel[sp.difference_type] || '—'}</p>
+            <div class="space-y-2 text-sm">
+                <div class="flex justify-between"><span class="text-gray-400">Razlika:</span><span class="font-bold ${razlika < 0 ? 'text-red-400' : razlika > 0 ? 'text-green-400' : ''}">${razlika !== 0 ? (razlika > 0 ? '+' : '') + fmt(razlika) : '-'}</span></div>
+                ${topup !== 0 ? `<div class="flex justify-between"><span class="text-gray-400">Dopuna:</span><span class="text-cyan-400">${topupSourceLabel[sp.topup_source] || sp.topup_source} +${fmt(topup)}</span></div>` : ''}
+                ${sp.shortage_reason ? `<div class="flex justify-between"><span class="text-gray-400">Razlog:</span><span>${shortageReasonLabel[sp.shortage_reason] || sp.shortage_reason}</span></div>` : ''}
+                ${sp.shortage_comment ? `<div class="flex justify-between"><span class="text-gray-400">Komentar:</span><span class="text-gray-300">${sp.shortage_comment}</span></div>` : ''}
+            </div>
+        </div>
+        
+        <div class="bg-purple-500/10 border border-purple-500/30 rounded-lg p-4">
+            <div class="flex justify-between items-center mb-2">
+                <span class="text-gray-400">Depozit:</span>
+                <span class="text-purple-400 font-medium">${fmt(deposit)}</span>
+            </div>
+            <div class="flex justify-between items-center border-t border-purple-500/20 pt-2">
+                <span class="text-gray-400">Za sef:</span>
+                <span class="text-2xl font-bold text-purple-400">${fmt(prebrojano)}</span>
+            </div>
+        </div>
+        
+        <div class="mt-4 text-xs text-gray-500 text-center">
+            Potvrdio: ${specUser?.first_name || '-'} ${specUser?.last_name || ''} • ${fmtTime(sp.confirmed_at)}
+        </div>
+    `;
+    
+    document.getElementById('shift-detail-content').innerHTML = html;
+    document.getElementById('shift-modal').classList.remove('hidden');
+}
+
+function showPickupModal(pickupId) {
+    const pickup = allData.pickups.find(p => p.id === pickupId);
+    if (!pickup) return;
+    
+    const pickedTime = pickup.picked_at ? new Date(pickup.picked_at).toLocaleString('sr-RS', {day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit'}) : '-';
+    const deliveredTime = pickup.delivered_at ? new Date(pickup.delivered_at).toLocaleString('sr-RS', {day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit'}) : '-';
+    const driverName = pickup.driver ? `${pickup.driver.first_name} ${pickup.driver.last_name}` : '-';
+    const isDone = pickup.delivered_at;
+    
+    // Find related finRec for expected amount
+    const finRec = allData.financeRecords.find(f => f.pickup_id === pickupId);
+    const expectedAmt = expectedAmounts[`${pickup.location_id}-${pickup.date}`] || 0;
+    
+    let html = `
+        <div class="mb-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-400 text-sm">Lokacija</p>
+                    <p class="text-lg font-bold">${pickup.location?.code} - ${pickup.location?.name}</p>
+                </div>
+                <div class="text-right">
+                    <p class="text-gray-400 text-sm">Datum</p>
+                    <p class="text-lg font-bold">${fmtDate(pickup.date)}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4 mb-4">
+            <p class="text-blue-400 font-medium mb-3">🚗 Status prikupljanja</p>
+            <div class="space-y-3 text-sm">
+                <div class="flex items-center justify-between">
+                    <span class="text-gray-400">1. Preuzeto od objekta:</span>
+                    <span class="${pickup.picked_at ? 'text-green-400' : 'text-gray-500'}">${pickedTime} ${pickup.picked_at ? '✓' : '⏳'}</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-gray-400">2. Predato finansijama:</span>
+                    <span class="${isDone ? 'text-green-400' : 'text-yellow-400'}">${deliveredTime} ${isDone ? '✓' : '⏳'}</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white/5 rounded-lg p-4 mb-4">
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <p class="text-gray-500 text-xs">Vozač</p>
+                    <p class="font-medium text-lg">${driverName}</p>
+                </div>
+                <div>
+                    <p class="text-gray-500 text-xs">Očekivani iznos</p>
+                    <p class="font-medium text-lg text-purple-400">${fmt(expectedAmt)}</p>
+                </div>
+            </div>
+        </div>
+        
+        ${pickup.notes ? `
+        <div class="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 mb-4">
+            <p class="text-yellow-400 text-xs font-medium mb-1">📝 Napomena</p>
+            <p class="text-sm text-gray-300">${pickup.notes}</p>
+        </div>
+        ` : ''}
+        
+        <div class="flex items-center justify-center gap-2 py-2">
+            <span class="text-3xl">${isDone ? '✅' : '🚗'}</span>
+            <span class="text-lg font-medium ${isDone ? 'text-green-400' : 'text-yellow-400'}">${isDone ? 'Uspešno dostavljeno' : 'U toku...'}</span>
+        </div>
+    `;
+    
+    document.getElementById('pickup-detail-content').innerHTML = html;
+    document.getElementById('pickup-detail-modal').classList.remove('hidden');
+}
+
+function showFinansijeModal(finRecId) {
+    const finRec = allData.financeRecords.find(f => f.id === finRecId);
+    if (!finRec) return;
+    
+    const pickup = allData.pickups.find(p => p.id === finRec.pickup_id);
+    const location = pickup?.location || allData.locations?.find(l => l.id === finRec.location_id);
+    
+    const receivedTime = finRec.received_at ? new Date(finRec.received_at).toLocaleString('sr-RS', {day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit'}) : '-';
+    const verifiedTime = finRec.verified_at ? new Date(finRec.verified_at).toLocaleString('sr-RS', {day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit'}) : '-';
+    const wasModified = finRec.spec_modified;
+    
+    const orig = finRec.original_denominations || {};
+    const mod = finRec.modified_denominations || {};
+    
+    // Prevodi razloga na srpski
+    const reasonLabels = {
+        'missing_cash': 'Nedostaje novac',
+        'extra_cash': 'Višak novca',
+        'counting_error': 'Greška pri brojanju',
+        'change_error': 'Greška u kusuru',
+        'wrong_denomination': 'Pogrešan apoen',
+        'theft_suspected': 'Sumnja na krađu',
+        'damaged_bill': 'Oštećena novčanica',
+        'counterfeit': 'Falsifikovana novčanica',
+        'from_own_money': 'Dopunjeno iz svog',
+        'no_money': 'Nije imao novac',
+        'other': 'Ostalo'
+    };
+    
+    const translateReason = (reason) => reasonLabels[reason] || reason || '-';
+    
+    // Helper to render denominations
+    const renderDenoms = (denoms, colorClass) => {
+        return DENOMINATIONS.map(d => denoms[d] > 0 ? 
+            `<div class="flex justify-between"><span class="text-gray-400">${fmt(d).replace(' RSD','')} × ${denoms[d]}</span><span class="${colorClass}">${fmt(d * denoms[d])}</span></div>` 
+            : '').join('') || '<p class="text-gray-500 text-sm">Nema apoena</p>';
+    };
+    
+    // Calculate totals
+    const origTotal = DENOMINATIONS.reduce((s, d) => s + ((orig[d] || 0) * d), 0);
+    const modTotal = wasModified ? DENOMINATIONS.reduce((s, d) => s + ((mod[d] || 0) * d), 0) : origTotal;
+    
+    let html = `
+        <div class="mb-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-400 text-sm">Lokacija</p>
+                    <p class="text-lg font-bold">${location?.code || '-'} - ${location?.name || '-'}</p>
+                </div>
+                <div class="text-right">
+                    <p class="text-gray-400 text-sm">Datum</p>
+                    <p class="text-lg font-bold">${fmtDate(finRec.date)}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-purple-500/10 border border-purple-500/30 rounded-lg p-4 mb-4">
+            <p class="text-purple-400 font-medium mb-3">💰 Status obrade</p>
+            <div class="space-y-3 text-sm">
+                <div class="flex items-center justify-between">
+                    <span class="text-gray-400">1. Primljeno:</span>
+                    <span class="${finRec.received_at ? 'text-green-400' : 'text-gray-500'}">${receivedTime} ${finRec.received_at ? '✓' : '⏳'}</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-gray-400">2. Zavedeno/Prebrojano:</span>
+                    <span class="${finRec.verified_at ? 'text-green-400' : 'text-gray-500'}">${verifiedTime} ${finRec.verified_at ? '✓' : '⏳'}</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="grid grid-cols-2 gap-3 mb-4">
+            <div class="bg-white/5 rounded-lg p-3">
+                <p class="text-gray-500 text-xs">Primio</p>
+                <p class="font-medium">${finRec.received_user?.first_name || '-'} ${finRec.received_user?.last_name || ''}</p>
+            </div>
+            <div class="bg-white/5 rounded-lg p-3">
+                <p class="text-gray-500 text-xs">Zaveo</p>
+                <p class="font-medium">${finRec.verified_user?.first_name || '-'} ${finRec.verified_user?.last_name || ''}</p>
+            </div>
+        </div>
+        
+        ${Object.keys(orig).length > 0 || wasModified ? `
+        <div class="grid ${wasModified ? 'grid-cols-2' : 'grid-cols-1'} gap-3 mb-4">
+            <!-- Original/Prijavljeni apoeni -->
+            <div class="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
+                <p class="text-blue-400 font-medium mb-3">📋 ${wasModified ? 'Prijavljeno' : 'Apoeni'}</p>
+                <div class="space-y-1 text-sm">
+                    ${renderDenoms(orig, 'text-blue-400')}
+                </div>
+                <div class="border-t border-blue-500/20 mt-3 pt-2 flex justify-between font-medium">
+                    <span class="text-gray-400">Ukupno:</span>
+                    <span class="text-blue-400">${fmt(origTotal)}</span>
+                </div>
+            </div>
+            
+            ${wasModified ? `
+            <!-- Izmenjeni/Prebrojani apoeni -->
+            <div class="bg-green-500/10 border border-green-500/30 rounded-lg p-4">
+                <p class="text-green-400 font-medium mb-3">✅ Prebrojano</p>
+                <div class="space-y-1 text-sm">
+                    ${renderDenoms(mod, 'text-green-400')}
+                </div>
+                <div class="border-t border-green-500/20 mt-3 pt-2 flex justify-between font-medium">
+                    <span class="text-gray-400">Ukupno:</span>
+                    <span class="text-green-400">${fmt(modTotal)}</span>
+                </div>
+            </div>
+            ` : ''}
+        </div>
+        
+        ${wasModified ? `
+        <!-- Razlike po apoenima -->
+        <div class="bg-orange-500/10 border border-orange-500/30 rounded-lg p-4 mb-4">
+            <p class="text-orange-400 font-medium mb-3">📊 Razlike po apoenima</p>
+            <div class="space-y-1 text-sm">
+                ${DENOMINATIONS.map(d => {
+                    const qDiff = (mod[d] || 0) - (orig[d] || 0);
+                    if (qDiff === 0) return '';
+                    const cls = qDiff > 0 ? 'text-green-400' : 'text-red-400';
+                    return `<div class="flex justify-between"><span class="text-gray-400">${fmt(d).replace(' RSD','')}</span><span class="${cls}">${qDiff > 0 ? '+' : ''}${qDiff} kom (${qDiff > 0 ? '+' : ''}${fmt(qDiff * d)})</span></div>`;
+                }).join('') || '<p class="text-gray-500">Bez razlika</p>'}
+            </div>
+            <div class="border-t border-orange-500/20 mt-3 pt-2 flex justify-between font-bold">
+                <span class="text-gray-400">Ukupna razlika:</span>
+                <span class="${modTotal - origTotal > 0 ? 'text-green-400' : 'text-red-400'}">${modTotal - origTotal > 0 ? '+' : ''}${fmt(modTotal - origTotal)}</span>
+            </div>
+        </div>
+        ` : ''}
+        ` : ''}
+        
+        ${finRec.counted_amount && !wasModified ? `
+        <div class="bg-green-500/10 border border-green-500/30 rounded-lg p-4 mb-4">
+            <div class="flex justify-between items-center">
+                <span class="text-gray-400">Prebrojani iznos:</span>
+                <span class="text-2xl font-bold text-green-400">${fmt(finRec.counted_amount)}</span>
+            </div>
+        </div>
+        ` : ''}
+        
+        ${wasModified && finRec.modification_reason ? `
+        <div class="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4 mb-4">
+            <p class="text-yellow-400 font-medium mb-2">✏️ Razlog izmene</p>
+            <div class="grid grid-cols-2 gap-4 text-sm">
+                <div><p class="text-gray-500">Razlog:</p><p>${translateReason(finRec.modification_reason)}</p></div>
+                <div><p class="text-gray-500">Komentar:</p><p>${finRec.modification_comment || '-'}</p></div>
+            </div>
+        </div>
+        ` : ''}
+        
+        ${finRec.discrepancy_reason ? `
+        <div class="bg-red-500/10 border border-red-500/30 rounded-lg p-4 mb-4">
+            <p class="text-red-400 font-medium mb-2">⚠️ Razlika vs očekivano</p>
+            <div class="text-sm">
+                <p class="text-gray-500">Razlog:</p>
+                <p>${translateReason(finRec.discrepancy_reason)}</p>
+                ${finRec.discrepancy_comment ? `<p class="text-gray-500 mt-2">Komentar:</p><p>${finRec.discrepancy_comment}</p>` : ''}
+            </div>
+        </div>
+        ` : ''}
+        
+        <div class="flex items-center justify-center gap-2 py-2 mb-4">
+            <span class="text-3xl">${finRec.verified_at ? '✅' : '⏳'}</span>
+            <span class="text-lg font-medium ${finRec.verified_at ? 'text-green-400' : 'text-purple-400'}">${finRec.verified_at ? 'Verifikovano' : 'U obradi...'}</span>
+        </div>
+        
+        ${finRec.verified_at && !finRec.in_safe_at ? `
+        <button onclick="depositToSafe('${finRec.id}')" class="w-full btn bg-cyan-500 hover:bg-cyan-600 text-white text-lg py-3 mb-2">
+            🔒 Deponuj u sef
+        </button>
+        ` : ''}
+        
+        ${finRec.in_safe_at ? `
+        <div class="bg-cyan-500/10 border border-cyan-500/30 rounded-lg p-3 text-center">
+            <span class="text-cyan-400">🔒 U sefu od ${new Date(finRec.in_safe_at).toLocaleString('sr-RS', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'})}</span>
+        </div>
+        ` : ''}
+    `;
+    
+    document.getElementById('finansije-detail-content').innerHTML = html;
+    document.getElementById('finansije-modal').classList.remove('hidden');
+}
+
+async function depositToSafe(finRecId) {
+    const finRec = allData.financeRecords.find(f => f.id === finRecId);
+    if (!finRec) return;
+    
+    const pickup = allData.pickups.find(p => p.id === finRec.pickup_id);
+    const location = pickup?.location || allData.locations?.find(l => l.id === finRec.location_id);
+    
+    if (!confirm(`Deponuj ${fmt(finRec.counted_amount)} u sef?\n\nLokacija: ${location?.name || '-'}\nDatum: ${fmtDate(finRec.date)}`)) {
+        return;
+    }
+    
+    try {
+        // 1. Create safe transaction
+        const transaction = {
+            type: 'deposit',
+            amount: finRec.counted_amount,
+            currency: 'RSD',
+            driver_name: finRec.received_user?.first_name || user.first_name,
+            linked_finance_record_id: finRec.id,
+            transaction_date: finRec.date,
+            notes: `Pazar ${location?.name || '-'} - ${fmtDate(finRec.date)}`,
+            source_location: location?.name || '-',
+            original_amount: finRec.original_amount,
+            difference: finRec.counted_amount - (finRec.original_amount || finRec.counted_amount),
+            difference_reason: finRec.modification_reason || finRec.discrepancy_reason,
+            created_by: user.id
+        };
+        
+        const { data: txData, error: txError } = await sb
+            .from('safe_transactions')
+            .insert(transaction)
+            .select()
+            .single();
+        
+        if (txError) {
+            console.error('Safe transaction error:', txError);
+            // Continue anyway - update finance record
+        }
+        
+        // 2. Update finance record
+        const { error: updError } = await sb
+            .from('pazar_finance_records')
+            .update({ 
+                in_safe_at: new Date().toISOString(),
+                safe_transaction_id: txData?.id || null
+            })
+            .eq('id', finRecId);
+        
+        if (updError) throw updError;
+        
+        closeModal('finansije');
+        loadData();
+        alert('✅ Uspešno deponovano u sef!');
+        
+    } catch (err) {
+        console.error('Deposit to safe error:', err);
+        alert('Greška: ' + (err.message || JSON.stringify(err)));
+    }
+}
+
+function showBankaModal(finRecId) {
+    const finRec = allData.financeRecords.find(f => f.id === finRecId);
+    if (!finRec) return;
+    
+    const bankDep = allData.bankDeposits.find(b => b.id === finRec.bank_deposit_id);
+    const pickup = allData.pickups.find(p => p.id === finRec.pickup_id);
+    const location = pickup?.location || allData.locations?.find(l => l.id === finRec.location_id);
+    
+    const bankedTime = finRec.banked_at ? new Date(finRec.banked_at).toLocaleString('sr-RS', {day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit'}) : '-';
+    
+    let html = `
+        <div class="mb-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-400 text-sm">Lokacija</p>
+                    <p class="text-lg font-bold">${location?.code || '-'} - ${location?.name || '-'}</p>
+                </div>
+                <div class="text-right">
+                    <p class="text-gray-400 text-sm">Datum</p>
+                    <p class="text-lg font-bold">${fmtDate(finRec.date)}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-green-500/10 border border-green-500/30 rounded-lg p-4 mb-4">
+            <p class="text-green-400 font-medium mb-3">🏦 Depozit u banku</p>
+            <div class="space-y-3 text-sm">
+                <div class="flex items-center justify-between">
+                    <span class="text-gray-400">Status:</span>
+                    <span class="text-green-400 font-medium">✓ Deponovano</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-gray-400">Vreme depozita:</span>
+                    <span class="text-white">${bankedTime}</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white/5 rounded-lg p-4 mb-4">
+            <div class="flex justify-between items-center mb-4">
+                <span class="text-gray-400">Deponovani iznos:</span>
+                <span class="text-3xl font-bold text-green-400">${fmt(finRec.counted_amount)}</span>
+            </div>
+            <div class="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                    <p class="text-gray-500">Referenca uplatnice</p>
+                    <p class="font-medium text-lg">${bankDep?.reference_number || '-'}</p>
+                </div>
+                <div>
+                    <p class="text-gray-500">Deponovala osoba</p>
+                    <p class="font-medium">${bankDep?.depositor?.first_name || '-'} ${bankDep?.depositor?.last_name || ''}</p>
+                </div>
+            </div>
+        </div>
+        
+        ${bankDep ? `
+        <div class="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4 mb-4">
+            <p class="text-blue-400 font-medium mb-2">📋 Grupni depozit</p>
+            <div class="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                    <p class="text-gray-500">Ukupno u depozitu</p>
+                    <p class="font-medium text-blue-400">${fmt(bankDep.total_amount)}</p>
+                </div>
+                <div>
+                    <p class="text-gray-500">Broj lokacija</p>
+                    <p class="font-medium">${bankDep.locations_count || '-'}</p>
+                </div>
+            </div>
+        </div>
+        ` : ''}
+        
+        <div class="flex items-center justify-center gap-2 py-2">
+            <span class="text-3xl">✅</span>
+            <span class="text-lg font-medium text-green-400">Uspešno deponovano</span>
+        </div>
+    `;
+    
+    document.getElementById('banka-detail-content').innerHTML = html;
+    document.getElementById('banka-modal').classList.remove('hidden');
 }
 
 function showBankModal() {
@@ -701,6 +1673,419 @@ async function confirmBankDeposit() {
     } catch (err) {
         console.error('Bank deposit error:', err);
         alert('Greška: ' + (err.message || JSON.stringify(err)));
+    }
+}
+
+// Print Uplatnica Functions
+function printUplatnica() {
+    const list = window.forBankList || [];
+    const checks = document.querySelectorAll('.bank-item-check');
+    
+    // Get selected items
+    const selectedItems = [];
+    checks.forEach(chk => {
+        if (chk.checked) {
+            const idx = parseInt(chk.dataset.idx);
+            selectedItems.push(list[idx]);
+        }
+    });
+    
+    if (!selectedItems.length) { 
+        alert('Izaberi bar jednu lokaciju'); 
+        return; 
+    }
+    
+    const total = selectedItems.reduce((sum, i) => sum + (i.finRec.counted_amount || 0), 0);
+    const bankAccountKey = document.getElementById('bank-account-select').value;
+    const bankAccount = BANK_ACCOUNTS[bankAccountKey];
+    const ref = document.getElementById('bank-reference').value.trim();
+    
+    // Get date range for svrha
+    const dates = selectedItems.map(i => i.finRec.date).sort();
+    const dateRange = dates.length === 1 
+        ? fmtDate(dates[0]) 
+        : `${fmtDate(dates[0])} - ${fmtDate(dates[dates.length - 1])}`;
+    
+    // Location names
+    const locationNames = [...new Set(selectedItems.map(i => i.location?.name || '-'))].join(', ');
+    
+    // Format amount for display
+    const amountFormatted = new Intl.NumberFormat('sr-RS').format(total);
+    
+    // Build uplatnica HTML
+    const uplatnicaHtml = `
+        <div id="uplatnica-print-area" style="font-family: 'Courier New', monospace; background: white; padding: 20px; border: 2px solid #333;">
+            <!-- Header -->
+            <div style="text-align: right; font-size: 18px; font-weight: bold; margin-bottom: 20px; border-bottom: 2px solid #333; padding-bottom: 10px;">
+                NALOG ZA UPLATU
+            </div>
+            
+            <div style="display: flex; gap: 30px;">
+                <!-- Left Column -->
+                <div style="flex: 1;">
+                    <div style="margin-bottom: 20px;">
+                        <label style="font-size: 11px; color: #666; display: block; margin-bottom: 4px;">uplatilac</label>
+                        <div style="border: 1px solid #333; padding: 10px; min-height: 60px; font-size: 14px;">
+                            ${COMPANY_INFO.name}<br>
+                            ${COMPANY_INFO.address}
+                        </div>
+                    </div>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <label style="font-size: 11px; color: #666; display: block; margin-bottom: 4px;">svrha uplate</label>
+                        <div style="border: 1px solid #333; padding: 10px; min-height: 40px; font-size: 14px;">
+                            Pazar ${dateRange}<br>
+                            ${locationNames}
+                        </div>
+                    </div>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <label style="font-size: 11px; color: #666; display: block; margin-bottom: 4px;">primalac</label>
+                        <div style="border: 1px solid #333; padding: 10px; min-height: 60px; font-size: 14px;">
+                            ${COMPANY_INFO.name}<br>
+                            ${COMPANY_INFO.address}
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 30px; border-top: 1px solid #333; padding-top: 10px;">
+                        <label style="font-size: 11px; color: #666;">pečat i potpis uplatioca</label>
+                    </div>
+                </div>
+                
+                <!-- Right Column -->
+                <div style="flex: 1;">
+                    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                        <div style="flex: 0 0 80px;">
+                            <label style="font-size: 11px; color: #666; display: block; margin-bottom: 4px;">šifra plaćanja</label>
+                            <div style="border: 1px solid #333; padding: 10px; text-align: center; font-size: 16px; font-weight: bold;">
+                                ${bankAccount.sifraPlacanja}
+                            </div>
+                        </div>
+                        <div style="flex: 0 0 60px;">
+                            <label style="font-size: 11px; color: #666; display: block; margin-bottom: 4px;">valuta</label>
+                            <div style="border: 1px solid #333; padding: 10px; text-align: center; font-size: 16px; font-weight: bold;">
+                                RSD
+                            </div>
+                        </div>
+                        <div style="flex: 1;">
+                            <label style="font-size: 11px; color: #666; display: block; margin-bottom: 4px;">iznos</label>
+                            <div style="border: 1px solid #333; padding: 10px; text-align: right; font-size: 18px; font-weight: bold;">
+                                ${amountFormatted},00
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <label style="font-size: 11px; color: #666; display: block; margin-bottom: 4px;">račun primaoca</label>
+                        <div style="border: 1px solid #333; padding: 10px; font-size: 16px; font-weight: bold; letter-spacing: 1px;">
+                            ${bankAccount.accountNumber}
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                        <div style="flex: 0 0 60px;">
+                            <label style="font-size: 11px; color: #666; display: block; margin-bottom: 4px;">broj modela</label>
+                            <div style="border: 1px solid #333; padding: 10px; text-align: center; font-size: 14px;">
+                                ${bankAccount.model}
+                            </div>
+                        </div>
+                        <div style="flex: 1;">
+                            <label style="font-size: 11px; color: #666; display: block; margin-bottom: 4px;">poziv na broj (odobrenje)</label>
+                            <div style="border: 1px solid #333; padding: 10px; font-size: 14px;">
+                                ${ref || '-'}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; gap: 20px; margin-top: 40px; padding-top: 10px; border-top: 1px solid #333;">
+                        <div style="flex: 1;">
+                            <label style="font-size: 11px; color: #666;">mesto i datum prijema</label>
+                            <div style="margin-top: 20px; border-bottom: 1px solid #333;"></div>
+                        </div>
+                        <div style="flex: 1;">
+                            <label style="font-size: 11px; color: #666;">datum valute</label>
+                            <div style="margin-top: 20px; border-bottom: 1px solid #333;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Footer info -->
+            <div style="margin-top: 20px; padding-top: 10px; border-top: 1px dashed #999; font-size: 11px; color: #666; text-align: center;">
+                Banka: ${bankAccount.bankName} | Generisano: ${new Date().toLocaleString('sr-RS')}
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('uplatnica-content').innerHTML = uplatnicaHtml;
+    document.getElementById('uplatnica-modal').classList.remove('hidden');
+}
+
+function doPrintUplatnica() {
+    const printContent = document.getElementById('uplatnica-print-area').innerHTML;
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Uplatnica</title>
+            <style>
+                body { margin: 0; padding: 20px; }
+                @media print {
+                    body { padding: 0; }
+                }
+            </style>
+        </head>
+        <body>
+            ${printContent}
+            <script>
+                window.onload = function() {
+                    window.print();
+                    window.onafterprint = function() { window.close(); }
+                }
+            <\/script>
+        </body>
+        </html>
+    `);
+    printWindow.document.close();
+}
+
+// PDF Export Function
+async function exportPDF() {
+    const from = document.getElementById('filter-from').value;
+    const to = document.getElementById('filter-to').value;
+    const locId = document.getElementById('filter-loc').value;
+    const locName = locId ? allData.locations.find(l => l.id === locId)?.name || 'Lokacija' : 'Sve lokacije';
+    
+    // Prepare data grouped by date and location
+    const groups = {};
+    allData.shifts.forEach(s => {
+        const key = `${s.date}-${s.location_id}`;
+        if (!groups[key]) groups[key] = { date: s.date, location: s.location, location_id: s.location_id, shifts: [] };
+        groups[key].shifts.push(s);
+    });
+    
+    const pickupMap = {}, financeMap = {}, bankMap = {};
+    allData.pickups.forEach(p => { pickupMap[`${p.location_id}-${p.date}`] = p; });
+    allData.financeRecords.forEach(f => { financeMap[f.pickup_id] = f; });
+    allData.bankDeposits.forEach(b => { bankMap[b.id] = b; });
+    
+    const sorted = Object.values(groups).sort((a,b) => b.date.localeCompare(a.date));
+    
+    // Reason labels
+    const reasonLabels = {
+        'missing_cash': 'Nedostaje novac',
+        'extra_cash': 'Višak novca',
+        'counting_error': 'Greška pri brojanju',
+        'change_error': 'Greška u kusuru',
+        'denomination_error': 'Pogrešni apoeni',
+        'other': 'Ostalo'
+    };
+    
+    // Build PDF content
+    let pdfHtml = `
+        <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+            <div style="text-align: center; margin-bottom: 30px; border-bottom: 2px solid #8B5CF6; padding-bottom: 20px;">
+                <h1 style="margin: 0; color: #8B5CF6;">📊 Finansijski Izveštaj</h1>
+                <p style="margin: 10px 0 0 0; color: #666;">Period: ${fmtDate(from)} - ${fmtDate(to)}</p>
+                <p style="margin: 5px 0 0 0; color: #666;">${locName}</p>
+                <p style="margin: 5px 0 0 0; font-size: 12px; color: #999;">Generisano: ${new Date().toLocaleString('sr-RS')}</p>
+            </div>
+    `;
+    
+    // Summary stats
+    let totalCounted = 0, totalBanked = 0, totalDiff = 0;
+    sorted.forEach(g => {
+        const pickup = pickupMap[`${g.location_id}-${g.date}`];
+        const finRec = pickup ? financeMap[pickup.id] : null;
+        if (finRec?.counted_amount) totalCounted += finRec.counted_amount;
+        if (finRec?.banked_at) totalBanked += finRec.counted_amount || 0;
+        if (finRec?.original_amount && finRec?.counted_amount) {
+            totalDiff += (finRec.counted_amount - finRec.original_amount);
+        }
+    });
+    
+    pdfHtml += `
+        <div style="display: flex; gap: 20px; margin-bottom: 30px;">
+            <div style="flex: 1; background: #f0fdf4; border: 1px solid #22c55e; border-radius: 8px; padding: 15px; text-align: center;">
+                <p style="margin: 0; font-size: 24px; font-weight: bold; color: #22c55e;">${fmt(totalCounted)}</p>
+                <p style="margin: 5px 0 0 0; font-size: 12px; color: #666;">Ukupno prebrojano</p>
+            </div>
+            <div style="flex: 1; background: #f0f9ff; border: 1px solid #3b82f6; border-radius: 8px; padding: 15px; text-align: center;">
+                <p style="margin: 0; font-size: 24px; font-weight: bold; color: #3b82f6;">${fmt(totalBanked)}</p>
+                <p style="margin: 5px 0 0 0; font-size: 12px; color: #666;">Ukupno u banci</p>
+            </div>
+            <div style="flex: 1; background: ${totalDiff < 0 ? '#fef2f2' : '#f0fdf4'}; border: 1px solid ${totalDiff < 0 ? '#ef4444' : '#22c55e'}; border-radius: 8px; padding: 15px; text-align: center;">
+                <p style="margin: 0; font-size: 24px; font-weight: bold; color: ${totalDiff < 0 ? '#ef4444' : '#22c55e'};">${totalDiff > 0 ? '+' : ''}${fmt(totalDiff)}</p>
+                <p style="margin: 5px 0 0 0; font-size: 12px; color: #666;">Ukupna razlika</p>
+            </div>
+        </div>
+    `;
+    
+    // Each day/location report
+    sorted.forEach(g => {
+        const deposit = g.location?.current_deposit || 10000;
+        const lastShift = g.shifts.find(s => s.is_last_shift);
+        const pickup = pickupMap[`${g.location_id}-${g.date}`];
+        const finRec = pickup ? financeMap[pickup.id] : null;
+        const bankDep = finRec?.bank_deposit_id ? bankMap[finRec.bank_deposit_id] : null;
+        
+        pdfHtml += `
+            <div style="border: 1px solid #ddd; border-radius: 8px; margin-bottom: 20px; page-break-inside: avoid;">
+                <div style="background: #f8f9fa; padding: 12px 15px; border-bottom: 1px solid #ddd; border-radius: 8px 8px 0 0;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <span style="font-size: 18px; font-weight: bold;">${fmtDate(g.date)}</span>
+                            <span style="margin-left: 15px; color: #8B5CF6; font-weight: 500;">${g.location?.code || '-'}</span>
+                            <span style="margin-left: 10px; color: #666;">${g.location?.name || '-'}</span>
+                        </div>
+                        <div>
+                            ${finRec?.banked_at ? '<span style="background: #dcfce7; color: #16a34a; padding: 4px 12px; border-radius: 20px; font-size: 12px;">✓ U banci</span>' : 
+                              finRec?.verified_at ? '<span style="background: #f3e8ff; color: #9333ea; padding: 4px 12px; border-radius: 20px; font-size: 12px;">Verifikovano</span>' :
+                              '<span style="background: #fef3c7; color: #d97706; padding: 4px 12px; border-radius: 20px; font-size: 12px;">U obradi</span>'}
+                        </div>
+                    </div>
+                </div>
+                <div style="padding: 15px;">
+        `;
+        
+        // Shifts table
+        pdfHtml += `
+            <table style="width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 15px;">
+                <thead>
+                    <tr style="background: #f1f5f9;">
+                        <th style="padding: 8px; text-align: left; border-bottom: 1px solid #ddd;">Smena</th>
+                        <th style="padding: 8px; text-align: left; border-bottom: 1px solid #ddd;">Konobar</th>
+                        <th style="padding: 8px; text-align: left; border-bottom: 1px solid #ddd;">Vreme</th>
+                        <th style="padding: 8px; text-align: right; border-bottom: 1px solid #ddd;">Gotovina</th>
+                        <th style="padding: 8px; text-align: right; border-bottom: 1px solid #ddd;">Kartica</th>
+                        <th style="padding: 8px; text-align: right; border-bottom: 1px solid #ddd;">Prebrojano</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+        
+        g.shifts.forEach(s => {
+            const sp = s.spec;
+            if (sp) {
+                const gotovina = parseFloat(sp.ebar_total) || 0;
+                const kartica = parseFloat(sp.terminal_amount) || 0;
+                const prebrojano = parseFloat(sp.counted_amount) || 0;
+                
+                pdfHtml += `
+                    <tr>
+                        <td style="padding: 8px; border-bottom: 1px solid #eee;">Smena ${s.shift_order}</td>
+                        <td style="padding: 8px; border-bottom: 1px solid #eee;">${s.user?.first_name || ''} ${s.user?.last_name || ''}</td>
+                        <td style="padding: 8px; border-bottom: 1px solid #eee;">${fmtTime(s.started_at)} - ${fmtTime(s.ended_at)}</td>
+                        <td style="padding: 8px; text-align: right; border-bottom: 1px solid #eee;">${fmt(gotovina)}</td>
+                        <td style="padding: 8px; text-align: right; border-bottom: 1px solid #eee;">${fmt(kartica)}</td>
+                        <td style="padding: 8px; text-align: right; border-bottom: 1px solid #eee; font-weight: bold;">${fmt(prebrojano)}</td>
+                    </tr>
+                `;
+            }
+        });
+        
+        pdfHtml += `</tbody></table>`;
+        
+        // Finance details
+        if (finRec) {
+            const orig = finRec.original_denominations || {};
+            const mod = finRec.modified_denominations || {};
+            const wasModified = finRec.spec_modified;
+            const origTotal = DENOMINATIONS.reduce((s, d) => s + ((orig[d] || 0) * d), 0);
+            const countedAmt = finRec.counted_amount || 0;
+            const diff = countedAmt - origTotal;
+            
+            pdfHtml += `
+                <div style="display: flex; gap: 15px; margin-top: 10px;">
+                    <div style="flex: 1; background: #eff6ff; border: 1px solid #3b82f6; border-radius: 8px; padding: 12px;">
+                        <p style="margin: 0 0 10px 0; font-weight: bold; color: #3b82f6;">📋 Prijavljeno</p>
+                        <div style="font-size: 12px;">
+                            ${DENOMINATIONS.map(d => orig[d] > 0 ? `<div style="display: flex; justify-content: space-between;"><span>${d} × ${orig[d]}</span><span>${fmt(d * orig[d])}</span></div>` : '').join('')}
+                        </div>
+                        <div style="border-top: 1px solid #3b82f6; margin-top: 8px; padding-top: 8px; font-weight: bold; display: flex; justify-content: space-between;">
+                            <span>Ukupno:</span><span>${fmt(origTotal)}</span>
+                        </div>
+                    </div>
+                    
+                    <div style="flex: 1; background: #f0fdf4; border: 1px solid #22c55e; border-radius: 8px; padding: 12px;">
+                        <p style="margin: 0 0 10px 0; font-weight: bold; color: #22c55e;">✅ Prebrojano</p>
+                        <div style="font-size: 12px;">
+                            ${wasModified ? DENOMINATIONS.map(d => mod[d] > 0 ? `<div style="display: flex; justify-content: space-between;"><span>${d} × ${mod[d]}</span><span>${fmt(d * mod[d])}</span></div>` : '').join('') : 
+                              DENOMINATIONS.map(d => orig[d] > 0 ? `<div style="display: flex; justify-content: space-between;"><span>${d} × ${orig[d]}</span><span>${fmt(d * orig[d])}</span></div>` : '').join('')}
+                        </div>
+                        <div style="border-top: 1px solid #22c55e; margin-top: 8px; padding-top: 8px; font-weight: bold; display: flex; justify-content: space-between;">
+                            <span>Ukupno:</span><span>${fmt(countedAmt)}</span>
+                        </div>
+                    </div>
+            `;
+            
+            if (wasModified && diff !== 0) {
+                pdfHtml += `
+                    <div style="flex: 1; background: ${diff < 0 ? '#fef2f2' : '#fefce8'}; border: 1px solid ${diff < 0 ? '#ef4444' : '#eab308'}; border-radius: 8px; padding: 12px;">
+                        <p style="margin: 0 0 10px 0; font-weight: bold; color: ${diff < 0 ? '#ef4444' : '#eab308'};">⚠️ Razlika</p>
+                        <div style="font-size: 24px; font-weight: bold; color: ${diff < 0 ? '#ef4444' : '#22c55e'}; text-align: center; margin: 10px 0;">
+                            ${diff > 0 ? '+' : ''}${fmt(diff)}
+                        </div>
+                        <div style="font-size: 12px; color: #666;">
+                            <p style="margin: 5px 0;"><strong>Razlog:</strong> ${reasonLabels[finRec.modification_reason] || finRec.discrepancy_reason || '-'}</p>
+                            ${finRec.modification_comment || finRec.discrepancy_comment ? `<p style="margin: 5px 0;"><strong>Komentar:</strong> ${finRec.modification_comment || finRec.discrepancy_comment}</p>` : ''}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            pdfHtml += `</div>`;
+            
+            // Bank info
+            if (finRec.banked_at && bankDep) {
+                pdfHtml += `
+                    <div style="margin-top: 15px; background: #f0fdf4; border: 1px solid #22c55e; border-radius: 8px; padding: 12px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <span style="font-weight: bold; color: #22c55e;">🏦 Deponovano u banku</span>
+                                <span style="margin-left: 15px; color: #666;">Ref: ${bankDep.reference_number || '-'}</span>
+                            </div>
+                            <div style="text-align: right;">
+                                <span style="color: #666;">${fmtTime(finRec.banked_at)}</span>
+                                <span style="margin-left: 10px; color: #666;">by ${bankDep.depositor?.first_name || '-'}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+        
+        pdfHtml += `</div></div>`;
+    });
+    
+    pdfHtml += `</div>`;
+    
+    // Create temporary element
+    const element = document.createElement('div');
+    element.innerHTML = pdfHtml;
+    document.body.appendChild(element);
+    
+    // Generate PDF
+    const filename = `finansije-${from}-do-${to}.pdf`;
+    
+    const opt = {
+        margin: 10,
+        filename: filename,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+    };
+    
+    try {
+        await html2pdf().set(opt).from(element).save();
+        alert('✅ PDF uspešno kreiran!');
+    } catch (err) {
+        console.error('PDF error:', err);
+        alert('Greška pri kreiranju PDF-a: ' + err.message);
+    } finally {
+        document.body.removeChild(element);
     }
 }
 </script>
