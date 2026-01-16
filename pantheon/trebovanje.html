@@ -1,0 +1,1268 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trebovanje - Collina Magacin</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { 
+      font-family: 'Inter', sans-serif; 
+      background: #0f172a;
+      min-height: 100vh;
+      color: #e2e8f0;
+    }
+    
+    /* HEADER - FIXED */
+    .header {
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      border-bottom: 1px solid #334155;
+      padding: 12px 24px;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 18px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .logo-icon {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+    
+    /* HEADER CONTROLS */
+    .header-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex: 1;
+      justify-content: flex-end;
+    }
+    .header-select {
+      padding: 10px 16px;
+      background: #334155;
+      border: 1px solid #475569;
+      border-radius: 8px;
+      color: #e2e8f0;
+      font-size: 14px;
+      min-width: 180px;
+    }
+    .header-select:focus { outline: none; border-color: #3b82f6; }
+    .header-select option { background: #1e293b; }
+    
+    .cart-summary {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      background: #334155;
+      padding: 8px 16px;
+      border-radius: 8px;
+    }
+    .cart-info {
+      display: flex;
+      gap: 16px;
+      font-size: 14px;
+    }
+    .cart-info span { display: flex; align-items: center; gap: 6px; }
+    .cart-info .count { 
+      background: #3b82f6; 
+      padding: 2px 8px; 
+      border-radius: 10px; 
+      font-weight: 600;
+    }
+    
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: white;
+    }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+    .btn-secondary {
+      background: #475569;
+      color: #e2e8f0;
+    }
+    .btn-secondary:hover { background: #64748b; }
+    .btn-danger {
+      background: #dc2626;
+      color: white;
+    }
+    .btn-warning {
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      color: white;
+    }
+    .btn-sm {
+      padding: 6px 12px;
+      font-size: 12px;
+    }
+    
+    /* MAIN CONTENT */
+    .main {
+      padding-top: 80px;
+      min-height: 100vh;
+    }
+    
+    /* TABS & FILTERS BAR */
+    .toolbar {
+      background: #1e293b;
+      border-bottom: 1px solid #334155;
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      position: sticky;
+      top: 60px;
+      z-index: 50;
+    }
+    .tabs {
+      display: flex;
+      gap: 4px;
+      background: #0f172a;
+      padding: 4px;
+      border-radius: 8px;
+    }
+    .tab {
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+    .tab:hover { background: #334155; }
+    .tab.active { background: #3b82f6; color: white; }
+    
+    .search-box {
+      flex: 1;
+      min-width: 200px;
+      max-width: 400px;
+    }
+    .search-input {
+      width: 100%;
+      padding: 10px 16px;
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      color: #e2e8f0;
+      font-size: 14px;
+    }
+    .search-input:focus { outline: none; border-color: #3b82f6; }
+    .search-input::placeholder { color: #64748b; }
+    
+    .filter-chips {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .chip {
+      padding: 6px 12px;
+      background: #334155;
+      border: 1px solid #475569;
+      border-radius: 20px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .chip:hover { background: #475569; }
+    .chip.active { background: #3b82f6; border-color: #3b82f6; }
+    
+    /* CONTENT AREA */
+    .content {
+      padding: 20px 24px;
+    }
+    
+    /* PREDLOG BANNER */
+    .suggestion-banner {
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      border-radius: 10px;
+      padding: 12px 20px;
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+    }
+    .suggestion-banner:hover { opacity: 0.95; }
+    .suggestion-banner.hidden { display: none; }
+    .suggestion-text { display: flex; align-items: center; gap: 12px; }
+    .suggestion-text h4 { font-size: 14px; font-weight: 600; }
+    .suggestion-text p { font-size: 12px; opacity: 0.9; }
+    
+    /* PRODUCTS LIST - HORIZONTAL CARDS */
+    .products-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .products-header h2 { font-size: 16px; font-weight: 600; }
+    .products-count { color: #64748b; font-size: 13px; }
+    
+    .products-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    
+    /* HORIZONTAL PRODUCT CARD */
+    .product-row {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      padding: 12px 16px;
+      display: grid;
+      grid-template-columns: 80px 1fr 100px 100px 140px;
+      gap: 16px;
+      align-items: center;
+      transition: all 0.2s;
+    }
+    .product-row:hover { border-color: #475569; background: #1e293b; }
+    .product-row.in-cart { border-color: #10b981; background: rgba(16, 185, 129, 0.1); }
+    .product-row.low-stock { border-left: 3px solid #f87171; }
+    
+    @media (max-width: 900px) {
+      .product-row {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+      .product-stocks { justify-content: flex-start; }
+      .product-actions { justify-content: flex-start; }
+    }
+    
+    .product-code {
+      font-size: 13px;
+      font-weight: 600;
+      color: #94a3b8;
+      background: #334155;
+      padding: 4px 8px;
+      border-radius: 4px;
+      text-align: center;
+    }
+    
+    .product-info {
+      min-width: 0;
+    }
+    .product-name {
+      font-size: 14px;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .product-unit {
+      font-size: 12px;
+      color: #64748b;
+    }
+    
+    .product-stocks {
+      display: flex;
+      gap: 8px;
+    }
+    .stock-badge {
+      text-align: center;
+      padding: 4px 10px;
+      background: #0f172a;
+      border-radius: 6px;
+      min-width: 60px;
+    }
+    .stock-badge .label {
+      font-size: 10px;
+      color: #64748b;
+    }
+    .stock-badge .value {
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .stock-badge .value.ok { color: #4ade80; }
+    .stock-badge .value.low { color: #f87171; }
+    .stock-badge .value.zero { color: #64748b; }
+    
+    .product-status {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .badge {
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .badge-low { background: rgba(248, 113, 113, 0.2); color: #f87171; }
+    .badge-ok { background: rgba(74, 222, 128, 0.2); color: #4ade80; }
+    
+    .product-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+    .qty-input-small {
+      width: 70px;
+      padding: 8px;
+      background: #0f172a;
+      border: 1px solid #475569;
+      border-radius: 6px;
+      color: #e2e8f0;
+      font-size: 14px;
+      text-align: center;
+    }
+    .qty-input-small:focus { outline: none; border-color: #3b82f6; }
+    
+    .add-btn {
+      padding: 8px 16px;
+      background: #3b82f6;
+      border: none;
+      border-radius: 6px;
+      color: white;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .add-btn:hover { background: #2563eb; }
+    .add-btn.added {
+      background: #10b981;
+    }
+    .add-btn.added:hover { background: #dc2626; }
+    
+    /* ALERTS */
+    .alert {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      padding: 14px 20px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      z-index: 1000;
+      animation: slideUp 0.3s ease;
+      max-width: 350px;
+      font-size: 14px;
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .alert-success { background: #065f46; border: 1px solid #10b981; }
+    .alert-error { background: #7f1d1d; border: 1px solid #f87171; }
+    .alert.hidden { display: none; }
+    
+    /* MODAL */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    .modal-overlay.hidden { display: none; }
+    .modal {
+      background: #1e293b;
+      border-radius: 12px;
+      width: 95%;
+      max-width: 700px;
+      max-height: 85vh;
+      overflow: hidden;
+    }
+    .modal-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid #334155;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .modal-header h3 { font-size: 16px; font-weight: 600; }
+    .modal-close {
+      background: none;
+      border: none;
+      color: #94a3b8;
+      font-size: 24px;
+      cursor: pointer;
+    }
+    .modal-body {
+      padding: 20px;
+      overflow-y: auto;
+      max-height: 55vh;
+    }
+    .modal-footer {
+      padding: 16px 20px;
+      border-top: 1px solid #334155;
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+    }
+    
+    .cart-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px;
+      background: #334155;
+      border-radius: 8px;
+      margin-bottom: 8px;
+    }
+    .cart-item-info { flex: 1; }
+    .cart-item-name { font-weight: 600; font-size: 14px; }
+    .cart-item-code { font-size: 12px; color: #94a3b8; }
+    .cart-item-controls { display: flex; align-items: center; gap: 10px; }
+    .cart-item-qty {
+      width: 70px;
+      padding: 8px;
+      background: #1e293b;
+      border: 1px solid #475569;
+      border-radius: 6px;
+      color: #e2e8f0;
+      text-align: center;
+    }
+    .cart-item-unit { color: #64748b; font-size: 13px; min-width: 40px; }
+    .cart-item-remove {
+      background: none;
+      border: none;
+      color: #f87171;
+      font-size: 20px;
+      cursor: pointer;
+      padding: 4px 8px;
+    }
+    
+    /* TABLES */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .data-table th, .data-table td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #334155;
+    }
+    .data-table th {
+      background: #1e293b;
+      font-weight: 600;
+      color: #94a3b8;
+      font-size: 12px;
+      text-transform: uppercase;
+    }
+    .data-table tr:hover { background: rgba(59, 130, 246, 0.1); }
+    
+    .status-badge {
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .status-NOVO { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
+    .status-ODOBRENO { background: rgba(251, 191, 36, 0.2); color: #fbbf24; }
+    .status-PRIPREMLJENO { background: rgba(168, 85, 247, 0.2); color: #a855f7; }
+    .status-U_ISPORUCI { background: rgba(249, 115, 22, 0.2); color: #f97316; }
+    .status-ISPORUCENO { background: rgba(74, 222, 128, 0.2); color: #4ade80; }
+    .status-OTKAZANO { background: rgba(248, 113, 113, 0.2); color: #f87171; }
+    
+    .hidden { display: none !important; }
+    
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #64748b;
+    }
+    .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+    
+    .loading-spinner {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+      color: #64748b;
+    }
+    .loading-spinner::after {
+      content: '';
+      width: 20px;
+      height: 20px;
+      border: 2px solid #334155;
+      border-top-color: #3b82f6;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-left: 10px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    
+    /* TREBOVANJE DETAIL */
+    .detail-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid #334155;
+    }
+    .detail-title { font-size: 18px; font-weight: 700; }
+    .detail-meta { font-size: 13px; color: #94a3b8; margin-top: 4px; }
+    .detail-actions { display: flex; gap: 8px; }
+    
+    .stavka-list {
+      margin-top: 16px;
+    }
+    .stavka-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px;
+      background: #334155;
+      border-radius: 8px;
+      margin-bottom: 8px;
+    }
+    .stavka-info { flex: 1; }
+    .stavka-name { font-weight: 600; }
+    .stavka-code { font-size: 12px; color: #94a3b8; }
+    .stavka-qty { 
+      font-weight: 700; 
+      font-size: 16px;
+      color: #3b82f6;
+    }
+  </style>
+</head>
+<body>
+  <!-- FIXED HEADER -->
+  <header class="header">
+    <div class="logo">
+      <div class="logo-icon">📦</div>
+      <span>Collina Magacin</span>
+    </div>
+    
+    <div class="header-controls">
+      <select class="header-select" id="radnja" onchange="onRadnjaChange()">
+        <option value="">-- Izaberi radnju --</option>
+      </select>
+      
+      <div class="cart-summary">
+        <div class="cart-info">
+          <span>🛒 <span class="count" id="cartCount">0</span></span>
+          <span>Artikala: <strong id="totalQty">0</strong></span>
+        </div>
+        <button class="btn btn-secondary" onclick="openCartModal()">Pregledaj</button>
+      </div>
+      
+      <button class="btn btn-primary" id="submitBtn" onclick="submitTrebovanje()" disabled>
+        📤 Pošalji trebovanje
+      </button>
+    </div>
+  </header>
+  
+  <div id="alert" class="alert hidden"></div>
+  
+  <main class="main">
+    <!-- TOOLBAR -->
+    <div class="toolbar">
+      <div class="tabs">
+        <div class="tab active" onclick="showTab('artikli', this)">🛍️ Artikli</div>
+        <div class="tab" onclick="showTab('lista', this)">📋 Trebovanja</div>
+        <div class="tab" onclick="showTab('prenosi', this)">📄 Prenosi</div>
+      </div>
+      
+      <div class="search-box">
+        <input type="text" class="search-input" id="searchInput" placeholder="Pretraži artikle..." oninput="filterProducts()">
+      </div>
+      
+      <div class="filter-chips">
+        <div class="chip active" data-cat="all" onclick="filterCategory('all', this)">Svi</div>
+        <div class="chip" data-cat="low" onclick="filterCategory('low', this)">⚠️ Ispod min.</div>
+        <div class="chip" data-cat="200" onclick="filterCategory('200', this)">Piće</div>
+        <div class="chip" data-cat="400" onclick="filterCategory('400', this)">Gotovi</div>
+        <div class="chip" data-cat="500" onclick="filterCategory('500', this)">Sirovine</div>
+        <div class="chip" data-cat="600" onclick="filterCategory('600', this)">Ambalaza</div>
+      </div>
+    </div>
+    
+    <!-- CONTENT -->
+    <div class="content">
+      <!-- TAB: ARTIKLI -->
+      <div id="tab-artikli">
+        <div class="suggestion-banner hidden" id="suggestionBanner" onclick="openSuggestions()">
+          <div class="suggestion-text">
+            <span style="font-size: 20px;">⚠️</span>
+            <div>
+              <h4>Predlog trebovanja</h4>
+              <p><span id="suggestionsCount">0</span> artikala ispod minimuma</p>
+            </div>
+          </div>
+          <button class="btn btn-secondary">Pregledaj →</button>
+        </div>
+        
+        <div class="products-header">
+          <h2 id="productsTitle">Svi artikli</h2>
+          <span class="products-count"><span id="productsCount">0</span> artikala</span>
+        </div>
+        
+        <div class="products-list" id="productsList">
+          <div class="loading-spinner">Učitavanje</div>
+        </div>
+      </div>
+      
+      <!-- TAB: LISTA -->
+      <div id="tab-lista" class="hidden">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <h2>📋 Trebovanja</h2>
+          <button class="btn btn-secondary" onclick="loadTrebovanja()">🔄 Osveži</button>
+        </div>
+        <table class="data-table">
+          <thead>
+            <tr><th>ID</th><th>Radnja</th><th>Datum</th><th>Stavke</th><th>Status</th><th>Akcija</th></tr>
+          </thead>
+          <tbody id="trebovanjaBody"></tbody>
+        </table>
+      </div>
+      
+      <!-- TAB: PRENOSI -->
+      <div id="tab-prenosi" class="hidden">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <h2>📄 Prenosi iz Pantheona</h2>
+          <button class="btn btn-secondary" onclick="loadPrenosi()">🔄 Osveži</button>
+        </div>
+        <table class="data-table">
+          <thead>
+            <tr><th>Broj</th><th>Datum</th><th>Primalac</th><th>Vrednost</th><th>Stavke</th></tr>
+          </thead>
+          <tbody id="prenosiBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+  
+  <!-- CART MODAL -->
+  <div class="modal-overlay hidden" id="cartModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>🛒 Korpa - <span id="cartModalCount">0</span> stavki</h3>
+        <button class="modal-close" onclick="closeCartModal()">×</button>
+      </div>
+      <div class="modal-body" id="cartModalBody">
+        <div class="empty-state"><div class="icon">🛒</div><p>Korpa je prazna</p></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-danger" onclick="clearCart()">🗑️ Isprazni</button>
+        <button class="btn btn-secondary" onclick="closeCartModal()">Zatvori</button>
+        <button class="btn btn-primary" onclick="submitTrebovanje()">📤 Pošalji</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- SUGGESTIONS MODAL -->
+  <div class="modal-overlay hidden" id="suggestionsModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>⚠️ Predlog trebovanja</h3>
+        <button class="modal-close" onclick="closeSuggestions()">×</button>
+      </div>
+      <div class="modal-body" id="suggestionsBody"></div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeSuggestions()">Zatvori</button>
+        <button class="btn btn-primary" onclick="addAllSuggestions()">➕ Dodaj sve</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- TREBOVANJE DETAIL MODAL -->
+  <div class="modal-overlay hidden" id="trebovanjeModal">
+    <div class="modal" style="max-width: 600px;">
+      <div class="modal-header">
+        <h3>📋 Detalji trebovanja</h3>
+        <button class="modal-close" onclick="closeTrebovanjeModal()">×</button>
+      </div>
+      <div class="modal-body" id="trebovanjeModalBody">
+        <div class="loading-spinner">Učitavanje</div>
+      </div>
+      <div class="modal-footer" id="trebovanjeModalFooter">
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    const API = 'https://instances-oakland-pink-dear.trycloudflare.com/api/trebovanje';
+    let artikli = [];
+    let stanjeCM = {};
+    let stanjeRadnja = {};
+    let minStanje = {};
+    let cart = [];
+    let currentCategory = 'all';
+    let selectedRadnja = '';
+    let suggestions = [];
+    let currentTrebovanje = null;
+    
+    // ==================== HELPER FUNKCIJE ====================
+    function formatDate(dateValue) {
+      if (!dateValue) return '-';
+      try {
+        const d = new Date(dateValue);
+        if (isNaN(d.getTime())) return '-';
+        return d.toLocaleDateString('sr-RS', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      } catch (e) {
+        return '-';
+      }
+    }
+    
+    function formatDateTime(dateValue) {
+      if (!dateValue) return '-';
+      try {
+        const d = new Date(dateValue);
+        if (isNaN(d.getTime())) return '-';
+        return d.toLocaleDateString('sr-RS', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+      } catch (e) {
+        return '-';
+      }
+    }
+    
+    // ==================== TABS ====================
+    function showTab(tabName, element) {
+      document.getElementById('tab-artikli').classList.add('hidden');
+      document.getElementById('tab-lista').classList.add('hidden');
+      document.getElementById('tab-prenosi').classList.add('hidden');
+      
+      document.getElementById('tab-' + tabName).classList.remove('hidden');
+      
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      element.classList.add('active');
+      
+      if (tabName === 'lista') loadTrebovanja();
+      if (tabName === 'prenosi') loadPrenosi();
+    }
+    
+    // ==================== FILTERS ====================
+    function filterProducts() {
+      renderProducts();
+    }
+    
+    function filterCategory(cat, element) {
+      currentCategory = cat;
+      document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+      element.classList.add('active');
+      renderProducts();
+    }
+    
+    // ==================== INIT ====================
+    document.addEventListener('DOMContentLoaded', async () => {
+      await loadRadnje();
+      await loadArtikli();
+      await loadStanje();
+      await loadMinStanje();
+      renderProducts();
+    });
+    
+    // ==================== DATA ====================
+    async function loadRadnje() {
+      try {
+        const res = await fetch(API + '/radnje');
+        const radnje = await res.json();
+        const select = document.getElementById('radnja');
+        radnje.forEach(r => {
+          const opt = document.createElement('option');
+          opt.value = r.sifra;
+          opt.textContent = r.naziv;
+          select.appendChild(opt);
+        });
+      } catch (err) { console.error(err); }
+    }
+    
+    async function loadArtikli() {
+      try {
+        const res = await fetch(API + '/artikli');
+        artikli = await res.json();
+      } catch (err) { console.error(err); }
+    }
+    
+    async function loadStanje() {
+      try {
+        const res = await fetch(API + '/stanje');
+        const data = await res.json();
+        stanjeCM = data['Centralni magacin'] || {};
+      } catch (err) { console.error(err); }
+    }
+    
+    async function loadMinStanje() {
+      try {
+        const res = await fetch(API + '/min-stanje');
+        minStanje = await res.json();
+      } catch (err) { console.error(err); }
+    }
+    
+    // ==================== RADNJA ====================
+    async function onRadnjaChange() {
+      selectedRadnja = document.getElementById('radnja').value;
+      if (selectedRadnja) {
+        try {
+          const res = await fetch(API + '/stanje');
+          const data = await res.json();
+          stanjeRadnja = data[selectedRadnja] || {};
+        } catch (err) { stanjeRadnja = {}; }
+        updateSuggestions();
+      } else {
+        stanjeRadnja = {};
+        document.getElementById('suggestionBanner').classList.add('hidden');
+      }
+      renderProducts();
+      updateSubmitBtn();
+    }
+    
+    function updateSuggestions() {
+      suggestions = artikli.filter(a => {
+        const stanje = stanjeRadnja[a.acIdent] || 0;
+        const min = minStanje[a.acIdent] || 0;
+        return min > 0 && stanje < min;
+      }).map(a => ({
+        ...a,
+        trenutno: stanjeRadnja[a.acIdent] || 0,
+        min: minStanje[a.acIdent] || 0,
+        potrebno: Math.max(1, (minStanje[a.acIdent] || 0) - (stanjeRadnja[a.acIdent] || 0))
+      }));
+      
+      const banner = document.getElementById('suggestionBanner');
+      if (suggestions.length > 0) {
+        banner.classList.remove('hidden');
+        document.getElementById('suggestionsCount').textContent = suggestions.length;
+      } else {
+        banner.classList.add('hidden');
+      }
+    }
+    
+    // ==================== PRODUCTS ====================
+    function renderProducts() {
+      const list = document.getElementById('productsList');
+      const search = document.getElementById('searchInput').value.toLowerCase();
+      
+      let filtered = artikli.filter(a => {
+        if (search && !a.acIdent.toLowerCase().includes(search) && !a.acName.toLowerCase().includes(search)) return false;
+        if (currentCategory !== 'all' && currentCategory !== 'low' && a.acSetOfItem !== currentCategory) return false;
+        if (currentCategory === 'low') {
+          const s = stanjeRadnja[a.acIdent] || 0;
+          const m = minStanje[a.acIdent] || 0;
+          if (!(m > 0 && s < m)) return false;
+        }
+        return true;
+      });
+      
+      document.getElementById('productsCount').textContent = filtered.length;
+      
+      if (filtered.length === 0) {
+        list.innerHTML = '<div class="empty-state"><div class="icon">🔍</div><p>Nema artikala</p></div>';
+        return;
+      }
+      
+      list.innerHTML = filtered.map(a => {
+        const cm = stanjeCM[a.acIdent] || a.anStock || 0;
+        const rad = stanjeRadnja[a.acIdent] || 0;
+        const min = minStanje[a.acIdent] || 0;
+        const isLow = min > 0 && rad < min;
+        const inCart = cart.find(c => c.sifra === a.acIdent);
+        const cartQty = inCart ? inCart.kolicina : 1;
+        
+        return `
+          <div class="product-row ${inCart ? 'in-cart' : ''} ${isLow ? 'low-stock' : ''}">
+            <div class="product-code">${a.acIdent}</div>
+            <div class="product-info">
+              <div class="product-name">${a.acName}</div>
+              <div class="product-unit">${a.acUM || 'KOM'}</div>
+            </div>
+            <div class="product-stocks">
+              <div class="stock-badge">
+                <div class="label">CM</div>
+                <div class="value ${cm > 0 ? 'ok' : 'zero'}">${cm}</div>
+              </div>
+              <div class="stock-badge">
+                <div class="label">${selectedRadnja || 'Radnja'}</div>
+                <div class="value ${isLow ? 'low' : (rad > 0 ? 'ok' : 'zero')}">${rad}</div>
+              </div>
+            </div>
+            <div class="product-status">
+              ${isLow ? '<span class="badge badge-low">Ispod min.</span>' : (cm > 0 ? '<span class="badge badge-ok">Na stanju</span>' : '')}
+            </div>
+            <div class="product-actions">
+              <input type="number" class="qty-input-small" id="qty-${a.acIdent}" value="${cartQty}" min="0.1" step="0.1">
+              <button class="add-btn ${inCart ? 'added' : ''}" onclick="toggleProduct('${a.acIdent}', '${a.acName.replace(/'/g, "\\'")}', '${a.acUM || 'KOM'}')">
+                ${inCart ? '✓ Dodato' : '+ Dodaj'}
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+    
+    // ==================== CART ====================
+    function toggleProduct(sifra, naziv, jm) {
+      const existing = cart.find(c => c.sifra === sifra);
+      const qtyInput = document.getElementById('qty-' + sifra);
+      const qty = parseFloat(qtyInput?.value) || 1;
+      
+      if (existing) {
+        cart = cart.filter(c => c.sifra !== sifra);
+        showAlert('Uklonjeno iz korpe', 'error');
+      } else {
+        cart.push({ sifra, naziv, jm, kolicina: qty });
+        showAlert('Dodato u korpu', 'success');
+      }
+      
+      updateCartUI();
+      renderProducts();
+    }
+    
+    function updateCartUI() {
+      document.getElementById('cartCount').textContent = cart.length;
+      document.getElementById('totalQty').textContent = cart.reduce((sum, c) => sum + c.kolicina, 0).toFixed(1);
+      updateSubmitBtn();
+    }
+    
+    function updateSubmitBtn() {
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = cart.length === 0 || !selectedRadnja;
+    }
+    
+    function openCartModal() {
+      const modal = document.getElementById('cartModal');
+      const body = document.getElementById('cartModalBody');
+      document.getElementById('cartModalCount').textContent = cart.length;
+      
+      if (cart.length === 0) {
+        body.innerHTML = '<div class="empty-state"><div class="icon">🛒</div><p>Korpa je prazna</p></div>';
+      } else {
+        body.innerHTML = cart.map((c, i) => `
+          <div class="cart-item">
+            <div class="cart-item-info">
+              <div class="cart-item-name">${c.naziv}</div>
+              <div class="cart-item-code">${c.sifra}</div>
+            </div>
+            <div class="cart-item-controls">
+              <input type="number" class="cart-item-qty" value="${c.kolicina}" min="0.1" step="0.1" onchange="updateCartQty(${i}, this.value)">
+              <span class="cart-item-unit">${c.jm}</span>
+              <button class="cart-item-remove" onclick="removeFromCart(${i})">×</button>
+            </div>
+          </div>
+        `).join('');
+      }
+      
+      modal.classList.remove('hidden');
+    }
+    
+    function closeCartModal() {
+      document.getElementById('cartModal').classList.add('hidden');
+    }
+    
+    function updateCartQty(index, value) {
+      cart[index].kolicina = parseFloat(value) || 1;
+      updateCartUI();
+    }
+    
+    function removeFromCart(index) {
+      cart.splice(index, 1);
+      updateCartUI();
+      openCartModal();
+      renderProducts();
+    }
+    
+    function clearCart() {
+      cart = [];
+      updateCartUI();
+      closeCartModal();
+      renderProducts();
+      showAlert('Korpa ispražnjena', 'error');
+    }
+    
+    // ==================== SUGGESTIONS ====================
+    function openSuggestions() {
+      const modal = document.getElementById('suggestionsModal');
+      const body = document.getElementById('suggestionsBody');
+      
+      body.innerHTML = suggestions.map(s => `
+        <div class="cart-item">
+          <div class="cart-item-info">
+            <div class="cart-item-name">${s.acName}</div>
+            <div class="cart-item-code">${s.acIdent} | Trenutno: ${s.trenutno} | Min: ${s.min}</div>
+          </div>
+          <div class="cart-item-controls">
+            <input type="number" class="cart-item-qty" id="sug-${s.acIdent}" value="${s.potrebno}" min="1" step="1">
+            <span class="cart-item-unit">${s.acUM || 'KOM'}</span>
+          </div>
+        </div>
+      `).join('');
+      
+      modal.classList.remove('hidden');
+    }
+    
+    function closeSuggestions() {
+      document.getElementById('suggestionsModal').classList.add('hidden');
+    }
+    
+    function addAllSuggestions() {
+      suggestions.forEach(s => {
+        const qty = parseFloat(document.getElementById('sug-' + s.acIdent)?.value) || s.potrebno;
+        const existing = cart.find(c => c.sifra === s.acIdent);
+        if (!existing) {
+          cart.push({ sifra: s.acIdent, naziv: s.acName, jm: s.acUM || 'KOM', kolicina: qty });
+        }
+      });
+      updateCartUI();
+      closeSuggestions();
+      renderProducts();
+      showAlert(`Dodato ${suggestions.length} artikala`, 'success');
+    }
+    
+    // ==================== SUBMIT ====================
+    async function submitTrebovanje() {
+      if (cart.length === 0 || !selectedRadnja) return;
+      
+      try {
+        const res = await fetch(API + '/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ radnja: selectedRadnja, stavke: cart })
+        });
+        
+        const result = await res.json();
+        
+        if (result.success) {
+          showAlert('Trebovanje uspešno poslato!', 'success');
+          cart = [];
+          updateCartUI();
+          closeCartModal();
+          renderProducts();
+        } else {
+          showAlert('Greška: ' + (result.error || 'Nepoznata greška'), 'error');
+        }
+      } catch (err) {
+        showAlert('Greška pri slanju', 'error');
+        console.error(err);
+      }
+    }
+    
+    // ==================== TREBOVANJA LIST ====================
+    async function loadTrebovanja() {
+      const body = document.getElementById('trebovanjaBody');
+      body.innerHTML = '<tr><td colspan="6" class="loading-spinner">Učitavanje</td></tr>';
+      
+      try {
+        const res = await fetch(API + '/lista');
+        const data = await res.json();
+        
+        if (data.length === 0) {
+          body.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:#64748b;">Nema trebovanja</td></tr>';
+          return;
+        }
+        
+        body.innerHTML = data.map(t => `
+          <tr>
+            <td>${t.id}</td>
+            <td>${t.radnja}</td>
+            <td>${formatDate(t.kreirano)}</td>
+            <td>${t.stavke_count || t.stavke?.length || '-'}</td>
+            <td><span class="status-badge status-${t.status}">${t.status}</span></td>
+            <td>
+              <button class="btn btn-secondary btn-sm" onclick="viewTrebovanje(${t.id})">👁️ Detalji</button>
+            </td>
+          </tr>
+        `).join('');
+      } catch (err) {
+        body.innerHTML = '<tr><td colspan="6" style="color:#f87171;">Greška pri učitavanju</td></tr>';
+      }
+    }
+    
+    // ==================== TREBOVANJE DETAIL ====================
+    async function viewTrebovanje(id) {
+      const modal = document.getElementById('trebovanjeModal');
+      const body = document.getElementById('trebovanjeModalBody');
+      const footer = document.getElementById('trebovanjeModalFooter');
+      
+      modal.classList.remove('hidden');
+      body.innerHTML = '<div class="loading-spinner">Učitavanje</div>';
+      footer.innerHTML = '';
+      
+      try {
+        const res = await fetch(API + '/' + id);
+        const t = await res.json();
+        currentTrebovanje = t;
+        
+        body.innerHTML = `
+          <div class="detail-header">
+            <div>
+              <div class="detail-title">Trebovanje #${t.id}</div>
+              <div class="detail-meta">
+                ${t.radnja} • ${formatDateTime(t.kreirano)}
+              </div>
+            </div>
+            <span class="status-badge status-${t.status}">${t.status}</span>
+          </div>
+          
+          ${t.napomena ? `<p style="margin-bottom:16px;color:#94a3b8;"><strong>Napomena:</strong> ${t.napomena}</p>` : ''}
+          
+          <h4 style="margin-bottom:12px;">📦 Stavke (${t.stavke?.length || 0})</h4>
+          <div class="stavka-list">
+            ${t.stavke?.map(s => `
+              <div class="stavka-item">
+                <div class="stavka-info">
+                  <div class="stavka-name">${s.acName}</div>
+                  <div class="stavka-code">${s.acIdent}</div>
+                </div>
+                <div class="stavka-qty">${s.anQty} ${s.acUM}</div>
+              </div>
+            `).join('') || '<p style="color:#64748b;">Nema stavki</p>'}
+          </div>
+          
+          ${t.pantheonKey ? `
+            <div style="margin-top:20px;padding:12px;background:#065f46;border-radius:8px;">
+              <strong>✅ Prenos kreiran:</strong> ${t.pantheonKey}
+            </div>
+          ` : ''}
+        `;
+        
+        // Footer buttons based on status
+        if (t.status === 'NOVO') {
+          footer.innerHTML = `
+            <button class="btn btn-secondary" onclick="closeTrebovanjeModal()">Zatvori</button>
+            <button class="btn btn-warning" onclick="odobriTrebovanje(${t.id})">✅ Odobri i pripremi</button>
+          `;
+        } else if (t.status === 'ODOBRENO' || t.status === 'PRIPREMLJENO') {
+          footer.innerHTML = `
+            <button class="btn btn-secondary" onclick="closeTrebovanjeModal()">Zatvori</button>
+            <button class="btn btn-primary" onclick="potvrdiPrijem(${t.id})">📦 Pošalji robu (kreira prenos)</button>
+          `;
+        } else {
+          footer.innerHTML = `
+            <button class="btn btn-secondary" onclick="closeTrebovanjeModal()">Zatvori</button>
+          `;
+        }
+        
+      } catch (err) {
+        body.innerHTML = '<p style="color:#f87171;">Greška pri učitavanju</p>';
+        console.error(err);
+      }
+    }
+    
+    function closeTrebovanjeModal() {
+      document.getElementById('trebovanjeModal').classList.add('hidden');
+      currentTrebovanje = null;
+    }
+    
+    // ==================== AKCIJE NA TREBOVANJU ====================
+    async function odobriTrebovanje(id) {
+      try {
+        const res = await fetch(API + '/' + id + '/status', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'ODOBRENO', korisnik: 'Magacioner' })
+        });
+        
+        const result = await res.json();
+        
+        if (result.success) {
+          showAlert('Trebovanje odobreno!', 'success');
+          viewTrebovanje(id); // Refresh modal
+          loadTrebovanja(); // Refresh list
+        } else {
+          showAlert('Greška: ' + result.error, 'error');
+        }
+      } catch (err) {
+        showAlert('Greška pri odobravanju', 'error');
+        console.error(err);
+      }
+    }
+    
+    async function potvrdiPrijem(id) {
+      if (!confirm('Da li ste sigurni da želite da pošaljete robu? Ovo će kreirati prenos u Pantheonu.')) {
+        return;
+      }
+      
+      try {
+        const res = await fetch(API + '/' + id + '/potvrdi-prijem', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ korisnik: 'Magacioner' })
+        });
+        
+        const result = await res.json();
+        
+        if (result.success) {
+          showAlert('Prenos kreiran u Pantheonu: ' + result.pantheon.transferKey, 'success');
+          viewTrebovanje(id); // Refresh modal
+          loadTrebovanja(); // Refresh list
+        } else {
+          showAlert('Greška: ' + result.error, 'error');
+        }
+      } catch (err) {
+        showAlert('Greška pri kreiranju prenosa', 'error');
+        console.error(err);
+      }
+    }
+    
+    // ==================== PRENOSI LIST ====================
+    async function loadPrenosi() {
+      const body = document.getElementById('prenosiBody');
+      body.innerHTML = '<tr><td colspan="5" class="loading-spinner">Učitavanje</td></tr>';
+      
+      try {
+        const res = await fetch(API + '/prenosi');
+        const data = await res.json();
+        
+        if (data.length === 0) {
+          body.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:40px;color:#64748b;">Nema prenosa</td></tr>';
+          return;
+        }
+        
+        body.innerHTML = data.map(p => `
+          <tr>
+            <td>${p.acKey}</td>
+            <td>${formatDate(p.adDate)}</td>
+            <td>${p.acReceiver}</td>
+            <td>${parseFloat(p.anValue || 0).toLocaleString('sr-RS')} RSD</td>
+            <td>${p.items_count || '-'}</td>
+          </tr>
+        `).join('');
+      } catch (err) {
+        body.innerHTML = '<tr><td colspan="5" style="color:#f87171;">Greška pri učitavanju</td></tr>';
+      }
+    }
+    
+    // ==================== ALERTS ====================
+    function showAlert(message, type = 'success') {
+      const alert = document.getElementById('alert');
+      alert.className = `alert alert-${type}`;
+      alert.innerHTML = `${type === 'success' ? '✓' : '✕'} ${message}`;
+      alert.classList.remove('hidden');
+      
+      setTimeout(() => alert.classList.add('hidden'), 3000);
+    }
+  </script>
+</body>
+</html>
