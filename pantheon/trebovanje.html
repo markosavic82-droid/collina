@@ -278,8 +278,8 @@
       border-radius: 10px;
       padding: 12px 16px;
       display: grid;
-      grid-template-columns: 80px 1fr auto 140px;
-      gap: 16px;
+      grid-template-columns: 70px minmax(150px, 1fr) auto auto;
+      gap: 12px;
       align-items: center;
       transition: all 0.2s;
     }
@@ -288,15 +288,24 @@
     .product-row.low-stock { border-left: 3px solid #f87171; }
     .product-row.has-reserved { border-left: 3px solid #f59e0b; }
     
-    @media (max-width: 900px) {
+    @media (max-width: 1100px) {
       .product-row {
-        grid-template-columns: 1fr;
-        gap: 12px;
+        grid-template-columns: 60px 1fr;
+        gap: 10px;
       }
-      .product-stocks { justify-content: flex-start; }
-      .product-actions { justify-content: flex-start; }
+      .stock-info-container {
+        grid-column: 1 / -1;
+        justify-content: flex-start;
+      }
+      .product-actions {
+        grid-column: 1 / -1;
+        justify-content: flex-start;
+      }
+    }
+    @media (max-width: 600px) {
       .header { flex-wrap: wrap; padding: 12px 16px; }
       .header-controls { flex-wrap: wrap; justify-content: center; }
+      .stock-card { min-width: 80px; }
     }
     
     .product-code {
@@ -333,9 +342,10 @@
     
     .stock-card {
       background: #0f172a;
-      border-radius: 8px;
-      padding: 8px 12px;
-      min-width: 90px;
+      border-radius: 6px;
+      padding: 6px 10px;
+      min-width: 75px;
+      max-width: 100px;
       text-align: center;
       border: 1px solid #334155;
     }
@@ -371,7 +381,7 @@
     
     .stock-value {
       font-weight: 700;
-      font-size: 13px;
+      font-size: 12px;
     }
     .stock-value.total { color: #e2e8f0; }
     .stock-value.reserved { color: #f59e0b; }
@@ -415,9 +425,9 @@
       justify-content: center;
     }
     .badge {
-      padding: 4px 10px;
-      border-radius: 12px;
-      font-size: 11px;
+      padding: 2px 6px;
+      border-radius: 10px;
+      font-size: 10px;
       font-weight: 600;
     }
     .badge-low { background: rgba(248, 113, 113, 0.2); color: #f87171; }
@@ -427,28 +437,29 @@
     .product-actions {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
       justify-content: flex-end;
+      flex-wrap: wrap;
     }
     .qty-input-small {
-      width: 70px;
-      padding: 8px;
+      width: 60px;
+      padding: 6px;
       background: #0f172a;
       border: 1px solid #475569;
       border-radius: 6px;
       color: #e2e8f0;
-      font-size: 14px;
+      font-size: 13px;
       text-align: center;
     }
     .qty-input-small:focus { outline: none; border-color: #dc2626; }
     
     .add-btn {
-      padding: 8px 16px;
+      padding: 6px 12px;
       background: #dc2626;
       border: none;
       border-radius: 6px;
       color: white;
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 600;
       cursor: pointer;
       transition: all 0.2s;
@@ -797,6 +808,7 @@
         <div class="tab active" onclick="showTab('artikli', this)">🛍️ Artikli</div>
         <div class="tab" onclick="showTab('lista', this)">📋 Trebovanja</div>
         <div class="tab" onclick="showTab('prenosi', this)">📄 Prenosi</div>
+        <div class="tab" onclick="showTab('nedostaje', this)">⚠️ Nedostaje</div>
       </div>
       
       <div class="search-box">
@@ -836,6 +848,20 @@
         
         <div class="products-list" id="productsList">
           <div class="loading-spinner">Učitavanje</div>
+        </div>
+        
+        <!-- SEKCIJA: TREBUJ OSTALO -->
+        <div id="trebujOstaloSection" class="hidden" style="margin-top: 30px; padding-top: 20px; border-top: 2px dashed #334155;">
+          <div class="products-header">
+            <h2 style="color: #f59e0b;">🔍 Trebuj ostalo</h2>
+            <span class="products-count">Artikli koje ova radnja još ne koristi</span>
+          </div>
+          <div style="margin-bottom: 16px;">
+            <input type="text" class="search-input" id="searchOstalo" placeholder="Pretraži artikle koji nisu u tvojoj radnji..." oninput="searchOstaloDebounced()" style="max-width: 400px;">
+          </div>
+          <div class="products-list" id="ostaloList">
+            <div style="color: #64748b; padding: 20px; text-align: center;">Unesite pojam za pretragu ili izaberite radnju</div>
+          </div>
         </div>
       </div>
       
@@ -891,6 +917,36 @@
               <tr><th>Broj</th><th>Datum</th><th>Primalac</th><th>Vrednost</th><th>Stavke</th><th>Akcija</th></tr>
             </thead>
             <tbody id="prenosiBody"></tbody>
+          </table>
+        </div>
+      </div>
+      
+      <!-- TAB: NEDOSTAJE -->
+      <div id="tab-nedostaje" class="hidden">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+          <div>
+            <h2>⚠️ Nedostajući artikli</h2>
+            <p style="color: #94a3b8; font-size: 13px; margin-top: 4px;">Artikli koji su traženi ali nisu bili na stanju u CM</p>
+          </div>
+          <button class="btn btn-secondary" onclick="loadNedostaje()">🔄 Osveži</button>
+        </div>
+        <div style="overflow-x: auto;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Artikal</th>
+                <th>Radnja</th>
+                <th>Traženo</th>
+                <th>Poslato</th>
+                <th>Nedostaje</th>
+                <th>Trenutno CM</th>
+                <th>Datum</th>
+                <th>Akcija</th>
+              </tr>
+            </thead>
+            <tbody id="nedostajeBody">
+              <tr><td colspan="8" style="text-align:center;padding:40px;color:#64748b;">Kliknite "Osveži" za učitavanje</td></tr>
+            </tbody>
           </table>
         </div>
       </div>
@@ -1045,6 +1101,7 @@
       document.getElementById('tab-artikli').classList.add('hidden');
       document.getElementById('tab-lista').classList.add('hidden');
       document.getElementById('tab-prenosi').classList.add('hidden');
+      document.getElementById('tab-nedostaje').classList.add('hidden');
       
       document.getElementById('tab-' + tabName).classList.remove('hidden');
       
@@ -1063,6 +1120,7 @@
       
       if (tabName === 'lista') loadTrebovanja();
       if (tabName === 'prenosi') loadPrenosi();
+      if (tabName === 'nedostaje') loadNedostaje();
     }
     
     // ==================== FILTERS ====================
@@ -1144,19 +1202,58 @@
       selectedRadnja = document.getElementById('radnja').value;
       const roleIndicator = document.getElementById('roleIndicator');
       const roleText = document.getElementById('roleText');
+      const trebujOstaloSection = document.getElementById('trebujOstaloSection');
       
       if (selectedRadnja) {
         stanjeRadnja = stanjeSvi[selectedRadnja] || {};
         roleText.textContent = selectedRadnja;
         roleIndicator.className = 'role-indicator mp';
         updateSuggestions();
+        
+        // Prikaži sekciju "Trebuj ostalo"
+        trebujOstaloSection.classList.remove('hidden');
+        
+        // Učitaj artikle specifične za ovu radnju
+        await loadArtikliRadnja();
       } else {
         stanjeRadnja = {};
         roleText.textContent = 'Izaberite radnju';
         document.getElementById('suggestionBanner').classList.add('hidden');
+        trebujOstaloSection.classList.add('hidden');
+        
+        // Vrati na sve artikle
+        await loadArtikli();
       }
       renderProducts();
       updateSubmitBtn();
+    }
+    
+    // Učitaj samo artikle koje radnja koristi
+    async function loadArtikliRadnja() {
+      if (!selectedRadnja) return;
+      
+      try {
+        document.getElementById('productsList').innerHTML = '<div class="loading-spinner">Učitavanje artikala za ' + escapeHtml(selectedRadnja) + '...</div>';
+        const res = await fetch(API + '/artikli-radnja/' + encodeURIComponent(selectedRadnja));
+        const data = await res.json();
+        
+        if (data.length > 0) {
+          // Mapiraj na standardni format
+          artikli = data.map(a => ({
+            ...a,
+            anStock: a.anStockCM || 0,
+            anPrice: a.anPrice || 0
+          }));
+          document.getElementById('productsTitle').textContent = 'Moji artikli (' + selectedRadnja + ')';
+        } else {
+          // Ako radnja nema artikala, učitaj sve
+          await loadArtikli();
+          document.getElementById('productsTitle').textContent = 'Svi artikli (radnja nema istoriju)';
+        }
+      } catch (err) {
+        console.error('Greška pri učitavanju artikala radnje:', err);
+        await loadArtikli(); // Fallback na sve artikle
+      }
     }
     
     function updateSuggestions() {
@@ -1971,6 +2068,168 @@
     
     function closePrenosModal() {
       document.getElementById('prenosModal').classList.add('hidden');
+    }
+    
+    // ==================== NEDOSTAJE ====================
+    async function loadNedostaje() {
+      const body = document.getElementById('nedostajeBody');
+      body.innerHTML = '<tr><td colspan="8" class="loading-spinner">Učitavanje</td></tr>';
+      
+      try {
+        const res = await fetch(API + '/nedostaje');
+        const data = await res.json();
+        
+        if (data.length === 0) {
+          body.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:40px;color:#64748b;">Nema nedostajućih artikala 🎉</td></tr>';
+          return;
+        }
+        
+        body.innerHTML = data.map(n => `
+          <tr>
+            <td>
+              <div style="font-weight: 600;">${escapeHtml(n.acName)}</div>
+              <div style="font-size: 12px; color: #94a3b8;">${escapeHtml(n.acIdent)}</div>
+            </td>
+            <td>${escapeHtml(n.acWarehouse)}</td>
+            <td style="font-weight: 600;">${formatNumber(n.anRequestedQty, 2)}</td>
+            <td style="color: #4ade80;">${formatNumber(n.anSentQty, 2)}</td>
+            <td style="color: #f87171; font-weight: 700;">${formatNumber(n.anMissingQty, 2)}</td>
+            <td style="color: ${n.anCurrentStockCM > 0 ? '#4ade80' : '#64748b'};">${formatNumber(n.anCurrentStockCM, 2)}</td>
+            <td style="font-size: 12px;">${formatDate(n.adTimeIns)}</td>
+            <td>
+              ${n.anCurrentStockCM >= n.anMissingQty ? 
+                `<button class="btn btn-success btn-sm" onclick="resiNedostaje(${n.anId})">✓ Reši</button>` :
+                `<button class="btn btn-secondary btn-sm" onclick="resiNedostaje(${n.anId})">Ignoriši</button>`
+              }
+            </td>
+          </tr>
+        `).join('');
+      } catch (err) {
+        body.innerHTML = '<tr><td colspan="8" style="color:#f87171;text-align:center;padding:40px;">Greška pri učitavanju</td></tr>';
+        console.error(err);
+      }
+    }
+    
+    async function resiNedostaje(id) {
+      if (!confirm('Da li želite da označite ovu stavku kao rešenu?')) return;
+      
+      try {
+        const res = await fetch(API + '/nedostaje/resi/' + id, { method: 'POST' });
+        const result = await res.json();
+        
+        if (result.success) {
+          showAlert('Označeno kao rešeno', 'success');
+          loadNedostaje();
+        } else {
+          showAlert('Greška: ' + result.error, 'error');
+        }
+      } catch (err) {
+        showAlert('Greška: ' + err.message, 'error');
+      }
+    }
+    
+    // ==================== TREBUJ OSTALO ====================
+    let searchOstaloTimeout = null;
+    let ostaloArtikli = [];
+    
+    function searchOstaloDebounced() {
+      clearTimeout(searchOstaloTimeout);
+      searchOstaloTimeout = setTimeout(loadOstaloArtikli, 300);
+    }
+    
+    async function loadOstaloArtikli() {
+      if (!selectedRadnja) {
+        document.getElementById('ostaloList').innerHTML = '<div style="color: #64748b; padding: 20px; text-align: center;">Izaberite radnju da biste videli artikle</div>';
+        return;
+      }
+      
+      const search = document.getElementById('searchOstalo').value.trim();
+      if (search.length < 2) {
+        document.getElementById('ostaloList').innerHTML = '<div style="color: #64748b; padding: 20px; text-align: center;">Unesite najmanje 2 karaktera za pretragu</div>';
+        return;
+      }
+      
+      const list = document.getElementById('ostaloList');
+      list.innerHTML = '<div class="loading-spinner">Pretraga...</div>';
+      
+      try {
+        const res = await fetch(API + '/artikli-ostalo/' + encodeURIComponent(selectedRadnja) + '?search=' + encodeURIComponent(search));
+        ostaloArtikli = await res.json();
+        
+        if (ostaloArtikli.length === 0) {
+          list.innerHTML = '<div style="color: #64748b; padding: 20px; text-align: center;">Nema rezultata za "' + escapeHtml(search) + '"</div>';
+          return;
+        }
+        
+        list.innerHTML = ostaloArtikli.map(a => {
+          const cmStock = a.anStockCM || 0;
+          const cmReserved = a.anReservedCM || 0;
+          const cmAvailable = cmStock - cmReserved;
+          const inCart = cart.find(c => c.sifra === a.acIdent);
+          
+          return `
+            <div class="product-row ${inCart ? 'in-cart' : ''}" style="border-left: 3px solid #f59e0b;">
+              <div class="product-code">${escapeHtml(a.acIdent)}</div>
+              <div class="product-info">
+                <div class="product-name">${escapeHtml(a.acName)}</div>
+                <div class="product-unit">${escapeHtml(a.acUM) || 'KOM'}</div>
+              </div>
+              
+              <div class="stock-info-container">
+                <div class="stock-card cm">
+                  <div class="stock-card-header">CM</div>
+                  <div class="stock-card-body">
+                    <div class="stock-value available ${cmAvailable <= 0 ? 'zero' : ''}" style="font-size: 18px; margin-top: 4px;">${formatNumber(cmAvailable)}</div>
+                  </div>
+                </div>
+                <div class="stock-card radnja" style="opacity: 0.5;">
+                  <div class="stock-card-header">${escapeHtml(selectedRadnja.substring(0, 8))}</div>
+                  <div class="stock-card-body">
+                    <div class="stock-value" style="font-size: 14px; color: #64748b;">Nema</div>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="product-actions">
+                <span class="badge badge-reserved">🆕 Novi</span>
+                <input type="number" class="qty-input-small" id="qty-ostalo-${a.acIdent}" value="1" min="0.001" step="0.001">
+                <button class="add-btn ${inCart ? 'added' : ''}" onclick="toggleProductOstalo('${a.acIdent}')">
+                  ${inCart ? '✓ Dodato' : '+ Dodaj'}
+                </button>
+              </div>
+            </div>
+          `;
+        }).join('');
+      } catch (err) {
+        list.innerHTML = '<div style="color: #f87171; padding: 20px; text-align: center;">Greška pri pretrazi</div>';
+        console.error(err);
+      }
+    }
+    
+    function toggleProductOstalo(sifra) {
+      const artikal = ostaloArtikli.find(a => a.acIdent === sifra);
+      if (!artikal) return;
+      
+      const existing = cart.find(c => c.sifra === sifra);
+      const qtyInput = document.getElementById('qty-ostalo-' + sifra);
+      const qty = parseFloat(qtyInput?.value) || 1;
+      
+      if (existing) {
+        cart = cart.filter(c => c.sifra !== sifra);
+        showAlert('Uklonjeno iz korpe', 'info');
+      } else {
+        cart.push({ 
+          sifra, 
+          naziv: artikal.acName, 
+          jm: artikal.acUM || 'KOM', 
+          kolicina: qty 
+        });
+        showAlert('Dodato u korpu (novi artikal za ovu radnju)', 'success');
+      }
+      
+      updateCartUI();
+      loadOstaloArtikli();
+      renderProducts();
     }
     
     // ==================== ALERTS ====================
