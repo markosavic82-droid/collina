@@ -40,7 +40,7 @@
     .logo-icon {
       width: 36px;
       height: 36px;
-      background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+      background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
       border-radius: 8px;
       display: flex;
       align-items: center;
@@ -65,7 +65,7 @@
       font-size: 14px;
       min-width: 180px;
     }
-    .header-select:focus { outline: none; border-color: #3b82f6; }
+    .header-select:focus { outline: none; border-color: #dc2626; }
     .header-select option { background: #1e293b; }
     
     .cart-summary {
@@ -83,7 +83,7 @@
     }
     .cart-info span { display: flex; align-items: center; gap: 6px; }
     .cart-info .count { 
-      background: #3b82f6; 
+      background: #dc2626; 
       padding: 2px 8px; 
       border-radius: 10px; 
       font-weight: 600;
@@ -103,10 +103,10 @@
       white-space: nowrap;
     }
     .btn-primary {
-      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
       color: white;
     }
-    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4); }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 15px rgba(220, 38, 38, 0.4); }
     .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
     .btn-secondary {
       background: #475569;
@@ -119,6 +119,15 @@
     }
     .btn-warning {
       background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      color: white;
+    }
+    .btn-success {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: white;
+    }
+    .btn-success:hover { transform: translateY(-1px); box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4); }
+    .btn-info {
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
       color: white;
     }
     .btn-sm {
@@ -161,7 +170,7 @@
       transition: all 0.2s;
     }
     .tab:hover { background: #334155; }
-    .tab.active { background: #3b82f6; color: white; }
+    .tab.active { background: #dc2626; color: white; }
     
     .search-box {
       flex: 1;
@@ -177,7 +186,7 @@
       color: #e2e8f0;
       font-size: 14px;
     }
-    .search-input:focus { outline: none; border-color: #3b82f6; }
+    .search-input:focus { outline: none; border-color: #dc2626; }
     .search-input::placeholder { color: #64748b; }
     
     .filter-chips {
@@ -195,7 +204,34 @@
       transition: all 0.2s;
     }
     .chip:hover { background: #475569; }
-    .chip.active { background: #3b82f6; border-color: #3b82f6; }
+    .chip.active { background: #dc2626; border-color: #dc2626; }
+    
+    /* STATUS FILTER CHIPS */
+    .status-chips {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .status-chip {
+      padding: 8px 16px;
+      background: #334155;
+      border: 1px solid #475569;
+      border-radius: 8px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .status-chip:hover { background: #475569; }
+    .status-chip.active { border-color: #dc2626; background: rgba(220, 38, 38, 0.2); }
+    .status-chip .badge {
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 700;
+    }
     
     /* CONTENT AREA */
     .content {
@@ -258,6 +294,8 @@
       }
       .product-stocks { justify-content: flex-start; }
       .product-actions { justify-content: flex-start; }
+      .header { flex-wrap: wrap; padding: 12px 16px; }
+      .header-controls { flex-wrap: wrap; justify-content: center; }
     }
     
     .product-code {
@@ -338,11 +376,11 @@
       font-size: 14px;
       text-align: center;
     }
-    .qty-input-small:focus { outline: none; border-color: #3b82f6; }
+    .qty-input-small:focus { outline: none; border-color: #dc2626; }
     
     .add-btn {
       padding: 8px 16px;
-      background: #3b82f6;
+      background: #dc2626;
       border: none;
       border-radius: 6px;
       color: white;
@@ -352,11 +390,11 @@
       transition: all 0.2s;
       white-space: nowrap;
     }
-    .add-btn:hover { background: #2563eb; }
+    .add-btn:hover { background: #b91c1c; }
     .add-btn.added {
       background: #10b981;
     }
-    .add-btn.added:hover { background: #dc2626; }
+    .add-btn.added:hover { background: #059669; }
     
     /* ALERTS */
     .alert {
@@ -370,7 +408,7 @@
       gap: 10px;
       z-index: 1000;
       animation: slideUp 0.3s ease;
-      max-width: 350px;
+      max-width: 400px;
       font-size: 14px;
     }
     @keyframes slideUp {
@@ -379,6 +417,7 @@
     }
     .alert-success { background: #065f46; border: 1px solid #10b981; }
     .alert-error { background: #7f1d1d; border: 1px solid #f87171; }
+    .alert-info { background: #1e3a5f; border: 1px solid #3b82f6; }
     .alert.hidden { display: none; }
     
     /* MODAL */
@@ -399,9 +438,11 @@
       background: #1e293b;
       border-radius: 12px;
       width: 95%;
-      max-width: 700px;
-      max-height: 85vh;
+      max-width: 800px;
+      max-height: 90vh;
       overflow: hidden;
+      display: flex;
+      flex-direction: column;
     }
     .modal-header {
       padding: 16px 20px;
@@ -409,6 +450,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      flex-shrink: 0;
     }
     .modal-header h3 { font-size: 16px; font-weight: 600; }
     .modal-close {
@@ -421,7 +463,7 @@
     .modal-body {
       padding: 20px;
       overflow-y: auto;
-      max-height: 55vh;
+      flex: 1;
     }
     .modal-footer {
       padding: 16px 20px;
@@ -429,6 +471,7 @@
       display: flex;
       gap: 12px;
       justify-content: flex-end;
+      flex-shrink: 0;
     }
     
     .cart-item {
@@ -479,21 +522,27 @@
       color: #94a3b8;
       font-size: 12px;
       text-transform: uppercase;
+      position: sticky;
+      top: 0;
     }
-    .data-table tr:hover { background: rgba(59, 130, 246, 0.1); }
+    .data-table tr:hover { background: rgba(220, 38, 38, 0.1); }
+    .data-table .actions-cell {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
     
+    /* STATUS BADGES */
     .status-badge {
-      padding: 4px 10px;
+      padding: 4px 12px;
       border-radius: 12px;
       font-size: 11px;
-      font-weight: 600;
+      font-weight: 700;
+      letter-spacing: 0.5px;
     }
-    .status-NOVO { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
-    .status-ODOBRENO { background: rgba(251, 191, 36, 0.2); color: #fbbf24; }
-    .status-PRIPREMLJENO { background: rgba(168, 85, 247, 0.2); color: #a855f7; }
-    .status-U_ISPORUCI { background: rgba(249, 115, 22, 0.2); color: #f97316; }
-    .status-ISPORUCENO { background: rgba(74, 222, 128, 0.2); color: #4ade80; }
-    .status-OTKAZANO { background: rgba(248, 113, 113, 0.2); color: #f87171; }
+    .status-N { background: rgba(251, 191, 36, 0.2); color: #fbbf24; }
+    .status-T { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
+    .status-Z { background: rgba(74, 222, 128, 0.2); color: #4ade80; }
     
     .hidden { display: none !important; }
     
@@ -516,7 +565,7 @@
       width: 20px;
       height: 20px;
       border: 2px solid #334155;
-      border-top-color: #3b82f6;
+      border-top-color: #dc2626;
       border-radius: 50%;
       animation: spin 1s linear infinite;
       margin-left: 10px;
@@ -534,39 +583,129 @@
     }
     .detail-title { font-size: 18px; font-weight: 700; }
     .detail-meta { font-size: 13px; color: #94a3b8; margin-top: 4px; }
-    .detail-actions { display: flex; gap: 8px; }
+    
+    .detail-info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .detail-info-item {
+      background: #334155;
+      padding: 12px;
+      border-radius: 8px;
+    }
+    .detail-info-label {
+      font-size: 11px;
+      color: #94a3b8;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    .detail-info-value {
+      font-size: 14px;
+      font-weight: 600;
+    }
     
     .stavka-list {
       margin-top: 16px;
     }
     .stavka-item {
-      display: flex;
-      justify-content: space-between;
+      display: grid;
+      grid-template-columns: 1fr auto auto auto;
+      gap: 16px;
       align-items: center;
       padding: 12px;
       background: #334155;
       border-radius: 8px;
       margin-bottom: 8px;
     }
-    .stavka-info { flex: 1; }
-    .stavka-name { font-weight: 600; }
+    .stavka-item.changed {
+      border: 1px solid #f59e0b;
+      background: rgba(245, 158, 11, 0.1);
+    }
+    .stavka-info { min-width: 0; }
+    .stavka-name { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .stavka-code { font-size: 12px; color: #94a3b8; }
     .stavka-qty { 
       font-weight: 700; 
       font-size: 16px;
       color: #3b82f6;
+      text-align: right;
     }
+    .stavka-received {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .stavka-received input {
+      width: 80px;
+      padding: 8px;
+      background: #1e293b;
+      border: 1px solid #475569;
+      border-radius: 6px;
+      color: #e2e8f0;
+      text-align: center;
+      font-size: 14px;
+    }
+    .stavka-received input:focus {
+      outline: none;
+      border-color: #dc2626;
+    }
+    .stavka-received input.changed {
+      border-color: #f59e0b;
+      background: rgba(245, 158, 11, 0.1);
+    }
+    .stavka-reason {
+      min-width: 120px;
+    }
+    .stavka-reason select {
+      width: 100%;
+      padding: 8px;
+      background: #1e293b;
+      border: 1px solid #475569;
+      border-radius: 6px;
+      color: #e2e8f0;
+      font-size: 12px;
+    }
+    
+    @media (max-width: 600px) {
+      .stavka-item {
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+      .stavka-received, .stavka-reason {
+        justify-self: start;
+      }
+    }
+    
+    /* ROLE INDICATOR */
+    .role-indicator {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      background: #334155;
+      border-radius: 6px;
+      font-size: 12px;
+    }
+    .role-indicator.cm { border-left: 3px solid #3b82f6; }
+    .role-indicator.mp { border-left: 3px solid #10b981; }
   </style>
 </head>
 <body>
   <!-- FIXED HEADER -->
   <header class="header">
     <div class="logo">
-      <div class="logo-icon">📦</div>
-      <span>Collina Magacin</span>
+      <div class="logo-icon">🥐</div>
+      <span>Collina Trebovanje</span>
     </div>
     
     <div class="header-controls">
+      <div class="role-indicator mp" id="roleIndicator">
+        <span>📍</span>
+        <span id="roleText">Izaberite radnju</span>
+      </div>
+      
       <select class="header-select" id="radnja" onchange="onRadnjaChange()">
         <option value="">-- Izaberi radnju --</option>
       </select>
@@ -600,7 +739,7 @@
         <input type="text" class="search-input" id="searchInput" placeholder="Pretraži artikle..." oninput="filterProducts()">
       </div>
       
-      <div class="filter-chips">
+      <div class="filter-chips" id="categoryChips">
         <div class="chip active" data-cat="all" onclick="filterCategory('all', this)">Svi</div>
         <div class="chip" data-cat="low" onclick="filterCategory('low', this)">⚠️ Ispod min.</div>
         <div class="chip" data-cat="200" onclick="filterCategory('200', this)">Piće</div>
@@ -635,18 +774,44 @@
         </div>
       </div>
       
-      <!-- TAB: LISTA -->
+      <!-- TAB: LISTA TREBOVANJA -->
       <div id="tab-lista" class="hidden">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
           <h2>📋 Trebovanja</h2>
           <button class="btn btn-secondary" onclick="loadTrebovanja()">🔄 Osveži</button>
         </div>
-        <table class="data-table">
-          <thead>
-            <tr><th>ID</th><th>Radnja</th><th>Datum</th><th>Stavke</th><th>Status</th><th>Akcija</th></tr>
-          </thead>
-          <tbody id="trebovanjaBody"></tbody>
-        </table>
+        
+        <!-- Status filter -->
+        <div class="status-chips" id="statusChips">
+          <div class="status-chip active" data-status="" onclick="filterTrebovanjaStatus('', this)">
+            Svi <span class="badge" id="countAll">0</span>
+          </div>
+          <div class="status-chip" data-status="N" onclick="filterTrebovanjaStatus('N', this)">
+            🆕 Novo <span class="badge" style="background:#fbbf24;color:#000;" id="countN">0</span>
+          </div>
+          <div class="status-chip" data-status="T" onclick="filterTrebovanjaStatus('T', this)">
+            🚚 Na putu <span class="badge" style="background:#3b82f6;" id="countT">0</span>
+          </div>
+          <div class="status-chip" data-status="Z" onclick="filterTrebovanjaStatus('Z', this)">
+            ✅ Završeno <span class="badge" style="background:#10b981;" id="countZ">0</span>
+          </div>
+        </div>
+        
+        <div style="overflow-x: auto;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Broj</th>
+                <th>Radnja</th>
+                <th>Datum</th>
+                <th>Stavke</th>
+                <th>Status</th>
+                <th>Akcije</th>
+              </tr>
+            </thead>
+            <tbody id="trebovanjaBody"></tbody>
+          </table>
+        </div>
       </div>
       
       <!-- TAB: PRENOSI -->
@@ -655,12 +820,14 @@
           <h2>📄 Prenosi iz Pantheona</h2>
           <button class="btn btn-secondary" onclick="loadPrenosi()">🔄 Osveži</button>
         </div>
-        <table class="data-table">
-          <thead>
-            <tr><th>Broj</th><th>Datum</th><th>Primalac</th><th>Vrednost</th><th>Stavke</th></tr>
-          </thead>
-          <tbody id="prenosiBody"></tbody>
-        </table>
+        <div style="overflow-x: auto;">
+          <table class="data-table">
+            <thead>
+              <tr><th>Broj</th><th>Datum</th><th>Primalac</th><th>Vrednost</th><th>Stavke</th><th>Akcija</th></tr>
+            </thead>
+            <tbody id="prenosiBody"></tbody>
+          </table>
+        </div>
       </div>
     </div>
   </main>
@@ -700,9 +867,9 @@
   
   <!-- TREBOVANJE DETAIL MODAL -->
   <div class="modal-overlay hidden" id="trebovanjeModal">
-    <div class="modal" style="max-width: 600px;">
+    <div class="modal" style="max-width: 800px;">
       <div class="modal-header">
-        <h3>📋 Detalji trebovanja</h3>
+        <h3 id="trebovanjeModalTitle">📋 Detalji trebovanja</h3>
         <button class="modal-close" onclick="closeTrebovanjeModal()">×</button>
       </div>
       <div class="modal-body" id="trebovanjeModalBody">
@@ -713,9 +880,32 @@
     </div>
   </div>
   
+  <!-- PRENOS DETAIL MODAL -->
+  <div class="modal-overlay hidden" id="prenosModal">
+    <div class="modal" style="max-width: 700px;">
+      <div class="modal-header">
+        <h3 id="prenosModalTitle">📄 Detalji prenosa</h3>
+        <button class="modal-close" onclick="closePrenosModal()">×</button>
+      </div>
+      <div class="modal-body" id="prenosModalBody">
+        <div class="loading-spinner">Učitavanje</div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closePrenosModal()">Zatvori</button>
+      </div>
+    </div>
+  </div>
+  
   <script>
-    const API = 'https://instances-oakland-pink-dear.trycloudflare.com/api/trebovanje';
+    // ==================== CONFIG ====================
+    // Promeni API URL prema potrebi
+    const API = window.location.hostname === 'localhost' 
+      ? 'http://localhost:3002/api/trebovanje'
+      : window.location.origin + '/api/trebovanje';
+    
+    // ==================== STATE ====================
     let artikli = [];
+    let stanjeSvi = {};
     let stanjeCM = {};
     let stanjeRadnja = {};
     let minStanje = {};
@@ -724,6 +914,23 @@
     let selectedRadnja = '';
     let suggestions = [];
     let currentTrebovanje = null;
+    let trebovanjaList = [];
+    let currentStatusFilter = '';
+    let izmeneStavki = {}; // {itemNo: {receivedQty, reason, note}}
+    
+    const STATUS_NAMES = {
+      'N': 'NOVO',
+      'T': 'NA PUTU',
+      'Z': 'ZAVRŠENO'
+    };
+    
+    const RAZLOZI_IZMENE = [
+      { kod: 'POLOMLJENO', naziv: 'Polomljeno' },
+      { kod: 'ISTEKAO_ROK', naziv: 'Istekao rok' },
+      { kod: 'MANJA_KOLICINA', naziv: 'Manja količina' },
+      { kod: 'VECA_KOLICINA', naziv: 'Veća količina' },
+      { kod: 'OSTALO', naziv: 'Ostalo' }
+    ];
     
     // ==================== HELPER FUNKCIJE ====================
     function formatDate(dateValue) {
@@ -742,10 +949,31 @@
       try {
         const d = new Date(dateValue);
         if (isNaN(d.getTime())) return '-';
-        return d.toLocaleDateString('sr-RS', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        return d.toLocaleDateString('sr-RS', { 
+          day: '2-digit', 
+          month: '2-digit', 
+          year: 'numeric', 
+          hour: '2-digit', 
+          minute: '2-digit' 
+        });
       } catch (e) {
         return '-';
       }
+    }
+    
+    function formatNumber(num, decimals = 2) {
+      if (num === null || num === undefined) return '0';
+      return Number(num).toLocaleString('sr-RS', { 
+        minimumFractionDigits: decimals, 
+        maximumFractionDigits: decimals 
+      });
+    }
+    
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/[&<>"']/g, m => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      }[m]));
     }
     
     // ==================== TABS ====================
@@ -759,6 +987,17 @@
       document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
       element.classList.add('active');
       
+      // Show/hide category chips
+      const categoryChips = document.getElementById('categoryChips');
+      const searchBox = document.querySelector('.search-box');
+      if (tabName === 'artikli') {
+        categoryChips.style.display = 'flex';
+        searchBox.style.display = 'block';
+      } else {
+        categoryChips.style.display = 'none';
+        searchBox.style.display = 'none';
+      }
+      
       if (tabName === 'lista') loadTrebovanja();
       if (tabName === 'prenosi') loadPrenosi();
     }
@@ -770,9 +1009,16 @@
     
     function filterCategory(cat, element) {
       currentCategory = cat;
-      document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+      document.querySelectorAll('#categoryChips .chip').forEach(c => c.classList.remove('active'));
       element.classList.add('active');
       renderProducts();
+    }
+    
+    function filterTrebovanjaStatus(status, element) {
+      currentStatusFilter = status;
+      document.querySelectorAll('.status-chip').forEach(c => c.classList.remove('active'));
+      element.classList.add('active');
+      renderTrebovanjaList();
     }
     
     // ==================== INIT ====================
@@ -784,7 +1030,7 @@
       renderProducts();
     });
     
-    // ==================== DATA ====================
+    // ==================== DATA LOADING ====================
     async function loadRadnje() {
       try {
         const res = await fetch(API + '/radnje');
@@ -792,47 +1038,58 @@
         const select = document.getElementById('radnja');
         radnje.forEach(r => {
           const opt = document.createElement('option');
-          opt.value = r.sifra;
+          opt.value = r.sifra || r.naziv;
           opt.textContent = r.naziv;
           select.appendChild(opt);
         });
-      } catch (err) { console.error(err); }
+      } catch (err) { 
+        console.error('Greška pri učitavanju radnji:', err); 
+        showAlert('Greška pri učitavanju radnji', 'error');
+      }
     }
     
     async function loadArtikli() {
       try {
         const res = await fetch(API + '/artikli');
         artikli = await res.json();
-      } catch (err) { console.error(err); }
+      } catch (err) { 
+        console.error('Greška pri učitavanju artikala:', err); 
+      }
     }
     
     async function loadStanje() {
       try {
         const res = await fetch(API + '/stanje');
-        const data = await res.json();
-        stanjeCM = data['Centralni magacin'] || {};
-      } catch (err) { console.error(err); }
+        stanjeSvi = await res.json();
+        stanjeCM = stanjeSvi['Centralni magacin'] || {};
+      } catch (err) { 
+        console.error('Greška pri učitavanju stanja:', err); 
+      }
     }
     
     async function loadMinStanje() {
       try {
         const res = await fetch(API + '/min-stanje');
         minStanje = await res.json();
-      } catch (err) { console.error(err); }
+      } catch (err) { 
+        console.error('Greška pri učitavanju min stanja:', err); 
+      }
     }
     
-    // ==================== RADNJA ====================
+    // ==================== RADNJA CHANGE ====================
     async function onRadnjaChange() {
       selectedRadnja = document.getElementById('radnja').value;
+      const roleIndicator = document.getElementById('roleIndicator');
+      const roleText = document.getElementById('roleText');
+      
       if (selectedRadnja) {
-        try {
-          const res = await fetch(API + '/stanje');
-          const data = await res.json();
-          stanjeRadnja = data[selectedRadnja] || {};
-        } catch (err) { stanjeRadnja = {}; }
+        stanjeRadnja = stanjeSvi[selectedRadnja] || {};
+        roleText.textContent = selectedRadnja;
+        roleIndicator.className = 'role-indicator mp';
         updateSuggestions();
       } else {
         stanjeRadnja = {};
+        roleText.textContent = 'Izaberite radnju';
         document.getElementById('suggestionBanner').classList.add('hidden');
       }
       renderProducts();
@@ -841,14 +1098,14 @@
     
     function updateSuggestions() {
       suggestions = artikli.filter(a => {
-        const stanje = stanjeRadnja[a.acIdent] || 0;
+        const stanje = (stanjeRadnja[a.acIdent]?.stock) || 0;
         const min = minStanje[a.acIdent] || 0;
         return min > 0 && stanje < min;
       }).map(a => ({
         ...a,
-        trenutno: stanjeRadnja[a.acIdent] || 0,
+        trenutno: (stanjeRadnja[a.acIdent]?.stock) || 0,
         min: minStanje[a.acIdent] || 0,
-        potrebno: Math.max(1, (minStanje[a.acIdent] || 0) - (stanjeRadnja[a.acIdent] || 0))
+        potrebno: Math.max(1, (minStanje[a.acIdent] || 0) - ((stanjeRadnja[a.acIdent]?.stock) || 0))
       }));
       
       const banner = document.getElementById('suggestionBanner');
@@ -860,7 +1117,7 @@
       }
     }
     
-    // ==================== PRODUCTS ====================
+    // ==================== PRODUCTS RENDERING ====================
     function renderProducts() {
       const list = document.getElementById('productsList');
       const search = document.getElementById('searchInput').value.toLowerCase();
@@ -869,7 +1126,7 @@
         if (search && !a.acIdent.toLowerCase().includes(search) && !a.acName.toLowerCase().includes(search)) return false;
         if (currentCategory !== 'all' && currentCategory !== 'low' && a.acSetOfItem !== currentCategory) return false;
         if (currentCategory === 'low') {
-          const s = stanjeRadnja[a.acIdent] || 0;
+          const s = (stanjeRadnja[a.acIdent]?.stock) || 0;
           const m = minStanje[a.acIdent] || 0;
           if (!(m > 0 && s < m)) return false;
         }
@@ -884,36 +1141,36 @@
       }
       
       list.innerHTML = filtered.map(a => {
-        const cm = stanjeCM[a.acIdent] || a.anStock || 0;
-        const rad = stanjeRadnja[a.acIdent] || 0;
+        const cmStock = (stanjeCM[a.acIdent]?.stock) || a.anStock || 0;
+        const radStock = (stanjeRadnja[a.acIdent]?.stock) || 0;
         const min = minStanje[a.acIdent] || 0;
-        const isLow = min > 0 && rad < min;
+        const isLow = min > 0 && radStock < min;
         const inCart = cart.find(c => c.sifra === a.acIdent);
-        const cartQty = inCart ? inCart.kolicina : 1;
+        const cartQty = inCart ? inCart.kolicina : (isLow ? Math.max(1, min - radStock) : 1);
         
         return `
           <div class="product-row ${inCart ? 'in-cart' : ''} ${isLow ? 'low-stock' : ''}">
-            <div class="product-code">${a.acIdent}</div>
+            <div class="product-code">${escapeHtml(a.acIdent)}</div>
             <div class="product-info">
-              <div class="product-name">${a.acName}</div>
-              <div class="product-unit">${a.acUM || 'KOM'}</div>
+              <div class="product-name">${escapeHtml(a.acName)}</div>
+              <div class="product-unit">${escapeHtml(a.acUM) || 'KOM'}</div>
             </div>
             <div class="product-stocks">
               <div class="stock-badge">
                 <div class="label">CM</div>
-                <div class="value ${cm > 0 ? 'ok' : 'zero'}">${cm}</div>
+                <div class="value ${cmStock > 0 ? 'ok' : 'zero'}">${formatNumber(cmStock, 0)}</div>
               </div>
               <div class="stock-badge">
-                <div class="label">${selectedRadnja || 'Radnja'}</div>
-                <div class="value ${isLow ? 'low' : (rad > 0 ? 'ok' : 'zero')}">${rad}</div>
+                <div class="label">${selectedRadnja ? escapeHtml(selectedRadnja.substring(0, 8)) : 'Radnja'}</div>
+                <div class="value ${isLow ? 'low' : (radStock > 0 ? 'ok' : 'zero')}">${formatNumber(radStock, 0)}</div>
               </div>
             </div>
             <div class="product-status">
-              ${isLow ? '<span class="badge badge-low">Ispod min.</span>' : (cm > 0 ? '<span class="badge badge-ok">Na stanju</span>' : '')}
+              ${isLow ? '<span class="badge badge-low">Ispod min.</span>' : (cmStock > 0 ? '<span class="badge badge-ok">Na stanju</span>' : '')}
             </div>
             <div class="product-actions">
-              <input type="number" class="qty-input-small" id="qty-${a.acIdent}" value="${cartQty}" min="0.1" step="0.1">
-              <button class="add-btn ${inCart ? 'added' : ''}" onclick="toggleProduct('${a.acIdent}', '${a.acName.replace(/'/g, "\\'")}', '${a.acUM || 'KOM'}')">
+              <input type="number" class="qty-input-small" id="qty-${a.acIdent}" value="${cartQty}" min="0.001" step="0.001">
+              <button class="add-btn ${inCart ? 'added' : ''}" onclick="toggleProduct('${a.acIdent}')">
                 ${inCart ? '✓ Dodato' : '+ Dodaj'}
               </button>
             </div>
@@ -923,16 +1180,24 @@
     }
     
     // ==================== CART ====================
-    function toggleProduct(sifra, naziv, jm) {
+    function toggleProduct(sifra) {
+      const artikal = artikli.find(a => a.acIdent === sifra);
+      if (!artikal) return;
+      
       const existing = cart.find(c => c.sifra === sifra);
       const qtyInput = document.getElementById('qty-' + sifra);
       const qty = parseFloat(qtyInput?.value) || 1;
       
       if (existing) {
         cart = cart.filter(c => c.sifra !== sifra);
-        showAlert('Uklonjeno iz korpe', 'error');
+        showAlert('Uklonjeno iz korpe', 'info');
       } else {
-        cart.push({ sifra, naziv, jm, kolicina: qty });
+        cart.push({ 
+          sifra, 
+          naziv: artikal.acName, 
+          jm: artikal.acUM || 'KOM', 
+          kolicina: qty 
+        });
         showAlert('Dodato u korpu', 'success');
       }
       
@@ -962,12 +1227,12 @@
         body.innerHTML = cart.map((c, i) => `
           <div class="cart-item">
             <div class="cart-item-info">
-              <div class="cart-item-name">${c.naziv}</div>
-              <div class="cart-item-code">${c.sifra}</div>
+              <div class="cart-item-name">${escapeHtml(c.naziv)}</div>
+              <div class="cart-item-code">${escapeHtml(c.sifra)}</div>
             </div>
             <div class="cart-item-controls">
-              <input type="number" class="cart-item-qty" value="${c.kolicina}" min="0.1" step="0.1" onchange="updateCartQty(${i}, this.value)">
-              <span class="cart-item-unit">${c.jm}</span>
+              <input type="number" class="cart-item-qty" value="${c.kolicina}" min="0.001" step="0.001" onchange="updateCartQty(${i}, this.value)">
+              <span class="cart-item-unit">${escapeHtml(c.jm)}</span>
               <button class="cart-item-remove" onclick="removeFromCart(${i})">×</button>
             </div>
           </div>
@@ -998,7 +1263,7 @@
       updateCartUI();
       closeCartModal();
       renderProducts();
-      showAlert('Korpa ispražnjena', 'error');
+      showAlert('Korpa ispražnjena', 'info');
     }
     
     // ==================== SUGGESTIONS ====================
@@ -1009,12 +1274,12 @@
       body.innerHTML = suggestions.map(s => `
         <div class="cart-item">
           <div class="cart-item-info">
-            <div class="cart-item-name">${s.acName}</div>
-            <div class="cart-item-code">${s.acIdent} | Trenutno: ${s.trenutno} | Min: ${s.min}</div>
+            <div class="cart-item-name">${escapeHtml(s.acName)}</div>
+            <div class="cart-item-code">${escapeHtml(s.acIdent)} | Trenutno: ${formatNumber(s.trenutno, 0)} | Min: ${formatNumber(s.min, 0)}</div>
           </div>
           <div class="cart-item-controls">
             <input type="number" class="cart-item-qty" id="sug-${s.acIdent}" value="${s.potrebno}" min="1" step="1">
-            <span class="cart-item-unit">${s.acUM || 'KOM'}</span>
+            <span class="cart-item-unit">${escapeHtml(s.acUM) || 'KOM'}</span>
           </div>
         </div>
       `).join('');
@@ -1040,9 +1305,13 @@
       showAlert(`Dodato ${suggestions.length} artikala`, 'success');
     }
     
-    // ==================== SUBMIT ====================
+    // ==================== SUBMIT TREBOVANJE ====================
     async function submitTrebovanje() {
       if (cart.length === 0 || !selectedRadnja) return;
+      
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = true;
+      btn.innerHTML = '⏳ Slanje...';
       
       try {
         const res = await fetch(API + '/submit', {
@@ -1054,7 +1323,7 @@
         const result = await res.json();
         
         if (result.success) {
-          showAlert('Trebovanje uspešno poslato!', 'success');
+          showAlert(`Trebovanje ${result.trebovanjeKey || ''} uspešno kreirano!`, 'success');
           cart = [];
           updateCartUI();
           closeCartModal();
@@ -1063,8 +1332,12 @@
           showAlert('Greška: ' + (result.error || 'Nepoznata greška'), 'error');
         }
       } catch (err) {
-        showAlert('Greška pri slanju', 'error');
+        showAlert('Greška pri slanju: ' + err.message, 'error');
         console.error(err);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '📤 Pošalji trebovanje';
+        updateSubmitBtn();
       }
     }
     
@@ -1075,88 +1348,139 @@
       
       try {
         const res = await fetch(API + '/lista');
-        const data = await res.json();
+        trebovanjaList = await res.json();
         
-        if (data.length === 0) {
-          body.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:#64748b;">Nema trebovanja</td></tr>';
-          return;
-        }
+        // Update counts
+        document.getElementById('countAll').textContent = trebovanjaList.length;
+        document.getElementById('countN').textContent = trebovanjaList.filter(t => t.status === 'N').length;
+        document.getElementById('countT').textContent = trebovanjaList.filter(t => t.status === 'T').length;
+        document.getElementById('countZ').textContent = trebovanjaList.filter(t => t.status === 'Z').length;
         
-        body.innerHTML = data.map(t => `
-          <tr>
-            <td>${t.id}</td>
-            <td>${t.radnja}</td>
-            <td>${formatDate(t.kreirano)}</td>
-            <td>${t.stavke_count || t.stavke?.length || '-'}</td>
-            <td><span class="status-badge status-${t.status}">${t.status}</span></td>
-            <td>
-              <button class="btn btn-secondary btn-sm" onclick="viewTrebovanje(${t.id})">👁️ Detalji</button>
-            </td>
-          </tr>
-        `).join('');
+        renderTrebovanjaList();
       } catch (err) {
-        body.innerHTML = '<tr><td colspan="6" style="color:#f87171;">Greška pri učitavanju</td></tr>';
+        body.innerHTML = '<tr><td colspan="6" style="color:#f87171;text-align:center;padding:40px;">Greška pri učitavanju</td></tr>';
+        console.error(err);
       }
     }
     
+    function renderTrebovanjaList() {
+      const body = document.getElementById('trebovanjaBody');
+      
+      let filtered = trebovanjaList;
+      if (currentStatusFilter) {
+        filtered = trebovanjaList.filter(t => t.status === currentStatusFilter);
+      }
+      
+      if (filtered.length === 0) {
+        body.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:#64748b;">Nema trebovanja</td></tr>';
+        return;
+      }
+      
+      body.innerHTML = filtered.map(t => {
+        const statusName = STATUS_NAMES[t.status] || t.status;
+        const canSend = t.status === 'N';
+        const canReceive = t.status === 'T';
+        
+        return `
+          <tr>
+            <td style="font-family: monospace; font-weight: 600;">${escapeHtml(t.acKey)}</td>
+            <td>${escapeHtml(t.radnja)}</td>
+            <td>${formatDate(t.adDate)}</td>
+            <td>${t.stavke_count || '-'}</td>
+            <td><span class="status-badge status-${t.status}">${statusName}</span></td>
+            <td class="actions-cell">
+              <button class="btn btn-secondary btn-sm" onclick="viewTrebovanje('${escapeHtml(t.acKey)}')">👁️</button>
+              ${canSend ? `<button class="btn btn-warning btn-sm" onclick="posaljiRobu('${escapeHtml(t.acKey)}')">🚚 Pošalji</button>` : ''}
+              ${canReceive ? `<button class="btn btn-success btn-sm" onclick="viewTrebovanjeZaPrijem('${escapeHtml(t.acKey)}')">📥 Primi</button>` : ''}
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+    
     // ==================== TREBOVANJE DETAIL ====================
-    async function viewTrebovanje(id) {
+    async function viewTrebovanje(key) {
       const modal = document.getElementById('trebovanjeModal');
       const body = document.getElementById('trebovanjeModalBody');
       const footer = document.getElementById('trebovanjeModalFooter');
+      const title = document.getElementById('trebovanjeModalTitle');
       
       modal.classList.remove('hidden');
       body.innerHTML = '<div class="loading-spinner">Učitavanje</div>';
       footer.innerHTML = '';
+      title.textContent = '📋 Trebovanje ' + key;
       
       try {
-        const res = await fetch(API + '/' + id);
-        const t = await res.json();
-        currentTrebovanje = t;
+        const res = await fetch(API + '/detalji/' + encodeURIComponent(key));
+        const data = await res.json();
+        currentTrebovanje = data;
+        
+        const { zaglavlje, stavke, rezervacije } = data;
+        const statusName = STATUS_NAMES[zaglavlje.status] || zaglavlje.status;
         
         body.innerHTML = `
           <div class="detail-header">
             <div>
-              <div class="detail-title">Trebovanje #${t.id}</div>
-              <div class="detail-meta">
-                ${t.radnja} • ${formatDateTime(t.kreirano)}
-              </div>
+              <div class="detail-title">${escapeHtml(zaglavlje.acKey)}</div>
+              <div class="detail-meta">${escapeHtml(zaglavlje.radnja)}</div>
             </div>
-            <span class="status-badge status-${t.status}">${t.status}</span>
+            <span class="status-badge status-${zaglavlje.status}">${statusName}</span>
           </div>
           
-          ${t.napomena ? `<p style="margin-bottom:16px;color:#94a3b8;"><strong>Napomena:</strong> ${t.napomena}</p>` : ''}
+          <div class="detail-info-grid">
+            <div class="detail-info-item">
+              <div class="detail-info-label">Kreirano</div>
+              <div class="detail-info-value">${formatDateTime(zaglavlje.adTimeCreated)}</div>
+            </div>
+            <div class="detail-info-item">
+              <div class="detail-info-label">Poslato</div>
+              <div class="detail-info-value">${formatDateTime(zaglavlje.adTimeSent) || '-'}</div>
+            </div>
+            <div class="detail-info-item">
+              <div class="detail-info-label">Primljeno</div>
+              <div class="detail-info-value">${formatDateTime(zaglavlje.adTimeReceived) || '-'}</div>
+            </div>
+          </div>
           
-          <h4 style="margin-bottom:12px;">📦 Stavke (${t.stavke?.length || 0})</h4>
+          <h4 style="margin-bottom:12px;">📦 Stavke (${stavke?.length || 0})</h4>
           <div class="stavka-list">
-            ${t.stavke?.map(s => `
+            ${stavke?.map(s => `
               <div class="stavka-item">
                 <div class="stavka-info">
-                  <div class="stavka-name">${s.acName}</div>
-                  <div class="stavka-code">${s.acIdent}</div>
+                  <div class="stavka-name">${escapeHtml(s.acName)}</div>
+                  <div class="stavka-code">${escapeHtml(s.acIdent)}</div>
                 </div>
-                <div class="stavka-qty">${s.anQty} ${s.acUM}</div>
+                <div class="stavka-qty">${formatNumber(s.anQty, 3)} ${escapeHtml(s.acUM)}</div>
               </div>
             `).join('') || '<p style="color:#64748b;">Nema stavki</p>'}
           </div>
           
-          ${t.pantheonKey ? `
-            <div style="margin-top:20px;padding:12px;background:#065f46;border-radius:8px;">
-              <strong>✅ Prenos kreiran:</strong> ${t.pantheonKey}
+          ${rezervacije?.length > 0 ? `
+            <h4 style="margin: 20px 0 12px;">🔒 Rezervacije</h4>
+            <div class="stavka-list">
+              ${rezervacije.map(r => `
+                <div class="stavka-item" style="background: rgba(59, 130, 246, 0.1);">
+                  <div class="stavka-info">
+                    <div class="stavka-name">${escapeHtml(r.IDENT)}</div>
+                    <div class="stavka-code">${escapeHtml(r.SKLADISCE)}</div>
+                  </div>
+                  <div class="stavka-qty">${formatNumber(r.KOLICINA, 3)}</div>
+                </div>
+              `).join('')}
             </div>
           ` : ''}
         `;
         
         // Footer buttons based on status
-        if (t.status === 'NOVO') {
+        if (zaglavlje.status === 'N') {
           footer.innerHTML = `
             <button class="btn btn-secondary" onclick="closeTrebovanjeModal()">Zatvori</button>
-            <button class="btn btn-warning" onclick="odobriTrebovanje(${t.id})">✅ Odobri i pripremi</button>
+            <button class="btn btn-warning" onclick="posaljiRobu('${escapeHtml(zaglavlje.acKey)}')">🚚 Pošalji robu</button>
           `;
-        } else if (t.status === 'ODOBRENO' || t.status === 'PRIPREMLJENO') {
+        } else if (zaglavlje.status === 'T') {
           footer.innerHTML = `
             <button class="btn btn-secondary" onclick="closeTrebovanjeModal()">Zatvori</button>
-            <button class="btn btn-primary" onclick="potvrdiPrijem(${t.id})">📦 Pošalji robu (kreira prenos)</button>
+            <button class="btn btn-success" onclick="viewTrebovanjeZaPrijem('${escapeHtml(zaglavlje.acKey)}')">📥 Primi robu</button>
           `;
         } else {
           footer.innerHTML = `
@@ -1165,7 +1489,207 @@
         }
         
       } catch (err) {
-        body.innerHTML = '<p style="color:#f87171;">Greška pri učitavanju</p>';
+        body.innerHTML = '<p style="color:#f87171;text-align:center;padding:40px;">Greška pri učitavanju</p>';
+        console.error(err);
+      }
+    }
+    
+    // ==================== PRIJEM ROBE - SA IZMENOM KOLIČINE ====================
+    async function viewTrebovanjeZaPrijem(key) {
+      const modal = document.getElementById('trebovanjeModal');
+      const body = document.getElementById('trebovanjeModalBody');
+      const footer = document.getElementById('trebovanjeModalFooter');
+      const title = document.getElementById('trebovanjeModalTitle');
+      
+      modal.classList.remove('hidden');
+      body.innerHTML = '<div class="loading-spinner">Učitavanje</div>';
+      footer.innerHTML = '';
+      title.textContent = '📥 Prijem robe - ' + key;
+      izmeneStavki = {};
+      
+      try {
+        const res = await fetch(API + '/detalji/' + encodeURIComponent(key));
+        const data = await res.json();
+        currentTrebovanje = data;
+        
+        const { zaglavlje, stavke } = data;
+        
+        body.innerHTML = `
+          <div class="detail-header">
+            <div>
+              <div class="detail-title">${escapeHtml(zaglavlje.acKey)}</div>
+              <div class="detail-meta">${escapeHtml(zaglavlje.radnja)} • Poslato: ${formatDateTime(zaglavlje.adTimeSent)}</div>
+            </div>
+            <span class="status-badge status-T">NA PUTU</span>
+          </div>
+          
+          <div style="background: #334155; padding: 12px; border-radius: 8px; margin-bottom: 20px;">
+            <p style="font-size: 13px; color: #94a3b8;">
+              💡 <strong>Uputstvo:</strong> Proverite primljene količine. Ako se razlikuju od poslatih, unesite stvarno primljenu količinu i izaberite razlog.
+            </p>
+          </div>
+          
+          <h4 style="margin-bottom:12px;">📦 Stavke za prijem</h4>
+          <div class="stavka-list" id="stavkeZaPrijem">
+            ${stavke?.map(s => {
+              const receivedQty = s.anReceivedQty !== undefined ? s.anReceivedQty : s.anQty;
+              const hasExistingChange = s.acReason ? true : false;
+              
+              return `
+                <div class="stavka-item ${hasExistingChange ? 'changed' : ''}" id="stavka-${s.anNo}">
+                  <div class="stavka-info">
+                    <div class="stavka-name">${escapeHtml(s.acName)}</div>
+                    <div class="stavka-code">${escapeHtml(s.acIdent)} • Poslato: <strong>${formatNumber(s.anQty, 3)}</strong> ${escapeHtml(s.acUM)}</div>
+                    ${s.acReason ? `<div style="font-size:11px;color:#f59e0b;margin-top:4px;">Prethodno: ${s.acReason} ${s.acNote ? '- ' + escapeHtml(s.acNote) : ''}</div>` : ''}
+                  </div>
+                  <div class="stavka-received">
+                    <span style="font-size:12px;color:#94a3b8;">Primljeno:</span>
+                    <input type="number" 
+                           id="received-${s.anNo}" 
+                           value="${receivedQty}" 
+                           min="0" 
+                           step="0.001" 
+                           onchange="onReceivedQtyChange(${s.anNo}, ${s.anQty}, this.value)">
+                  </div>
+                  <div class="stavka-reason" id="reason-container-${s.anNo}" style="${receivedQty != s.anQty ? '' : 'visibility:hidden;'}">
+                    <select id="reason-${s.anNo}" onchange="onReasonChange(${s.anNo})">
+                      <option value="">-- Razlog --</option>
+                      ${RAZLOZI_IZMENE.map(r => `<option value="${r.kod}" ${s.acReason === r.kod ? 'selected' : ''}>${r.naziv}</option>`).join('')}
+                    </select>
+                  </div>
+                </div>
+              `;
+            }).join('') || '<p style="color:#64748b;">Nema stavki</p>'}
+          </div>
+        `;
+        
+        footer.innerHTML = `
+          <button class="btn btn-secondary" onclick="closeTrebovanjeModal()">Otkaži</button>
+          <button class="btn btn-success" onclick="potvrdiPrijem('${escapeHtml(zaglavlje.acKey)}')">✅ Potvrdi prijem i kreiraj prenos</button>
+        `;
+        
+      } catch (err) {
+        body.innerHTML = '<p style="color:#f87171;text-align:center;padding:40px;">Greška pri učitavanju</p>';
+        console.error(err);
+      }
+    }
+    
+    function onReceivedQtyChange(itemNo, originalQty, newValue) {
+      const newQty = parseFloat(newValue) || 0;
+      const reasonContainer = document.getElementById('reason-container-' + itemNo);
+      const input = document.getElementById('received-' + itemNo);
+      const stavkaDiv = document.getElementById('stavka-' + itemNo);
+      
+      if (Math.abs(newQty - originalQty) > 0.001) {
+        reasonContainer.style.visibility = 'visible';
+        input.classList.add('changed');
+        stavkaDiv.classList.add('changed');
+        izmeneStavki[itemNo] = { receivedQty: newQty, reason: '', note: '' };
+      } else {
+        reasonContainer.style.visibility = 'hidden';
+        input.classList.remove('changed');
+        stavkaDiv.classList.remove('changed');
+        delete izmeneStavki[itemNo];
+      }
+    }
+    
+    function onReasonChange(itemNo) {
+      const reason = document.getElementById('reason-' + itemNo).value;
+      if (izmeneStavki[itemNo]) {
+        izmeneStavki[itemNo].reason = reason;
+      }
+    }
+    
+    // ==================== AKCIJE NA TREBOVANJU ====================
+    async function posaljiRobu(key) {
+      if (!confirm(`Da li ste sigurni da želite da pošaljete robu za trebovanje ${key}?`)) {
+        return;
+      }
+      
+      try {
+        showAlert('Slanje robe...', 'info');
+        
+        const res = await fetch(API + '/posalji/' + encodeURIComponent(key), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: 5 })
+        });
+        
+        const result = await res.json();
+        
+        if (result.success) {
+          showAlert('Roba je poslata! Status: NA PUTU', 'success');
+          closeTrebovanjeModal();
+          loadTrebovanja();
+        } else {
+          showAlert('Greška: ' + (result.error || result.Poruka), 'error');
+        }
+      } catch (err) {
+        showAlert('Greška pri slanju: ' + err.message, 'error');
+        console.error(err);
+      }
+    }
+    
+    async function potvrdiPrijem(key) {
+      // Proveri da li sve izmene imaju razlog
+      const izmeneKeys = Object.keys(izmeneStavki);
+      for (const itemNo of izmeneKeys) {
+        if (!izmeneStavki[itemNo].reason) {
+          showAlert(`Unesite razlog za izmenu stavke #${itemNo}`, 'error');
+          return;
+        }
+      }
+      
+      if (!confirm(`Da li ste sigurni da želite da primite robu i kreirate prenos u Pantheonu?`)) {
+        return;
+      }
+      
+      try {
+        // Prvo sačuvaj izmene ako ih ima
+        for (const itemNo of izmeneKeys) {
+          const izmena = izmeneStavki[itemNo];
+          showAlert(`Čuvanje izmene za stavku #${itemNo}...`, 'info');
+          
+          const izRes = await fetch(API + '/izmena-kolicine', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              acOrderKey: key,
+              anItemNo: parseInt(itemNo),
+              anReceivedQty: izmena.receivedQty,
+              acReason: izmena.reason,
+              acNote: izmena.note || null,
+              userId: 5
+            })
+          });
+          
+          const izResult = await izRes.json();
+          if (!izResult.success) {
+            showAlert('Greška pri čuvanju izmene: ' + (izResult.error || izResult.Poruka), 'error');
+            return;
+          }
+        }
+        
+        // Zatim potvrdi prijem
+        showAlert('Kreiranje prenosa u Pantheonu...', 'info');
+        
+        const res = await fetch(API + '/primi/' + encodeURIComponent(key), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: 5 })
+        });
+        
+        const result = await res.json();
+        
+        if (result.success) {
+          showAlert(`Prenos kreiran: ${result.transferKey}`, 'success');
+          closeTrebovanjeModal();
+          loadTrebovanja();
+        } else {
+          showAlert('Greška: ' + (result.error || result.ErrorMessage), 'error');
+        }
+      } catch (err) {
+        showAlert('Greška pri prijemu: ' + err.message, 'error');
         console.error(err);
       }
     }
@@ -1173,95 +1697,119 @@
     function closeTrebovanjeModal() {
       document.getElementById('trebovanjeModal').classList.add('hidden');
       currentTrebovanje = null;
-    }
-    
-    // ==================== AKCIJE NA TREBOVANJU ====================
-    async function odobriTrebovanje(id) {
-      try {
-        const res = await fetch(API + '/' + id + '/status', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: 'ODOBRENO', korisnik: 'Magacioner' })
-        });
-        
-        const result = await res.json();
-        
-        if (result.success) {
-          showAlert('Trebovanje odobreno!', 'success');
-          viewTrebovanje(id); // Refresh modal
-          loadTrebovanja(); // Refresh list
-        } else {
-          showAlert('Greška: ' + result.error, 'error');
-        }
-      } catch (err) {
-        showAlert('Greška pri odobravanju', 'error');
-        console.error(err);
-      }
-    }
-    
-    async function potvrdiPrijem(id) {
-      if (!confirm('Da li ste sigurni da želite da pošaljete robu? Ovo će kreirati prenos u Pantheonu.')) {
-        return;
-      }
-      
-      try {
-        const res = await fetch(API + '/' + id + '/potvrdi-prijem', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ korisnik: 'Magacioner' })
-        });
-        
-        const result = await res.json();
-        
-        if (result.success) {
-          showAlert('Prenos kreiran u Pantheonu: ' + result.pantheon.transferKey, 'success');
-          viewTrebovanje(id); // Refresh modal
-          loadTrebovanja(); // Refresh list
-        } else {
-          showAlert('Greška: ' + result.error, 'error');
-        }
-      } catch (err) {
-        showAlert('Greška pri kreiranju prenosa', 'error');
-        console.error(err);
-      }
+      izmeneStavki = {};
     }
     
     // ==================== PRENOSI LIST ====================
     async function loadPrenosi() {
       const body = document.getElementById('prenosiBody');
-      body.innerHTML = '<tr><td colspan="5" class="loading-spinner">Učitavanje</td></tr>';
+      body.innerHTML = '<tr><td colspan="6" class="loading-spinner">Učitavanje</td></tr>';
       
       try {
         const res = await fetch(API + '/prenosi');
         const data = await res.json();
         
         if (data.length === 0) {
-          body.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:40px;color:#64748b;">Nema prenosa</td></tr>';
+          body.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:#64748b;">Nema prenosa</td></tr>';
           return;
         }
         
         body.innerHTML = data.map(p => `
           <tr>
-            <td>${p.acKey}</td>
+            <td style="font-family: monospace; font-weight: 600;">${escapeHtml(p.acKey)}</td>
             <td>${formatDate(p.adDate)}</td>
-            <td>${p.acReceiver}</td>
-            <td>${parseFloat(p.anValue || 0).toLocaleString('sr-RS')} RSD</td>
+            <td>${escapeHtml(p.acReceiver)}</td>
+            <td>${formatNumber(p.anValue || 0)} RSD</td>
             <td>${p.items_count || '-'}</td>
+            <td>
+              <button class="btn btn-secondary btn-sm" onclick="viewPrenosDetalji('${escapeHtml(p.acKey)}')">👁️ Detalji</button>
+            </td>
           </tr>
         `).join('');
       } catch (err) {
-        body.innerHTML = '<tr><td colspan="5" style="color:#f87171;">Greška pri učitavanju</td></tr>';
+        body.innerHTML = '<tr><td colspan="6" style="color:#f87171;text-align:center;padding:40px;">Greška pri učitavanju</td></tr>';
+        console.error(err);
       }
+    }
+    
+    async function viewPrenosDetalji(key) {
+      const modal = document.getElementById('prenosModal');
+      const body = document.getElementById('prenosModalBody');
+      const title = document.getElementById('prenosModalTitle');
+      
+      modal.classList.remove('hidden');
+      body.innerHTML = '<div class="loading-spinner">Učitavanje</div>';
+      title.textContent = '📄 Prenos ' + key;
+      
+      try {
+        const res = await fetch(API + '/prenos/' + encodeURIComponent(key));
+        const data = await res.json();
+        
+        const { zaglavlje, stavke } = data;
+        
+        body.innerHTML = `
+          <div class="detail-info-grid">
+            <div class="detail-info-item">
+              <div class="detail-info-label">Izdavalac</div>
+              <div class="detail-info-value">${escapeHtml(zaglavlje?.acIssuer)}</div>
+            </div>
+            <div class="detail-info-item">
+              <div class="detail-info-label">Primalac</div>
+              <div class="detail-info-value">${escapeHtml(zaglavlje?.acReceiver)}</div>
+            </div>
+            <div class="detail-info-item">
+              <div class="detail-info-label">Datum</div>
+              <div class="detail-info-value">${formatDate(zaglavlje?.adDate)}</div>
+            </div>
+            <div class="detail-info-item">
+              <div class="detail-info-label">Vrednost</div>
+              <div class="detail-info-value">${formatNumber(zaglavlje?.anValue)} RSD</div>
+            </div>
+          </div>
+          
+          <h4 style="margin: 20px 0 12px;">📦 Stavke (${stavke?.length || 0})</h4>
+          <div class="stavka-list">
+            ${stavke?.map(s => `
+              <div class="stavka-item">
+                <div class="stavka-info">
+                  <div class="stavka-name">${escapeHtml(s.acName)}</div>
+                  <div class="stavka-code">${escapeHtml(s.acIdent)}</div>
+                </div>
+                <div style="text-align:right;">
+                  <div class="stavka-qty">${formatNumber(s.anQty, 2)} ${escapeHtml(s.acUM)}</div>
+                  <div style="font-size:12px;color:#94a3b8;">${formatNumber(s.anPrice)} RSD</div>
+                </div>
+              </div>
+            `).join('') || '<p style="color:#64748b;">Nema stavki</p>'}
+          </div>
+        `;
+        
+      } catch (err) {
+        body.innerHTML = '<p style="color:#f87171;text-align:center;padding:40px;">Greška pri učitavanju</p>';
+        console.error(err);
+      }
+    }
+    
+    function closePrenosModal() {
+      document.getElementById('prenosModal').classList.add('hidden');
     }
     
     // ==================== ALERTS ====================
     function showAlert(message, type = 'success') {
       const alert = document.getElementById('alert');
+      const icons = { success: '✓', error: '✕', info: 'ℹ' };
+      
       alert.className = `alert alert-${type}`;
-      alert.innerHTML = `${type === 'success' ? '✓' : '✕'} ${message}`;
+      alert.innerHTML = `${icons[type] || ''} ${escapeHtml(message)}`;
       alert.classList.remove('hidden');
       
-      setTimeout(() => alert.classList.add('hidden'), 3000);
+      // Clear existing timeout
+      if (alert.timeoutId) clearTimeout(alert.timeoutId);
+      
+      // Auto-hide after 4 seconds (except for info)
+      if (type !== 'info') {
+        alert.timeoutId = setTimeout(() => alert.classList.add('hidden'), 4000);
+      }
     }
   </script>
 </body>
