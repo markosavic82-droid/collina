@@ -1350,11 +1350,11 @@
         const res = await fetch(API + '/lista');
         trebovanjaList = await res.json();
         
-        // Update counts
+        // Update counts - koristi normalizeStatus za oba formata
         document.getElementById('countAll').textContent = trebovanjaList.length;
-        document.getElementById('countN').textContent = trebovanjaList.filter(t => t.status === 'N').length;
-        document.getElementById('countT').textContent = trebovanjaList.filter(t => t.status === 'T').length;
-        document.getElementById('countZ').textContent = trebovanjaList.filter(t => t.status === 'Z').length;
+        document.getElementById('countN').textContent = trebovanjaList.filter(t => normalizeStatus(t.status) === 'N').length;
+        document.getElementById('countT').textContent = trebovanjaList.filter(t => normalizeStatus(t.status) === 'T').length;
+        document.getElementById('countZ').textContent = trebovanjaList.filter(t => normalizeStatus(t.status) === 'Z').length;
         
         renderTrebovanjaList();
       } catch (err) {
@@ -1368,7 +1368,7 @@
       
       let filtered = trebovanjaList;
       if (currentStatusFilter) {
-        filtered = trebovanjaList.filter(t => t.status === currentStatusFilter);
+        filtered = trebovanjaList.filter(t => normalizeStatus(t.status) === currentStatusFilter);
       }
       
       if (filtered.length === 0) {
@@ -1377,25 +1377,39 @@
       }
       
       body.innerHTML = filtered.map(t => {
-        const statusName = STATUS_NAMES[t.status] || t.status;
-        const canSend = t.status === 'N';
-        const canReceive = t.status === 'T';
+        // Podrška za oba formata - stari (lokalna tabela) i novi (Pantheon)
+        const trebovanjeKey = t.acKey || t.id;
+        const datum = t.adDate || t.kreirano || t.azurirano;
+        const status = normalizeStatus(t.status);
+        const statusName = STATUS_NAMES[status] || t.status;
+        const canSend = status === 'N';
+        const canReceive = status === 'T';
         
         return `
           <tr>
-            <td style="font-family: monospace; font-weight: 600;">${escapeHtml(t.acKey)}</td>
+            <td style="font-family: monospace; font-weight: 600;">${escapeHtml(String(trebovanjeKey))}</td>
             <td>${escapeHtml(t.radnja)}</td>
-            <td>${formatDate(t.adDate)}</td>
-            <td>${t.stavke_count || '-'}</td>
-            <td><span class="status-badge status-${t.status}">${statusName}</span></td>
+            <td>${formatDate(datum)}</td>
+            <td>${t.stavke_count || (t.stavke?.length) || '-'}</td>
+            <td><span class="status-badge status-${status}">${statusName}</span></td>
             <td class="actions-cell">
-              <button class="btn btn-secondary btn-sm" onclick="viewTrebovanje('${escapeHtml(t.acKey)}')">👁️</button>
-              ${canSend ? `<button class="btn btn-warning btn-sm" onclick="posaljiRobu('${escapeHtml(t.acKey)}')">🚚 Pošalji</button>` : ''}
-              ${canReceive ? `<button class="btn btn-success btn-sm" onclick="viewTrebovanjeZaPrijem('${escapeHtml(t.acKey)}')">📥 Primi</button>` : ''}
+              <button class="btn btn-secondary btn-sm" onclick="viewTrebovanje('${escapeHtml(String(trebovanjeKey))}')">👁️</button>
+              ${canSend ? `<button class="btn btn-warning btn-sm" onclick="posaljiRobu('${escapeHtml(String(trebovanjeKey))}')">🚚 Pošalji</button>` : ''}
+              ${canReceive ? `<button class="btn btn-success btn-sm" onclick="viewTrebovanjeZaPrijem('${escapeHtml(String(trebovanjeKey))}')">📥 Primi</button>` : ''}
             </td>
           </tr>
         `;
       }).join('');
+    }
+    
+    // Normalizuje status iz različitih formata
+    function normalizeStatus(status) {
+      if (!status) return 'N';
+      const s = status.toUpperCase();
+      if (s === 'NOVO' || s === 'N') return 'N';
+      if (s === 'NA PUTU' || s === 'NA_PUTU' || s === 'T' || s === 'POSLATO') return 'T';
+      if (s === 'ZAVRŠENO' || s === 'ZAVRSENO' || s === 'Z' || s === 'PRIMLJENO') return 'Z';
+      return 'N';
     }
     
     // ==================== TREBOVANJE DETAIL ====================
@@ -1411,46 +1425,71 @@
       title.textContent = '📋 Trebovanje ' + key;
       
       try {
-        const res = await fetch(API + '/detalji/' + encodeURIComponent(key));
-        const data = await res.json();
+        // Probaj prvo novi endpoint, pa stari ako ne uspe
+        let data;
+        try {
+          const res = await fetch(API + '/detalji/' + encodeURIComponent(key));
+          if (res.ok) {
+            data = await res.json();
+          } else {
+            throw new Error('Novi endpoint nije dostupan');
+          }
+        } catch (e) {
+          // Fallback na stari endpoint
+          const res = await fetch(API + '/' + encodeURIComponent(key));
+          data = await res.json();
+        }
+        
         currentTrebovanje = data;
         
-        const { zaglavlje, stavke, rezervacije } = data;
-        const statusName = STATUS_NAMES[zaglavlje.status] || zaglavlje.status;
+        // Podrška za oba formata
+        const zaglavlje = data.zaglavlje || data;
+        const stavke = data.stavke || zaglavlje.stavke || [];
+        const rezervacije = data.rezervacije || [];
+        
+        const trebovanjeKey = zaglavlje.acKey || zaglavlje.id;
+        const radnja = zaglavlje.radnja;
+        const status = normalizeStatus(zaglavlje.status);
+        const statusName = STATUS_NAMES[status] || zaglavlje.status;
+        const datumKreirano = zaglavlje.adTimeCreated || zaglavlje.kreirano;
+        const datumPoslato = zaglavlje.adTimeSent || zaglavlje.poslato;
+        const datumPrimljeno = zaglavlje.adTimeReceived || zaglavlje.primljeno;
         
         body.innerHTML = `
           <div class="detail-header">
             <div>
-              <div class="detail-title">${escapeHtml(zaglavlje.acKey)}</div>
-              <div class="detail-meta">${escapeHtml(zaglavlje.radnja)}</div>
+              <div class="detail-title">#${escapeHtml(String(trebovanjeKey))}</div>
+              <div class="detail-meta">${escapeHtml(radnja)}</div>
             </div>
-            <span class="status-badge status-${zaglavlje.status}">${statusName}</span>
+            <span class="status-badge status-${status}">${statusName}</span>
           </div>
           
           <div class="detail-info-grid">
             <div class="detail-info-item">
               <div class="detail-info-label">Kreirano</div>
-              <div class="detail-info-value">${formatDateTime(zaglavlje.adTimeCreated)}</div>
+              <div class="detail-info-value">${formatDateTime(datumKreirano)}</div>
             </div>
             <div class="detail-info-item">
               <div class="detail-info-label">Poslato</div>
-              <div class="detail-info-value">${formatDateTime(zaglavlje.adTimeSent) || '-'}</div>
+              <div class="detail-info-value">${formatDateTime(datumPoslato) || '-'}</div>
             </div>
             <div class="detail-info-item">
               <div class="detail-info-label">Primljeno</div>
-              <div class="detail-info-value">${formatDateTime(zaglavlje.adTimeReceived) || '-'}</div>
+              <div class="detail-info-value">${formatDateTime(datumPrimljeno) || '-'}</div>
             </div>
           </div>
+          
+          ${zaglavlje.napomena ? `<p style="margin-bottom:16px;padding:12px;background:#334155;border-radius:8px;"><strong>Napomena:</strong> ${escapeHtml(zaglavlje.napomena)}</p>` : ''}
           
           <h4 style="margin-bottom:12px;">📦 Stavke (${stavke?.length || 0})</h4>
           <div class="stavka-list">
             ${stavke?.map(s => `
               <div class="stavka-item">
                 <div class="stavka-info">
-                  <div class="stavka-name">${escapeHtml(s.acName)}</div>
-                  <div class="stavka-code">${escapeHtml(s.acIdent)}</div>
+                  <div class="stavka-name">${escapeHtml(s.acName || s.naziv)}</div>
+                  <div class="stavka-code">${escapeHtml(s.acIdent || s.sifra)}</div>
                 </div>
-                <div class="stavka-qty">${formatNumber(s.anQty, 3)} ${escapeHtml(s.acUM)}</div>
+                <div class="stavka-qty">${formatNumber(s.anQty || s.kolicina, 3)} ${escapeHtml(s.acUM || s.jm || 'KOM')}</div>
               </div>
             `).join('') || '<p style="color:#64748b;">Nema stavki</p>'}
           </div>
@@ -1469,18 +1508,24 @@
               `).join('')}
             </div>
           ` : ''}
+          
+          ${zaglavlje.pantheonKey ? `
+            <div style="margin-top:20px;padding:12px;background:#065f46;border-radius:8px;">
+              <strong>✅ Prenos kreiran:</strong> ${escapeHtml(zaglavlje.pantheonKey)}
+            </div>
+          ` : ''}
         `;
         
         // Footer buttons based on status
-        if (zaglavlje.status === 'N') {
+        if (status === 'N') {
           footer.innerHTML = `
             <button class="btn btn-secondary" onclick="closeTrebovanjeModal()">Zatvori</button>
-            <button class="btn btn-warning" onclick="posaljiRobu('${escapeHtml(zaglavlje.acKey)}')">🚚 Pošalji robu</button>
+            <button class="btn btn-warning" onclick="posaljiRobu('${escapeHtml(String(trebovanjeKey))}')">🚚 Pošalji robu</button>
           `;
-        } else if (zaglavlje.status === 'T') {
+        } else if (status === 'T') {
           footer.innerHTML = `
             <button class="btn btn-secondary" onclick="closeTrebovanjeModal()">Zatvori</button>
-            <button class="btn btn-success" onclick="viewTrebovanjeZaPrijem('${escapeHtml(zaglavlje.acKey)}')">📥 Primi robu</button>
+            <button class="btn btn-success" onclick="viewTrebovanjeZaPrijem('${escapeHtml(String(trebovanjeKey))}')">📥 Primi robu</button>
           `;
         } else {
           footer.innerHTML = `
@@ -1489,7 +1534,7 @@
         }
         
       } catch (err) {
-        body.innerHTML = '<p style="color:#f87171;text-align:center;padding:40px;">Greška pri učitavanju</p>';
+        body.innerHTML = '<p style="color:#f87171;text-align:center;padding:40px;">Greška pri učitavanju: ' + escapeHtml(err.message) + '</p>';
         console.error(err);
       }
     }
@@ -1508,17 +1553,35 @@
       izmeneStavki = {};
       
       try {
-        const res = await fetch(API + '/detalji/' + encodeURIComponent(key));
-        const data = await res.json();
+        // Probaj novi endpoint, pa stari
+        let data;
+        try {
+          const res = await fetch(API + '/detalji/' + encodeURIComponent(key));
+          if (res.ok) {
+            data = await res.json();
+          } else {
+            throw new Error('Novi endpoint nije dostupan');
+          }
+        } catch (e) {
+          const res = await fetch(API + '/' + encodeURIComponent(key));
+          data = await res.json();
+        }
+        
         currentTrebovanje = data;
         
-        const { zaglavlje, stavke } = data;
+        // Podrška za oba formata
+        const zaglavlje = data.zaglavlje || data;
+        const stavke = data.stavke || zaglavlje.stavke || [];
+        
+        const trebovanjeKey = zaglavlje.acKey || zaglavlje.id;
+        const radnja = zaglavlje.radnja;
+        const datumPoslato = zaglavlje.adTimeSent || zaglavlje.poslato || zaglavlje.azurirano;
         
         body.innerHTML = `
           <div class="detail-header">
             <div>
-              <div class="detail-title">${escapeHtml(zaglavlje.acKey)}</div>
-              <div class="detail-meta">${escapeHtml(zaglavlje.radnja)} • Poslato: ${formatDateTime(zaglavlje.adTimeSent)}</div>
+              <div class="detail-title">#${escapeHtml(String(trebovanjeKey))}</div>
+              <div class="detail-meta">${escapeHtml(radnja)} • Poslato: ${formatDateTime(datumPoslato)}</div>
             </div>
             <span class="status-badge status-T">NA PUTU</span>
           </div>
@@ -1531,28 +1594,33 @@
           
           <h4 style="margin-bottom:12px;">📦 Stavke za prijem</h4>
           <div class="stavka-list" id="stavkeZaPrijem">
-            ${stavke?.map(s => {
-              const receivedQty = s.anReceivedQty !== undefined ? s.anReceivedQty : s.anQty;
+            ${stavke?.map((s, index) => {
+              const itemNo = s.anNo || (index + 1);
+              const sifra = s.acIdent || s.sifra;
+              const naziv = s.acName || s.naziv;
+              const kolicina = s.anQty || s.kolicina;
+              const jm = s.acUM || s.jm || 'KOM';
+              const receivedQty = s.anReceivedQty !== undefined ? s.anReceivedQty : kolicina;
               const hasExistingChange = s.acReason ? true : false;
               
               return `
-                <div class="stavka-item ${hasExistingChange ? 'changed' : ''}" id="stavka-${s.anNo}">
+                <div class="stavka-item ${hasExistingChange ? 'changed' : ''}" id="stavka-${itemNo}">
                   <div class="stavka-info">
-                    <div class="stavka-name">${escapeHtml(s.acName)}</div>
-                    <div class="stavka-code">${escapeHtml(s.acIdent)} • Poslato: <strong>${formatNumber(s.anQty, 3)}</strong> ${escapeHtml(s.acUM)}</div>
+                    <div class="stavka-name">${escapeHtml(naziv)}</div>
+                    <div class="stavka-code">${escapeHtml(sifra)} • Poslato: <strong>${formatNumber(kolicina, 3)}</strong> ${escapeHtml(jm)}</div>
                     ${s.acReason ? `<div style="font-size:11px;color:#f59e0b;margin-top:4px;">Prethodno: ${s.acReason} ${s.acNote ? '- ' + escapeHtml(s.acNote) : ''}</div>` : ''}
                   </div>
                   <div class="stavka-received">
                     <span style="font-size:12px;color:#94a3b8;">Primljeno:</span>
                     <input type="number" 
-                           id="received-${s.anNo}" 
+                           id="received-${itemNo}" 
                            value="${receivedQty}" 
                            min="0" 
                            step="0.001" 
-                           onchange="onReceivedQtyChange(${s.anNo}, ${s.anQty}, this.value)">
+                           onchange="onReceivedQtyChange(${itemNo}, ${kolicina}, this.value)">
                   </div>
-                  <div class="stavka-reason" id="reason-container-${s.anNo}" style="${receivedQty != s.anQty ? '' : 'visibility:hidden;'}">
-                    <select id="reason-${s.anNo}" onchange="onReasonChange(${s.anNo})">
+                  <div class="stavka-reason" id="reason-container-${itemNo}" style="${receivedQty != kolicina ? '' : 'visibility:hidden;'}">
+                    <select id="reason-${itemNo}" onchange="onReasonChange(${itemNo})">
                       <option value="">-- Razlog --</option>
                       ${RAZLOZI_IZMENE.map(r => `<option value="${r.kod}" ${s.acReason === r.kod ? 'selected' : ''}>${r.naziv}</option>`).join('')}
                     </select>
@@ -1565,11 +1633,11 @@
         
         footer.innerHTML = `
           <button class="btn btn-secondary" onclick="closeTrebovanjeModal()">Otkaži</button>
-          <button class="btn btn-success" onclick="potvrdiPrijem('${escapeHtml(zaglavlje.acKey)}')">✅ Potvrdi prijem i kreiraj prenos</button>
+          <button class="btn btn-success" onclick="potvrdiPrijem('${escapeHtml(String(trebovanjeKey))}')">✅ Potvrdi prijem i kreiraj prenos</button>
         `;
         
       } catch (err) {
-        body.innerHTML = '<p style="color:#f87171;text-align:center;padding:40px;">Greška pri učitavanju</p>';
+        body.innerHTML = '<p style="color:#f87171;text-align:center;padding:40px;">Greška pri učitavanju: ' + escapeHtml(err.message) + '</p>';
         console.error(err);
       }
     }
@@ -1609,20 +1677,31 @@
       try {
         showAlert('Slanje robe...', 'info');
         
-        const res = await fetch(API + '/posalji/' + encodeURIComponent(key), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: 5 })
-        });
+        // Probaj novi endpoint, pa stari ako ne uspe
+        let res;
+        try {
+          res = await fetch(API + '/posalji/' + encodeURIComponent(key), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: 5 })
+          });
+        } catch (e) {
+          // Fallback na stari endpoint
+          res = await fetch(API + '/' + encodeURIComponent(key) + '/status', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: 'NA_PUTU', korisnik: 'Magacioner' })
+          });
+        }
         
         const result = await res.json();
         
-        if (result.success) {
+        if (result.success || result.Status === 'OK') {
           showAlert('Roba je poslata! Status: NA PUTU', 'success');
           closeTrebovanjeModal();
           loadTrebovanja();
         } else {
-          showAlert('Greška: ' + (result.error || result.Poruka), 'error');
+          showAlert('Greška: ' + (result.error || result.Poruka || 'Nepoznata greška'), 'error');
         }
       } catch (err) {
         showAlert('Greška pri slanju: ' + err.message, 'error');
@@ -1645,48 +1724,62 @@
       }
       
       try {
-        // Prvo sačuvaj izmene ako ih ima
+        // Prvo sačuvaj izmene ako ih ima (samo za novi backend)
         for (const itemNo of izmeneKeys) {
           const izmena = izmeneStavki[itemNo];
           showAlert(`Čuvanje izmene za stavku #${itemNo}...`, 'info');
           
-          const izRes = await fetch(API + '/izmena-kolicine', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              acOrderKey: key,
-              anItemNo: parseInt(itemNo),
-              anReceivedQty: izmena.receivedQty,
-              acReason: izmena.reason,
-              acNote: izmena.note || null,
-              userId: 5
-            })
-          });
-          
-          const izResult = await izRes.json();
-          if (!izResult.success) {
-            showAlert('Greška pri čuvanju izmene: ' + (izResult.error || izResult.Poruka), 'error');
-            return;
+          try {
+            const izRes = await fetch(API + '/izmena-kolicine', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                acOrderKey: key,
+                anItemNo: parseInt(itemNo),
+                anReceivedQty: izmena.receivedQty,
+                acReason: izmena.reason,
+                acNote: izmena.note || null,
+                userId: 5
+              })
+            });
+            
+            const izResult = await izRes.json();
+            if (!izResult.success && izResult.Status !== 'OK') {
+              console.warn('Izmena nije sačuvana:', izResult);
+            }
+          } catch (e) {
+            console.warn('Endpoint za izmene nije dostupan:', e);
           }
         }
         
         // Zatim potvrdi prijem
         showAlert('Kreiranje prenosa u Pantheonu...', 'info');
         
-        const res = await fetch(API + '/primi/' + encodeURIComponent(key), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: 5 })
-        });
+        let res;
+        try {
+          res = await fetch(API + '/primi/' + encodeURIComponent(key), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: 5 })
+          });
+        } catch (e) {
+          // Fallback na stari endpoint
+          res = await fetch(API + '/' + encodeURIComponent(key) + '/potvrdi-prijem', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ korisnik: 'Magacioner' })
+          });
+        }
         
         const result = await res.json();
         
-        if (result.success) {
-          showAlert(`Prenos kreiran: ${result.transferKey}`, 'success');
+        if (result.success || result.Status === 'OK' || result.Status === 'SUCCESS') {
+          const transferKey = result.transferKey || result.TransferKey || result.pantheon?.transferKey || '';
+          showAlert(`Prenos kreiran: ${transferKey}`, 'success');
           closeTrebovanjeModal();
           loadTrebovanja();
         } else {
-          showAlert('Greška: ' + (result.error || result.ErrorMessage), 'error');
+          showAlert('Greška: ' + (result.error || result.ErrorMessage || result.Poruka || 'Nepoznata greška'), 'error');
         }
       } catch (err) {
         showAlert('Greška pri prijemu: ' + err.message, 'error');
