@@ -278,7 +278,7 @@
       border-radius: 10px;
       padding: 12px 16px;
       display: grid;
-      grid-template-columns: 80px 1fr 100px 100px 140px;
+      grid-template-columns: 80px 1fr auto 140px;
       gap: 16px;
       align-items: center;
       transition: all 0.2s;
@@ -286,6 +286,7 @@
     .product-row:hover { border-color: #475569; background: #1e293b; }
     .product-row.in-cart { border-color: #10b981; background: rgba(16, 185, 129, 0.1); }
     .product-row.low-stock { border-left: 3px solid #f87171; }
+    .product-row.has-reserved { border-left: 3px solid #f59e0b; }
     
     @media (max-width: 900px) {
       .product-row {
@@ -323,28 +324,90 @@
       color: #64748b;
     }
     
-    .product-stocks {
+    /* STOCK INFO - NOVI DIZAJN */
+    .stock-info-container {
       display: flex;
       gap: 8px;
+      align-items: stretch;
     }
-    .stock-badge {
-      text-align: center;
-      padding: 4px 10px;
+    
+    .stock-card {
       background: #0f172a;
-      border-radius: 6px;
-      min-width: 60px;
+      border-radius: 8px;
+      padding: 8px 12px;
+      min-width: 90px;
+      text-align: center;
+      border: 1px solid #334155;
     }
-    .stock-badge .label {
+    .stock-card.cm { border-color: #3b82f6; }
+    .stock-card.radnja { border-color: #10b981; }
+    .stock-card.has-reserved { border-color: #f59e0b; }
+    
+    .stock-card-header {
       font-size: 10px;
       color: #64748b;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+      font-weight: 600;
     }
-    .stock-badge .value {
-      font-size: 14px;
+    
+    .stock-card-body {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    
+    .stock-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+    }
+    
+    .stock-label {
+      color: #94a3b8;
+      font-size: 10px;
+    }
+    
+    .stock-value {
       font-weight: 700;
+      font-size: 13px;
     }
-    .stock-badge .value.ok { color: #4ade80; }
-    .stock-badge .value.low { color: #f87171; }
-    .stock-badge .value.zero { color: #64748b; }
+    .stock-value.total { color: #e2e8f0; }
+    .stock-value.reserved { color: #f59e0b; }
+    .stock-value.available { color: #4ade80; }
+    .stock-value.available.low { color: #f87171; }
+    .stock-value.available.zero { color: #64748b; }
+    
+    .stock-divider {
+      height: 1px;
+      background: #334155;
+      margin: 4px 0;
+    }
+    
+    /* SIMPLE STOCK BADGE (za CM) */
+    .stock-badge-simple {
+      text-align: center;
+      padding: 8px 12px;
+      background: #0f172a;
+      border-radius: 8px;
+      min-width: 70px;
+      border: 1px solid #334155;
+    }
+    .stock-badge-simple .label {
+      font-size: 10px;
+      color: #64748b;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+    .stock-badge-simple .value {
+      font-size: 16px;
+      font-weight: 700;
+      margin-top: 2px;
+    }
+    .stock-badge-simple .value.ok { color: #4ade80; }
+    .stock-badge-simple .value.low { color: #f87171; }
+    .stock-badge-simple .value.zero { color: #64748b; }
     
     .product-status {
       display: flex;
@@ -359,6 +422,7 @@
     }
     .badge-low { background: rgba(248, 113, 113, 0.2); color: #f87171; }
     .badge-ok { background: rgba(74, 222, 128, 0.2); color: #4ade80; }
+    .badge-reserved { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
     
     .product-actions {
       display: flex;
@@ -742,6 +806,7 @@
       <div class="filter-chips" id="categoryChips">
         <div class="chip active" data-cat="all" onclick="filterCategory('all', this)">Svi</div>
         <div class="chip" data-cat="low" onclick="filterCategory('low', this)">⚠️ Ispod min.</div>
+        <div class="chip" data-cat="reserved" onclick="filterCategory('reserved', this)">🔒 Rezervisano</div>
         <div class="chip" data-cat="200" onclick="filterCategory('200', this)">Piće</div>
         <div class="chip" data-cat="400" onclick="filterCategory('400', this)">Gotovi</div>
         <div class="chip" data-cat="500" onclick="filterCategory('500', this)">Sirovine</div>
@@ -898,7 +963,6 @@
   
   <script>
     // ==================== CONFIG ====================
-    // Promeni API URL prema potrebi
     const API = window.location.hostname === 'localhost' 
       ? 'http://localhost:3002/api/trebovanje'
       : window.location.origin + '/api/trebovanje';
@@ -916,7 +980,7 @@
     let currentTrebovanje = null;
     let trebovanjaList = [];
     let currentStatusFilter = '';
-    let izmeneStavki = {}; // {itemNo: {receivedQty, reason, note}}
+    let izmeneStavki = {};
     
     const STATUS_NAMES = {
       'N': 'NOVO',
@@ -961,7 +1025,7 @@
       }
     }
     
-    function formatNumber(num, decimals = 2) {
+    function formatNumber(num, decimals = 0) {
       if (num === null || num === undefined) return '0';
       return Number(num).toLocaleString('sr-RS', { 
         minimumFractionDigits: decimals, 
@@ -971,7 +1035,7 @@
     
     function escapeHtml(str) {
       if (!str) return '';
-      return str.replace(/[&<>"']/g, m => ({
+      return String(str).replace(/[&<>"']/g, m => ({
         '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
       }[m]));
     }
@@ -987,7 +1051,6 @@
       document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
       element.classList.add('active');
       
-      // Show/hide category chips
       const categoryChips = document.getElementById('categoryChips');
       const searchBox = document.querySelector('.search-box');
       if (tabName === 'artikli') {
@@ -1124,11 +1187,18 @@
       
       let filtered = artikli.filter(a => {
         if (search && !a.acIdent.toLowerCase().includes(search) && !a.acName.toLowerCase().includes(search)) return false;
-        if (currentCategory !== 'all' && currentCategory !== 'low' && a.acSetOfItem !== currentCategory) return false;
+        if (currentCategory !== 'all' && currentCategory !== 'low' && currentCategory !== 'reserved') {
+          if (a.acSetOfItem !== currentCategory) return false;
+        }
         if (currentCategory === 'low') {
           const s = (stanjeRadnja[a.acIdent]?.stock) || 0;
           const m = minStanje[a.acIdent] || 0;
           if (!(m > 0 && s < m)) return false;
+        }
+        if (currentCategory === 'reserved') {
+          const cmRes = (stanjeCM[a.acIdent]?.reserved) || 0;
+          const radRes = (stanjeRadnja[a.acIdent]?.reserved) || 0;
+          if (cmRes <= 0 && radRes <= 0) return false;
         }
         return true;
       });
@@ -1141,34 +1211,91 @@
       }
       
       list.innerHTML = filtered.map(a => {
-        const cmStock = (stanjeCM[a.acIdent]?.stock) || a.anStock || 0;
+        // CM stanje
+        const cmStock = (stanjeCM[a.acIdent]?.stock) || 0;
+        const cmReserved = (stanjeCM[a.acIdent]?.reserved) || 0;
+        const cmAvailable = cmStock - cmReserved;
+        
+        // Radnja stanje
         const radStock = (stanjeRadnja[a.acIdent]?.stock) || 0;
+        const radReserved = (stanjeRadnja[a.acIdent]?.reserved) || 0;
+        const radAvailable = radStock - radReserved;
+        
         const min = minStanje[a.acIdent] || 0;
         const isLow = min > 0 && radStock < min;
+        const hasReserved = cmReserved > 0 || radReserved > 0;
         const inCart = cart.find(c => c.sifra === a.acIdent);
         const cartQty = inCart ? inCart.kolicina : (isLow ? Math.max(1, min - radStock) : 1);
         
+        // CSS klase za row
+        let rowClasses = 'product-row';
+        if (inCart) rowClasses += ' in-cart';
+        if (isLow) rowClasses += ' low-stock';
+        else if (hasReserved) rowClasses += ' has-reserved';
+        
         return `
-          <div class="product-row ${inCart ? 'in-cart' : ''} ${isLow ? 'low-stock' : ''}">
+          <div class="${rowClasses}">
             <div class="product-code">${escapeHtml(a.acIdent)}</div>
             <div class="product-info">
               <div class="product-name">${escapeHtml(a.acName)}</div>
               <div class="product-unit">${escapeHtml(a.acUM) || 'KOM'}</div>
             </div>
-            <div class="product-stocks">
-              <div class="stock-badge">
-                <div class="label">CM</div>
-                <div class="value ${cmStock > 0 ? 'ok' : 'zero'}">${formatNumber(cmStock, 0)}</div>
+            
+            <div class="stock-info-container">
+              <!-- CM Stanje -->
+              <div class="stock-card cm">
+                <div class="stock-card-header">CM</div>
+                <div class="stock-card-body">
+                  ${cmReserved > 0 ? `
+                    <div class="stock-row">
+                      <span class="stock-label">Ukupno:</span>
+                      <span class="stock-value total">${formatNumber(cmStock)}</span>
+                    </div>
+                    <div class="stock-row">
+                      <span class="stock-label">Rez:</span>
+                      <span class="stock-value reserved">${formatNumber(cmReserved)}</span>
+                    </div>
+                    <div class="stock-divider"></div>
+                    <div class="stock-row">
+                      <span class="stock-label">Rasp:</span>
+                      <span class="stock-value available ${cmAvailable <= 0 ? 'zero' : cmAvailable < 10 ? 'low' : ''}">${formatNumber(cmAvailable)}</span>
+                    </div>
+                  ` : `
+                    <div class="stock-value available ${cmStock <= 0 ? 'zero' : ''}" style="font-size: 18px; margin-top: 4px;">${formatNumber(cmStock)}</div>
+                  `}
+                </div>
               </div>
-              <div class="stock-badge">
-                <div class="label">${selectedRadnja ? escapeHtml(selectedRadnja.substring(0, 8)) : 'Radnja'}</div>
-                <div class="value ${isLow ? 'low' : (radStock > 0 ? 'ok' : 'zero')}">${formatNumber(radStock, 0)}</div>
-              </div>
+              
+              <!-- Radnja Stanje -->
+              ${selectedRadnja ? `
+                <div class="stock-card radnja ${radReserved > 0 ? 'has-reserved' : ''}">
+                  <div class="stock-card-header">${escapeHtml(selectedRadnja.substring(0, 8))}</div>
+                  <div class="stock-card-body">
+                    ${radReserved > 0 ? `
+                      <div class="stock-row">
+                        <span class="stock-label">Ukupno:</span>
+                        <span class="stock-value total">${formatNumber(radStock)}</span>
+                      </div>
+                      <div class="stock-row">
+                        <span class="stock-label">Rez:</span>
+                        <span class="stock-value reserved">${formatNumber(radReserved)}</span>
+                      </div>
+                      <div class="stock-divider"></div>
+                      <div class="stock-row">
+                        <span class="stock-label">Rasp:</span>
+                        <span class="stock-value available ${radAvailable <= 0 ? 'zero' : isLow ? 'low' : ''}">${formatNumber(radAvailable)}</span>
+                      </div>
+                    ` : `
+                      <div class="stock-value available ${radStock <= 0 ? 'zero' : isLow ? 'low' : ''}" style="font-size: 18px; margin-top: 4px;">${formatNumber(radStock)}</div>
+                    `}
+                  </div>
+                </div>
+              ` : ''}
             </div>
-            <div class="product-status">
-              ${isLow ? '<span class="badge badge-low">Ispod min.</span>' : (cmStock > 0 ? '<span class="badge badge-ok">Na stanju</span>' : '')}
-            </div>
+            
             <div class="product-actions">
+              ${isLow ? '<span class="badge badge-low">Ispod min.</span>' : ''}
+              ${hasReserved ? '<span class="badge badge-reserved">🔒 Rez.</span>' : ''}
               <input type="number" class="qty-input-small" id="qty-${a.acIdent}" value="${cartQty}" min="0.001" step="0.001">
               <button class="add-btn ${inCart ? 'added' : ''}" onclick="toggleProduct('${a.acIdent}')">
                 ${inCart ? '✓ Dodato' : '+ Dodaj'}
@@ -1275,7 +1402,7 @@
         <div class="cart-item">
           <div class="cart-item-info">
             <div class="cart-item-name">${escapeHtml(s.acName)}</div>
-            <div class="cart-item-code">${escapeHtml(s.acIdent)} | Trenutno: ${formatNumber(s.trenutno, 0)} | Min: ${formatNumber(s.min, 0)}</div>
+            <div class="cart-item-code">${escapeHtml(s.acIdent)} | Trenutno: ${formatNumber(s.trenutno)} | Min: ${formatNumber(s.min)}</div>
           </div>
           <div class="cart-item-controls">
             <input type="number" class="cart-item-qty" id="sug-${s.acIdent}" value="${s.potrebno}" min="1" step="1">
@@ -1350,7 +1477,6 @@
         const res = await fetch(API + '/lista');
         trebovanjaList = await res.json();
         
-        // Update counts - koristi normalizeStatus za oba formata
         document.getElementById('countAll').textContent = trebovanjaList.length;
         document.getElementById('countN').textContent = trebovanjaList.filter(t => normalizeStatus(t.status) === 'N').length;
         document.getElementById('countT').textContent = trebovanjaList.filter(t => normalizeStatus(t.status) === 'T').length;
@@ -1377,7 +1503,6 @@
       }
       
       body.innerHTML = filtered.map(t => {
-        // Podrška za oba formata - stari (lokalna tabela) i novi (Pantheon)
         const trebovanjeKey = t.acKey || t.id;
         const datum = t.adDate || t.kreirano || t.azurirano;
         const status = normalizeStatus(t.status);
@@ -1390,7 +1515,7 @@
             <td style="font-family: monospace; font-weight: 600;">${escapeHtml(String(trebovanjeKey))}</td>
             <td>${escapeHtml(t.radnja)}</td>
             <td>${formatDate(datum)}</td>
-            <td>${t.stavke_count || (t.stavke?.length) || '-'}</td>
+            <td>${t.stavke_count || '-'}</td>
             <td><span class="status-badge status-${status}">${statusName}</span></td>
             <td class="actions-cell">
               <button class="btn btn-secondary btn-sm" onclick="viewTrebovanje('${escapeHtml(String(trebovanjeKey))}')">👁️</button>
@@ -1402,10 +1527,9 @@
       }).join('');
     }
     
-    // Normalizuje status iz različitih formata
     function normalizeStatus(status) {
       if (!status) return 'N';
-      const s = status.toUpperCase();
+      const s = String(status).toUpperCase();
       if (s === 'NOVO' || s === 'N') return 'N';
       if (s === 'NA PUTU' || s === 'NA_PUTU' || s === 'T' || s === 'POSLATO') return 'T';
       if (s === 'ZAVRŠENO' || s === 'ZAVRSENO' || s === 'Z' || s === 'PRIMLJENO') return 'Z';
@@ -1425,7 +1549,6 @@
       title.textContent = '📋 Trebovanje ' + key;
       
       try {
-        // Probaj prvo novi endpoint, pa stari ako ne uspe
         let data;
         try {
           const res = await fetch(API + '/detalji/' + encodeURIComponent(key));
@@ -1435,14 +1558,12 @@
             throw new Error('Novi endpoint nije dostupan');
           }
         } catch (e) {
-          // Fallback na stari endpoint
           const res = await fetch(API + '/' + encodeURIComponent(key));
           data = await res.json();
         }
         
         currentTrebovanje = data;
         
-        // Podrška za oba formata
         const zaglavlje = data.zaglavlje || data;
         const stavke = data.stavke || zaglavlje.stavke || [];
         const rezervacije = data.rezervacije || [];
@@ -1479,8 +1600,6 @@
             </div>
           </div>
           
-          ${zaglavlje.napomena ? `<p style="margin-bottom:16px;padding:12px;background:#334155;border-radius:8px;"><strong>Napomena:</strong> ${escapeHtml(zaglavlje.napomena)}</p>` : ''}
-          
           <h4 style="margin-bottom:12px;">📦 Stavke (${stavke?.length || 0})</h4>
           <div class="stavka-list">
             ${stavke?.map(s => `
@@ -1498,25 +1617,24 @@
             <h4 style="margin: 20px 0 12px;">🔒 Rezervacije</h4>
             <div class="stavka-list">
               ${rezervacije.map(r => `
-                <div class="stavka-item" style="background: rgba(59, 130, 246, 0.1);">
+                <div class="stavka-item" style="background: rgba(245, 158, 11, 0.1); border: 1px solid #f59e0b;">
                   <div class="stavka-info">
                     <div class="stavka-name">${escapeHtml(r.IDENT)}</div>
                     <div class="stavka-code">${escapeHtml(r.SKLADISCE)}</div>
                   </div>
-                  <div class="stavka-qty">${formatNumber(r.KOLICINA, 3)}</div>
+                  <div class="stavka-qty" style="color: #f59e0b;">${formatNumber(r.KOLICINA, 3)}</div>
                 </div>
               `).join('')}
             </div>
           ` : ''}
           
-          ${zaglavlje.pantheonKey ? `
+          ${zaglavlje.acTransferKey ? `
             <div style="margin-top:20px;padding:12px;background:#065f46;border-radius:8px;">
-              <strong>✅ Prenos kreiran:</strong> ${escapeHtml(zaglavlje.pantheonKey)}
+              <strong>✅ Prenos kreiran:</strong> ${escapeHtml(zaglavlje.acTransferKey)}
             </div>
           ` : ''}
         `;
         
-        // Footer buttons based on status
         if (status === 'N') {
           footer.innerHTML = `
             <button class="btn btn-secondary" onclick="closeTrebovanjeModal()">Zatvori</button>
@@ -1539,7 +1657,7 @@
       }
     }
     
-    // ==================== PRIJEM ROBE - SA IZMENOM KOLIČINE ====================
+    // ==================== PRIJEM ROBE ====================
     async function viewTrebovanjeZaPrijem(key) {
       const modal = document.getElementById('trebovanjeModal');
       const body = document.getElementById('trebovanjeModalBody');
@@ -1553,7 +1671,6 @@
       izmeneStavki = {};
       
       try {
-        // Probaj novi endpoint, pa stari
         let data;
         try {
           const res = await fetch(API + '/detalji/' + encodeURIComponent(key));
@@ -1569,7 +1686,6 @@
         
         currentTrebovanje = data;
         
-        // Podrška za oba formata
         const zaglavlje = data.zaglavlje || data;
         const stavke = data.stavke || zaglavlje.stavke || [];
         
@@ -1608,7 +1724,6 @@
                   <div class="stavka-info">
                     <div class="stavka-name">${escapeHtml(naziv)}</div>
                     <div class="stavka-code">${escapeHtml(sifra)} • Poslato: <strong>${formatNumber(kolicina, 3)}</strong> ${escapeHtml(jm)}</div>
-                    ${s.acReason ? `<div style="font-size:11px;color:#f59e0b;margin-top:4px;">Prethodno: ${s.acReason} ${s.acNote ? '- ' + escapeHtml(s.acNote) : ''}</div>` : ''}
                   </div>
                   <div class="stavka-received">
                     <span style="font-size:12px;color:#94a3b8;">Primljeno:</span>
@@ -1619,7 +1734,7 @@
                            step="0.001" 
                            onchange="onReceivedQtyChange(${itemNo}, ${kolicina}, this.value)">
                   </div>
-                  <div class="stavka-reason" id="reason-container-${itemNo}" style="${receivedQty != kolicina ? '' : 'visibility:hidden;'}">
+                  <div class="stavka-reason" id="reason-container-${itemNo}" style="${Math.abs(receivedQty - kolicina) > 0.001 ? '' : 'visibility:hidden;'}">
                     <select id="reason-${itemNo}" onchange="onReasonChange(${itemNo})">
                       <option value="">-- Razlog --</option>
                       ${RAZLOZI_IZMENE.map(r => `<option value="${r.kod}" ${s.acReason === r.kod ? 'selected' : ''}>${r.naziv}</option>`).join('')}
@@ -1668,7 +1783,7 @@
       }
     }
     
-    // ==================== AKCIJE NA TREBOVANJU ====================
+    // ==================== AKCIJE ====================
     async function posaljiRobu(key) {
       if (!confirm(`Da li ste sigurni da želite da pošaljete robu za trebovanje ${key}?`)) {
         return;
@@ -1677,22 +1792,11 @@
       try {
         showAlert('Slanje robe...', 'info');
         
-        // Probaj novi endpoint, pa stari ako ne uspe
-        let res;
-        try {
-          res = await fetch(API + '/posalji/' + encodeURIComponent(key), {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: 5 })
-          });
-        } catch (e) {
-          // Fallback na stari endpoint
-          res = await fetch(API + '/' + encodeURIComponent(key) + '/status', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ status: 'NA_PUTU', korisnik: 'Magacioner' })
-          });
-        }
+        const res = await fetch(API + '/posalji/' + encodeURIComponent(key), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: 5 })
+        });
         
         const result = await res.json();
         
@@ -1710,7 +1814,6 @@
     }
     
     async function potvrdiPrijem(key) {
-      // Proveri da li sve izmene imaju razlog
       const izmeneKeys = Object.keys(izmeneStavki);
       for (const itemNo of izmeneKeys) {
         if (!izmeneStavki[itemNo].reason) {
@@ -1724,13 +1827,12 @@
       }
       
       try {
-        // Prvo sačuvaj izmene ako ih ima (samo za novi backend)
         for (const itemNo of izmeneKeys) {
           const izmena = izmeneStavki[itemNo];
           showAlert(`Čuvanje izmene za stavku #${itemNo}...`, 'info');
           
           try {
-            const izRes = await fetch(API + '/izmena-kolicine', {
+            await fetch(API + '/izmena-kolicine', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -1742,44 +1844,28 @@
                 userId: 5
               })
             });
-            
-            const izResult = await izRes.json();
-            if (!izResult.success && izResult.Status !== 'OK') {
-              console.warn('Izmena nije sačuvana:', izResult);
-            }
           } catch (e) {
             console.warn('Endpoint za izmene nije dostupan:', e);
           }
         }
         
-        // Zatim potvrdi prijem
         showAlert('Kreiranje prenosa u Pantheonu...', 'info');
         
-        let res;
-        try {
-          res = await fetch(API + '/primi/' + encodeURIComponent(key), {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: 5 })
-          });
-        } catch (e) {
-          // Fallback na stari endpoint
-          res = await fetch(API + '/' + encodeURIComponent(key) + '/potvrdi-prijem', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ korisnik: 'Magacioner' })
-          });
-        }
+        const res = await fetch(API + '/primi/' + encodeURIComponent(key), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: 5 })
+        });
         
         const result = await res.json();
         
         if (result.success || result.Status === 'OK' || result.Status === 'SUCCESS') {
-          const transferKey = result.transferKey || result.TransferKey || result.pantheon?.transferKey || '';
+          const transferKey = result.transferKey || result.TransferKey || '';
           showAlert(`Prenos kreiran: ${transferKey}`, 'success');
           closeTrebovanjeModal();
           loadTrebovanja();
         } else {
-          showAlert('Greška: ' + (result.error || result.ErrorMessage || result.Poruka || 'Nepoznata greška'), 'error');
+          showAlert('Greška: ' + (result.error || result.ErrorMessage || 'Nepoznata greška'), 'error');
         }
       } catch (err) {
         showAlert('Greška pri prijemu: ' + err.message, 'error');
@@ -1793,7 +1879,7 @@
       izmeneStavki = {};
     }
     
-    // ==================== PRENOSI LIST ====================
+    // ==================== PRENOSI ====================
     async function loadPrenosi() {
       const body = document.getElementById('prenosiBody');
       body.innerHTML = '<tr><td colspan="6" class="loading-spinner">Učitavanje</td></tr>';
@@ -1896,10 +1982,8 @@
       alert.innerHTML = `${icons[type] || ''} ${escapeHtml(message)}`;
       alert.classList.remove('hidden');
       
-      // Clear existing timeout
       if (alert.timeoutId) clearTimeout(alert.timeoutId);
       
-      // Auto-hide after 4 seconds (except for info)
       if (type !== 'info') {
         alert.timeoutId = setTimeout(() => alert.classList.add('hidden'), 4000);
       }
