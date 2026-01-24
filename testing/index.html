@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RestaurantOS - Porudžbine</title>
+    <title>RestaurantOS vs Historical - Porudžbine</title>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -31,11 +31,7 @@
             --accent-yellow-dim: rgba(234, 179, 8, 0.15);
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
@@ -51,7 +47,6 @@
             padding: 32px 24px;
         }
 
-        /* Header */
         .header {
             display: flex;
             justify-content: space-between;
@@ -69,26 +64,16 @@
             gap: 12px;
         }
 
-        .header h1 span {
-            color: var(--accent-green);
-        }
+        .header h1 span { color: var(--accent-green); }
 
-        .stats {
-            display: flex;
-            gap: 24px;
-        }
-
-        .stat {
-            text-align: right;
-        }
-
+        .stats { display: flex; gap: 24px; }
+        .stat { text-align: right; }
         .stat-value {
             font-family: 'JetBrains Mono', monospace;
             font-size: 24px;
             font-weight: 700;
             color: var(--accent-green);
         }
-
         .stat-label {
             font-size: 12px;
             color: var(--text-muted);
@@ -96,7 +81,6 @@
             letter-spacing: 0.5px;
         }
 
-        /* Filters */
         .filters {
             display: flex;
             gap: 12px;
@@ -116,18 +100,9 @@
             transition: all 0.2s ease;
         }
 
-        .filter-btn:hover {
-            background: var(--bg-card-hover);
-            border-color: var(--border-light);
-        }
+        .filter-btn:hover { background: var(--bg-card-hover); border-color: var(--border-light); }
+        .filter-btn.active { background: var(--accent-green-dim); border-color: var(--accent-green); color: var(--accent-green); }
 
-        .filter-btn.active {
-            background: var(--accent-green-dim);
-            border-color: var(--accent-green);
-            color: var(--accent-green);
-        }
-
-        /* Orders Grid */
         .orders-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
@@ -148,90 +123,43 @@
         .order-card::before {
             content: '';
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 4px;
-            height: 100%;
+            top: 0; left: 0;
+            width: 4px; height: 100%;
             background: var(--card-accent, var(--accent-green));
         }
 
-        .order-card:hover {
-            background: var(--bg-card-hover);
-            border-color: var(--border-light);
-            transform: translateY(-2px);
-        }
+        .order-card:hover { background: var(--bg-card-hover); border-color: var(--border-light); transform: translateY(-2px); }
 
-        .order-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 16px;
-        }
-
-        .order-number {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 18px;
-            font-weight: 700;
-        }
+        .order-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+        .order-number { font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 700; }
 
         .order-channel {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            padding: 4px 10px;
-            border-radius: 6px;
-            font-size: 11px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            display: flex; align-items: center; gap: 6px;
+            padding: 4px 10px; border-radius: 6px;
+            font-size: 11px; font-weight: 600;
+            text-transform: uppercase; letter-spacing: 0.5px;
         }
 
         .channel-wolt { background: var(--accent-blue-dim); color: var(--accent-blue); }
         .channel-gloriafood { background: var(--accent-orange-dim); color: var(--accent-orange); }
         .channel-pos { background: var(--accent-purple-dim); color: var(--accent-purple); }
         .channel-emeni { background: var(--accent-green-dim); color: var(--accent-green); }
+        .channel-ebar { background: var(--accent-purple-dim); color: var(--accent-purple); }
         .channel-unknown { background: var(--bg-secondary); color: var(--text-muted); }
 
-        .order-customer {
-            font-size: 15px;
-            font-weight: 600;
-            margin-bottom: 4px;
-            color: var(--text-primary);
+        .order-customer { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+        .order-location { font-size: 13px; color: var(--text-muted); margin-bottom: 12px; }
+        .order-items-preview {
+            font-size: 12px; color: var(--text-secondary);
+            margin-bottom: 12px; padding: 8px 10px;
+            background: var(--bg-secondary); border-radius: 6px;
         }
 
-        .order-location {
-            font-size: 13px;
-            color: var(--text-muted);
-            margin-bottom: 12px;
-        }
+        .order-meta { display: flex; justify-content: space-between; align-items: center; padding-top: 12px; border-top: 1px solid var(--border); }
+        .order-status { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; animation: pulse 2s infinite; }
 
-        .order-meta {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding-top: 12px;
-            border-top: 1px solid var(--border);
-        }
-
-        .order-status {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 12px;
-            font-weight: 500;
-        }
-
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
 
         .status-delivered .status-dot { background: var(--accent-green); }
         .status-ready .status-dot { background: var(--accent-yellow); }
@@ -239,613 +167,234 @@
         .status-active .status-dot { background: var(--accent-blue); animation: pulse 1s infinite; }
         .status-cancelled .status-dot { background: var(--accent-red); animation: none; }
 
-        .order-amount {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 16px;
-            font-weight: 700;
-            color: var(--accent-green);
-        }
+        .order-amount { font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 700; color: var(--accent-green); }
+        .order-time { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-muted); text-align: right; }
 
-        .order-time {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 12px;
-            color: var(--text-muted);
+        .loading { text-align: center; padding: 60px; color: var(--text-muted); }
+        .loading-spinner {
+            width: 40px; height: 40px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent-green);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
         }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
         /* Modal */
         .modal-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
             background: rgba(0, 0, 0, 0.8);
             backdrop-filter: blur(4px);
+            display: flex; align-items: center; justify-content: center;
             z-index: 1000;
-            justify-content: center;
-            align-items: center;
-            padding: 24px;
+            opacity: 0; visibility: hidden;
+            transition: all 0.3s ease;
         }
-
-        .modal-overlay.active {
-            display: flex;
-        }
+        .modal-overlay.active { opacity: 1; visibility: visible; }
 
         .modal {
             background: var(--bg-modal);
             border: 1px solid var(--border);
             border-radius: 16px;
-            width: 100%;
-            max-width: 600px;
-            max-height: 90vh;
+            width: 95%; max-width: 1200px; max-height: 95vh;
             overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            animation: modalIn 0.3s ease;
-        }
-
-        @keyframes modalIn {
-            from {
-                opacity: 0;
-                transform: scale(0.95) translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: scale(1) translateY(0);
-            }
+            display: flex; flex-direction: column;
         }
 
         .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            padding: 24px;
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 20px 24px;
             border-bottom: 1px solid var(--border);
+            background: var(--bg-secondary);
         }
-
-        .modal-title {
-            font-size: 24px;
-            font-weight: 700;
-        }
-
-        .modal-subtitle {
-            font-size: 13px;
-            color: var(--text-muted);
-            margin-top: 4px;
-        }
+        .modal-title { font-size: 20px; font-weight: 700; }
+        .modal-subtitle { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
 
         .modal-close {
-            width: 36px;
-            height: 36px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: var(--text-secondary);
-            cursor: pointer;
-            font-size: 20px;
-            transition: all 0.2s ease;
+            width: 36px; height: 36px; border: none;
+            background: var(--bg-card); border-radius: 8px;
+            color: var(--text-secondary); font-size: 20px;
+            cursor: pointer; transition: all 0.2s ease;
         }
+        .modal-close:hover { background: var(--accent-red-dim); color: var(--accent-red); }
 
-        .modal-close:hover {
-            background: var(--bg-card-hover);
-            color: var(--text-primary);
-        }
+        .modal-body { padding: 24px; overflow-y: auto; }
 
-        .modal-body {
-            padding: 24px;
-            overflow-y: auto;
-            flex: 1;
-        }
-
-        .modal-section {
-            margin-bottom: 24px;
-        }
-
-        .modal-section:last-child {
-            margin-bottom: 0;
-        }
-
-        .modal-section-title {
-            font-size: 11px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: var(--text-muted);
-            margin-bottom: 12px;
-        }
-
-        .info-grid {
+        /* Summary */
+        .summary-stats {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 12px; margin-bottom: 24px;
         }
-
-        .info-card {
+        .summary-stat {
             background: var(--bg-card);
             border: 1px solid var(--border);
             border-radius: 10px;
-            padding: 14px;
+            padding: 14px; text-align: center;
         }
-
-        .info-card.full-width {
-            grid-column: span 2;
-        }
-
-        .info-label {
-            font-size: 11px;
-            color: var(--text-muted);
-            margin-bottom: 4px;
-        }
-
-        .info-value {
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--text-primary);
-        }
-
-        .info-value.mono {
+        .summary-stat-value {
             font-family: 'JetBrains Mono', monospace;
-        }
-
-        .info-value.green {
+            font-size: 18px; font-weight: 700;
             color: var(--accent-green);
         }
-
-        /* Timeline */
-        .timeline {
-            position: relative;
-            padding-left: 24px;
+        .summary-stat-value.warning { color: var(--accent-orange); }
+        .summary-stat-value.error { color: var(--accent-red); }
+        .summary-stat-label {
+            font-size: 10px; color: var(--text-muted);
+            text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px;
         }
 
-        .timeline::before {
-            content: '';
-            position: absolute;
-            left: 7px;
-            top: 8px;
-            bottom: 8px;
-            width: 2px;
-            background: var(--border);
-        }
-
-        .timeline-item {
-            position: relative;
-            padding-bottom: 16px;
-        }
-
-        .timeline-item:last-child {
-            padding-bottom: 0;
-        }
-
-        .timeline-dot {
-            position: absolute;
-            left: -20px;
-            top: 6px;
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: var(--accent-purple);
-            border: 2px solid var(--bg-modal);
-        }
-
-        .timeline-time {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 12px;
-            color: var(--text-muted);
-        }
-
-        .timeline-event {
-            font-size: 14px;
-            font-weight: 500;
-            color: var(--text-primary);
-        }
-
-        /* Items table */
-        .items-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .items-table th {
-            text-align: left;
-            font-size: 11px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: var(--text-muted);
-            padding: 8px 12px;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .items-table td {
-            padding: 12px;
-            font-size: 14px;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .items-table tr:last-child td {
-            border-bottom: none;
-        }
-
-        .items-table .item-name {
-            font-weight: 500;
-        }
-
-        .items-table .item-note {
-            font-size: 12px;
-            color: var(--accent-orange);
-            margin-top: 4px;
-        }
-
-        .items-table .item-qty {
-            text-align: center;
-            font-family: 'JetBrains Mono', monospace;
-        }
-
-        .items-table .item-price {
-            text-align: right;
-            font-family: 'JetBrains Mono', monospace;
-            font-weight: 600;
-        }
-
-        .total-row {
-            background: var(--bg-card);
-            border-radius: 8px;
-            padding: 16px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 12px;
-        }
-
-        .total-label {
-            font-weight: 600;
-        }
-
-        .total-value {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 20px;
-            font-weight: 700;
+        /* Comparison Table */
+        .comparison-section-title {
+            font-size: 14px; font-weight: 700;
             color: var(--accent-green);
-        }
-
-        /* Raw JSON */
-        .raw-json-toggle {
-            width: 100%;
-            padding: 12px 16px;
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            color: var(--text-secondary);
-            font-size: 13px;
-            font-weight: 500;
-            cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            transition: all 0.2s ease;
-        }
-
-        .raw-json-toggle:hover {
-            background: var(--bg-card-hover);
-        }
-
-        .raw-json-toggle .arrow {
-            transition: transform 0.2s ease;
-        }
-
-        .raw-json-toggle.open .arrow {
-            transform: rotate(180deg);
-        }
-
-        .raw-json-content {
-            display: none;
-            margin-top: 12px;
-            padding: 16px;
-            background: var(--bg-secondary);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            overflow-x: auto;
-        }
-
-        .raw-json-content.open {
-            display: block;
-        }
-
-        .raw-json-content pre {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 11px;
-            line-height: 1.6;
-            color: var(--text-secondary);
-            white-space: pre-wrap;
-            word-break: break-all;
-        }
-
-        /* Loading */
-        .loading {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 80px 20px;
-            color: var(--text-muted);
-        }
-
-        .loading-spinner {
-            width: 40px;
-            height: 40px;
-            border: 3px solid var(--border);
-            border-top-color: var(--accent-green);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-bottom: 16px;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        /* Error */
-        .error {
-            background: var(--accent-red-dim);
-            border: 1px solid var(--accent-red);
-            border-radius: 12px;
-            padding: 20px;
-            color: var(--accent-red);
-            text-align: center;
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .header {
-                flex-direction: column;
-                gap: 16px;
-                align-items: flex-start;
-            }
-
-            .stats {
-                width: 100%;
-                justify-content: space-between;
-            }
-
-            .orders-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .info-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .info-card.full-width {
-                grid-column: span 1;
-            }
-
-            .comparison-row {
-                flex-direction: column;
-            }
-
-            .comparison-restos, .comparison-historical {
-                width: 100%;
-            }
-        }
-
-        /* Comparison Styles */
-        .comparison-header {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 24px;
-            padding-bottom: 16px;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .comparison-badge {
-            padding: 8px 16px;
-            border-radius: 8px;
-            font-size: 13px;
-            font-weight: 600;
-        }
-
-        .comparison-badge.found {
-            background: var(--accent-green-dim);
-            color: var(--accent-green);
-        }
-
-        .comparison-badge.not-found {
-            background: var(--accent-red-dim);
-            color: var(--accent-red);
-        }
-
-        .comparison-id {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 12px;
-            color: var(--text-muted);
+            margin: 24px 0 12px 0;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--accent-green);
+            display: flex; align-items: center; gap: 8px;
         }
 
         .comparison-table {
+            width: 100%;
             border: 1px solid var(--border);
-            border-radius: 12px;
+            border-radius: 10px;
             overflow: hidden;
-            margin-bottom: 24px;
+            margin-bottom: 16px;
         }
+
+        .comparison-header {
+            display: grid;
+            grid-template-columns: 180px 1fr 1fr;
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border);
+            font-size: 11px; font-weight: 600;
+            text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .comparison-header > div {
+            padding: 12px 14px;
+            border-right: 1px solid var(--border);
+        }
+        .comparison-header > div:last-child { border-right: none; }
+        .comparison-header .col-restos { color: var(--accent-blue); }
+        .comparison-header .col-historical { color: var(--accent-purple); }
 
         .comparison-row {
-            display: flex;
+            display: grid;
+            grid-template-columns: 180px 1fr 1fr;
             border-bottom: 1px solid var(--border);
         }
+        .comparison-row:last-child { border-bottom: none; }
 
-        .comparison-row:last-child {
-            border-bottom: none;
+        .comparison-row > div {
+            padding: 8px 14px;
+            font-size: 12px;
+            border-right: 1px solid var(--border);
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .comparison-row > div:last-child { border-right: none; }
+
+        .comparison-row .field-name {
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            font-weight: 500;
         }
 
-        .comparison-row.header {
-            background: var(--bg-card);
-            font-weight: 600;
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: var(--text-muted);
-        }
+        .comparison-row .col-restos { background: rgba(59, 130, 246, 0.03); }
+        .comparison-row .col-historical { background: rgba(168, 85, 247, 0.03); }
 
-        .comparison-row.match {
-            background: rgba(34, 197, 94, 0.05);
-        }
+        .comparison-row.match .col-restos,
+        .comparison-row.match .col-historical { color: var(--accent-green); }
 
-        .comparison-row.mismatch {
-            background: rgba(249, 115, 22, 0.1);
-        }
-
-        .comparison-row.mismatch .comparison-restos,
-        .comparison-row.mismatch .comparison-historical {
-            color: var(--accent-orange);
-        }
+        .comparison-row.mismatch .col-restos,
+        .comparison-row.mismatch .col-historical { color: var(--accent-orange); }
 
         .comparison-row.missing-restos {
             background: rgba(239, 68, 68, 0.05);
         }
+        .comparison-row.missing-restos .field-name { color: var(--accent-red); }
+        .comparison-row.missing-restos .col-restos { color: var(--accent-red); font-style: italic; }
+        .comparison-row.missing-restos .col-historical { color: var(--accent-green); }
 
-        .comparison-row.missing-restos .comparison-restos {
-            color: var(--accent-red);
-        }
+        .comparison-row.only-restos .col-restos { color: var(--accent-blue); }
+        .comparison-row.only-restos .col-historical { color: var(--text-muted); font-style: italic; }
 
-        .comparison-row.missing-restos .comparison-historical {
-            color: var(--accent-green);
-        }
-
-        .comparison-row.only-restos .comparison-restos {
-            color: var(--accent-blue);
-        }
-
-        .comparison-label {
-            width: 160px;
-            min-width: 160px;
-            padding: 10px 14px;
-            font-size: 12px;
-            color: var(--text-secondary);
-            background: var(--bg-secondary);
-            border-right: 1px solid var(--border);
-        }
-
-        .comparison-restos,
-        .comparison-historical {
-            flex: 1;
-            padding: 10px 14px;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 12px;
-        }
-
-        .comparison-restos {
-            border-right: 1px solid var(--border);
-            background: rgba(59, 130, 246, 0.03);
-        }
-
-        .comparison-historical {
-            background: rgba(168, 85, 247, 0.03);
-        }
-
-        .comparison-section {
-            background: var(--bg-card);
-            padding: 8px 14px;
-            font-size: 10px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: var(--text-muted);
-            border-bottom: 1px solid var(--border);
-        }
-
-        .comparison-section-title {
-            font-size: 11px;
+        .badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 9px;
             font-weight: 600;
             text-transform: uppercase;
-            letter-spacing: 1px;
-            color: var(--text-muted);
-            margin-bottom: 12px;
-            margin-top: 8px;
+            margin-left: 8px;
         }
+        .badge.missing { background: var(--accent-red-dim); color: var(--accent-red); }
+        .badge.extra { background: var(--accent-blue-dim); color: var(--accent-blue); }
 
         /* Items comparison */
-        .items-comparison {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
-            margin-bottom: 24px;
-        }
-
-        .items-column {
-            background: var(--bg-card);
+        .items-table {
+            width: 100%;
             border: 1px solid var(--border);
             border-radius: 10px;
             overflow: hidden;
+            margin-bottom: 16px;
         }
 
-        .items-column-title {
-            padding: 12px 14px;
+        .items-header {
+            display: grid;
+            grid-template-columns: 40px 1fr 100px 70px 90px 90px;
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border);
+            font-size: 10px; font-weight: 600;
+            text-transform: uppercase;
+        }
+        .items-header > div {
+            padding: 10px 8px;
+            border-right: 1px solid var(--border);
+        }
+        .items-header > div:last-child { border-right: none; }
+
+        .items-row {
+            display: grid;
+            grid-template-columns: 40px 1fr 100px 70px 90px 90px;
+            border-bottom: 1px solid var(--border);
+            font-size: 12px;
+        }
+        .items-row:last-child { border-bottom: none; }
+        .items-row > div {
+            padding: 10px 8px;
+            border-right: 1px solid var(--border);
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .items-row > div:last-child { border-right: none; }
+        .items-row .item-name { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 500; }
+
+        .no-data {
+            text-align: center;
+            padding: 30px;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        /* Historical badge */
+        .historical-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 8px;
             font-size: 12px;
             font-weight: 600;
-            background: var(--bg-secondary);
-            border-bottom: 1px solid var(--border);
+            margin-bottom: 16px;
         }
-
-        .items-column:first-child .items-column-title {
-            color: var(--accent-blue);
-        }
-
-        .items-column:last-child .items-column-title {
-            color: var(--accent-purple);
-        }
-
-        .item-row {
-            display: flex;
-            align-items: flex-start;
-            gap: 8px;
-            padding: 10px 14px;
-            border-bottom: 1px solid var(--border);
-            font-size: 13px;
-        }
-
-        .item-row:last-child {
-            border-bottom: none;
-        }
-
-        .item-row .item-name {
-            flex: 1;
-            font-weight: 500;
-        }
-
-        .item-row .item-note {
-            display: block;
-            font-size: 11px;
-            color: var(--accent-orange);
-            width: 100%;
-        }
-
-        .item-row .item-qty {
-            font-family: 'JetBrains Mono', monospace;
-            color: var(--text-muted);
-        }
-
-        .item-row .item-price {
-            font-family: 'JetBrains Mono', monospace;
-            font-weight: 600;
-            color: var(--accent-green);
-        }
-
-        .no-items {
-            padding: 20px;
-            text-align: center;
-            color: var(--accent-red);
-            font-size: 13px;
-        }
+        .historical-status.found { background: var(--accent-green-dim); color: var(--accent-green); }
+        .historical-status.not-found { background: var(--accent-red-dim); color: var(--accent-red); }
     </style>
 </head>
 <body>
     <div class="container">
         <header class="header">
-            <h1>🍽️ <span>RestaurantOS</span> Porudžbine</h1>
+            <h1>🍽️ <span>RestaurantOS</span> vs Historical</h1>
             <div class="stats">
                 <div class="stat">
                     <div class="stat-value" id="totalOrders">-</div>
@@ -853,7 +402,7 @@
                 </div>
                 <div class="stat">
                     <div class="stat-value" id="totalRevenue">-</div>
-                    <div class="stat-label">Promet (RSD)</div>
+                    <div class="stat-label">Promet</div>
                 </div>
             </div>
         </header>
@@ -874,73 +423,124 @@
         </div>
     </div>
 
-    <!-- Modal -->
     <div class="modal-overlay" id="modalOverlay">
         <div class="modal">
             <div class="modal-header">
                 <div>
                     <div class="modal-title" id="modalTitle">Porudžbina #-</div>
-                    <div class="modal-subtitle" id="modalSubtitle">- • -</div>
+                    <div class="modal-subtitle" id="modalSubtitle">-</div>
                 </div>
                 <button class="modal-close" onclick="closeModal()">×</button>
             </div>
-            <div class="modal-body" id="modalBody">
-                <!-- Dynamic content -->
-            </div>
+            <div class="modal-body" id="modalBody"></div>
         </div>
     </div>
 
     <script>
-        // restOS baza
-        const RESTOS_URL = 'https://hlmprmebwpndfgrunjok.supabase.co';
-        const RESTOS_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhsbXBybWVid3BuZGZncnVuam9rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkxNTU3NTQsImV4cCI6MjA4NDczMTc1NH0.DjxeeQFs60Y3RjXcKFUlXJmMACOU-NEkSwDiQQn1ZLQ';
+        const SUPABASE_URL = 'https://hlmprmebwpndfgrunjok.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhsbXBybWVid3BuZGZncnVuam9rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkxNTU3NTQsImV4cCI6MjA4NDczMTc1NH0.DjxeeQFs60Y3RjXcKFUlXJmMACOU-NEkSwDiQQn1ZLQ';
 
-        // Historical baza
         const HISTORICAL_URL = 'https://bbnbbbpofelbkyuffslj.supabase.co';
         const HISTORICAL_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJibmJiYnBvZmVsYmt5dWZmc2xqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUwNTI0MzQsImV4cCI6MjA4MDYyODQzNH0.koW44soAB-bEfh8OzqjGBwdgov4Snscw1ITsg5OureU';
-        
-        // Za stare kompatibilnosti
-        const SUPABASE_URL = RESTOS_URL;
-        const SUPABASE_KEY = RESTOS_KEY;
 
         let allOrders = [];
         let currentFilter = 'all';
 
-        // Fetch orders
+        // Field mappings: restOS field -> historical field
+        const ORDER_FIELD_MAPPINGS = {
+            'IDENTIFIKACIJA': {
+                'external_id': 'order_id',
+                'order_number': 'order_no',
+                'channel_order_id': 'order_no'
+            },
+            'KANAL & LOKACIJA': {
+                'channel_code': 'provider',
+                'location_id': 'company_id',
+                'delivery_type': 'delivery_type'
+            },
+            'STATUS': {
+                'status': 'status',
+                'is_paid': 'is_paid',
+                'is_void': 'is_invalid'
+            },
+            'KUPAC': {
+                'customer_name': 'customer_name',
+                'customer_phone': 'customer_phone',
+                'customer_email': 'customer_email',
+                'delivery_address': 'customer_address'
+            },
+            'KOORDINATE': {
+                'delivery_lat': 'latitude',
+                'delivery_lng': 'longitude'
+            },
+            'KONOBAR & STO': {
+                'waiter_id': 'waiter_id',
+                'waiter_name': 'waiter_name',
+                'table_id': 'table_id'
+            },
+            'FINANSIJE': {
+                'total_amount': '_calculated_total',
+                'subtotal': 'subtotal',
+                'discount_amount': 'discount',
+                'delivery_fee': 'delivery_fee'
+            },
+            'TIMESTAMPS': {
+                'created_at': 'created_at',
+                'accepted_at': 'accepted_at',
+                'ebar_datum': 'modified_at'
+            }
+        };
+
+        // Historical-only fields (ne dobijamo iz eBar-a)
+        const HISTORICAL_ONLY_FIELDS = {
+            'KUPAC': ['customer_address', 'customer_email'],
+            'KOORDINATE': ['latitude', 'longitude'],
+            'DOSTAVA': ['delivery_type', 'delivery_fee', 'estimated_delivery_time'],
+            'NAPOMENE': ['customer_notes', 'restaurant_notes'],
+            'ITEMS DETALJI': ['item_notes', 'item_options']
+        };
+
         async function fetchOrders() {
             try {
-                const response = await fetch(
+                const ordersResponse = await fetch(
                     `${SUPABASE_URL}/rest/v1/orders?select=*&order=ebar_datum.desc&limit=100`,
-                    {
-                        headers: {
-                            'apikey': SUPABASE_KEY,
-                            'Authorization': `Bearer ${SUPABASE_KEY}`
-                        }
-                    }
+                    { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
                 );
+                if (!ordersResponse.ok) throw new Error('Failed to fetch orders');
+                const orders = await ordersResponse.json();
 
-                if (!response.ok) throw new Error('Failed to fetch orders');
+                const orderIds = orders.map(o => o.id);
+                const itemsResponse = await fetch(
+                    `${SUPABASE_URL}/rest/v1/order_items?order_id=in.(${orderIds.join(',')})&select=*`,
+                    { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
+                );
+                const allItems = itemsResponse.ok ? await itemsResponse.json() : [];
 
-                allOrders = await response.json();
+                const itemsByOrder = {};
+                allItems.forEach(item => {
+                    if (!itemsByOrder[item.order_id]) itemsByOrder[item.order_id] = [];
+                    itemsByOrder[item.order_id].push(item);
+                });
+
+                allOrders = orders.map(order => ({
+                    ...order,
+                    order_items: itemsByOrder[order.id] || []
+                }));
+
                 renderOrders();
                 updateStats();
             } catch (error) {
                 console.error('Error:', error);
                 document.getElementById('ordersContainer').innerHTML = `
-                    <div class="error">
-                        <p>Greška pri učitavanju porudžbina</p>
-                        <p style="font-size: 12px; margin-top: 8px;">${error.message}</p>
-                    </div>
-                `;
+                    <div style="color: var(--accent-red); text-align: center; padding: 40px;">
+                        <p>Greška: ${error.message}</p>
+                    </div>`;
             }
         }
 
-        // Render orders
         function renderOrders() {
             const container = document.getElementById('ordersContainer');
-            const filtered = currentFilter === 'all' 
-                ? allOrders 
-                : allOrders.filter(o => o.channel_code?.toLowerCase() === currentFilter);
+            const filtered = currentFilter === 'all' ? allOrders : allOrders.filter(o => o.channel_code?.toLowerCase() === currentFilter);
 
             if (filtered.length === 0) {
                 container.innerHTML = '<div class="loading"><p>Nema porudžbina</p></div>';
@@ -950,9 +550,14 @@
             container.innerHTML = filtered.map(order => {
                 const channel = order.channel_code?.toLowerCase() || 'unknown';
                 const statusClass = getStatusClass(order.status);
-                const amount = parseFloat(order.total_amount) || 0;
+                const orderItems = order.order_items || [];
+                const calculatedTotal = orderItems.reduce((sum, item) => sum + (parseFloat(item.total_price) || 0), 0);
+                const amount = parseFloat(order.total_amount) || calculatedTotal;
                 const time = formatTime(order.ebar_datum || order.created_at);
-                
+                const itemsPreview = orderItems.length > 0
+                    ? orderItems.slice(0, 2).map(i => i.item_name).join(', ') + (orderItems.length > 2 ? ` +${orderItems.length - 2}` : '')
+                    : 'Nema stavki';
+
                 return `
                     <div class="order-card" onclick="openModal('${order.id}')" style="--card-accent: ${getChannelColor(channel)}">
                         <div class="order-header">
@@ -961,6 +566,7 @@
                         </div>
                         <div class="order-customer">${order.customer_name || 'Nepoznat kupac'}</div>
                         <div class="order-location">${getLocationName(order.location_id)} • ${order.delivery_type || '-'}</div>
+                        <div class="order-items-preview">📦 ${orderItems.length} stavki: ${itemsPreview}</div>
                         <div class="order-meta">
                             <div class="order-status ${statusClass}">
                                 <span class="status-dot"></span>
@@ -971,35 +577,29 @@
                                 <div class="order-time">${time}</div>
                             </div>
                         </div>
-                    </div>
-                `;
+                    </div>`;
             }).join('');
         }
 
-        // Update stats
         function updateStats() {
             const totalOrders = allOrders.length;
             const totalRevenue = allOrders.reduce((sum, o) => {
-                const amount = parseFloat(o.total_amount) || 0;
-                return sum + (amount > 0 ? amount : 0);
+                let amount = parseFloat(o.total_amount) || 0;
+                if (amount === 0 && o.order_items) {
+                    amount = o.order_items.reduce((s, i) => s + (parseFloat(i.total_price) || 0), 0);
+                }
+                return sum + amount;
             }, 0);
-
             document.getElementById('totalOrders').textContent = totalOrders;
             document.getElementById('totalRevenue').textContent = formatCurrency(totalRevenue);
         }
 
-        // Fetch Historical order by reference_id
         async function fetchHistoricalOrder(referenceId) {
             if (!referenceId) return null;
             try {
                 const response = await fetch(
                     `${HISTORICAL_URL}/rest/v1/emeni_orders?order_id=eq.${referenceId}&select=*`,
-                    {
-                        headers: {
-                            'apikey': HISTORICAL_KEY,
-                            'Authorization': `Bearer ${HISTORICAL_KEY}`
-                        }
-                    }
+                    { headers: { 'apikey': HISTORICAL_KEY, 'Authorization': `Bearer ${HISTORICAL_KEY}` } }
                 );
                 if (!response.ok) return null;
                 const data = await response.json();
@@ -1010,260 +610,309 @@
             }
         }
 
-        // Compare values helper
-        function compareValue(restosVal, histVal, label) {
-            const rVal = restosVal ?? '-';
-            const hVal = histVal ?? '-';
-            const match = String(rVal) === String(hVal);
-            const matchClass = match ? 'match' : (hVal !== '-' && rVal === '-') ? 'missing' : (rVal !== '-' && hVal === '-') ? 'extra' : 'mismatch';
-            return { rVal, hVal, match, matchClass };
-        }
-
-        // Open modal with comparison
         async function openModal(orderId) {
             const order = allOrders.find(o => o.id === orderId);
             if (!order) return;
 
             const referenceId = order.raw_data?.reference_id;
-            
+
             document.getElementById('modalTitle').textContent = `Porudžbina #${order.order_number || '-'}`;
-            document.getElementById('modalSubtitle').textContent = `${getLocationName(order.location_id)} • ${order.channel_code || '-'}`;
-            
-            // Show loading while fetching historical
+            document.getElementById('modalSubtitle').textContent = `${getLocationName(order.location_id)} • ${order.channel_code || '-'} • ref: ${referenceId || '-'}`;
+
             document.getElementById('modalBody').innerHTML = `
                 <div class="loading" style="padding: 40px;">
                     <div class="loading-spinner"></div>
-                    <p>Učitavanje podataka iz obe baze...</p>
-                </div>
-            `;
-            
+                    <p>Učitavanje Historical podataka...</p>
+                </div>`;
+
             document.getElementById('modalOverlay').classList.add('active');
             document.body.style.overflow = 'hidden';
 
-            // Fetch historical data
             const historical = await fetchHistoricalOrder(referenceId);
-            
-            // Render comparison
             renderComparison(order, historical);
         }
 
         function renderComparison(order, historical) {
             const h = historical || {};
-            const hItems = h.raw_payload?.items || [];
-            const rItems = order.raw_data?.items || [];
-            
-            document.getElementById('modalBody').innerHTML = `
-                <div class="comparison-header">
-                    <div class="comparison-badge ${historical ? 'found' : 'not-found'}">
-                        ${historical ? '✅ Pronađen u Historical' : '❌ Nije pronađen u Historical'}
-                    </div>
-                    ${historical ? `<div class="comparison-id">order_id: ${h.order_id}</div>` : ''}
+            const hPayload = h.raw_payload || {};
+            const hItems = hPayload.items || [];
+            const rItems = order.order_items || [];
+
+            // Calculate totals
+            const rTotal = rItems.reduce((s, i) => s + (parseFloat(i.total_price) || 0), 0);
+            const hTotal = hItems.reduce((s, i) => s + ((i.price || 0) * (i.quantity || 1)), 0);
+            const orderTotal = parseFloat(order.total_amount) || 0;
+
+            // Count filled fields
+            const rFilledCount = Object.values(order).filter(v => v !== null && v !== undefined && v !== '' && v !== 0).length;
+            const hFilledCount = Object.values(h).filter(v => v !== null && v !== undefined && v !== '').length;
+
+            let html = `
+                <div class="historical-status ${historical ? 'found' : 'not-found'}">
+                    ${historical ? '✅ Pronađen u Historical bazi' : '❌ Nije pronađen u Historical bazi'}
+                    ${historical ? `(order_id: ${h.order_id})` : ''}
                 </div>
 
-                <div class="comparison-table">
-                    <div class="comparison-row header">
-                        <div class="comparison-label">Polje</div>
-                        <div class="comparison-restos">restOS (eBar)</div>
-                        <div class="comparison-historical">Historical (webhook)</div>
+                <div class="summary-stats">
+                    <div class="summary-stat">
+                        <div class="summary-stat-value ${orderTotal === 0 ? 'warning' : ''}">${formatCurrency(orderTotal)}</div>
+                        <div class="summary-stat-label">restOS total</div>
                     </div>
+                    <div class="summary-stat">
+                        <div class="summary-stat-value">${formatCurrency(rTotal)}</div>
+                        <div class="summary-stat-label">restOS items</div>
+                    </div>
+                    <div class="summary-stat">
+                        <div class="summary-stat-value">${formatCurrency(hTotal)}</div>
+                        <div class="summary-stat-label">Historical total</div>
+                    </div>
+                    <div class="summary-stat">
+                        <div class="summary-stat-value">${rItems.length}</div>
+                        <div class="summary-stat-label">restOS stavki</div>
+                    </div>
+                    <div class="summary-stat">
+                        <div class="summary-stat-value">${hItems.length}</div>
+                        <div class="summary-stat-label">Historical stavki</div>
+                    </div>
+                </div>
 
-                    <div class="comparison-section">IDENTIFIKACIJA</div>
-                    ${compRow('external_id', order.external_id, h.order_id)}
-                    ${compRow('reference_id', order.raw_data?.reference_id, h.order_id)}
-                    ${compRow('order_number', order.order_number, h.order_no)}
+                <div class="comparison-section-title">📋 ORDERS TABELA</div>
+            `;
+
+            // Render order fields comparison by section
+            for (const [section, mappings] of Object.entries(ORDER_FIELD_MAPPINGS)) {
+                const rows = [];
+
+                for (const [rField, hField] of Object.entries(mappings)) {
+                    let rVal = order[rField];
+                    let hVal = hField === '_calculated_total' ? hTotal : (h[hField] ?? hPayload[hField]);
+
+                    // Skip if both are empty
+                    if (isEmpty(rVal) && isEmpty(hVal)) continue;
+
+                    // Format values
+                    rVal = formatValue(rVal, rField);
+                    hVal = formatValue(hVal, hField);
+
+                    const status = getComparisonStatus(rVal, hVal);
+                    rows.push({ rField, hField, rVal, hVal, status });
+                }
+
+                // Check for historical-only fields in this section
+                if (HISTORICAL_ONLY_FIELDS[section]) {
+                    for (const hField of HISTORICAL_ONLY_FIELDS[section]) {
+                        const hVal = h[hField] ?? hPayload[hField];
+                        if (!isEmpty(hVal)) {
+                            rows.push({
+                                rField: `⚠️ ${hField}`,
+                                hField: hField,
+                                rVal: '— NE DOBIJAMO —',
+                                hVal: formatValue(hVal, hField),
+                                status: 'missing-restos'
+                            });
+                        }
+                    }
+                }
+
+                if (rows.length > 0) {
+                    html += `
+                        <div class="comparison-table">
+                            <div class="comparison-header">
+                                <div>${section}</div>
+                                <div class="col-restos">restOS (eBar)</div>
+                                <div class="col-historical">Historical (webhook)</div>
+                            </div>
+                    `;
+
+                    for (const row of rows) {
+                        html += `
+                            <div class="comparison-row ${row.status}">
+                                <div class="field-name">${row.rField}${row.status === 'missing-restos' ? '<span class="badge missing">FALI</span>' : ''}</div>
+                                <div class="col-restos">${row.rVal}</div>
+                                <div class="col-historical">${row.hVal}</div>
+                            </div>
+                        `;
+                    }
+
+                    html += `</div>`;
+                }
+            }
+
+            // ORDER ITEMS section
+            html += `<div class="comparison-section-title">📦 ORDER_ITEMS TABELA (${rItems.length} stavki restOS / ${hItems.length} stavki Historical)</div>`;
+
+            if (rItems.length === 0 && hItems.length === 0) {
+                html += `<div class="no-data">Nema stavki ni u jednoj bazi</div>`;
+            } else {
+                // Prikaži svaki item pojedinačno sa svim poljima
+                const maxLen = Math.max(rItems.length, hItems.length);
+                
+                for (let i = 0; i < maxLen; i++) {
+                    const rItem = rItems[i] || {};
+                    const hItem = hItems[i] || {};
                     
-                    <div class="comparison-section">KANAL & LOKACIJA</div>
-                    ${compRow('channel', order.channel_code, h.provider)}
-                    ${compRow('location', getLocationName(order.location_id), h.company_id)}
-                    ${compRow('delivery_type', order.delivery_type, h.delivery_type)}
+                    const rName = rItem.item_name || '—';
+                    const hName = hItem.name || '—';
+                    const hasRestOS = Object.keys(rItem).length > 0;
+                    const hasHistorical = Object.keys(hItem).length > 0;
 
-                    <div class="comparison-section">STATUS</div>
-                    ${compRow('status', order.status, h.status ? `${h.status} (${getStatusName(h.status)})` : null)}
-                    ${compRow('is_paid', formatBool(order.is_paid), formatBool(h.is_paid))}
-                    ${compRow('is_void', formatBool(order.is_void), formatBool(h.is_invalid))}
+                    // Item header
+                    let itemStatus = '';
+                    if (!hasRestOS) itemStatus = '<span class="badge missing">SAMO HISTORICAL</span>';
+                    else if (!hasHistorical) itemStatus = '<span class="badge extra">SAMO RESTOS</span>';
 
-                    <div class="comparison-section">KUPAC</div>
-                    ${compRow('customer_name', order.customer_name, h.customer_name)}
-                    ${compRow('customer_phone', order.customer_phone, h.customer_phone)}
-                    ${compRow('customer_address', order.delivery_address, h.customer_address)}
-                    ${compRow('latitude', order.delivery_lat, h.latitude)}
-                    ${compRow('longitude', order.delivery_lng, h.longitude)}
-
-                    <div class="comparison-section">KONOBAR & STO</div>
-                    ${compRow('waiter_id', order.waiter_id, h.waiter_id || h.raw_payload?.waiter?.id)}
-                    ${compRow('waiter_name', order.waiter_name, h.waiter_name || h.raw_payload?.waiter?.name)}
-                    ${compRow('table_id', order.table_id, h.table_id || h.raw_payload?.tableID)}
-                    ${compRow('table_reference', order.table_reference_id, h.table_reference_id || h.raw_payload?.tableReferenceID)}
-
-                    <div class="comparison-section">FINANSIJE</div>
-                    ${compRow('total_amount', formatCurrency(parseFloat(order.total_amount) || 0), hItems.length ? formatCurrency(hItems.reduce((s,i) => s + (i.price * i.quantity), 0)) : '-')}
-                    ${compRow('cash_amount', formatCurrency(parseFloat(order.cash_amount) || 0), '-')}
-                    ${compRow('card_amount', formatCurrency(parseFloat(order.card_amount) || 0), '-')}
-                    ${compRow('transfer_amount', formatCurrency(parseFloat(order.transfer_amount) || 0), '-')}
-
-                    <div class="comparison-section">FISKALIZACIJA</div>
-                    ${compRow('racun_id', order.racun_id, '-')}
-                    ${compRow('broj_racuna', order.broj_racuna, '-')}
-                    ${compRow('receipt_number', order.receipt_number, '-')}
-
-                    <div class="comparison-section">TIMESTAMPS</div>
-                    ${compRow('created_at', formatDateTime(order.created_at), formatDateTime(h.created_at))}
-                    ${compRow('ebar_datum', formatDateTime(order.ebar_datum), '-')}
-                    ${compRow('accepted_at', formatDateTime(order.accepted_at), formatDateTime(h.accepted_at))}
-                    ${compRow('modified_at', '-', formatDateTime(h.modified_at))}
-                </div>
-
-                <div class="comparison-section-title">ORDER ITEMS</div>
-                <div class="items-comparison">
-                    <div class="items-column">
-                        <div class="items-column-title">restOS (${rItems.length} stavki)</div>
-                        ${rItems.length > 0 ? rItems.map(i => `
-                            <div class="item-row">
-                                <span class="item-name">${i.name}</span>
-                                <span class="item-qty">x${i.quantity}</span>
-                                <span class="item-price">${formatCurrency(i.price)}</span>
+                    html += `
+                        <div class="comparison-table" style="margin-bottom: 16px;">
+                            <div class="comparison-header">
+                                <div>STAVKA ${i + 1}: ${rName !== '—' ? rName : hName} ${itemStatus}</div>
+                                <div class="col-restos">restOS (order_items)</div>
+                                <div class="col-historical">Historical (raw_payload.items)</div>
                             </div>
-                        `).join('') : '<div class="no-items">❌ Nema stavki</div>'}
-                    </div>
-                    <div class="items-column">
-                        <div class="items-column-title">Historical (${hItems.length} stavki)</div>
-                        ${hItems.length > 0 ? hItems.map(i => `
-                            <div class="item-row">
-                                <span class="item-name">${i.name}</span>
-                                ${i.note ? `<span class="item-note">📝 ${i.note}</span>` : ''}
-                                <span class="item-qty">x${i.quantity}</span>
-                                <span class="item-price">${formatCurrency(i.price)}</span>
+                    `;
+
+                    // Mapiranje polja između restOS i Historical za items
+                    const itemFieldMappings = {
+                        'id': null,
+                        'order_id': null,
+                        'tenant_id': null,
+                        'line_number': null,
+                        'external_item_id': 'id',
+                        'item_id': null,
+                        'item_code': 'menuItemId',
+                        'item_name': 'name',
+                        'item_category': 'categoryName',
+                        'quantity': 'quantity',
+                        'unit_price': 'price',
+                        'total_price': '_calculated',
+                        'modifiers': 'options',
+                        'special_instructions': 'note',
+                        'kitchen_station': null,
+                        'preparation_priority': null,
+                        'printed_at': null,
+                        'confirmed_at': null,
+                        'is_paid': null,
+                        'is_void': null
+                    };
+
+                    // Historical-only fields
+                    const historicalOnlyItemFields = ['note', 'options', 'groupName', 'instructions'];
+
+                    // Render restOS fields
+                    for (const [rField, hField] of Object.entries(itemFieldMappings)) {
+                        let rVal = rItem[rField];
+                        let hVal = null;
+                        
+                        if (hField === '_calculated') {
+                            hVal = hItem.price && hItem.quantity ? (hItem.price * hItem.quantity) : null;
+                        } else if (hField) {
+                            hVal = hItem[hField];
+                        }
+
+                        // Skip if both empty
+                        if (isEmpty(rVal) && isEmpty(hVal)) continue;
+
+                        // Format values
+                        const rFormatted = formatItemValue(rVal, rField);
+                        const hFormatted = formatItemValue(hVal, hField || rField);
+
+                        const status = getComparisonStatus(rFormatted, hFormatted);
+
+                        html += `
+                            <div class="comparison-row ${status}">
+                                <div class="field-name">${rField}${status === 'missing-restos' ? '<span class="badge missing">FALI</span>' : ''}</div>
+                                <div class="col-restos">${rFormatted}</div>
+                                <div class="col-historical">${hFormatted}</div>
                             </div>
-                        `).join('') : '<div class="no-items">❌ Nema stavki</div>'}
-                    </div>
-                </div>
+                        `;
+                    }
 
-                <div class="modal-section">
-                    <button class="raw-json-toggle" onclick="toggleRawJson(this)">
-                        <span>RAW_DATA (restOS)</span>
-                        <span class="arrow">▼</span>
-                    </button>
-                    <div class="raw-json-content">
-                        <pre>${JSON.stringify(order.raw_data, null, 2)}</pre>
-                    </div>
-                </div>
+                    // Check for historical-only fields
+                    for (const hField of historicalOnlyItemFields) {
+                        const hVal = hItem[hField];
+                        if (!isEmpty(hVal) && !Object.values(itemFieldMappings).includes(hField)) {
+                            html += `
+                                <div class="comparison-row missing-restos">
+                                    <div class="field-name">⚠️ ${hField}<span class="badge missing">FALI</span></div>
+                                    <div class="col-restos">— NE DOBIJAMO —</div>
+                                    <div class="col-historical">${formatItemValue(hVal, hField)}</div>
+                                </div>
+                            `;
+                        }
+                    }
 
-                ${historical ? `
-                <div class="modal-section">
-                    <button class="raw-json-toggle" onclick="toggleRawJson(this)">
-                        <span>RAW_PAYLOAD (Historical)</span>
-                        <span class="arrow">▼</span>
-                    </button>
-                    <div class="raw-json-content">
-                        <pre>${JSON.stringify(h.raw_payload, null, 2)}</pre>
-                    </div>
-                </div>
-                ` : ''}
-            `;
+                    html += `</div>`;
+                }
+            }
+
+            document.getElementById('modalBody').innerHTML = html;
         }
 
-        // Comparison row helper
-        function compRow(label, restosVal, histVal) {
-            const rVal = restosVal ?? '-';
-            const hVal = histVal ?? '-';
-            const rStr = String(rVal);
-            const hStr = String(hVal);
-            
-            let status = 'neutral';
-            if (rStr === hStr && rStr !== '-') status = 'match';
-            else if (rStr === '-' && hStr !== '-') status = 'missing-restos';
-            else if (rStr !== '-' && hStr === '-') status = 'only-restos';
-            else if (rStr !== hStr && rStr !== '-' && hStr !== '-') status = 'mismatch';
-            
-            return `
-                <div class="comparison-row ${status}">
-                    <div class="comparison-label">${label}</div>
-                    <div class="comparison-restos">${rStr}</div>
-                    <div class="comparison-historical">${hStr}</div>
-                </div>
-            `;
+        function formatItemValue(val, field) {
+            if (val === null || val === undefined || val === '') return '—';
+            if (typeof val === 'boolean') return val ? '✅ DA' : '❌ NE';
+            if (Array.isArray(val)) return val.length > 0 ? JSON.stringify(val) : '—';
+            if (typeof val === 'object') return JSON.stringify(val);
+            if (field.includes('price') || field === 'total_price' || field === 'unit_price') {
+                const num = parseFloat(val);
+                if (!isNaN(num)) return formatCurrency(num);
+            }
+            if (field.includes('_at') || field.includes('date')) {
+                return formatDateTime(val);
+            }
+            return String(val);
         }
 
-        function formatBool(val) {
-            if (val === true) return '✅ DA';
-            if (val === false) return '❌ NE';
-            return '⚠️ NULL';
+        function isEmpty(val) {
+            return val === null || val === undefined || val === '' || val === 0 || val === '0' || val === '0.00';
         }
 
-        function getStatusName(code) {
-            const map = {1:'created', 3:'accepted', 4:'preparing', 5:'ready', 6:'dispatched', 7:'delivered', 8:'rejected', 9:'cancelled', 10:'completed', 11:'void'};
-            return map[code] || code;
+        function formatValue(val, field) {
+            if (val === null || val === undefined || val === '') return '—';
+            if (typeof val === 'boolean') return val ? '✅ DA' : '❌ NE';
+            if (typeof val === 'object') return JSON.stringify(val);
+            if (field.includes('amount') || field.includes('total') || field.includes('fee') || field.includes('price')) {
+                const num = parseFloat(val);
+                if (!isNaN(num)) return formatCurrency(num);
+            }
+            if (field.includes('_at') || field.includes('date') || field.includes('datum')) {
+                return formatDateTime(val);
+            }
+            if (field === 'status' && typeof val === 'number') {
+                const map = {1:'created', 3:'accepted', 4:'preparing', 5:'ready', 6:'dispatched', 7:'delivered', 8:'rejected', 9:'cancelled', 10:'completed', 11:'void'};
+                return `${val} (${map[val] || '?'})`;
+            }
+            if (field === 'location_id') return getLocationName(val);
+            return String(val);
         }
 
-        // Close modal
-        function closeModal() {
-            document.getElementById('modalOverlay').classList.remove('active');
-            document.body.style.overflow = '';
+        function getComparisonStatus(rVal, hVal) {
+            const rEmpty = rVal === '—' || rVal === '— NE DOBIJAMO —';
+            const hEmpty = hVal === '—';
+            if (rEmpty && !hEmpty) return 'missing-restos';
+            if (!rEmpty && hEmpty) return 'only-restos';
+            if (rVal === hVal) return 'match';
+            return 'mismatch';
         }
 
-        // Toggle raw JSON
-        function toggleRawJson(btn) {
-            btn.classList.toggle('open');
-            btn.nextElementSibling.classList.toggle('open');
-        }
-
-        // Close modal on overlay click
-        document.getElementById('modalOverlay').addEventListener('click', (e) => {
-            if (e.target === e.currentTarget) closeModal();
-        });
-
-        // Close modal on Escape
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') closeModal();
-        });
-
-        // Filter buttons
-        document.querySelectorAll('.filter-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                currentFilter = btn.dataset.filter;
-                renderOrders();
-            });
-        });
-
-        // Helper functions
         function formatCurrency(amount) {
             return new Intl.NumberFormat('sr-RS').format(Math.round(amount)) + ' RSD';
         }
 
         function formatTime(dateStr) {
             if (!dateStr) return '-';
-            const date = new Date(dateStr);
-            return date.toLocaleTimeString('sr-RS', { hour: '2-digit', minute: '2-digit' });
+            return new Date(dateStr).toLocaleTimeString('sr-RS', { hour: '2-digit', minute: '2-digit' });
         }
 
         function formatDateTime(dateStr) {
-            if (!dateStr) return '-';
-            const date = new Date(dateStr);
-            return date.toLocaleString('sr-RS', { 
-                day: '2-digit', 
-                month: '2-digit', 
-                year: 'numeric',
-                hour: '2-digit', 
-                minute: '2-digit',
-                second: '2-digit'
+            if (!dateStr) return '—';
+            return new Date(dateStr).toLocaleString('sr-RS', {
+                day: '2-digit', month: '2-digit', year: 'numeric',
+                hour: '2-digit', minute: '2-digit'
             });
         }
 
         function formatStatus(status) {
-            const map = {
-                'delivered': 'Dostavljeno',
-                'completed': 'Završeno',
-                'ready': 'Spremno',
-                'preparing': 'Priprema',
-                'active': 'Aktivno',
-                'accepted': 'Prihvaćeno',
-                'created': 'Kreirano',
-                'cancelled': 'Otkazano',
-                'rejected': 'Odbijeno',
-                'void': 'Stornirano'
-            };
+            const map = { 'delivered': 'Dostavljeno', 'completed': 'Završeno', 'ready': 'Spremno', 'preparing': 'Priprema', 'active': 'Aktivno', 'accepted': 'Prihvaćeno', 'created': 'Kreirano', 'cancelled': 'Otkazano', 'rejected': 'Odbijeno', 'void': 'Stornirano' };
             return map[status?.toLowerCase()] || status || '-';
         }
 
@@ -1277,35 +926,13 @@
             return '';
         }
 
-        function getStatusColor(status) {
-            const s = status?.toLowerCase();
-            if (s === 'delivered' || s === 'completed') return 'var(--accent-green)';
-            if (s === 'ready') return 'var(--accent-yellow)';
-            if (s === 'preparing') return 'var(--accent-orange)';
-            if (s === 'active' || s === 'accepted' || s === 'created') return 'var(--accent-blue)';
-            if (s === 'cancelled' || s === 'rejected' || s === 'void') return 'var(--accent-red)';
-            return 'var(--text-primary)';
-        }
-
         function getChannelColor(channel) {
-            const map = {
-                'wolt': 'var(--accent-blue)',
-                'gloriafood': 'var(--accent-orange)',
-                'pos': 'var(--accent-purple)',
-                'emeni': 'var(--accent-green)',
-                'ebar': 'var(--accent-purple)'
-            };
+            const map = { 'wolt': 'var(--accent-blue)', 'gloriafood': 'var(--accent-orange)', 'pos': 'var(--accent-purple)', 'emeni': 'var(--accent-green)', 'ebar': 'var(--accent-purple)' };
             return map[channel] || 'var(--text-muted)';
         }
 
         function getChannelIcon(channel) {
-            const map = {
-                'wolt': '🛵',
-                'gloriafood': '🍕',
-                'pos': '💳',
-                'emeni': '📱',
-                'ebar': '💳'
-            };
+            const map = { 'wolt': '🛵', 'gloriafood': '🍕', 'pos': '💳', 'emeni': '📱', 'ebar': '💳' };
             return map[channel] || '📦';
         }
 
@@ -1319,10 +946,31 @@
                 'b1eebc99-9c0b-4ef8-bb6d-6bb9bd380006': 'Kuhinjica',
                 'b1eebc99-9c0b-4ef8-bb6d-6bb9bd380007': 'Girosito'
             };
-            return map[locationId] || 'Nepoznata lokacija';
+            return map[locationId] || locationId || '—';
         }
 
-        // Init
+        function closeModal() {
+            document.getElementById('modalOverlay').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        document.getElementById('modalOverlay').addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) closeModal();
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeModal();
+        });
+
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentFilter = btn.dataset.filter;
+                renderOrders();
+            });
+        });
+
         fetchOrders();
     </script>
 </body>
