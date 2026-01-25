@@ -738,110 +738,235 @@
                 }
             }
 
-            // ORDER ITEMS section
-            html += `<div class="comparison-section-title">📦 ORDER_ITEMS TABELA (${rItems.length} stavki restOS / ${hItems.length} stavki Historical)</div>`;
+            // ORDER ITEMS section - sa FLATTENED modifiers iz Historical
+            
+            // FLATTEN Historical items - izvuci modifiers kao zasebne stavke
+            const hItemsFlat = [];
+            hItems.forEach(hItem => {
+                // Dodaj glavni item
+                hItemsFlat.push({
+                    ...hItem,
+                    _isModifier: false,
+                    _parentName: null
+                });
+                
+                // Dodaj modifiers kao zasebne stavke
+                if (hItem.modifiers && hItem.modifiers.length > 0) {
+                    hItem.modifiers.forEach(mod => {
+                        hItemsFlat.push({
+                            name: mod.name || `Modifier (productID: ${mod.productID})`,
+                            price: mod.price,
+                            quantity: mod.quantity || 1,
+                            productID: mod.productID,
+                            productReferenceID: mod.productReferenceID,
+                            _isModifier: true,
+                            _parentName: hItem.name
+                        });
+                    });
+                }
+            });
+            
+            html += `<div class="comparison-section-title">📦 ORDER_ITEMS TABELA (${rItems.length} stavki restOS / ${hItems.length} stavki + ${hItemsFlat.length - hItems.length} modifiers Historical)</div>`;
 
-            if (rItems.length === 0 && hItems.length === 0) {
+            if (rItems.length === 0 && hItemsFlat.length === 0) {
                 html += `<div class="no-data">Nema stavki ni u jednoj bazi</div>`;
             } else {
-                // Prikaži svaki item pojedinačno sa svim poljima
-                const maxLen = Math.max(rItems.length, hItems.length);
-                
-                for (let i = 0; i < maxLen; i++) {
-                    const rItem = rItems[i] || {};
-                    const hItem = hItems[i] || {};
+                // SMART MATCHING
+                const matchedPairs = [];
+                const usedRIndexes = new Set();
+                const usedHIndexes = new Set();
+
+                // 1. Prvo matchuj GLAVNE stavke po imenu
+                hItemsFlat.forEach((hItem, hIdx) => {
+                    if (hItem._isModifier) return; // Modifajere matchujemo kasnije
+                    
+                    const hName = (hItem.name || '').toLowerCase().trim();
+                    
+                    rItems.forEach((rItem, rIdx) => {
+                        if (usedRIndexes.has(rIdx)) return;
+                        if ((rItem.item_category || '').toLowerCase() === 'mod') return; // Skip restOS modifajere
+                        
+                        const rName = (rItem.item_name || '').toLowerCase().trim();
+                        
+                        // Match po imenu
+                        const nameMatch = rName === hName || 
+                                          rName.includes(hName) || 
+                                          hName.includes(rName) ||
+                                          (rName.length > 5 && hName.length > 5 && 
+                                           (rName.substring(0, 5) === hName.substring(0, 5)));
+                        
+                        if (nameMatch) {
+                            matchedPairs.push({ rItem, hItem, rIdx, hIdx });
+                            usedRIndexes.add(rIdx);
+                            usedHIndexes.add(hIdx);
+                        }
+                    });
+                });
+
+                // 2. Matchuj MODIFAJERE po CENI
+                hItemsFlat.forEach((hItem, hIdx) => {
+                    if (!hItem._isModifier) return;
+                    if (usedHIndexes.has(hIdx)) return;
+                    
+                    const hPrice = hItem.price || 0;
+                    
+                    rItems.forEach((rItem, rIdx) => {
+                        if (usedRIndexes.has(rIdx)) return;
+                        
+                        const rPrice = parseFloat(rItem.unit_price) || 0;
+                        const rCategory = (rItem.item_category || '').toLowerCase();
+                        
+                        // Za modifajere matchuj po ceni (tolerancija ±1 RSD)
+                        const priceMatch = Math.abs(rPrice - hPrice) <= 1;
+                        const isModCategory = rCategory === 'mod' || 
+                                              rCategory.includes('dod') || 
+                                              (rItem.item_name || '').toLowerCase().startsWith('dod');
+                        
+                        if (priceMatch && isModCategory) {
+                            matchedPairs.push({ rItem, hItem, rIdx, hIdx });
+                            usedRIndexes.add(rIdx);
+                            usedHIndexes.add(hIdx);
+                        }
+                    });
+                });
+
+                // 3. Dodaj neupare restOS stavke
+                rItems.forEach((rItem, rIdx) => {
+                    if (!usedRIndexes.has(rIdx)) {
+                        matchedPairs.push({ rItem, hItem: null, rIdx, hIdx: null });
+                    }
+                });
+
+                // 4. Dodaj neupare Historical stavke (uključujući neupare modifajere)
+                hItemsFlat.forEach((hItem, hIdx) => {
+                    if (!usedHIndexes.has(hIdx)) {
+                        matchedPairs.push({ rItem: null, hItem, rIdx: null, hIdx });
+                    }
+                });
+
+                // Sortiraj po restOS line_number
+                matchedPairs.sort((a, b) => {
+                    const aLine = a.rItem?.line_number || 999;
+                    const bLine = b.rItem?.line_number || 999;
+                    return aLine - bLine;
+                });
+
+                // Renderuj svaku uparenu stavku
+                matchedPairs.forEach((pair, idx) => {
+                    const rItem = pair.rItem || {};
+                    const hItem = pair.hItem || {};
                     
                     const rName = rItem.item_name || '—';
                     const hName = hItem.name || '—';
+                    const displayName = rName !== '—' ? rName : hName;
                     const hasRestOS = Object.keys(rItem).length > 0;
                     const hasHistorical = Object.keys(hItem).length > 0;
 
-                    // Item header
+                    // Item header badges
                     let itemStatus = '';
-                    if (!hasRestOS) itemStatus = '<span class="badge missing">SAMO HISTORICAL</span>';
-                    else if (!hasHistorical) itemStatus = '<span class="badge extra">SAMO RESTOS</span>';
+                    let modifierBadge = '';
+                    
+                    if (!hasRestOS) {
+                        itemStatus = '<span class="badge missing">SAMO HISTORICAL</span>';
+                    } else if (!hasHistorical) {
+                        itemStatus = '<span class="badge extra">SAMO RESTOS</span>';
+                    }
+                    
+                    if (hItem._isModifier) {
+                        modifierBadge = `<span class="badge" style="background: var(--accent-orange-dim); color: var(--accent-orange); margin-left: 8px;">MODIFIER za: ${hItem._parentName}</span>`;
+                    }
 
                     html += `
                         <div class="comparison-table" style="margin-bottom: 16px;">
                             <div class="comparison-header">
-                                <div>STAVKA ${i + 1}: ${rName !== '—' ? rName : hName} ${itemStatus}</div>
+                                <div>STAVKA ${idx + 1}: ${displayName} ${itemStatus}${modifierBadge}</div>
                                 <div class="col-restos">restOS (order_items)</div>
-                                <div class="col-historical">Historical (raw_payload.items)</div>
+                                <div class="col-historical">Historical (raw_payload)</div>
                             </div>
                     `;
 
-                    // Mapiranje polja između restOS i Historical za items
-                    const itemFieldMappings = {
-                        'id': null,
-                        'order_id': null,
-                        'tenant_id': null,
-                        'line_number': null,
-                        'external_item_id': 'id',
-                        'item_id': null,
-                        'item_code': 'menuItemId',
-                        'item_name': 'name',
-                        'item_category': 'categoryName',
-                        'quantity': 'quantity',
-                        'unit_price': 'price',
-                        'total_price': '_calculated',
-                        'modifiers': 'options',
-                        'special_instructions': 'note',
-                        'kitchen_station': null,
-                        'preparation_priority': null,
-                        'printed_at': null,
-                        'confirmed_at': null,
-                        'is_paid': null,
-                        'is_void': null
-                    };
+                    // Mapiranje polja
+                    const itemFieldMappings = [
+                        { rField: 'id', hField: null },
+                        { rField: 'order_id', hField: null },
+                        { rField: 'tenant_id', hField: null },
+                        { rField: 'line_number', hField: null },
+                        { rField: 'external_item_id', hField: 'orderItemID' },
+                        { rField: 'item_id', hField: null },
+                        { rField: 'item_code', hField: 'productID' },
+                        { rField: 'item_name', hField: 'name' },
+                        { rField: 'item_category', hField: null },
+                        { rField: 'quantity', hField: 'quantity' },
+                        { rField: 'unit_price', hField: 'price' },
+                        { rField: 'total_price', hField: '_calculated' },
+                        { rField: 'modifiers', hField: null },
+                        { rField: 'special_instructions', hField: null },
+                        { rField: 'printed_at', hField: null },
+                        { rField: 'is_paid', hField: null },
+                        { rField: 'is_void', hField: 'isCanceled' }
+                    ];
 
                     // Historical-only fields
-                    const historicalOnlyItemFields = ['note', 'options', 'groupName', 'instructions'];
+                    const historicalOnlyItemFields = [
+                        { hField: 'referenceID', label: 'referenceID' },
+                        { hField: 'productReferenceID', label: 'productReferenceID' },
+                        { hField: 'status', label: 'status' }
+                    ];
 
-                    // Render restOS fields
-                    for (const [rField, hField] of Object.entries(itemFieldMappings)) {
-                        let rVal = rItem[rField];
+                    // Render fields
+                    for (const mapping of itemFieldMappings) {
+                        let rVal = rItem[mapping.rField];
                         let hVal = null;
                         
-                        if (hField === '_calculated') {
+                        if (mapping.hField === '_calculated') {
                             hVal = hItem.price && hItem.quantity ? (hItem.price * hItem.quantity) : null;
-                        } else if (hField) {
-                            hVal = hItem[hField];
+                        } else if (mapping.hField) {
+                            hVal = hItem[mapping.hField];
                         }
 
                         // Skip if both empty
                         if (isEmpty(rVal) && isEmpty(hVal)) continue;
 
-                        // Format values
-                        const rFormatted = formatItemValue(rVal, rField);
-                        const hFormatted = formatItemValue(hVal, hField || rField);
-
+                        const rFormatted = formatItemValue(rVal, mapping.rField);
+                        const hFormatted = formatItemValue(hVal, mapping.hField || mapping.rField);
                         const status = getComparisonStatus(rFormatted, hFormatted);
 
                         html += `
                             <div class="comparison-row ${status}">
-                                <div class="field-name">${rField}${status === 'missing-restos' ? '<span class="badge missing">FALI</span>' : ''}</div>
+                                <div class="field-name">${mapping.rField}${status === 'missing-restos' ? '<span class="badge missing">FALI</span>' : ''}</div>
                                 <div class="col-restos">${rFormatted}</div>
                                 <div class="col-historical">${hFormatted}</div>
                             </div>
                         `;
                     }
 
-                    // Check for historical-only fields
-                    for (const hField of historicalOnlyItemFields) {
-                        const hVal = hItem[hField];
-                        if (!isEmpty(hVal) && !Object.values(itemFieldMappings).includes(hField)) {
-                            html += `
-                                <div class="comparison-row missing-restos">
-                                    <div class="field-name">⚠️ ${hField}<span class="badge missing">FALI</span></div>
-                                    <div class="col-restos">— NE DOBIJAMO —</div>
-                                    <div class="col-historical">${formatItemValue(hVal, hField)}</div>
-                                </div>
-                            `;
-                        }
+                    // Historical-only fields
+                    for (const hFieldInfo of historicalOnlyItemFields) {
+                        const hVal = hItem[hFieldInfo.hField];
+                        if (isEmpty(hVal)) continue;
+                        
+                        html += `
+                            <div class="comparison-row missing-restos">
+                                <div class="field-name">⚠️ ${hFieldInfo.label}<span class="badge missing">FALI</span></div>
+                                <div class="col-restos">— NE DOBIJAMO —</div>
+                                <div class="col-historical">${formatItemValue(hVal, hFieldInfo.hField)}</div>
+                            </div>
+                        `;
+                    }
+
+                    // Ako glavni item ima modifiers array, prikaži info
+                    if (!hItem._isModifier && hItem.modifiers && hItem.modifiers.length > 0) {
+                        html += `
+                            <div class="comparison-row" style="background: var(--accent-orange-dim);">
+                                <div class="field-name">ℹ️ modifiers</div>
+                                <div class="col-restos">—</div>
+                                <div class="col-historical">${hItem.modifiers.length} modifier(a) - prikazani kao zasebne stavke</div>
+                            </div>
+                        `;
                     }
 
                     html += `</div>`;
-                }
+                });
             }
 
             document.getElementById('modalBody').innerHTML = html;
@@ -850,9 +975,27 @@
         function formatItemValue(val, field) {
             if (val === null || val === undefined || val === '') return '—';
             if (typeof val === 'boolean') return val ? '✅ DA' : '❌ NE';
-            if (Array.isArray(val)) return val.length > 0 ? JSON.stringify(val) : '—';
-            if (typeof val === 'object') return JSON.stringify(val);
-            if (field.includes('price') || field === 'total_price' || field === 'unit_price') {
+            if (Array.isArray(val)) {
+                if (val.length === 0) return '—';
+                if (field === 'options' || field === 'modifiers') {
+                    return val.map(opt => {
+                        if (typeof opt === 'object') {
+                            const name = opt.name || `ID:${opt.productID}`;
+                            return `${name}: ${opt.price || 0} RSD`;
+                        }
+                        return String(opt);
+                    }).join(', ');
+                }
+                return JSON.stringify(val);
+            }
+            if (typeof val === 'object') {
+                return JSON.stringify(val);
+            }
+            if (field === 'price' || field === 'unit_price') {
+                const num = parseFloat(val);
+                if (!isNaN(num)) return formatCurrency(num);
+            }
+            if (field === 'total_price' || field === '_calculated') {
                 const num = parseFloat(val);
                 if (!isNaN(num)) return formatCurrency(num);
             }
