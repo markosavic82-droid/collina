@@ -224,7 +224,7 @@
         /* Summary */
         .summary-stats {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
             gap: 12px; margin-bottom: 24px;
         }
         .summary-stat {
@@ -265,7 +265,7 @@
 
         .comparison-header {
             display: grid;
-            grid-template-columns: 180px 1fr 1fr;
+            grid-template-columns: 200px 1fr 1fr;
             background: var(--bg-card);
             border-bottom: 1px solid var(--border);
             font-size: 11px; font-weight: 600;
@@ -281,7 +281,7 @@
 
         .comparison-row {
             display: grid;
-            grid-template-columns: 180px 1fr 1fr;
+            grid-template-columns: 200px 1fr 1fr;
             border-bottom: 1px solid var(--border);
         }
         .comparison-row:last-child { border-bottom: none; }
@@ -291,6 +291,7 @@
             font-size: 12px;
             border-right: 1px solid var(--border);
             font-family: 'JetBrains Mono', monospace;
+            word-break: break-word;
         }
         .comparison-row > div:last-child { border-right: none; }
 
@@ -316,6 +317,9 @@
         .comparison-row.missing-restos .col-restos { color: var(--accent-red); font-style: italic; }
         .comparison-row.missing-restos .col-historical { color: var(--accent-green); }
 
+        .comparison-row.only-restos {
+            background: rgba(59, 130, 246, 0.05);
+        }
         .comparison-row.only-restos .col-restos { color: var(--accent-blue); }
         .comparison-row.only-restos .col-historical { color: var(--text-muted); font-style: italic; }
 
@@ -330,44 +334,18 @@
         }
         .badge.missing { background: var(--accent-red-dim); color: var(--accent-red); }
         .badge.extra { background: var(--accent-blue-dim); color: var(--accent-blue); }
+        .badge.match { background: var(--accent-green-dim); color: var(--accent-green); }
 
-        /* Items comparison */
-        .items-table {
-            width: 100%;
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            overflow: hidden;
-            margin-bottom: 16px;
-        }
-
-        .items-header {
-            display: grid;
-            grid-template-columns: 40px 1fr 100px 70px 90px 90px;
+        .field-group-title {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--accent-purple);
+            padding: 10px 14px;
             background: var(--bg-card);
             border-bottom: 1px solid var(--border);
-            font-size: 10px; font-weight: 600;
             text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
-        .items-header > div {
-            padding: 10px 8px;
-            border-right: 1px solid var(--border);
-        }
-        .items-header > div:last-child { border-right: none; }
-
-        .items-row {
-            display: grid;
-            grid-template-columns: 40px 1fr 100px 70px 90px 90px;
-            border-bottom: 1px solid var(--border);
-            font-size: 12px;
-        }
-        .items-row:last-child { border-bottom: none; }
-        .items-row > div {
-            padding: 10px 8px;
-            border-right: 1px solid var(--border);
-            font-family: 'JetBrains Mono', monospace;
-        }
-        .items-row > div:last-child { border-right: none; }
-        .items-row .item-name { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 500; }
 
         .no-data {
             text-align: center;
@@ -389,6 +367,25 @@
         }
         .historical-status.found { background: var(--accent-green-dim); color: var(--accent-green); }
         .historical-status.not-found { background: var(--accent-red-dim); color: var(--accent-red); }
+
+        /* Field stats */
+        .field-stats {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 16px;
+            padding: 12px 16px;
+            background: var(--bg-card);
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+        .field-stat-item {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        .field-stat-item strong {
+            color: var(--text-primary);
+            font-family: 'JetBrains Mono', monospace;
+        }
     </style>
 </head>
 <body>
@@ -446,59 +443,57 @@
         let allOrders = [];
         let currentFilter = 'all';
 
-        // Field mappings: restOS field -> historical field
-        const ORDER_FIELD_MAPPINGS = {
-            'IDENTIFIKACIJA': {
-                'external_id': 'order_id',
-                'order_number': 'order_no',
-                'channel_order_id': 'order_no'
-            },
-            'KANAL & LOKACIJA': {
-                'channel_code': 'provider',
-                'location_id': 'company_id',
-                'delivery_type': 'delivery_type'
-            },
-            'STATUS': {
-                'status': 'status',
-                'is_paid': 'is_paid',
-                'is_void': 'is_invalid'
-            },
-            'KUPAC': {
-                'customer_name': 'customer_name',
-                'customer_phone': 'customer_phone',
-                'customer_email': 'customer_email',
-                'delivery_address': 'customer_address'
-            },
-            'KOORDINATE': {
-                'delivery_lat': 'latitude',
-                'delivery_lng': 'longitude'
-            },
-            'KONOBAR & STO': {
-                'waiter_id': 'waiter_id',
-                'waiter_name': 'waiter_name',
-                'table_id': 'table_id'
-            },
-            'FINANSIJE': {
-                'total_amount': '_calculated_total',
-                'subtotal': 'subtotal',
-                'discount_amount': 'discount',
-                'delivery_fee': 'delivery_fee'
-            },
-            'TIMESTAMPS': {
-                'created_at': 'created_at',
-                'accepted_at': 'accepted_at',
-                'ebar_datum': 'modified_at'
-            }
+        // Known field mappings between restOS and Historical
+        const KNOWN_MAPPINGS = {
+            // restOS field -> historical field
+            'external_id': 'order_id',
+            'order_number': 'order_no',
+            'channel_order_id': 'order_no',
+            'channel_code': 'provider',
+            'location_id': 'company_id',
+            'delivery_type': 'delivery_type',
+            'status': 'status',
+            'is_paid': 'is_paid',
+            'is_void': 'is_invalid',
+            'customer_name': 'customer_name',
+            'customer_phone': 'customer_phone',
+            'customer_email': 'customer_email',
+            'delivery_address': 'customer_address',
+            'delivery_lat': 'latitude',
+            'delivery_lng': 'longitude',
+            'waiter_id': 'waiter_id',
+            'waiter_name': 'waiter_name',
+            'table_id': 'table_id',
+            'subtotal': 'subtotal',
+            'discount_amount': 'discount',
+            'delivery_fee': 'delivery_fee',
+            'created_at': 'created_at',
+            'accepted_at': 'accepted_at',
+            'ebar_datum': 'modified_at'
         };
 
-        // Historical-only fields (ne dobijamo iz eBar-a)
-        const HISTORICAL_ONLY_FIELDS = {
-            'KUPAC': ['customer_address', 'customer_email'],
-            'KOORDINATE': ['latitude', 'longitude'],
-            'DOSTAVA': ['delivery_type', 'delivery_fee', 'estimated_delivery_time'],
-            'NAPOMENE': ['customer_notes', 'restaurant_notes'],
-            'ITEMS DETALJI': ['item_notes', 'item_options']
+        // Reverse mapping
+        const REVERSE_MAPPINGS = {};
+        for (const [r, h] of Object.entries(KNOWN_MAPPINGS)) {
+            REVERSE_MAPPINGS[h] = r;
+        }
+
+        // Field grouping for display
+        const FIELD_GROUPS = {
+            'IDENTIFIKACIJA': ['id', 'external_id', 'order_number', 'channel_order_id', 'reference_id', 'order_id', 'order_no', 'racun_id'],
+            'KANAL & LOKACIJA': ['channel_code', 'provider', 'location_id', 'company_id', 'tenant_id', 'delivery_type'],
+            'STATUS': ['status', 'is_paid', 'is_void', 'is_invalid', 'is_fulfilled'],
+            'KUPAC': ['customer_name', 'customer_phone', 'customer_email', 'customer_address', 'delivery_address'],
+            'KOORDINATE': ['delivery_lat', 'delivery_lng', 'latitude', 'longitude'],
+            'KONOBAR & STO': ['waiter_id', 'waiter_name', 'table_id', 'table_name'],
+            'FINANSIJE': ['total_amount', 'subtotal', 'discount_amount', 'discount', 'delivery_fee', 'tip_amount', 'cash_amount', 'card_amount', 'transfer_amount'],
+            'TIMESTAMPS': ['created_at', 'accepted_at', 'preparing_at', 'ready_at', 'dispatched_at', 'delivered_at', 'completed_at', 'modified_at', 'ebar_datum', 'updated_at'],
+            'NAPOMENE': ['customer_notes', 'restaurant_notes', 'notes', 'special_instructions'],
+            'RAW DATA': ['raw_data', 'raw_payload', 'metadata']
         };
+
+        // Fields to skip (internal/technical)
+        const SKIP_FIELDS = ['inserted_at', 'synced_at'];
 
         async function fetchOrders() {
             try {
@@ -614,7 +609,8 @@
             const order = allOrders.find(o => o.id === orderId);
             if (!order) return;
 
-            const referenceId = order.raw_data?.reference_id;
+            // Try multiple sources for reference_id
+            const referenceId = order.reference_id || order.raw_data?.reference_id || order.external_id;
 
             document.getElementById('modalTitle').textContent = `Porudžbina #${order.order_number || '-'}`;
             document.getElementById('modalSubtitle').textContent = `${getLocationName(order.location_id)} • ${order.channel_code || '-'} • ref: ${referenceId || '-'}`;
@@ -632,20 +628,81 @@
             renderComparison(order, historical);
         }
 
+        // Calculate Historical total INCLUDING modifiers
+        function calculateHistoricalTotal(items) {
+            if (!items || items.length === 0) return 0;
+            
+            return items.reduce((sum, item) => {
+                // Main item price
+                let itemTotal = (item.price || 0) * (item.quantity || 1);
+                
+                // Add modifiers
+                if (item.modifiers && item.modifiers.length > 0) {
+                    item.modifiers.forEach(mod => {
+                        itemTotal += (mod.price || 0) * (mod.quantity || 1);
+                    });
+                }
+                
+                return sum + itemTotal;
+            }, 0);
+        }
+
+        // Get all non-empty fields from an object
+        function getFilledFields(obj) {
+            if (!obj) return {};
+            const filled = {};
+            for (const [key, value] of Object.entries(obj)) {
+                if (!isEmpty(value) && !SKIP_FIELDS.includes(key)) {
+                    filled[key] = value;
+                }
+            }
+            return filled;
+        }
+
+        // Determine which group a field belongs to
+        function getFieldGroup(fieldName) {
+            for (const [group, fields] of Object.entries(FIELD_GROUPS)) {
+                if (fields.includes(fieldName)) return group;
+            }
+            return 'OSTALO';
+        }
+
         function renderComparison(order, historical) {
             const h = historical || {};
             const hPayload = h.raw_payload || {};
             const hItems = hPayload.items || [];
             const rItems = order.order_items || [];
 
-            // Calculate totals
+            // Calculate totals - FIXED: includes modifiers
             const rTotal = rItems.reduce((s, i) => s + (parseFloat(i.total_price) || 0), 0);
-            const hTotal = hItems.reduce((s, i) => s + ((i.price || 0) * (i.quantity || 1)), 0);
+            const hTotal = calculateHistoricalTotal(hItems);
             const orderTotal = parseFloat(order.total_amount) || 0;
+            const totalDiff = Math.abs(rTotal - hTotal);
 
-            // Count filled fields
-            const rFilledCount = Object.values(order).filter(v => v !== null && v !== undefined && v !== '' && v !== 0).length;
-            const hFilledCount = Object.values(h).filter(v => v !== null && v !== undefined && v !== '').length;
+            // Get ALL filled fields from both sources
+            const rFilledFields = getFilledFields(order);
+            const hFilledFields = { ...getFilledFields(h), ...getFilledFields(hPayload) };
+            
+            // Remove nested objects we handle separately
+            delete rFilledFields.order_items;
+            delete rFilledFields.raw_data;
+            delete hFilledFields.raw_payload;
+            delete hFilledFields.items;
+
+            // Count stats
+            const rFieldCount = Object.keys(rFilledFields).length;
+            const hFieldCount = Object.keys(hFilledFields).length;
+
+            // Build unified field list
+            const allFields = new Set([...Object.keys(rFilledFields), ...Object.keys(hFilledFields)]);
+            
+            // Group fields
+            const groupedFields = {};
+            allFields.forEach(field => {
+                const group = getFieldGroup(field);
+                if (!groupedFields[group]) groupedFields[group] = [];
+                groupedFields[group].push(field);
+            });
 
             let html = `
                 <div class="historical-status ${historical ? 'found' : 'not-found'}">
@@ -656,15 +713,19 @@
                 <div class="summary-stats">
                     <div class="summary-stat">
                         <div class="summary-stat-value ${orderTotal === 0 ? 'warning' : ''}">${formatCurrency(orderTotal)}</div>
-                        <div class="summary-stat-label">restOS total</div>
+                        <div class="summary-stat-label">restOS total_amount</div>
                     </div>
                     <div class="summary-stat">
                         <div class="summary-stat-value">${formatCurrency(rTotal)}</div>
-                        <div class="summary-stat-label">restOS items</div>
+                        <div class="summary-stat-label">restOS items suma</div>
                     </div>
                     <div class="summary-stat">
                         <div class="summary-stat-value">${formatCurrency(hTotal)}</div>
-                        <div class="summary-stat-label">Historical total</div>
+                        <div class="summary-stat-label">Historical total (sa mod)</div>
+                    </div>
+                    <div class="summary-stat">
+                        <div class="summary-stat-value ${totalDiff > 10 ? 'error' : totalDiff > 0 ? 'warning' : ''}">${totalDiff > 0 ? '±' : ''}${formatCurrency(totalDiff)}</div>
+                        <div class="summary-stat-label">Razlika</div>
                     </div>
                     <div class="summary-stat">
                         <div class="summary-stat-value">${rItems.length}</div>
@@ -676,81 +737,91 @@
                     </div>
                 </div>
 
-                <div class="comparison-section-title">📋 ORDERS TABELA</div>
+                <div class="field-stats">
+                    <div class="field-stat-item">restOS polja: <strong>${rFieldCount}</strong></div>
+                    <div class="field-stat-item">Historical polja: <strong>${hFieldCount}</strong></div>
+                    <div class="field-stat-item">Ukupno jedinstvenih: <strong>${allFields.size}</strong></div>
+                </div>
+
+                <div class="comparison-section-title">📋 ORDERS TABELA - SVA POPUNJENA POLJA</div>
             `;
 
-            // Render order fields comparison by section
-            for (const [section, mappings] of Object.entries(ORDER_FIELD_MAPPINGS)) {
-                const rows = [];
+            // Render fields by group
+            const groupOrder = ['IDENTIFIKACIJA', 'KANAL & LOKACIJA', 'STATUS', 'KUPAC', 'KOORDINATE', 'KONOBAR & STO', 'FINANSIJE', 'TIMESTAMPS', 'NAPOMENE', 'RAW DATA', 'OSTALO'];
+            
+            for (const group of groupOrder) {
+                const fields = groupedFields[group];
+                if (!fields || fields.length === 0) continue;
 
-                for (const [rField, hField] of Object.entries(mappings)) {
-                    let rVal = order[rField];
-                    let hVal = hField === '_calculated_total' ? hTotal : (h[hField] ?? hPayload[hField]);
+                html += `
+                    <div class="comparison-table">
+                        <div class="comparison-header">
+                            <div>${group}</div>
+                            <div class="col-restos">restOS</div>
+                            <div class="col-historical">Historical</div>
+                        </div>
+                `;
 
-                    // Skip if both are empty
-                    if (isEmpty(rVal) && isEmpty(hVal)) continue;
+                // Sort fields within group
+                fields.sort();
 
-                    // Format values
-                    rVal = formatValue(rVal, rField);
-                    hVal = formatValue(hVal, hField);
+                for (const field of fields) {
+                    // Get restOS value (direct or via mapping)
+                    let rVal = rFilledFields[field];
+                    let rField = field;
+                    
+                    // Get Historical value (direct or via reverse mapping)
+                    let hVal = hFilledFields[field];
+                    let hField = field;
 
-                    const status = getComparisonStatus(rVal, hVal);
-                    rows.push({ rField, hField, rVal, hVal, status });
-                }
-
-                // Check for historical-only fields in this section
-                if (HISTORICAL_ONLY_FIELDS[section]) {
-                    for (const hField of HISTORICAL_ONLY_FIELDS[section]) {
-                        const hVal = h[hField] ?? hPayload[hField];
-                        if (!isEmpty(hVal)) {
-                            rows.push({
-                                rField: `⚠️ ${hField}`,
-                                hField: hField,
-                                rVal: '— NE DOBIJAMO —',
-                                hVal: formatValue(hVal, hField),
-                                status: 'missing-restos'
-                            });
-                        }
+                    // Try mapping
+                    if (rVal === undefined && REVERSE_MAPPINGS[field]) {
+                        rVal = rFilledFields[REVERSE_MAPPINGS[field]];
+                        rField = REVERSE_MAPPINGS[field];
                     }
-                }
+                    if (hVal === undefined && KNOWN_MAPPINGS[field]) {
+                        hVal = hFilledFields[KNOWN_MAPPINGS[field]];
+                        hField = KNOWN_MAPPINGS[field];
+                    }
 
-                if (rows.length > 0) {
+                    const rFormatted = formatValue(rVal, field);
+                    const hFormatted = formatValue(hVal, field);
+                    const status = getComparisonStatus(rFormatted, hFormatted);
+
+                    // Determine badge
+                    let badge = '';
+                    if (status === 'missing-restos') badge = '<span class="badge missing">FALI U RESTOS</span>';
+                    else if (status === 'only-restos') badge = '<span class="badge extra">SAMO RESTOS</span>';
+                    else if (status === 'match') badge = '<span class="badge match">✓</span>';
+
                     html += `
-                        <div class="comparison-table">
-                            <div class="comparison-header">
-                                <div>${section}</div>
-                                <div class="col-restos">restOS (eBar)</div>
-                                <div class="col-historical">Historical (webhook)</div>
-                            </div>
+                        <div class="comparison-row ${status}">
+                            <div class="field-name">${field}${badge}</div>
+                            <div class="col-restos">${rFormatted}</div>
+                            <div class="col-historical">${hFormatted}</div>
+                        </div>
                     `;
-
-                    for (const row of rows) {
-                        html += `
-                            <div class="comparison-row ${row.status}">
-                                <div class="field-name">${row.rField}${row.status === 'missing-restos' ? '<span class="badge missing">FALI</span>' : ''}</div>
-                                <div class="col-restos">${row.rVal}</div>
-                                <div class="col-historical">${row.hVal}</div>
-                            </div>
-                        `;
-                    }
-
-                    html += `</div>`;
                 }
+
+                html += `</div>`;
             }
 
-            // ORDER ITEMS section - sa FLATTENED modifiers iz Historical
-            
-            // FLATTEN Historical items - izvuci modifiers kao zasebne stavke
+            // ORDER ITEMS section
+            html += renderItemsComparison(rItems, hItems);
+
+            document.getElementById('modalBody').innerHTML = html;
+        }
+
+        function renderItemsComparison(rItems, hItems) {
+            // FLATTEN Historical items - extract modifiers as separate items
             const hItemsFlat = [];
             hItems.forEach(hItem => {
-                // Dodaj glavni item
                 hItemsFlat.push({
                     ...hItem,
                     _isModifier: false,
                     _parentName: null
                 });
                 
-                // Dodaj modifiers kao zasebne stavke
                 if (hItem.modifiers && hItem.modifiers.length > 0) {
                     hItem.modifiers.forEach(mod => {
                         hItemsFlat.push({
@@ -766,210 +837,207 @@
                 }
             });
             
-            html += `<div class="comparison-section-title">📦 ORDER_ITEMS TABELA (${rItems.length} stavki restOS / ${hItems.length} stavki + ${hItemsFlat.length - hItems.length} modifiers Historical)</div>`;
+            let html = `<div class="comparison-section-title">📦 ORDER_ITEMS (${rItems.length} restOS / ${hItems.length} Historical + ${hItemsFlat.length - hItems.length} modifiers)</div>`;
 
             if (rItems.length === 0 && hItemsFlat.length === 0) {
-                html += `<div class="no-data">Nema stavki ni u jednoj bazi</div>`;
-            } else {
-                // SMART MATCHING
-                const matchedPairs = [];
-                const usedRIndexes = new Set();
-                const usedHIndexes = new Set();
-
-                // 1. Prvo matchuj GLAVNE stavke po imenu
-                hItemsFlat.forEach((hItem, hIdx) => {
-                    if (hItem._isModifier) return; // Modifajere matchujemo kasnije
-                    
-                    const hName = (hItem.name || '').toLowerCase().trim();
-                    
-                    rItems.forEach((rItem, rIdx) => {
-                        if (usedRIndexes.has(rIdx)) return;
-                        if ((rItem.item_category || '').toLowerCase() === 'mod') return; // Skip restOS modifajere
-                        
-                        const rName = (rItem.item_name || '').toLowerCase().trim();
-                        
-                        // Match po imenu
-                        const nameMatch = rName === hName || 
-                                          rName.includes(hName) || 
-                                          hName.includes(rName) ||
-                                          (rName.length > 5 && hName.length > 5 && 
-                                           (rName.substring(0, 5) === hName.substring(0, 5)));
-                        
-                        if (nameMatch) {
-                            matchedPairs.push({ rItem, hItem, rIdx, hIdx });
-                            usedRIndexes.add(rIdx);
-                            usedHIndexes.add(hIdx);
-                        }
-                    });
-                });
-
-                // 2. Matchuj MODIFAJERE po CENI
-                hItemsFlat.forEach((hItem, hIdx) => {
-                    if (!hItem._isModifier) return;
-                    if (usedHIndexes.has(hIdx)) return;
-                    
-                    const hPrice = hItem.price || 0;
-                    
-                    rItems.forEach((rItem, rIdx) => {
-                        if (usedRIndexes.has(rIdx)) return;
-                        
-                        const rPrice = parseFloat(rItem.unit_price) || 0;
-                        const rCategory = (rItem.item_category || '').toLowerCase();
-                        
-                        // Za modifajere matchuj po ceni (tolerancija ±1 RSD)
-                        const priceMatch = Math.abs(rPrice - hPrice) <= 1;
-                        const isModCategory = rCategory === 'mod' || 
-                                              rCategory.includes('dod') || 
-                                              (rItem.item_name || '').toLowerCase().startsWith('dod');
-                        
-                        if (priceMatch && isModCategory) {
-                            matchedPairs.push({ rItem, hItem, rIdx, hIdx });
-                            usedRIndexes.add(rIdx);
-                            usedHIndexes.add(hIdx);
-                        }
-                    });
-                });
-
-                // 3. Dodaj neupare restOS stavke
-                rItems.forEach((rItem, rIdx) => {
-                    if (!usedRIndexes.has(rIdx)) {
-                        matchedPairs.push({ rItem, hItem: null, rIdx, hIdx: null });
-                    }
-                });
-
-                // 4. Dodaj neupare Historical stavke (uključujući neupare modifajere)
-                hItemsFlat.forEach((hItem, hIdx) => {
-                    if (!usedHIndexes.has(hIdx)) {
-                        matchedPairs.push({ rItem: null, hItem, rIdx: null, hIdx });
-                    }
-                });
-
-                // Sortiraj po restOS line_number
-                matchedPairs.sort((a, b) => {
-                    const aLine = a.rItem?.line_number || 999;
-                    const bLine = b.rItem?.line_number || 999;
-                    return aLine - bLine;
-                });
-
-                // Renderuj svaku uparenu stavku
-                matchedPairs.forEach((pair, idx) => {
-                    const rItem = pair.rItem || {};
-                    const hItem = pair.hItem || {};
-                    
-                    const rName = rItem.item_name || '—';
-                    const hName = hItem.name || '—';
-                    const displayName = rName !== '—' ? rName : hName;
-                    const hasRestOS = Object.keys(rItem).length > 0;
-                    const hasHistorical = Object.keys(hItem).length > 0;
-
-                    // Item header badges
-                    let itemStatus = '';
-                    let modifierBadge = '';
-                    
-                    if (!hasRestOS) {
-                        itemStatus = '<span class="badge missing">SAMO HISTORICAL</span>';
-                    } else if (!hasHistorical) {
-                        itemStatus = '<span class="badge extra">SAMO RESTOS</span>';
-                    }
-                    
-                    if (hItem._isModifier) {
-                        modifierBadge = `<span class="badge" style="background: var(--accent-orange-dim); color: var(--accent-orange); margin-left: 8px;">MODIFIER za: ${hItem._parentName}</span>`;
-                    }
-
-                    html += `
-                        <div class="comparison-table" style="margin-bottom: 16px;">
-                            <div class="comparison-header">
-                                <div>STAVKA ${idx + 1}: ${displayName} ${itemStatus}${modifierBadge}</div>
-                                <div class="col-restos">restOS (order_items)</div>
-                                <div class="col-historical">Historical (raw_payload)</div>
-                            </div>
-                    `;
-
-                    // Mapiranje polja
-                    const itemFieldMappings = [
-                        { rField: 'id', hField: null },
-                        { rField: 'order_id', hField: null },
-                        { rField: 'tenant_id', hField: null },
-                        { rField: 'line_number', hField: null },
-                        { rField: 'external_item_id', hField: 'orderItemID' },
-                        { rField: 'item_id', hField: null },
-                        { rField: 'item_code', hField: 'productID' },
-                        { rField: 'item_name', hField: 'name' },
-                        { rField: 'item_category', hField: null },
-                        { rField: 'quantity', hField: 'quantity' },
-                        { rField: 'unit_price', hField: 'price' },
-                        { rField: 'total_price', hField: '_calculated' },
-                        { rField: 'modifiers', hField: null },
-                        { rField: 'special_instructions', hField: null },
-                        { rField: 'printed_at', hField: null },
-                        { rField: 'is_paid', hField: null },
-                        { rField: 'is_void', hField: 'isCanceled' }
-                    ];
-
-                    // Historical-only fields
-                    const historicalOnlyItemFields = [
-                        { hField: 'referenceID', label: 'referenceID' },
-                        { hField: 'productReferenceID', label: 'productReferenceID' },
-                        { hField: 'status', label: 'status' }
-                    ];
-
-                    // Render fields
-                    for (const mapping of itemFieldMappings) {
-                        let rVal = rItem[mapping.rField];
-                        let hVal = null;
-                        
-                        if (mapping.hField === '_calculated') {
-                            hVal = hItem.price && hItem.quantity ? (hItem.price * hItem.quantity) : null;
-                        } else if (mapping.hField) {
-                            hVal = hItem[mapping.hField];
-                        }
-
-                        // Skip if both empty
-                        if (isEmpty(rVal) && isEmpty(hVal)) continue;
-
-                        const rFormatted = formatItemValue(rVal, mapping.rField);
-                        const hFormatted = formatItemValue(hVal, mapping.hField || mapping.rField);
-                        const status = getComparisonStatus(rFormatted, hFormatted);
-
-                        html += `
-                            <div class="comparison-row ${status}">
-                                <div class="field-name">${mapping.rField}${status === 'missing-restos' ? '<span class="badge missing">FALI</span>' : ''}</div>
-                                <div class="col-restos">${rFormatted}</div>
-                                <div class="col-historical">${hFormatted}</div>
-                            </div>
-                        `;
-                    }
-
-                    // Historical-only fields
-                    for (const hFieldInfo of historicalOnlyItemFields) {
-                        const hVal = hItem[hFieldInfo.hField];
-                        if (isEmpty(hVal)) continue;
-                        
-                        html += `
-                            <div class="comparison-row missing-restos">
-                                <div class="field-name">⚠️ ${hFieldInfo.label}<span class="badge missing">FALI</span></div>
-                                <div class="col-restos">— NE DOBIJAMO —</div>
-                                <div class="col-historical">${formatItemValue(hVal, hFieldInfo.hField)}</div>
-                            </div>
-                        `;
-                    }
-
-                    // Ako glavni item ima modifiers array, prikaži info
-                    if (!hItem._isModifier && hItem.modifiers && hItem.modifiers.length > 0) {
-                        html += `
-                            <div class="comparison-row" style="background: var(--accent-orange-dim);">
-                                <div class="field-name">ℹ️ modifiers</div>
-                                <div class="col-restos">—</div>
-                                <div class="col-historical">${hItem.modifiers.length} modifier(a) - prikazani kao zasebne stavke</div>
-                            </div>
-                        `;
-                    }
-
-                    html += `</div>`;
-                });
+                return html + `<div class="no-data">Nema stavki ni u jednoj bazi</div>`;
             }
 
-            document.getElementById('modalBody').innerHTML = html;
+            // SMART MATCHING
+            const matchedPairs = [];
+            const usedRIndexes = new Set();
+            const usedHIndexes = new Set();
+
+            // 1. Match main items by name
+            hItemsFlat.forEach((hItem, hIdx) => {
+                if (hItem._isModifier) return;
+                
+                const hName = (hItem.name || '').toLowerCase().trim();
+                
+                rItems.forEach((rItem, rIdx) => {
+                    if (usedRIndexes.has(rIdx)) return;
+                    if ((rItem.item_category || '').toLowerCase() === 'mod') return;
+                    
+                    const rName = (rItem.item_name || '').toLowerCase().trim();
+                    
+                    const nameMatch = rName === hName || 
+                                      rName.includes(hName) || 
+                                      hName.includes(rName) ||
+                                      (rName.length > 5 && hName.length > 5 && 
+                                       (rName.substring(0, 5) === hName.substring(0, 5)));
+                    
+                    if (nameMatch) {
+                        matchedPairs.push({ rItem, hItem, rIdx, hIdx });
+                        usedRIndexes.add(rIdx);
+                        usedHIndexes.add(hIdx);
+                    }
+                });
+            });
+
+            // 2. Match modifiers by price
+            hItemsFlat.forEach((hItem, hIdx) => {
+                if (!hItem._isModifier) return;
+                if (usedHIndexes.has(hIdx)) return;
+                
+                const hPrice = hItem.price || 0;
+                
+                rItems.forEach((rItem, rIdx) => {
+                    if (usedRIndexes.has(rIdx)) return;
+                    
+                    const rPrice = parseFloat(rItem.unit_price) || 0;
+                    const rCategory = (rItem.item_category || '').toLowerCase();
+                    
+                    const priceMatch = Math.abs(rPrice - hPrice) <= 1;
+                    const isModCategory = rCategory === 'mod' || 
+                                          rCategory.includes('dod') || 
+                                          (rItem.item_name || '').toLowerCase().startsWith('dod');
+                    
+                    if (priceMatch && isModCategory) {
+                        matchedPairs.push({ rItem, hItem, rIdx, hIdx });
+                        usedRIndexes.add(rIdx);
+                        usedHIndexes.add(hIdx);
+                    }
+                });
+            });
+
+            // 3. Add unmatched restOS items
+            rItems.forEach((rItem, rIdx) => {
+                if (!usedRIndexes.has(rIdx)) {
+                    matchedPairs.push({ rItem, hItem: null, rIdx, hIdx: null });
+                }
+            });
+
+            // 4. Add unmatched Historical items
+            hItemsFlat.forEach((hItem, hIdx) => {
+                if (!usedHIndexes.has(hIdx)) {
+                    matchedPairs.push({ rItem: null, hItem, rIdx: null, hIdx });
+                }
+            });
+
+            // Sort by line_number
+            matchedPairs.sort((a, b) => {
+                const aLine = a.rItem?.line_number || 999;
+                const bLine = b.rItem?.line_number || 999;
+                return aLine - bLine;
+            });
+
+            // Render each matched pair
+            matchedPairs.forEach((pair, idx) => {
+                const rItem = pair.rItem || {};
+                const hItem = pair.hItem || {};
+                
+                const rName = rItem.item_name || '—';
+                const hName = hItem.name || '—';
+                const displayName = rName !== '—' ? rName : hName;
+                const hasRestOS = Object.keys(rItem).length > 0;
+                const hasHistorical = Object.keys(hItem).length > 0;
+
+                let itemStatus = '';
+                let modifierBadge = '';
+                
+                if (!hasRestOS) {
+                    itemStatus = '<span class="badge missing">SAMO HISTORICAL</span>';
+                } else if (!hasHistorical) {
+                    itemStatus = '<span class="badge extra">SAMO RESTOS</span>';
+                }
+                
+                if (hItem._isModifier) {
+                    modifierBadge = `<span class="badge" style="background: var(--accent-orange-dim); color: var(--accent-orange); margin-left: 8px;">MOD: ${hItem._parentName}</span>`;
+                }
+
+                // Get ALL filled fields from both items
+                const rFilledFields = getFilledFields(rItem);
+                const hFilledFields = getFilledFields(hItem);
+                
+                // Remove internal fields
+                delete rFilledFields._isModifier;
+                delete rFilledFields._parentName;
+                delete hFilledFields._isModifier;
+                delete hFilledFields._parentName;
+
+                const allItemFields = new Set([...Object.keys(rFilledFields), ...Object.keys(hFilledFields)]);
+
+                html += `
+                    <div class="comparison-table" style="margin-bottom: 16px;">
+                        <div class="comparison-header">
+                            <div>STAVKA ${idx + 1}: ${displayName} ${itemStatus}${modifierBadge}</div>
+                            <div class="col-restos">restOS</div>
+                            <div class="col-historical">Historical</div>
+                        </div>
+                `;
+
+                // Known item field mappings
+                const itemMappings = {
+                    'external_item_id': 'orderItemID',
+                    'item_code': 'productID',
+                    'item_name': 'name',
+                    'quantity': 'quantity',
+                    'unit_price': 'price',
+                    'is_void': 'isCanceled'
+                };
+
+                // Sort and render all fields
+                const sortedFields = Array.from(allItemFields).sort((a, b) => {
+                    // Prioritize common fields
+                    const priority = ['item_name', 'name', 'quantity', 'unit_price', 'price', 'total_price'];
+                    const aIdx = priority.indexOf(a);
+                    const bIdx = priority.indexOf(b);
+                    if (aIdx !== -1 && bIdx !== -1) return aIdx - bIdx;
+                    if (aIdx !== -1) return -1;
+                    if (bIdx !== -1) return 1;
+                    return a.localeCompare(b);
+                });
+
+                for (const field of sortedFields) {
+                    let rVal = rFilledFields[field];
+                    let hVal = hFilledFields[field];
+
+                    // Try mappings
+                    if (rVal === undefined && Object.values(itemMappings).includes(field)) {
+                        const rField = Object.keys(itemMappings).find(k => itemMappings[k] === field);
+                        if (rField) rVal = rFilledFields[rField];
+                    }
+                    if (hVal === undefined && itemMappings[field]) {
+                        hVal = hFilledFields[itemMappings[field]];
+                    }
+
+                    // Calculate total for Historical
+                    if (field === 'total_price' && hVal === undefined && hItem.price && hItem.quantity) {
+                        hVal = hItem.price * hItem.quantity;
+                    }
+
+                    const rFormatted = formatItemValue(rVal, field);
+                    const hFormatted = formatItemValue(hVal, field);
+                    const status = getComparisonStatus(rFormatted, hFormatted);
+
+                    let badge = '';
+                    if (status === 'missing-restos') badge = '<span class="badge missing">FALI</span>';
+                    else if (status === 'only-restos') badge = '<span class="badge extra">EXTRA</span>';
+
+                    html += `
+                        <div class="comparison-row ${status}">
+                            <div class="field-name">${field}${badge}</div>
+                            <div class="col-restos">${rFormatted}</div>
+                            <div class="col-historical">${hFormatted}</div>
+                        </div>
+                    `;
+                }
+
+                // Show modifiers array info if present
+                if (!hItem._isModifier && hItem.modifiers && hItem.modifiers.length > 0) {
+                    html += `
+                        <div class="comparison-row" style="background: var(--accent-orange-dim);">
+                            <div class="field-name">ℹ️ modifiers</div>
+                            <div class="col-restos">—</div>
+                            <div class="col-historical">${hItem.modifiers.length} modifier(a) - prikazani kao zasebne stavke</div>
+                        </div>
+                    `;
+                }
+
+                html += `</div>`;
+            });
+
+            return html;
         }
 
         function formatItemValue(val, field) {
@@ -989,31 +1057,38 @@
                 return JSON.stringify(val);
             }
             if (typeof val === 'object') {
-                return JSON.stringify(val);
+                // Truncate large objects
+                const str = JSON.stringify(val);
+                if (str.length > 200) return str.substring(0, 200) + '...';
+                return str;
             }
-            if (field === 'price' || field === 'unit_price') {
+            if (field === 'price' || field === 'unit_price' || field === 'total_price') {
                 const num = parseFloat(val);
                 if (!isNaN(num)) return formatCurrency(num);
             }
-            if (field === 'total_price' || field === '_calculated') {
-                const num = parseFloat(val);
-                if (!isNaN(num)) return formatCurrency(num);
-            }
-            if (field.includes('_at') || field.includes('date')) {
+            if (field.includes('_at') || field.includes('date') || field.includes('datum')) {
                 return formatDateTime(val);
             }
             return String(val);
         }
 
         function isEmpty(val) {
-            return val === null || val === undefined || val === '' || val === 0 || val === '0' || val === '0.00';
+            if (val === null || val === undefined || val === '') return true;
+            if (val === 0 || val === '0' || val === '0.00') return true;
+            if (typeof val === 'object' && Object.keys(val).length === 0) return true;
+            if (Array.isArray(val) && val.length === 0) return true;
+            return false;
         }
 
         function formatValue(val, field) {
             if (val === null || val === undefined || val === '') return '—';
             if (typeof val === 'boolean') return val ? '✅ DA' : '❌ NE';
-            if (typeof val === 'object') return JSON.stringify(val);
-            if (field.includes('amount') || field.includes('total') || field.includes('fee') || field.includes('price')) {
+            if (typeof val === 'object') {
+                const str = JSON.stringify(val);
+                if (str.length > 200) return str.substring(0, 200) + '...';
+                return str;
+            }
+            if (field.includes('amount') || field.includes('total') || field.includes('fee') || field.includes('price') || field.includes('subtotal')) {
                 const num = parseFloat(val);
                 if (!isNaN(num)) return formatCurrency(num);
             }
@@ -1024,7 +1099,7 @@
                 const map = {1:'created', 3:'accepted', 4:'preparing', 5:'ready', 6:'dispatched', 7:'delivered', 8:'rejected', 9:'cancelled', 10:'completed', 11:'void'};
                 return `${val} (${map[val] || '?'})`;
             }
-            if (field === 'location_id') return getLocationName(val);
+            if (field === 'location_id' || field === 'company_id') return getLocationName(val);
             return String(val);
         }
 
@@ -1087,9 +1162,17 @@
                 'b1eebc99-9c0b-4ef8-bb6d-6bb9bd380004': 'Collina Vracar',
                 'b1eebc99-9c0b-4ef8-bb6d-6bb9bd380005': 'Food Truck',
                 'b1eebc99-9c0b-4ef8-bb6d-6bb9bd380006': 'Kuhinjica',
-                'b1eebc99-9c0b-4ef8-bb6d-6bb9bd380007': 'Girosito'
+                'b1eebc99-9c0b-4ef8-bb6d-6bb9bd380007': 'Girosito',
+                // Integer mappings from eBar
+                '310': 'Collina B.Brdo',
+                '311': 'Pekarica',
+                '312': 'Collina NBG',
+                '313': 'Collina Vracar',
+                '314': 'Food Truck',
+                '315': 'Kuhinjica',
+                '316': 'Girosito'
             };
-            return map[locationId] || locationId || '—';
+            return map[locationId] || map[String(locationId)] || locationId || '—';
         }
 
         function closeModal() {
