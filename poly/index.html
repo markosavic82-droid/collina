@@ -21,7 +21,9 @@
             justify-content: center;
             align-items: center;
             font-family: 'VT323', monospace;
-            overflow: hidden;
+            overflow-x: hidden;
+            padding: 15px;
+            box-sizing: border-box;
         }
         
         /* Animated beer bubbles background */
@@ -60,7 +62,8 @@
                 0 0 0 8px #555,
                 inset 0 2px 10px rgba(0,0,0,0.5),
                 0 20px 60px rgba(0,0,0,0.8);
-            min-width: 500px;
+            width: 100%;
+            max-width: 500px;
         }
         
         .header {
@@ -334,6 +337,124 @@
             color: #ffd700;
             font-size: 14px;
             margin-top: 5px;
+        }
+
+        /* MOBILE RESPONSIVE */
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+                align-items: flex-start;
+                padding-top: 20px;
+            }
+            
+            .container {
+                min-width: unset;
+                width: 100%;
+                max-width: 100%;
+                padding: 15px;
+                border-width: 4px;
+                border-radius: 15px;
+            }
+            
+            .header h1 {
+                font-size: 11px;
+            }
+            
+            .header .table-badge {
+                font-size: 12px;
+                padding: 4px 12px;
+            }
+            
+            .lcd-display {
+                padding: 15px 10px;
+            }
+            
+            .beer-counter {
+                padding: 10px;
+            }
+            
+            .beer-label {
+                font-size: 16px;
+            }
+            
+            .beer-number {
+                font-size: 80px;
+            }
+            
+            .beer-number::after {
+                font-size: 40px;
+            }
+            
+            .datetime-display {
+                flex-direction: column;
+                gap: 5px;
+                align-items: center;
+            }
+            
+            .clock, .date-display {
+                font-size: 22px;
+            }
+            
+            .stats-panel {
+                grid-template-columns: 1fr 1fr;
+                gap: 8px;
+            }
+            
+            .stat-box {
+                padding: 8px;
+            }
+            
+            .stat-label {
+                font-size: 10px;
+            }
+            
+            .stat-value {
+                font-size: 20px;
+            }
+            
+            .progress-label {
+                font-size: 11px;
+            }
+            
+            .liters-display {
+                font-size: 12px;
+            }
+            
+            .status-text {
+                font-size: 11px;
+            }
+            
+            .fun-message p {
+                font-size: 13px;
+            }
+            
+            .refresh-btn {
+                padding: 8px 12px;
+                font-size: 12px;
+            }
+        }
+
+        /* Extra small phones */
+        @media (max-width: 380px) {
+            .header h1 {
+                font-size: 9px;
+            }
+            
+            .beer-number {
+                font-size: 60px;
+            }
+            
+            .beer-number::after {
+                font-size: 30px;
+            }
+            
+            .clock, .date-display {
+                font-size: 18px;
+            }
+            
+            .stat-value {
+                font-size: 16px;
+            }
         }
     </style>
 </head>
