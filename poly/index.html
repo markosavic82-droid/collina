@@ -1,1 +1,592 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🍺 PIVO METAR - Sto #3105</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a0a00 0%, #2d1810 50%, #1a0a00 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'VT323', monospace;
+            overflow: hidden;
+        }
+        
+        /* Animated beer bubbles background */
+        .bubbles {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        .bubble {
+            position: absolute;
+            bottom: -50px;
+            background: radial-gradient(circle at 30% 30%, rgba(255, 200, 100, 0.4), rgba(200, 150, 50, 0.1));
+            border-radius: 50%;
+            animation: rise linear infinite;
+            opacity: 0.6;
+        }
+        
+        @keyframes rise {
+            0% { transform: translateY(0) scale(1); opacity: 0.6; }
+            100% { transform: translateY(-100vh) scale(0.5); opacity: 0; }
+        }
+        
+        .container {
+            position: relative;
+            z-index: 1;
+            background: linear-gradient(180deg, #2a2a2a 0%, #1a1a1a 100%);
+            border: 8px solid #444;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 
+                0 0 0 4px #222,
+                0 0 0 8px #555,
+                inset 0 2px 10px rgba(0,0,0,0.5),
+                0 20px 60px rgba(0,0,0,0.8);
+            min-width: 500px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 3px dashed #ffd700;
+        }
+        
+        .header h1 {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 16px;
+            color: #ffd700;
+            text-shadow: 0 0 10px #ffd700, 0 0 20px #ff8c00;
+            margin-bottom: 10px;
+        }
+        
+        .header .table-badge {
+            display: inline-block;
+            background: #8b0000;
+            color: #fff;
+            padding: 5px 15px;
+            border-radius: 5px;
+            font-size: 14px;
+            border: 2px solid #ff4444;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 5px #ff4444; }
+            50% { box-shadow: 0 0 20px #ff4444, 0 0 30px #ff0000; }
+        }
+        
+        .lcd-display {
+            background: #0a1a0a;
+            border: 4px inset #333;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 15px 0;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .lcd-display::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(0,0,0,0.1) 2px,
+                rgba(0,0,0,0.1) 4px
+            );
+            pointer-events: none;
+        }
+        
+        .beer-counter {
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .beer-label {
+            color: #00ff00;
+            font-size: 20px;
+            text-shadow: 0 0 10px #00ff00;
+            margin-bottom: 10px;
+        }
+        
+        .beer-number {
+            font-family: 'VT323', monospace;
+            font-size: 120px;
+            color: #00ff00;
+            text-shadow: 
+                0 0 10px #00ff00,
+                0 0 20px #00ff00,
+                0 0 40px #00ff00;
+            line-height: 1;
+            position: relative;
+        }
+        
+        .beer-number::after {
+            content: '🍺';
+            font-size: 60px;
+            position: absolute;
+            margin-left: 10px;
+            animation: wobble 1s infinite;
+        }
+        
+        @keyframes wobble {
+            0%, 100% { transform: rotate(-5deg); }
+            50% { transform: rotate(5deg); }
+        }
+        
+        .datetime-display {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+        }
+        
+        .clock, .date-display {
+            color: #ffcc00;
+            font-size: 28px;
+            text-shadow: 0 0 5px #ffcc00;
+        }
+        
+        .stats-panel {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .stat-box {
+            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+            border: 2px solid #0f3460;
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+        }
+        
+        .stat-label {
+            color: #888;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+        
+        .stat-value {
+            color: #00d4ff;
+            font-size: 24px;
+            text-shadow: 0 0 5px #00d4ff;
+        }
+        
+        .status-bar {
+            margin-top: 15px;
+            padding: 10px;
+            background: #111;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .status-led {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #00ff00;
+            box-shadow: 0 0 10px #00ff00;
+            animation: blink 1s infinite;
+        }
+        
+        .status-led.error {
+            background: #ff0000;
+            box-shadow: 0 0 10px #ff0000;
+        }
+        
+        .status-led.loading {
+            background: #ffcc00;
+            box-shadow: 0 0 10px #ffcc00;
+        }
+        
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .status-text {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .fun-message {
+            text-align: center;
+            margin-top: 15px;
+            padding: 10px;
+            background: linear-gradient(90deg, transparent, rgba(255,215,0,0.1), transparent);
+            border-radius: 5px;
+        }
+        
+        .fun-message p {
+            color: #ffd700;
+            font-size: 16px;
+            font-style: italic;
+        }
+        
+        .refresh-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #333;
+            border: 2px solid #555;
+            color: #888;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: 'VT323', monospace;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        .refresh-btn:hover {
+            background: #444;
+            color: #fff;
+            border-color: #777;
+        }
+        
+        .error-display {
+            color: #ff4444;
+            text-align: center;
+            padding: 20px;
+            font-size: 18px;
+        }
 
+        .beer-progress {
+            margin-top: 15px;
+            padding: 10px;
+            background: #111;
+            border-radius: 5px;
+        }
+
+        .progress-label {
+            color: #888;
+            font-size: 12px;
+            margin-bottom: 5px;
+        }
+
+        .progress-bar {
+            height: 20px;
+            background: #222;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ffd700, #ff8c00, #ff4500);
+            border-radius: 10px;
+            transition: width 0.5s ease;
+            position: relative;
+        }
+
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(
+                90deg,
+                transparent 0%,
+                rgba(255,255,255,0.3) 50%,
+                transparent 100%
+            );
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .liters-display {
+            text-align: right;
+            color: #ffd700;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Beer bubbles animation -->
+    <div class="bubbles" id="bubbles"></div>
+    
+    <div class="container">
+        <button class="refresh-btn" onclick="fetchBeerCount()">↻ REFRESH</button>
+        
+        <div class="header">
+            <h1>🍺 PIVO METAR 🍺</h1>
+            <span class="table-badge">📍 STO #3105</span>
+        </div>
+        
+        <div class="lcd-display">
+            <div class="beer-counter">
+                <div class="beer-label">DANAS NARUČENIH PIVA</div>
+                <div class="beer-number" id="beerCount">--</div>
+            </div>
+            
+            <div class="datetime-display">
+                <div class="clock" id="clock">--:--:--</div>
+                <div class="date-display" id="date">--.--.----</div>
+            </div>
+        </div>
+        
+        <div class="stats-panel">
+            <div class="stat-box">
+                <div class="stat-label">Porudžbina</div>
+                <div class="stat-value" id="orderCount">--</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Ukupno RSD</div>
+                <div class="stat-value" id="totalAmount">--</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Prosek po Porudžbini</div>
+                <div class="stat-value" id="avgBeers">--</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Poslednja Porudžbina</div>
+                <div class="stat-value" id="lastOrder">--</div>
+            </div>
+        </div>
+
+        <div class="beer-progress">
+            <div class="progress-label">🎯 DNEVNI CILJ (100 PIVA)</div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+            </div>
+            <div class="liters-display" id="litersDisplay">≈ 0.0 litara popijeno</div>
+        </div>
+        
+        <div class="status-bar">
+            <span class="status-led" id="statusLed"></span>
+            <span class="status-text" id="statusText">Učitavanje...</span>
+        </div>
+        
+        <div class="fun-message">
+            <p id="funMessage">"Pivo nije odgovor... Pivo je pitanje. DA je odgovor!"</p>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // SUPABASE CONFIG
+        // ============================================
+        const SUPABASE_URL = 'https://bbnbbbpofelbkyuffslj.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJibmJiYnBvZmVsYmt5dWZmc2xqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUwNTI0MzQsImV4cCI6MjA4MDYyODQzNH0.koW44soAB-bEfh8OzqjGBwdgov4Snscw1ITsg5OureU';
+        
+        // TABLE TO TRACK - use table_id (INTEGER)
+        const TARGET_TABLE_ID = 3105;
+        
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        // Debug mode - set to true to see console logs
+        const DEBUG = true;
+        function log(...args) { if (DEBUG) console.log('[PIVO METAR]', ...args); }
+        
+        // Fun messages
+        const funMessages = [
+            '"Pivo nije odgovor... Pivo je pitanje. DA je odgovor!"',
+            '"U pivu je istina, u vinu mudrost, u vodi bakterije."',
+            '"Život je prekratak za loše pivo!"',
+            '"Pivo: Pomaže ružnim ljudima da imaju seks od 1862."',
+            '"Bez piva, život bi bio greška." - Fridrih Niče (možda)',
+            '"Jedno pivo dnevno tera doktora... da naruči i on jedno."',
+            '"Pijem pivo samo danima koji se završavaju na -ak."',
+            '"24 sata u danu, 24 piva u gajbi. Slučajnost? Ne verujem."',
+            '"Pivo je dokaz da nas Bog voli."',
+            '"Sto #3105: Gde se legende rađaju!"',
+        ];
+        
+        // Beer-related keywords to search in items
+        const beerKeywords = ['pivo', 'beer', 'lager', 'ale', 'točeno', 'zaječarsko', 'jelen', 
+                             'heineken', 'stella', 'kozel', 'pilsner', 'budweiser', 'corona',
+                             'erdinger', 'paulaner', 'weissbier', 'ipa', 'stout', 'porter',
+                             'craft', 'bud', 'becks', 'tuborg', 'carlsberg', 'laško', 'niško',
+                             'apatinsko', 'valjevsko', 'kabinet', 'pan', 'zlatni bik'];
+        
+        // Update clock
+        function updateClock() {
+            const now = new Date();
+            const time = now.toLocaleTimeString('sr-RS', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            const date = now.toLocaleDateString('sr-RS', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            
+            document.getElementById('clock').textContent = time;
+            document.getElementById('date').textContent = date;
+        }
+        
+        // Count beers in items
+        function countBeersInItems(items) {
+            if (!items || !Array.isArray(items)) return 0;
+            
+            let count = 0;
+            items.forEach(item => {
+                const name = (item.name || item.item_name || '').toLowerCase();
+                const isBeer = beerKeywords.some(keyword => name.includes(keyword));
+                if (isBeer) {
+                    count += item.quantity || item.qty || 1;
+                }
+            });
+            return count;
+        }
+        
+        // Fetch beer count from Supabase
+        async function fetchBeerCount() {
+            const statusLed = document.getElementById('statusLed');
+            const statusText = document.getElementById('statusText');
+            
+            statusLed.className = 'status-led loading';
+            statusText.textContent = 'Učitavanje podataka...';
+            
+            try {
+                // Get today's date range (Serbian timezone UTC+1)
+                const today = new Date();
+                const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate()).toISOString();
+                const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1).toISOString();
+                
+                log('Fetching orders for table_id:', TARGET_TABLE_ID, 'Date:', startOfDay.split('T')[0]);
+                
+                // Query using table_id (INTEGER) - TODAY ONLY
+                const { data, error } = await supabaseClient
+                    .from('emeni_orders')
+                    .select('id, order_id, table_id, raw_payload, created_at, status')
+                    .eq('table_id', TARGET_TABLE_ID)
+                    .gte('created_at', startOfDay)
+                    .lt('created_at', endOfDay)
+                    .order('created_at', { ascending: false });
+                
+                if (error) throw error;
+                
+                log('Orders found:', data?.length);
+                
+                let totalBeers = 0;
+                let totalAmount = 0;
+                let orderCount = data?.length || 0;
+                let lastOrderTime = null;
+                
+                if (data && data.length > 0) {
+                    data.forEach(order => {
+                        // Items are in raw_payload.items
+                        const items = order.raw_payload?.items || [];
+                        
+                        const beersInOrder = countBeersInItems(items);
+                        const orderTotal = items.reduce((sum, item) => 
+                            sum + (item.price * (item.quantity || 1)), 0);
+                        
+                        log('Order', order.order_id, '- items:', items.length, 'beers:', beersInOrder);
+                        
+                        totalBeers += beersInOrder;
+                        totalAmount += orderTotal;
+                    });
+                    
+                    // Last order time
+                    if (data[0]?.created_at) {
+                        lastOrderTime = new Date(data[0].created_at);
+                    }
+                }
+                
+                log('TOTAL BEERS:', totalBeers, 'TOTAL RSD:', totalAmount);
+                
+                // Update UI
+                document.getElementById('beerCount').textContent = totalBeers;
+                document.getElementById('orderCount').textContent = orderCount;
+                document.getElementById('totalAmount').textContent = totalAmount.toLocaleString('sr-RS');
+                document.getElementById('avgBeers').textContent = orderCount > 0 
+                    ? (totalBeers / orderCount).toFixed(1) 
+                    : '0';
+                
+                if (lastOrderTime) {
+                    document.getElementById('lastOrder').textContent = lastOrderTime.toLocaleTimeString('sr-RS', { 
+                        hour: '2-digit', 
+                        minute: '2-digit' 
+                    });
+                } else {
+                    document.getElementById('lastOrder').textContent = '--';
+                }
+
+                // Update progress bar (goal: 100 beers)
+                const progress = Math.min((totalBeers / 100) * 100, 100);
+                document.getElementById('progressFill').style.width = progress + '%';
+                
+                // Estimate liters (assuming 0.5L per beer)
+                const liters = (totalBeers * 0.5).toFixed(1);
+                document.getElementById('litersDisplay').textContent = `≈ ${liters} litara popijeno`;
+                
+                // Update fun message randomly
+                const randomMessage = funMessages[Math.floor(Math.random() * funMessages.length)];
+                document.getElementById('funMessage').textContent = randomMessage;
+                
+                statusLed.className = 'status-led';
+                const todayStr = today.toLocaleDateString('sr-RS');
+                statusText.textContent = `${todayStr} • ${orderCount} porudžbina sa stola #${TARGET_TABLE_ID}`;
+                
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                statusLed.className = 'status-led error';
+                statusText.textContent = 'Greška: ' + error.message;
+                
+                // Show demo data if connection fails
+                document.getElementById('beerCount').textContent = '??';
+            }
+        }
+        
+        // Create beer bubbles
+        function createBubbles() {
+            const container = document.getElementById('bubbles');
+            for (let i = 0; i < 20; i++) {
+                const bubble = document.createElement('div');
+                bubble.className = 'bubble';
+                bubble.style.left = Math.random() * 100 + '%';
+                bubble.style.width = (Math.random() * 20 + 10) + 'px';
+                bubble.style.height = bubble.style.width;
+                bubble.style.animationDuration = (Math.random() * 10 + 5) + 's';
+                bubble.style.animationDelay = (Math.random() * 5) + 's';
+                container.appendChild(bubble);
+            }
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            createBubbles();
+            updateClock();
+            setInterval(updateClock, 1000);
+            
+            // Initial fetch
+            fetchBeerCount();
+            
+            // Auto-refresh every 30 seconds
+            setInterval(fetchBeerCount, 30000);
+        });
+    </script>
+</body>
+</html>
