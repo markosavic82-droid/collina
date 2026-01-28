@@ -1,1 +1,856 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wolt Dispatch - Collina</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0a0a0f;
+      color: #ffffff;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 16px;
+      background: #111118;
+      border-bottom: 1px solid #1f1f2e;
+      flex-shrink: 0;
+    }
+
+    .header h1 {
+      font-size: 16px;
+      font-weight: 600;
+      color: #f97316;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .header h1 .wolt-badge {
+      background: #00c2e8;
+      color: #000;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 9px;
+      font-weight: 700;
+    }
+
+    .status-indicator {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: #888;
+      font-size: 11px;
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #22c55e;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    /* Main Layout */
+    .columns-container {
+      flex: 1;
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 8px;
+      padding: 8px;
+      overflow: hidden;
+    }
+
+    /* Location Column */
+    .location-column {
+      display: flex;
+      flex-direction: column;
+      background: #111116;
+      border: 1px solid #1f1f2e;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    /* Location Header */
+    .location-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 12px;
+      background: #18181b;
+      border-bottom: 1px solid #27272a;
+      flex-shrink: 0;
+    }
+
+    .location-name {
+      font-size: 12px;
+      font-weight: 600;
+      color: #fff;
+    }
+
+    .location-stats {
+      display: flex;
+      gap: 6px;
+      font-size: 10px;
+    }
+
+    .stat-pill {
+      padding: 3px 8px;
+      border-radius: 10px;
+      font-weight: 600;
+    }
+
+    .stat-pill.active {
+      background: #f97316;
+      color: #000;
+    }
+
+    .stat-pill.new {
+      background: #22c55e;
+      color: #000;
+    }
+
+    .stat-pill.empty {
+      background: #27272a;
+      color: #52525b;
+    }
+
+    /* Kitchen Stats Bar */
+    .kitchen-stats-bar {
+      display: flex;
+      gap: 4px;
+      padding: 8px 12px;
+      background: #141418;
+      border-bottom: 1px solid #27272a;
+      flex-shrink: 0;
+    }
+
+    .kitchen-stat {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      padding: 6px 4px;
+      background: #1a1a22;
+      border-radius: 6px;
+      font-size: 11px;
+    }
+
+    .kitchen-stat .icon {
+      font-size: 12px;
+    }
+
+    .kitchen-stat .count {
+      font-weight: 700;
+    }
+
+    .kitchen-stat.burgers .count { color: #f97316; }
+    .kitchen-stat.pancakes .count { color: #a855f7; }
+    .kitchen-stat.other .count { color: #3b82f6; }
+
+    .kitchen-stat.zero {
+      opacity: 0.4;
+    }
+
+    .kitchen-stat.zero .count {
+      color: #52525b;
+    }
+
+    /* Active Orders Section */
+    .active-section {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      border-bottom: 1px solid #27272a;
+    }
+
+    .section-label {
+      font-size: 9px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 6px 12px;
+      color: #71717a;
+      background: #141418;
+      flex-shrink: 0;
+    }
+
+    .active-orders-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .active-orders-list::-webkit-scrollbar {
+      width: 3px;
+    }
+
+    .active-orders-list::-webkit-scrollbar-thumb {
+      background: #3f3f46;
+      border-radius: 2px;
+    }
+
+    /* Active Order Card */
+    .active-card {
+      background: #1a1a20;
+      border: 1px solid #27272a;
+      border-radius: 6px;
+      padding: 8px;
+    }
+
+    .active-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .active-order-number {
+      font-size: 12px;
+      font-weight: 700;
+      color: #f97316;
+    }
+
+    .active-order-provider {
+      font-size: 9px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .active-order-provider.wolt { background: #00c2e8; color: #000; }
+    .active-order-provider.glovo { background: #ffc244; color: #000; }
+    .active-order-provider.ebar { background: #8b5cf6; color: #fff; }
+    .active-order-provider.emeniwaiter { background: #8b5cf6; color: #fff; }
+    .active-order-provider.gloriafood { background: #ff6b35; color: #fff; }
+
+    .active-items {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 3px;
+    }
+
+    .active-item {
+      font-size: 10px;
+      color: #a1a1aa;
+      background: #27272a;
+      padding: 2px 6px;
+      border-radius: 3px;
+    }
+
+    .active-item .qty {
+      color: #22c55e;
+      font-weight: 600;
+    }
+
+    /* New Orders Section */
+    .new-section {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      background: rgba(249, 115, 22, 0.05);
+    }
+
+    .new-section .section-label {
+      background: rgba(249, 115, 22, 0.15);
+      color: #f97316;
+    }
+
+    .new-orders-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .new-orders-list::-webkit-scrollbar {
+      width: 3px;
+    }
+
+    .new-orders-list::-webkit-scrollbar-thumb {
+      background: #f97316;
+      border-radius: 2px;
+    }
+
+    /* New Order Card - Compact */
+    .new-card {
+      background: #1a1a20;
+      border: 1px solid #3f3f46;
+      border-radius: 8px;
+      padding: 10px;
+      transition: all 0.2s;
+    }
+
+    .new-card:hover {
+      border-color: #f97316;
+    }
+
+    .new-card.processing {
+      opacity: 0.5;
+      pointer-events: none;
+    }
+
+    .new-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .new-order-info {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .new-order-number {
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .new-order-time {
+      font-size: 10px;
+      color: #71717a;
+    }
+
+    .waiting-badge {
+      background: #7c2d12;
+      color: #fed7aa;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 10px;
+      font-weight: 600;
+    }
+
+    .waiting-badge.urgent {
+      background: #dc2626;
+      color: #fff;
+      animation: urgentPulse 0.8s infinite;
+    }
+
+    @keyframes urgentPulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+
+    .new-items {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-bottom: 8px;
+    }
+
+    .new-item {
+      font-size: 11px;
+      color: #e4e4e7;
+      background: #27272a;
+      padding: 4px 8px;
+      border-radius: 4px;
+      border-left: 2px solid #3f3f46;
+    }
+
+    .new-item .qty {
+      color: #22c55e;
+      font-weight: 700;
+      margin-right: 3px;
+    }
+
+    .new-item.burger { border-left-color: #f97316; }
+    .new-item.pancake { border-left-color: #a855f7; }
+
+    .new-order-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .new-order-total {
+      font-size: 11px;
+      color: #a1a1aa;
+    }
+
+    /* Time Buttons */
+    .time-buttons {
+      display: flex;
+      gap: 3px;
+    }
+
+    .time-btn {
+      background: transparent;
+      border: 1.5px solid #3f3f46;
+      border-radius: 4px;
+      padding: 6px 6px;
+      color: #a1a1aa;
+      font-size: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .time-btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .time-btn.btn-5 { border-color: #06b6d4; color: #06b6d4; }
+    .time-btn.btn-5:hover { background: #06b6d4; color: #000; }
+
+    .time-btn.btn-10 { border-color: #22c55e; color: #22c55e; }
+    .time-btn.btn-10:hover { background: #22c55e; color: #000; }
+
+    .time-btn.btn-15 { border-color: #84cc16; color: #84cc16; }
+    .time-btn.btn-15:hover { background: #84cc16; color: #000; }
+
+    .time-btn.btn-20 { border-color: #eab308; color: #eab308; }
+    .time-btn.btn-20:hover { background: #eab308; color: #000; }
+
+    .time-btn.btn-25 { border-color: #f97316; color: #f97316; }
+    .time-btn.btn-25:hover { background: #f97316; color: #000; }
+
+    .time-btn.btn-30 { border-color: #ef4444; color: #ef4444; }
+    .time-btn.btn-30:hover { background: #ef4444; color: #fff; }
+
+    .time-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .time-btn.loading {
+      color: transparent;
+      position: relative;
+    }
+
+    .time-btn.loading::after {
+      content: '';
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      top: 50%;
+      left: 50%;
+      margin: -5px 0 0 -5px;
+      border: 2px solid currentColor;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Empty States */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      color: #3f3f46;
+      text-align: center;
+      flex: 1;
+    }
+
+    .empty-state .icon {
+      font-size: 20px;
+      margin-bottom: 4px;
+      opacity: 0.5;
+    }
+
+    .empty-state p {
+      font-size: 10px;
+    }
+
+    /* Toast */
+    .toast-container {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .toast {
+      background: #18181b;
+      border: 1px solid #27272a;
+      border-radius: 8px;
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+      animation: slideIn 0.3s ease;
+      font-size: 12px;
+    }
+
+    .toast.success { border-color: #22c55e; }
+    .toast.error { border-color: #ef4444; }
+
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <h1>
+      🚀 Dispatch
+      <span class="wolt-badge">WOLT</span>
+    </h1>
+    <div class="status-indicator">
+      <div class="status-dot" id="statusDot"></div>
+      <span id="lastUpdated">Povezivanje...</span>
+    </div>
+  </header>
+
+  <!-- Columns -->
+  <div class="columns-container" id="columnsContainer"></div>
+
+  <!-- Toast -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script>
+    // ============================================
+    // Configuration
+    // ============================================
+    const SUPABASE_URL = 'https://bbnbbbpofelbkyuffslj.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJibmJiYnBvZmVsYmt5dWZmc2xqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUwNTI0MzQsImV4cCI6MjA4MDYyODQzNH0.koW44soAB-bEfh8OzqjGBwdgov4Snscw1ITsg5OureU';
+    
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const STATUS_NEW = 1;
+    const STATUS_ACCEPTED = 3;
+    const STATUS_IN_PRODUCTION = 4;
+
+    const LOCATIONS = [
+      { id: null, name: 'Collina Vračar', keywords: ['vračar', 'vracar'] },
+      { id: null, name: 'Collina NBG', keywords: ['nbg', 'novi beograd'] },
+      { id: null, name: 'Collina B.Brdo', keywords: ['b.brdo', 'brdo', 'banovo'] },
+      { id: null, name: 'Kuhinjica B.Brdo', keywords: ['kuhinjica'] },
+      { id: null, name: 'Pekarica B.Brdo', keywords: ['pekarica'] },
+      { id: null, name: 'Girosito', keywords: ['girosito', 'giros'] }
+    ];
+
+    const BURGER_KEYWORDS = ['burger', 'smash', 'čizburger', 'cheeseburger', 'hamburger', 'cheese burger', 'collina burger', 'chicken burger', 'vege burger'];
+    const PANCAKE_KEYWORDS = ['palačink', 'palacink', 'american', 'američka', 'pancake', 'crepe', 'morning', 'nutella', 'eurokrem', 'plazma'];
+
+    let locations = {};
+    let allOrders = [];
+
+    // ============================================
+    // Utilities
+    // ============================================
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.innerHTML = `<span>${type === 'success' ? '✅' : '❌'}</span><span>${message}</span>`;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+
+    function categorizeItem(name) {
+      const lower = (name || '').toLowerCase();
+      if (BURGER_KEYWORDS.some(k => lower.includes(k))) return 'burger';
+      if (PANCAKE_KEYWORDS.some(k => lower.includes(k))) return 'pancake';
+      return 'other';
+    }
+
+    function updateStatus(ok) {
+      document.getElementById('statusDot').style.background = ok ? '#22c55e' : '#ef4444';
+      document.getElementById('lastUpdated').textContent = ok 
+        ? `${new Date().toLocaleTimeString('sr-RS')}` 
+        : 'Greška';
+    }
+
+    // ============================================
+    // Data Fetching
+    // ============================================
+    async function fetchLocations() {
+      const { data, error } = await supabaseClient.from('emeni_locations').select('*');
+      
+      if (!error && data) {
+        data.forEach(loc => {
+          locations[loc.company_id] = loc.location_name;
+          const name = loc.location_name.toLowerCase();
+          LOCATIONS.forEach(fixedLoc => {
+            if (fixedLoc.keywords.some(k => name.includes(k))) {
+              fixedLoc.id = String(loc.company_id);
+            }
+          });
+        });
+        console.log('📍 Locations mapped:', LOCATIONS);
+      }
+    }
+
+    async function fetchOrders() {
+      const startDate = new Date();
+      startDate.setHours(0, 0, 0, 0);
+      const endDate = new Date();
+      endDate.setHours(23, 59, 59, 999);
+
+      const { data: orders, error } = await supabaseClient
+        .from('emeni_orders')
+        .select('*')
+        .gte('created_at', startDate.toISOString())
+        .lte('created_at', endDate.toISOString())
+        .order('created_at', { ascending: true });
+
+      if (error) {
+        updateStatus(false);
+        return [];
+      }
+
+      const orderIds = orders.map(o => o.order_id);
+      const { data: items } = await supabaseClient
+        .from('emeni_order_items')
+        .select('*')
+        .in('order_id', orderIds);
+
+      orders.forEach(order => {
+        order.items = items?.filter(i => i.order_id === order.order_id) || [];
+      });
+
+      updateStatus(true);
+      return orders;
+    }
+
+    // ============================================
+    // Render
+    // ============================================
+    function renderColumns(orders) {
+      const container = document.getElementById('columnsContainer');
+      
+      const activeOrders = orders.filter(o => o.status === STATUS_ACCEPTED || o.status === STATUS_IN_PRODUCTION);
+      const newWoltOrders = orders.filter(o => o.status === STATUS_NEW && (o.provider || '').toLowerCase() === 'wolt');
+
+      container.innerHTML = LOCATIONS.map(loc => {
+        const locActive = activeOrders.filter(o => String(o.company_id) === loc.id);
+        const locNew = newWoltOrders.filter(o => String(o.company_id) === loc.id);
+        
+        // Calculate stats per location - count actual product quantities
+        let burgers = 0, pancakes = 0, other = 0;
+        locActive.forEach(order => {
+          (order.items || []).forEach(item => {
+            const itemQty = parseInt(item.quantity) || 1;
+            const name = (item.name || '').toLowerCase();
+            const cat = categorizeItem(item.name);
+            
+            // Check if name contains quantity prefix like "2X" or "2x"
+            let multiplier = 1;
+            const prefixMatch = name.match(/^(\d+)\s*x\s+/i);
+            if (prefixMatch) {
+              multiplier = parseInt(prefixMatch[1]) || 1;
+            }
+            
+            // Also check for combo items that contain multiple burgers
+            // e.g., "2X Collina burger+pomfrit+2x Pepsi" = 2 burgers
+            const totalQty = itemQty * multiplier;
+            
+            if (cat === 'burger') burgers += totalQty;
+            else if (cat === 'pancake') pancakes += totalQty;
+            else other += totalQty;
+          });
+        });
+        
+        return `
+          <div class="location-column">
+            <div class="location-header">
+              <div class="location-name">📍 ${loc.name}</div>
+              <div class="location-stats">
+                <span class="stat-pill ${locActive.length > 0 ? 'active' : 'empty'}">${locActive.length} 🍳</span>
+                <span class="stat-pill ${locNew.length > 0 ? 'new' : 'empty'}">${locNew.length} 🆕</span>
+              </div>
+            </div>
+            
+            <div class="kitchen-stats-bar">
+              <div class="kitchen-stat burgers ${burgers === 0 ? 'zero' : ''}">
+                <span class="icon">🍔</span>
+                <span class="count">${burgers}</span>
+              </div>
+              <div class="kitchen-stat pancakes ${pancakes === 0 ? 'zero' : ''}">
+                <span class="icon">🥞</span>
+                <span class="count">${pancakes}</span>
+              </div>
+              <div class="kitchen-stat other ${other === 0 ? 'zero' : ''}">
+                <span class="icon">🍽️</span>
+                <span class="count">${other}</span>
+              </div>
+            </div>
+            
+            <div class="active-section">
+              <div class="section-label">🍳 U pripremi</div>
+              <div class="active-orders-list">
+                ${locActive.length === 0 ? `
+                  <div class="empty-state">
+                    <div class="icon">😴</div>
+                    <p>Kuhinja prazna</p>
+                  </div>
+                ` : locActive.map(o => renderActiveCard(o)).join('')}
+              </div>
+            </div>
+            
+            <div class="new-section">
+              <div class="section-label">🆕 Nove Wolt narudžbe</div>
+              <div class="new-orders-list">
+                ${locNew.length === 0 ? `
+                  <div class="empty-state">
+                    <div class="icon">✨</div>
+                    <p>Nema novih</p>
+                  </div>
+                ` : locNew.map(o => renderNewCard(o)).join('')}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderActiveCard(order) {
+      const items = order.items || [];
+      const provider = (order.provider || 'ebar').toLowerCase();
+      
+      return `
+        <div class="active-card">
+          <div class="active-card-header">
+            <span class="active-order-number">#${order.order_no}</span>
+            <span class="active-order-provider ${provider}">${provider}</span>
+          </div>
+          <div class="active-items">
+            ${items.map(i => `<span class="active-item"><span class="qty">${i.quantity}×</span> ${i.name}</span>`).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderNewCard(order) {
+      const items = order.items || [];
+      const total = items.reduce((s, i) => s + (parseFloat(i.price) || 0) * (parseInt(i.quantity) || 1), 0);
+      const createdAt = new Date(order.created_at);
+      const waitMin = Math.floor((Date.now() - createdAt) / 60000);
+      const time = createdAt.toLocaleTimeString('sr-RS', { hour: '2-digit', minute: '2-digit' });
+
+      return `
+        <div class="new-card" data-order-id="${order.order_id}">
+          <div class="new-card-header">
+            <div class="new-order-info">
+              <span class="new-order-number">#${order.order_no}</span>
+              <span class="new-order-time">${time}</span>
+            </div>
+            <div class="waiting-badge ${waitMin >= 5 ? 'urgent' : ''}" data-created="${order.created_at}">
+              ⏳ <span class="wt">${waitMin}</span>m
+            </div>
+          </div>
+          
+          <div class="new-items">
+            ${items.map(i => {
+              const cat = categorizeItem(i.name);
+              return `<span class="new-item ${cat}"><span class="qty">${i.quantity}×</span>${i.name}</span>`;
+            }).join('')}
+          </div>
+          
+          <div class="new-order-footer">
+            <span class="new-order-total">💰 ${total.toLocaleString('sr-RS')} RSD</span>
+            <div class="time-buttons">
+              <button class="time-btn btn-5" onclick="acceptOrder(${order.order_id}, 5, this)">5</button>
+              <button class="time-btn btn-10" onclick="acceptOrder(${order.order_id}, 10, this)">10</button>
+              <button class="time-btn btn-15" onclick="acceptOrder(${order.order_id}, 15, this)">15</button>
+              <button class="time-btn btn-20" onclick="acceptOrder(${order.order_id}, 20, this)">20</button>
+              <button class="time-btn btn-25" onclick="acceptOrder(${order.order_id}, 25, this)">25</button>
+              <button class="time-btn btn-30" onclick="acceptOrder(${order.order_id}, 30, this)">30</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // ============================================
+    // Actions
+    // ============================================
+    async function acceptOrder(orderId, prepTime, btn) {
+      const card = btn.closest('.new-card');
+      card.classList.add('processing');
+      btn.classList.add('loading');
+
+      try {
+        // TODO: Call Edge Function
+        await new Promise(r => setTimeout(r, 1000));
+        showToast(`#${orderId} → ${prepTime} min`, 'success');
+        card.style.transform = 'scale(0.9)';
+        card.style.opacity = '0';
+        setTimeout(() => loadOrders(), 300);
+      } catch (e) {
+        showToast(`Greška`, 'error');
+        card.classList.remove('processing');
+        btn.classList.remove('loading');
+      }
+    }
+
+    function updateWaitingTimes() {
+      document.querySelectorAll('.waiting-badge[data-created]').forEach(badge => {
+        const mins = Math.floor((Date.now() - new Date(badge.dataset.created)) / 60000);
+        const span = badge.querySelector('.wt');
+        if (span) span.textContent = mins;
+        badge.classList.toggle('urgent', mins >= 5);
+      });
+    }
+
+    // ============================================
+    // Init
+    // ============================================
+    async function loadOrders() {
+      allOrders = await fetchOrders();
+      renderColumns(allOrders);
+    }
+
+    async function init() {
+      await fetchLocations();
+      await loadOrders();
+      
+      supabaseClient
+        .channel('dispatch-v4')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'emeni_orders' }, () => loadOrders())
+        .subscribe();
+      
+      setInterval(loadOrders, 10000);
+      setInterval(updateWaitingTimes, 1000);
+    }
+
+    init();
+  </script>
+</body>
+</html>
