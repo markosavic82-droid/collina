@@ -758,16 +758,25 @@
       }
 
       const orderIds = orders.map(o => o.order_id).filter(Boolean);
+      const chunkSize = 100;
       
-      // Fetch order items
-      const { data: items } = await supabaseClient
-        .from('emeni_order_items')
-        .select('*')
-        .in('order_id', orderIds);
+      // Fetch order items - need to chunk if too many orders
+      let items = [];
+      for (let i = 0; i < orderIds.length; i += chunkSize) {
+        const chunk = orderIds.slice(i, i + chunkSize);
+        const { data: chunkData } = await supabaseClient
+          .from('emeni_order_items')
+          .select('*')
+          .in('order_id', chunk);
+        if (chunkData) {
+          items = items.concat(chunkData);
+        }
+      }
+      
+      console.log('📦 Items count:', items?.length || 0);
 
       // Fetch lifecycle events in chunks
       let lifecycle = [];
-      const chunkSize = 100;
       for (let i = 0; i < orderIds.length; i += chunkSize) {
         const chunk = orderIds.slice(i, i + chunkSize);
         const { data: chunkData } = await supabaseClient
@@ -1031,6 +1040,37 @@
       card.classList.add('processing');
       btn.classList.add('loading');
 
+      // FIRST: Save prep_time_given to database (before API call)
+      try {
+        const { data: existingLifecycle } = await supabaseClient
+          .from('emeni_order_lifecycle')
+          .select('*')
+          .eq('order_id', orderId)
+          .eq('status', 3)
+          .single();
+        
+        if (existingLifecycle) {
+          await supabaseClient
+            .from('emeni_order_lifecycle')
+            .update({ prep_time_given: prepTime })
+            .eq('id', existingLifecycle.id);
+        } else {
+          await supabaseClient
+            .from('emeni_order_lifecycle')
+            .insert({
+              order_id: orderId,
+              status: 3,
+              event_type: 'dispatch.accepted',
+              timestamp: new Date().toISOString(),
+              prep_time_given: prepTime
+            });
+        }
+        console.log('✅ Saved prep_time_given to database:', prepTime);
+      } catch (dbError) {
+        console.error('❌ DB Error:', dbError);
+      }
+
+      // THEN: Try to call eMeni API
       try {
         const payload = {
           orderID: orderId,
@@ -1051,44 +1091,23 @@
         const result = await response.json();
         console.log('📥 Edge Function response:', result);
         
-        if (!result.success) {
-          throw new Error(result.error || 'API call failed');
-        }
-        
-        // Update lifecycle in our database
-        const { data: existingLifecycle } = await supabaseClient
-          .from('emeni_order_lifecycle')
-          .select('*')
-          .eq('order_id', orderId)
-          .eq('status', 3)
-          .single();
-        
-        if (existingLifecycle) {
-          await supabaseClient
-            .from('emeni_order_lifecycle')
-            .update({ prep_time_given: prepTime })
-            .eq('id', existingLifecycle.id);
+        if (result.success) {
+          showToast(`#${orderId} → ${prepTime} min ✓`, 'success');
         } else {
-          await supabaseClient
-            .from('emeni_order_lifecycle')
-            .insert({
-              order_id: orderId,
-              status: 3,
-              event_type: 'order.statusChanged',
-              timestamp: new Date().toISOString(),
-              prep_time_given: prepTime
-            });
+          // API failed but we saved to DB - show warning
+          showToast(`#${orderId} → ${prepTime} min (API error)`, 'error');
+          console.warn('⚠️ API error but prep_time saved:', result.apiResponse);
         }
         
-        showToast(`#${orderId} → ${prepTime} min ✓`, 'success');
         card.style.transform = 'scale(0.9)';
         card.style.opacity = '0';
         setTimeout(() => loadOrders(), 300);
       } catch (e) {
         console.error('❌ Error:', e);
-        showToast(`Greška: ${e.message}`, 'error');
-        card.classList.remove('processing');
-        btn.classList.remove('loading');
+        showToast(`#${orderId} → ${prepTime} min (offline)`, 'error');
+        card.style.transform = 'scale(0.9)';
+        card.style.opacity = '0';
+        setTimeout(() => loadOrders(), 300);
       }
     }
 
