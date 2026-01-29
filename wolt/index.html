@@ -1001,7 +1001,7 @@
       const time = createdAt.toLocaleTimeString('sr-RS', { hour: '2-digit', minute: '2-digit' });
 
       return `
-        <div class="new-card" data-order-id="${order.order_id}">
+        <div class="new-card" data-order-id="${order.order_id}" data-company-id="${order.company_id}">
           <div class="new-card-header">
             <div class="new-order-info">
               <span class="new-order-number">#${order.order_no}</span>
@@ -1037,6 +1037,8 @@
     // ============================================
     async function acceptOrder(orderId, prepTime, btn) {
       const card = btn.closest('.new-card');
+      const locationId = card.dataset.companyId; // Izvlačimo iz data-company-id atributa
+      
       card.classList.add('processing');
       btn.classList.add('loading');
 
@@ -1074,7 +1076,8 @@
       try {
         const payload = {
           orderID: orderId,
-          preparationTime: prepTime
+          preparationTime: prepTime,
+          companyId: locationId  // Edge Function očekuje companyId
         };
         
         console.log('📤 Calling Edge Function with:', payload);
