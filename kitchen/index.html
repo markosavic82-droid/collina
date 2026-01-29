@@ -2,8 +2,8 @@
 <html lang="sr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Collina Kitchen Monitor</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Collina Kitchen Display v2</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
@@ -20,87 +20,374 @@
             color: #EAE4DA;
             height: 100vh;
             overflow: hidden;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        /* Tab Navigation */
-        .tab-nav {
+        /* ============================================
+           TOP HEADER BAR
+           ============================================ */
+        .header {
             display: flex;
-            gap: 4px;
-            padding: 12px 12px 0 12px;
+            align-items: center;
+            padding: 8px 12px;
             background: #1D1D1B;
+            gap: 8px;
         }
 
         .tab-btn {
-            padding: 10px 24px;
+            padding: 10px 20px;
             border: none;
-            background: #2a2a28;
-            color: #888;
+            background: #8B5CF6;
+            color: white;
             font-family: 'Montserrat', sans-serif;
             font-weight: 700;
-            font-size: 0.9rem;
-            border-radius: 4px 4px 0 0;
+            font-size: 0.85rem;
+            border-radius: 4px;
             cursor: pointer;
-            transition: all 0.2s;
         }
 
-        .tab-btn:hover {
+        .tab-btn.secondary {
+            background: #2a2a28;
+            color: #888;
+        }
+
+        .tab-btn.secondary:hover {
             background: #3a3a38;
             color: #EAE4DA;
         }
 
-        .tab-btn.active {
+        .view-toggle {
+            display: flex;
+            background: #2a2a28;
+            border-radius: 4px;
+            padding: 3px;
+            gap: 3px;
+            margin-left: auto;
+        }
+
+        .toggle-btn {
+            padding: 8px 16px;
+            border: none;
+            background: transparent;
+            color: #888;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 700;
+            font-size: 0.75rem;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .toggle-btn:hover {
+            background: #3a3a38;
+            color: #EAE4DA;
+        }
+
+        .toggle-btn.active {
             background: #8B5CF6;
             color: white;
         }
 
-        .tab-content {
-            display: none;
-            height: calc(100vh - 54px);
-            overflow: hidden;
-        }
-
-        .tab-content.active {
-            display: flex;
-        }
-
-        /* Estimates tab needs scrolling */
-        #tab-estimates {
-            overflow-y: auto;
-        }
-
+        /* ============================================
+           MAIN LAYOUT
+           ============================================ */
         .main-container {
             display: flex;
-            width: 100%;
-            padding: 12px;
+            height: calc(100vh - 52px);
+            padding: 0 12px 12px 12px;
             gap: 12px;
-            height: 100%;
         }
 
-        .estimates-container {
+        /* ============================================
+           KANBAN COLUMNS
+           ============================================ */
+        .columns-container {
+            flex: 1;
+            display: flex;
+            gap: 12px;
+            min-width: 0;
+        }
+
+        .kanban-column {
+            flex: 1;
             display: flex;
             flex-direction: column;
-            width: 100%;
-            padding: 20px;
-            gap: 20px;
-            min-height: min-content;
+            flex-wrap: wrap;
+            align-content: flex-start;
+            gap: 8px;
+            overflow: hidden;
+            min-width: 0;
         }
 
-        /* Right Sidebar */
+        .kanban-column.hidden {
+            display: none;
+        }
+
+        /* ============================================
+           ORDER CARDS
+           ============================================ */
+        .order-card {
+            width: 260px;
+            background: #2a2a28;
+            border-radius: 6px;
+            overflow: hidden;
+            border: 2px solid #3a3a38;
+            transition: transform 0.15s, box-shadow 0.15s;
+            user-select: none;
+        }
+
+        .order-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        /* Card type borders */
+        .order-card.burger {
+            border-left: 5px solid #808BC5;
+        }
+
+        .order-card.pancake {
+            border-left: 5px solid #ED773C;
+        }
+
+        .order-card.mixed {
+            border-left: 5px solid;
+            border-image: linear-gradient(to bottom, #808BC5 50%, #ED773C 50%) 1;
+        }
+
+        .order-card.other {
+            border-left: 5px solid #888;
+        }
+
+        .order-card.urgent {
+            background: #3d2a2a;
+        }
+
+        .order-card.urgent .card-wait {
+            background: #C63F3E;
+            color: white;
+        }
+
+        /* Spremno column cards - different background */
+        .column-spremno .order-card {
+            background: #2d2d2a;
+            border-color: #4a4a45;
+        }
+
+        .card-header {
+            padding: 8px 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-time {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 700;
+            font-size: 1rem;
+            color: #9ED6DF;
+        }
+
+        .card-wait {
+            padding: 3px 8px;
+            border-radius: 4px;
+            background: #3a3a38;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #888;
+        }
+
+        .card-body {
+            padding: 6px 10px 10px;
+        }
+
+        .card-items {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .card-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 6px;
+            padding: 6px 8px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        .card-item.burger-item {
+            background: rgba(128, 139, 197, 0.2);
+        }
+
+        .card-item.pancake-item {
+            background: rgba(237, 119, 60, 0.2);
+        }
+
+        .card-item.other-item {
+            background: rgba(136, 136, 136, 0.15);
+        }
+
+        .item-icon {
+            font-size: 1rem;
+            flex-shrink: 0;
+        }
+
+        .item-qty {
+            font-weight: 700;
+            color: #9ED6DF;
+            font-size: 0.95rem;
+            flex-shrink: 0;
+        }
+
+        .item-name {
+            flex: 1;
+            font-weight: 500;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        .item-note {
+            font-size: 0.8rem;
+            color: #FF6B6B;
+            padding: 6px 10px;
+            font-weight: 600;
+            background: rgba(255, 107, 107, 0.15);
+            border-left: 3px solid #FF6B6B;
+            border-radius: 0 4px 4px 0;
+            margin-top: 4px;
+        }
+
+        /* Modifiers - very visible */
+        .item-modifiers {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            margin-top: 4px;
+            padding-left: 28px;
+        }
+
+        .modifier-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 8px;
+            background: rgba(251, 191, 36, 0.2);
+            border-left: 3px solid #FBBF24;
+            border-radius: 0 4px 4px 0;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #FBBF24;
+        }
+
+        .modifier-tag::before {
+            content: '+';
+            font-weight: 700;
+        }
+
+        /* Order-level comment */
+        .order-comment {
+            padding: 8px 10px;
+            background: rgba(255, 107, 107, 0.2);
+            border-left: 4px solid #FF6B6B;
+            margin: 6px 0 0 0;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #FF6B6B;
+        }
+
+        .order-comment::before {
+            content: '📝 ';
+        }
+
+        .card-footer {
+            padding: 6px 10px;
+            background: #252523;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+        }
+
+        .card-order-no {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 700;
+            color: #EAE4DA;
+        }
+
+        .card-provider {
+            color: #666;
+            font-size: 0.75rem;
+        }
+
+        /* Action Buttons */
+        .card-action {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 0;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 700;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.15s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .card-action:active {
+            transform: scale(0.98);
+        }
+
+        .card-action.to-spremno {
+            background: #4a9e8e;
+            color: white;
+        }
+
+        .card-action.to-spremno:hover {
+            background: #3d8577;
+        }
+
+        .card-action.to-predato {
+            background: #8B5CF6;
+            color: white;
+        }
+
+        .card-action.to-predato:hover {
+            background: #7C3AED;
+        }
+
+        /* ============================================
+           RIGHT SIDEBAR
+           ============================================ */
         .sidebar {
+            width: 200px;
             display: flex;
             flex-direction: column;
             gap: 10px;
-            width: 200px;
             flex-shrink: 0;
+        }
+
+        .time-display {
+            background: #EAE4DA;
+            color: #1D1D1B;
+            padding: 14px;
+            border-radius: 6px;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 2rem;
+            font-weight: 800;
+            text-align: center;
         }
 
         .location-select {
             background: #2a2a28;
             border: 2px solid #3a3a38;
-            border-radius: 4px;
-            padding: 12px;
+            border-radius: 6px;
+            padding: 10px 12px;
             color: #EAE4DA;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             font-family: 'Inter', sans-serif;
             cursor: pointer;
             width: 100%;
@@ -111,83 +398,73 @@
             border-color: #8B5CF6;
         }
 
-        .overview-card {
-            padding: 14px;
-            border-radius: 4px;
+        /* Stat Cards */
+        .stat-card {
+            padding: 12px;
+            border-radius: 6px;
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
             color: white;
         }
 
-        .overview-card .icon { font-size: 1.6rem; }
-        .overview-card .count { 
-            font-family: 'Montserrat', sans-serif;
-            font-size: 1.8rem; 
-            font-weight: 800; 
-            line-height: 1; 
-        }
-        .overview-card .label { 
-            font-size: 0.7rem; 
-            opacity: 0.9; 
-            text-transform: uppercase; 
-            letter-spacing: 0.5px;
-            font-weight: 500;
+        .stat-card .icon {
+            font-size: 1.4rem;
         }
 
-        .overview-card.burgers { background: #808BC5; }
-        .overview-card.pancakes { background: #ED773C; }
-        .overview-card.urgent { background: #C63F3E; }
-
-        .eta-card {
-            padding: 12px;
-            border-radius: 4px;
+        .stat-card .info {
             display: flex;
             flex-direction: column;
-            align-items: center;
-            gap: 4px;
-            border: 3px solid;
-            background: #2a2a28;
-            text-align: center;
         }
 
-        .eta-card.burger-eta { border-color: #808BC5; }
-        .eta-card.burger-eta .eta-time { color: #9ED6DF; }
-        .eta-card.pancake-eta { border-color: #ED773C; }
-        .eta-card.pancake-eta .eta-time { color: #ED773C; }
-        .eta-card .icon { font-size: 1.4rem; }
-        .eta-card .eta-label { 
-            font-size: 0.65rem; 
-            opacity: 0.6; 
-            text-transform: uppercase; 
-            letter-spacing: 0.5px; 
-        }
-        .eta-card .eta-time { 
+        .stat-card .count {
             font-family: 'Montserrat', sans-serif;
-            font-size: 1.6rem; 
-            font-weight: 700; 
-            line-height: 1; 
+            font-size: 1.6rem;
+            font-weight: 800;
+            line-height: 1;
         }
-        .eta-card .eta-subtitle { font-size: 0.6rem; opacity: 0.5; }
+
+        .stat-card .label {
+            font-size: 0.7rem;
+            opacity: 0.9;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 2px;
+        }
+
+        .stat-card.burgers {
+            background: #808BC5;
+        }
+
+        .stat-card.pancakes {
+            background: #ED773C;
+        }
+
+        .stat-card.urgent {
+            background: #C63F3E;
+        }
 
         /* Items Summary */
         .items-summary {
             background: #2a2a28;
-            border-radius: 4px;
+            border-radius: 6px;
             border: 2px solid #3a3a38;
             overflow: hidden;
             flex: 1;
             display: flex;
             flex-direction: column;
-            min-height: 100px;
+            min-height: 150px;
         }
 
         .items-summary-header {
             background: #3a3a38;
             padding: 8px 12px;
-            font-weight: 700;
+            font-weight: 600;
             font-size: 0.8rem;
             color: #EAE4DA;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
 
         .items-summary-list {
@@ -196,7 +473,7 @@
             padding: 6px;
         }
 
-        .items-summary-item {
+        .summary-item {
             display: flex;
             align-items: center;
             gap: 8px;
@@ -206,1282 +483,351 @@
             font-size: 0.75rem;
         }
 
-        .items-summary-item.burger {
+        .summary-item.burger {
             background: rgba(128, 139, 197, 0.2);
             border-left: 3px solid #808BC5;
         }
 
-        .items-summary-item.pancake {
+        .summary-item.pancake {
             background: rgba(237, 119, 60, 0.2);
             border-left: 3px solid #ED773C;
         }
 
-        .items-summary-item.other {
+        .summary-item.other {
             background: rgba(136, 136, 136, 0.15);
             border-left: 3px solid #666;
         }
 
-        .items-summary-qty {
+        .summary-qty {
             font-weight: 700;
             color: #9ED6DF;
-            min-width: 28px;
-            font-size: 0.85rem;
+            min-width: 24px;
         }
 
-        .items-summary-name {
+        .summary-name {
             flex: 1;
-            color: #EAE4DA;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
 
-        .items-summary-empty {
-            color: #666;
-            text-align: center;
-            padding: 16px;
-            font-size: 0.75rem;
-        }
-
-        .time-display {
-            background: #EAE4DA;
-            color: #1D1D1B;
-            padding: 16px;
-            border-radius: 4px;
+        /* Predato Button */
+        .predato-btn {
+            padding: 12px;
+            border: 2px solid #3a3a38;
+            background: #2a2a28;
+            color: #EAE4DA;
             font-family: 'Montserrat', sans-serif;
-            font-size: 2.4rem;
-            font-weight: 800;
+            font-weight: 700;
+            font-size: 0.8rem;
+            border-radius: 6px;
+            cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
+            gap: 8px;
+            transition: all 0.2s;
         }
 
-        /* Orders Grid - Column-first flow */
-        .orders-grid {
-            flex: 1;
+        .predato-btn:hover {
+            background: #3a3a38;
+        }
+
+        .predato-btn .badge {
+            background: #8B5CF6;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.75rem;
+        }
+
+        /* ============================================
+           PREDATO SIDE PANEL
+           ============================================ */
+        .predato-panel {
+            position: fixed;
+            top: 0;
+            right: -400px;
+            width: 400px;
+            height: 100vh;
+            background: #252523;
+            border-left: 2px solid #3a3a38;
+            transition: right 0.3s ease;
+            z-index: 100;
             display: flex;
             flex-direction: column;
-            flex-wrap: wrap;
-            gap: 10px;
-            align-content: flex-start;
-            overflow: hidden;
-            height: 100%;
         }
 
-        .order-card {
-            border-radius: 4px;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            width: 240px;
-            background: #2a2a28;
-            border: 2px solid #3a3a38;
-            transition: transform 0.3s, opacity 0.3s;
+        .predato-panel.open {
+            right: 0;
         }
 
-        .order-card.new-order {
-            animation: slideIn 0.4s ease-out;
-        }
-
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        /* Burger orders - Lavender/Sky accent */
-        .order-card.burger {
-            border-left: 8px solid #808BC5;
-        }
-        .order-card.burger .order-header {
-            background: #2a2a28;
-            border-bottom: 2px solid #3a3a38;
-        }
-        .order-card.burger .order-time {
-            color: #9ED6DF;
+        .predato-header {
+            padding: 16px 20px;
+            background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
+            color: white;
+            font-family: 'Montserrat', sans-serif;
             font-weight: 700;
-        }
-
-        /* Pancake orders - Tangerine accent */
-        .order-card.pancake {
-            border-left: 8px solid #ED773C;
-        }
-        .order-card.pancake .order-header {
-            background: #2a2a28;
-            border-bottom: 2px solid #3a3a38;
-        }
-        .order-card.pancake .order-time {
-            color: #ED773C;
-            font-weight: 700;
-        }
-
-        /* Mixed orders - Split border */
-        .order-card.mixed {
-            border-left: 8px solid;
-            border-image: linear-gradient(to bottom, #808BC5 50%, #ED773C 50%) 1;
-        }
-        .order-card.mixed .order-header {
-            background: #2a2a28;
-            border-bottom: 2px solid #3a3a38;
-        }
-        .order-card.mixed .order-time {
-            color: #4a9e8e;
-            font-weight: 700;
-        }
-
-        /* Other orders */
-        .order-card.other {
-            border-left: 8px solid #888;
-        }
-        .order-card.other .order-time {
-            color: #888;
-            font-weight: 700;
-        }
-
-        .order-header {
-            padding: 8px 12px;
+            font-size: 1rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-family: 'Montserrat', sans-serif;
-            font-weight: 700;
+        }
+
+        .predato-close {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            cursor: pointer;
             font-size: 1.1rem;
         }
 
-        .order-time {
-            font-weight: 700;
+        .predato-close:hover {
+            background: rgba(255,255,255,0.3);
         }
 
-        .order-wait {
-            padding: 2px 8px;
-            border-radius: 2px;
-            background: #3a3a38;
-            font-size: 1rem;
-            color: #888;
-            font-weight: 600;
-        }
-
-        .order-card.urgent .order-wait {
-            background: #C63F3E;
-            color: #fff;
-        }
-
-        .order-content {
-            padding: 8px;
+        .predato-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            gap: 8px;
         }
 
-        .order-item {
-            padding: 6px 8px;
-            border-radius: 2px;
-            font-size: 0.9rem;
-            background: #333331;
+        .predato-card {
+            background: #2a2a28;
+            border-radius: 6px;
+            padding: 10px 12px;
+            border-left: 4px solid #8B5CF6;
         }
 
-        .order-item.burger-item {
-            border-left: 4px solid #808BC5;
-            background: rgba(128, 139, 197, 0.15);
-        }
-        
-        .order-item.pancake-item {
-            border-left: 4px solid #ED773C;
-            background: rgba(237, 119, 60, 0.15);
-        }
-
-        .order-item.other-item {
-            border-left: 4px solid #888;
-            background: rgba(136, 136, 136, 0.15);
-        }
-
-        .item-main {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .item-icon { font-size: 1rem; }
-        
-        .item-qty {
-            font-weight: 700;
-            color: #9ED6DF;
-            min-width: 24px;
-        }
-        
-        .item-name {
-            flex: 1;
-            font-weight: 500;
-            word-wrap: break-word;
-            overflow-wrap: break-word;
-        }
-
-        .item-mods {
-            font-size: 0.75rem;
-            color: #888;
-            padding-left: 32px;
-            margin-top: 2px;
-        }
-
-        .item-comment {
-            font-size: 0.75rem;
-            color: #C63F3E;
-            padding-left: 32px;
-            margin-top: 2px;
-            font-style: italic;
-        }
-
-        .order-footer {
-            padding: 8px 12px;
-            background: #252523;
+        .predato-card-header {
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            font-size: 0.85rem;
+            margin-bottom: 6px;
         }
 
-        .order-number {
+        .predato-card-time {
             font-family: 'Montserrat', sans-serif;
             font-weight: 700;
-            color: #EAE4DA;
+            color: #9ED6DF;
         }
 
-        .order-table {
+        .predato-card-no {
             color: #888;
             font-size: 0.8rem;
         }
 
+        .predato-card-items {
+            font-size: 0.8rem;
+            color: #aaa;
+        }
+
+        .panel-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0,0,0,0.5);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+            z-index: 99;
+        }
+
+        .panel-overlay.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* ============================================
+           EMPTY STATE
+           ============================================ */
         .empty-state {
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            height: 100%;
-            color: #666;
-            font-size: 1.2rem;
-            gap: 12px;
+            color: #555;
+            font-size: 0.9rem;
+            gap: 8px;
+            text-align: center;
+            padding: 30px;
+            width: 100%;
         }
 
         .empty-state .icon {
-            font-size: 4rem;
+            font-size: 2.5rem;
             opacity: 0.5;
+        }
+
+        .items-summary .empty-state {
+            padding: 20px 10px;
+            font-size: 0.75rem;
+        }
+
+        .items-summary .empty-state .icon {
+            font-size: 1.5rem;
         }
 
         /* ============================================
-           ESTIMATES TAB STYLES
+           RESPONSIVE
            ============================================ */
-        .estimates-container {
-            display: flex;
-            flex-direction: column;
-            width: 100%;
-            padding: 12px;
-            gap: 16px;
-            overflow-y: auto;
-        }
+        @media (max-width: 1100px) {
+            .sidebar {
+                width: 180px;
+            }
 
-        .estimates-header {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
+            .order-card {
+                width: 230px;
+            }
 
-        .date-input {
-            background: #2a2a28;
-            border: 2px solid #3a3a38;
-            border-radius: 4px;
-            padding: 10px 14px;
-            color: #EAE4DA;
-            font-family: 'Inter', sans-serif;
-            font-size: 0.9rem;
-        }
-
-        .date-input:focus {
-            outline: none;
-            border-color: #8B5CF6;
-        }
-
-        .btn-primary {
-            background: #8B5CF6;
-            border: none;
-            border-radius: 4px;
-            padding: 10px 20px;
-            color: white;
-            font-family: 'Montserrat', sans-serif;
-            font-weight: 700;
-            font-size: 0.9rem;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .btn-primary:hover {
-            background: #7C3AED;
-        }
-
-        .btn-primary:disabled {
-            background: #4a4a48;
-            cursor: not-allowed;
-        }
-
-        .estimates-stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 12px;
-        }
-
-        .stat-card {
-            background: #2a2a28;
-            border-radius: 8px;
-            padding: 20px;
-            border: 2px solid #3a3a38;
-        }
-
-        .stat-card.burger-stat {
-            border-left: 6px solid #808BC5;
-        }
-
-        .stat-card.pancake-stat {
-            border-left: 6px solid #ED773C;
-        }
-
-        .stat-card.other-stat {
-            border-left: 6px solid #888;
-        }
-
-        .stat-card.total-stat {
-            border-left: 6px solid #8B5CF6;
-        }
-
-        .stat-header {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 12px;
-        }
-
-        .stat-icon {
-            font-size: 1.8rem;
-        }
-
-        .stat-title {
-            font-family: 'Montserrat', sans-serif;
-            font-weight: 700;
-            font-size: 1rem;
-            color: #EAE4DA;
-        }
-
-        .stat-value {
-            font-family: 'Montserrat', sans-serif;
-            font-weight: 800;
-            font-size: 2.5rem;
-            color: #9ED6DF;
-            line-height: 1;
-        }
-
-        .stat-label {
-            font-size: 0.75rem;
-            color: #888;
-            margin-top: 4px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .stat-secondary {
-            margin-top: 12px;
-            padding-top: 12px;
-            border-top: 1px solid #3a3a38;
-        }
-
-        .stat-secondary-value {
-            font-family: 'Montserrat', sans-serif;
-            font-weight: 700;
-            font-size: 1.4rem;
-            color: #ED773C;
-        }
-
-        .estimates-table-container {
-            background: #2a2a28;
-            border-radius: 8px;
-            border: 2px solid #3a3a38;
-            overflow: hidden;
-            flex: 1;
-        }
-
-        .estimates-table-header {
-            background: #3a3a38;
-            padding: 12px 16px;
-            font-family: 'Montserrat', sans-serif;
-            font-weight: 700;
-            font-size: 0.9rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .estimates-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .estimates-table th,
-        .estimates-table td {
-            padding: 12px 16px;
-            text-align: left;
-            border-bottom: 1px solid #3a3a38;
-        }
-
-        .estimates-table th {
-            background: #333331;
-            font-weight: 600;
-            font-size: 0.8rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: #888;
-        }
-
-        .estimates-table td {
-            font-size: 0.9rem;
-        }
-
-        .estimates-table tbody tr:hover {
-            background: #333331;
-        }
-
-        .estimates-table-scroll {
-            max-height: 300px;
-            overflow-y: auto;
-        }
-
-        .prep-time-badge {
-            display: inline-block;
-            padding: 4px 10px;
-            border-radius: 4px;
-            font-weight: 600;
-            font-size: 0.85rem;
-        }
-
-        .prep-time-badge.fast {
-            background: rgba(74, 222, 128, 0.2);
-            color: #4ADE80;
-        }
-
-        .prep-time-badge.normal {
-            background: rgba(139, 92, 246, 0.2);
-            color: #A78BFA;
-        }
-
-        .prep-time-badge.slow {
-            background: rgba(251, 146, 60, 0.2);
-            color: #FB923C;
-        }
-
-        .prep-time-badge.very-slow {
-            background: rgba(239, 68, 68, 0.2);
-            color: #EF4444;
-        }
-
-        .loading-spinner {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 40px;
-            color: #888;
-        }
-
-        .loading-spinner::after {
-            content: '';
-            width: 32px;
-            height: 32px;
-            border: 3px solid #3a3a38;
-            border-top-color: #8B5CF6;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            margin-right: 12px;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        .location-filter {
-            background: #2a2a28;
-            border: 2px solid #3a3a38;
-            border-radius: 4px;
-            padding: 10px 14px;
-            color: #EAE4DA;
-            font-family: 'Inter', sans-serif;
-            font-size: 0.9rem;
-            min-width: 180px;
-        }
-
-        .location-filter:focus {
-            outline: none;
-            border-color: #8B5CF6;
-        }
-
-        .hourly-chart {
-            background: #2a2a28;
-            border-radius: 8px;
-            border: 2px solid #3a3a38;
-            padding: 16px;
-        }
-
-        .hourly-chart-title {
-            font-family: 'Montserrat', sans-serif;
-            font-weight: 700;
-            font-size: 0.9rem;
-            margin-bottom: 12px;
-        }
-
-        .hourly-bars {
-            display: flex;
-            align-items: flex-end;
-            gap: 4px;
-            height: 100px;
-        }
-
-        .hourly-bar {
-            flex: 1;
-            background: #8B5CF6;
-            border-radius: 2px 2px 0 0;
-            min-width: 20px;
-            position: relative;
-            transition: height 0.3s;
-        }
-
-        .hourly-bar:hover {
-            background: #A78BFA;
-        }
-
-        .hourly-bar .tooltip {
-            position: absolute;
-            bottom: 100%;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #1D1D1B;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 0.75rem;
-            white-space: nowrap;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.2s;
-        }
-
-        .hourly-bar:hover .tooltip {
-            opacity: 1;
-        }
-
-        .hourly-labels {
-            display: flex;
-            gap: 4px;
-            margin-top: 8px;
-        }
-
-        .hourly-label {
-            flex: 1;
-            text-align: center;
-            font-size: 0.7rem;
-            color: #666;
-        }
-
-        /* Concurrent Orders Section */
-        .concurrent-section {
-            background: #2a2a28;
-            border-radius: 8px;
-            border: 2px solid #3a3a38;
-            overflow: hidden;
-        }
-
-        .concurrent-header {
-            background: #3a3a38;
-            padding: 12px 16px;
-            font-family: 'Montserrat', sans-serif;
-            font-weight: 700;
-            font-size: 0.9rem;
-        }
-
-        .concurrent-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 12px;
-            padding: 16px;
-        }
-
-        @media (max-width: 1200px) {
-            .concurrent-grid {
-                grid-template-columns: repeat(2, 1fr);
+            .time-display {
+                font-size: 1.6rem;
             }
         }
 
-        @media (max-width: 600px) {
-            .concurrent-grid {
-                grid-template-columns: 1fr;
+        @media (max-width: 800px) {
+            .main-container {
+                flex-direction: column;
             }
-        }
 
-        .concurrent-card {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 16px;
-            border-radius: 8px;
-            background: #333331;
-        }
+            .sidebar {
+                width: 100%;
+                flex-direction: row;
+                flex-wrap: wrap;
+                order: -1;
+            }
 
-        .concurrent-card.burger-concurrent {
-            border-left: 4px solid #808BC5;
-        }
+            .time-display {
+                flex: 0;
+            }
 
-        .concurrent-card.pancake-concurrent {
-            border-left: 4px solid #ED773C;
-        }
+            .stat-card {
+                flex: 1;
+                min-width: 100px;
+            }
 
-        .concurrent-card.total-concurrent {
-            border-left: 4px solid #8B5CF6;
-        }
+            .items-summary {
+                display: none;
+            }
 
-        .concurrent-card.peak-concurrent {
-            border-left: 4px solid #EF4444;
-        }
+            .columns-container {
+                flex: 1;
+                overflow-y: auto;
+            }
 
-        .concurrent-icon {
-            font-size: 2rem;
-        }
+            .kanban-column {
+                flex-wrap: nowrap;
+                flex-direction: column;
+            }
 
-        .concurrent-value {
-            font-family: 'Montserrat', sans-serif;
-            font-weight: 800;
-            font-size: 2rem;
-            color: #9ED6DF;
-            line-height: 1;
-        }
-
-        .concurrent-label {
-            font-size: 0.75rem;
-            color: #888;
-            margin-top: 4px;
-        }
-
-        /* Time Slots Section */
-        .time-slots-section {
-            background: #2a2a28;
-            border-radius: 8px;
-            border: 2px solid #3a3a38;
-            overflow: hidden;
-        }
-
-        .time-slots-header {
-            background: #3a3a38;
-            padding: 12px 16px;
-            font-family: 'Montserrat', sans-serif;
-            font-weight: 700;
-            font-size: 0.9rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 12px;
-        }
-
-        .slot-legend {
-            display: flex;
-            gap: 16px;
-            font-size: 0.75rem;
-            font-weight: 400;
-        }
-
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            color: #888;
-        }
-
-        .legend-dot {
-            width: 12px;
-            height: 12px;
-            border-radius: 2px;
-        }
-
-        .legend-dot.fast { background: #4ADE80; }
-        .legend-dot.normal { background: #8B5CF6; }
-        .legend-dot.slow { background: #FB923C; }
-        .legend-dot.very-slow { background: #EF4444; }
-
-        .time-slots-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
-            gap: 6px;
-            padding: 12px;
-            max-height: 250px;
-            overflow-y: auto;
-        }
-
-        .time-slot {
-            background: #333331;
-            border-radius: 6px;
-            padding: 8px;
-            text-align: center;
-            transition: transform 0.2s;
-        }
-
-        .time-slot:hover {
-            transform: scale(1.02);
-        }
-
-        .time-slot.fast {
-            border: 2px solid #4ADE80;
-            background: rgba(74, 222, 128, 0.1);
-        }
-
-        .time-slot.normal {
-            border: 2px solid #8B5CF6;
-            background: rgba(139, 92, 246, 0.1);
-        }
-
-        .time-slot.slow {
-            border: 2px solid #FB923C;
-            background: rgba(251, 146, 60, 0.1);
-        }
-
-        .time-slot.very-slow {
-            border: 2px solid #EF4444;
-            background: rgba(239, 68, 68, 0.1);
-        }
-
-        .time-slot.no-data {
-            border: 2px solid #3a3a38;
-            opacity: 0.5;
-        }
-
-        .slot-range {
-            font-size: 0.7rem;
-            color: #888;
-            margin-bottom: 4px;
-        }
-
-        .slot-time {
-            font-family: 'Montserrat', sans-serif;
-            font-weight: 700;
-            font-size: 1.1rem;
-        }
-
-        .time-slot.fast .slot-time { color: #4ADE80; }
-        .time-slot.normal .slot-time { color: #A78BFA; }
-        .time-slot.slow .slot-time { color: #FB923C; }
-        .time-slot.very-slow .slot-time { color: #EF4444; }
-        .time-slot.no-data .slot-time { color: #666; }
-
-        .slot-orders {
-            font-size: 0.65rem;
-            color: #666;
-            margin-top: 4px;
-        }
-
-        .slot-items {
-            display: flex;
-            justify-content: center;
-            gap: 8px;
-            margin-top: 6px;
-            font-size: 0.7rem;
-        }
-
-        .slot-item {
-            display: flex;
-            align-items: center;
-            gap: 2px;
-        }
-
-        .slot-item.burger { color: #808BC5; }
-        .slot-item.pancake { color: #ED773C; }
-
-        /* Line Chart Section */
-        .line-chart-section {
-            background: #2a2a28;
-            border-radius: 8px;
-            border: 2px solid #3a3a38;
-            overflow: hidden;
-            position: relative;
-            min-height: 420px;
-        }
-
-        .line-chart-header {
-            background: #3a3a38;
-            padding: 12px 16px;
-            font-family: 'Montserrat', sans-serif;
-            font-weight: 700;
-            font-size: 0.9rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 12px;
-        }
-
-        .chart-legend {
-            display: flex;
-            gap: 16px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            flex-wrap: wrap;
-        }
-
-        .legend-line {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .legend-line.burger-line::before {
-            content: '';
-            width: 20px;
-            height: 3px;
-            background: #808BC5;
-            border-radius: 2px;
-        }
-
-        .legend-line.pancake-line::before {
-            content: '';
-            width: 20px;
-            height: 3px;
-            background: #ED773C;
-            border-radius: 2px;
-        }
-
-        .legend-line.avg-time-line::before {
-            content: '';
-            width: 20px;
-            height: 3px;
-            background: #4ADE80;
-            border-radius: 2px;
-        }
-
-        .legend-line.max-time-line::before {
-            content: '';
-            width: 20px;
-            height: 3px;
-            background: #EF4444;
-            border-radius: 2px;
-        }
-
-        .line-chart-container {
-            display: flex;
-            padding: 20px 20px 10px 10px;
-            gap: 10px;
-            height: 360px;
-        }
-
-        .chart-y-axis {
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            align-items: flex-end;
-            padding: 0 8px;
-            font-size: 0.7rem;
-            color: #666;
-            min-width: 30px;
-            height: 300px;
-        }
-
-        .chart-y-axis-right {
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            align-items: flex-start;
-            padding: 0 8px;
-            font-size: 0.7rem;
-            color: #4ADE80;
-            min-width: 40px;
-            height: 300px;
-        }
-
-        .chart-area {
-            flex: 1;
-            position: relative;
-            height: 100%;
-        }
-
-        #itemsLineChart {
-            background: #1D1D1B;
-            border-radius: 4px;
-            display: block;
-            width: 100%;
-            height: 300px;
-        }
-
-        .chart-x-axis {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0 0 0;
-            font-size: 0.65rem;
-            color: #666;
-        }
-
-        .chart-x-label {
-            text-align: center;
-            min-width: 30px;
-        }
-
-        .chart-tooltip {
-            position: absolute;
-            background: #1D1D1B;
-            border: 2px solid #8B5CF6;
-            border-radius: 6px;
-            padding: 10px 14px;
-            font-size: 0.8rem;
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 0.2s;
-            z-index: 100;
-            white-space: nowrap;
-        }
-
-        .chart-tooltip.visible {
-            opacity: 1;
-        }
-
-        .tooltip-time {
-            font-weight: 700;
-            color: #EAE4DA;
-            margin-bottom: 6px;
-        }
-
-        .tooltip-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-top: 4px;
-        }
-
-        .tooltip-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-        }
-
-        .tooltip-dot.burger { background: #808BC5; }
-        .tooltip-dot.pancake { background: #ED773C; }
-
-        .chart-grid-line {
-            stroke: #3a3a38;
-            stroke-width: 1;
-        }
-
-        .chart-line {
-            fill: none;
-            stroke-width: 2.5;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-        }
-
-        .chart-line.burger {
-            stroke: #808BC5;
-        }
-
-        .chart-line.pancake {
-            stroke: #ED773C;
-        }
-
-        .chart-line.avg-time {
-            stroke: #4ADE80;
-            stroke-dasharray: 5, 3;
-        }
-
-        .chart-line.max-time {
-            stroke: #EF4444;
-            stroke-dasharray: 2, 2;
-        }
-
-        .chart-area-fill {
-            opacity: 0.15;
-        }
-
-        .chart-area-fill.burger {
-            fill: #808BC5;
-        }
-
-        .chart-area-fill.pancake {
-            fill: #ED773C;
-        }
-
-        .chart-point {
-            cursor: pointer;
-            transition: r 0.2s;
-        }
-
-        .chart-point:hover {
-            r: 6;
-        }
-
-        .chart-point.burger {
-            fill: #808BC5;
-        }
-
-        .chart-point.pancake {
-            fill: #ED773C;
+            .order-card {
+                width: 100%;
+            }
         }
     </style>
 </head>
 <body>
-    <!-- Tab Navigation -->
-    <div class="tab-nav">
-        <button class="tab-btn active" data-tab="monitor">🍳 Kitchen Monitor</button>
-        <button class="tab-btn" data-tab="estimates">📊 Estimates</button>
-    </div>
+    <!-- Header -->
+    <header class="header">
+        <button class="tab-btn">🟢 Kitchen Monitor</button>
+        <button class="tab-btn secondary" id="predatoToggle">📋 Predato <span id="predatoCountHeader">0</span></button>
+        
+        <div class="view-toggle">
+            <button class="toggle-btn active" data-view="oba">OBA</button>
+            <button class="toggle-btn" data-view="priprema">PRIPREMA</button>
+            <button class="toggle-btn" data-view="spremno">SPREMNO</button>
+        </div>
+    </header>
 
-    <!-- Kitchen Monitor Tab -->
-    <div class="tab-content active" id="tab-monitor">
-        <div class="main-container">
-            <!-- Orders Grid -->
-            <div class="orders-grid" id="ordersGrid">
-                <div class="empty-state">
-                    <div class="icon">👨‍🍳</div>
-                    <div>Učitavanje...</div>
+    <!-- Main Layout -->
+    <div class="main-container">
+        <!-- Kanban Columns -->
+        <div class="columns-container">
+            <!-- U Pripremi Column -->
+            <div class="kanban-column column-priprema" id="columnPriprema">
+                <!-- Cards will be rendered here -->
+            </div>
+
+            <!-- Spremno Column -->
+            <div class="kanban-column column-spremno" id="columnSpremno">
+                <!-- Cards will be rendered here -->
+            </div>
+        </div>
+
+        <!-- Right Sidebar -->
+        <div class="sidebar">
+            <div class="time-display" id="currentTime">00:00</div>
+            
+            <select class="location-select" id="locationSelect">
+                <option value="">Sve lokacije</option>
+            </select>
+
+            <div class="stat-card burgers">
+                <div class="icon">🍔</div>
+                <div class="info">
+                    <div class="count" id="burgerCount">0</div>
+                    <div class="label">Burgera</div>
                 </div>
             </div>
 
-            <!-- Right Sidebar -->
-            <div class="sidebar">
-                <div class="time-display" id="currentTime">00:00</div>
-                
-                <select class="location-select" id="locationSelect">
-                    <!-- Locations will be loaded dynamically -->
-                </select>
+            <div class="stat-card pancakes">
+                <div class="icon">🥞</div>
+                <div class="info">
+                    <div class="count" id="pancakeCount">0</div>
+                    <div class="label">Palačinki</div>
+                </div>
+            </div>
 
-                <div class="overview-card burgers">
-                    <div class="icon">🍔</div>
-                    <div class="info">
-                        <div class="count" id="burgerCount">0</div>
-                        <div class="label">Burgera</div>
-                    </div>
+            <div class="stat-card urgent">
+                <div class="icon">⚠️</div>
+                <div class="info">
+                    <div class="count" id="urgentCount">0</div>
+                    <div class="label">Preko 20'</div>
                 </div>
-                <div class="overview-card pancakes">
-                    <div class="icon">🥞</div>
-                    <div class="info">
-                        <div class="count" id="pancakeCount">0</div>
-                        <div class="label">Palačinki</div>
-                    </div>
-                </div>
-                <div class="overview-card urgent">
-                    <div class="icon">⚠️</div>
-                    <div class="info">
-                        <div class="count" id="urgentCount">0</div>
-                        <div class="label">Preko 20'</div>
-                    </div>
-                </div>
+            </div>
 
-                <div class="eta-card burger-eta">
-                    <div class="icon">🍔</div>
-                    <div class="eta-label">Nova narudžbina</div>
-                    <div class="eta-time" id="burgerEta">~0 min</div>
-                    <div class="eta-subtitle">reci kuriru</div>
-                </div>
-                <div class="eta-card pancake-eta">
-                    <div class="icon">🥞</div>
-                    <div class="eta-label">Nova narudžbina</div>
-                    <div class="eta-time" id="pancakeEta">~0 min</div>
-                    <div class="eta-subtitle">reci kuriru</div>
-                </div>
-
-                <!-- Items to prepare summary -->
-                <div class="items-summary">
-                    <div class="items-summary-header">📋 Za pripremu</div>
-                    <div class="items-summary-list" id="itemsSummaryList">
-                        <!-- Items will be loaded dynamically -->
+            <div class="items-summary">
+                <div class="items-summary-header">📋 Za pripremu</div>
+                <div class="items-summary-list" id="itemsSummaryList">
+                    <div class="empty-state">
+                        <div class="icon">✅</div>
+                        <div>Nema stavki</div>
                     </div>
                 </div>
             </div>
+
+            <button class="predato-btn" id="predatoBtnSidebar">
+                📦 Predato danas
+                <span class="badge" id="predatoCount">0</span>
+            </button>
         </div>
     </div>
 
-    <!-- Estimates Tab -->
-    <div class="tab-content" id="tab-estimates">
-        <div class="estimates-container">
-            <div class="estimates-header">
-                <input type="date" class="date-input" id="startDate">
-                <span style="color: #666;">do</span>
-                <input type="date" class="date-input" id="endDate">
-                <select class="location-filter" id="estimatesLocation">
-                    <option value="">Sve lokacije</option>
-                </select>
-                <button class="btn-primary" id="loadEstimates">📊 Učitaj podatke</button>
-            </div>
-
-            <div class="estimates-stats" id="estimatesStats">
-                <div class="stat-card burger-stat">
-                    <div class="stat-header">
-                        <span class="stat-icon">🍔</span>
-                        <span class="stat-title">Burgeri</span>
-                    </div>
-                    <div class="stat-value" id="estBurgerCount">-</div>
-                    <div class="stat-label">ukupno naručeno</div>
-                    <div class="stat-secondary">
-                        <div class="stat-secondary-value" id="estBurgerAvgTime">-</div>
-                        <div class="stat-label">prosečno vreme pripreme</div>
-                    </div>
-                </div>
-
-                <div class="stat-card pancake-stat">
-                    <div class="stat-header">
-                        <span class="stat-icon">🥞</span>
-                        <span class="stat-title">Palačinke</span>
-                    </div>
-                    <div class="stat-value" id="estPancakeCount">-</div>
-                    <div class="stat-label">ukupno naručeno</div>
-                    <div class="stat-secondary">
-                        <div class="stat-secondary-value" id="estPancakeAvgTime">-</div>
-                        <div class="stat-label">prosečno vreme pripreme</div>
-                    </div>
-                </div>
-
-                <div class="stat-card other-stat">
-                    <div class="stat-header">
-                        <span class="stat-icon">🍽️</span>
-                        <span class="stat-title">Ostalo</span>
-                    </div>
-                    <div class="stat-value" id="estOtherCount">-</div>
-                    <div class="stat-label">ukupno naručeno</div>
-                    <div class="stat-secondary">
-                        <div class="stat-secondary-value" id="estOtherAvgTime">-</div>
-                        <div class="stat-label">prosečno vreme pripreme</div>
-                    </div>
-                </div>
-
-                <div class="stat-card total-stat">
-                    <div class="stat-header">
-                        <span class="stat-icon">📦</span>
-                        <span class="stat-title">Ukupno porudžbina</span>
-                    </div>
-                    <div class="stat-value" id="estTotalOrders">-</div>
-                    <div class="stat-label">u periodu</div>
-                    <div class="stat-secondary">
-                        <div class="stat-secondary-value" id="estAvgOrderTime">-</div>
-                        <div class="stat-label">prosečno po porudžbini</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Concurrent Orders Analysis -->
-            <div class="concurrent-section">
-                <div class="concurrent-header">⏱️ Istovremena priprema (prosečno)</div>
-                <div class="concurrent-grid" id="concurrentGrid">
-                    <div class="concurrent-card burger-concurrent">
-                        <div class="concurrent-icon">🍔</div>
-                        <div class="concurrent-info">
-                            <div class="concurrent-value" id="concurrentBurgers">-</div>
-                            <div class="concurrent-label">burgera u isto vreme</div>
-                        </div>
-                    </div>
-                    <div class="concurrent-card pancake-concurrent">
-                        <div class="concurrent-icon">🥞</div>
-                        <div class="concurrent-info">
-                            <div class="concurrent-value" id="concurrentPancakes">-</div>
-                            <div class="concurrent-label">palačinki u isto vreme</div>
-                        </div>
-                    </div>
-                    <div class="concurrent-card total-concurrent">
-                        <div class="concurrent-icon">📦</div>
-                        <div class="concurrent-info">
-                            <div class="concurrent-value" id="concurrentOrders">-</div>
-                            <div class="concurrent-label">porudžbina u isto vreme</div>
-                        </div>
-                    </div>
-                    <div class="concurrent-card peak-concurrent">
-                        <div class="concurrent-icon">🔥</div>
-                        <div class="concurrent-info">
-                            <div class="concurrent-value" id="peakConcurrent">-</div>
-                            <div class="concurrent-label">maksimalno istovremeno</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Concurrent Items Line Chart -->
-            <div class="line-chart-section">
-                <div class="line-chart-header">
-                    <span>📈 Primljene stavke po vremenu (5-min intervali)</span>
-                    <div class="chart-legend">
-                        <span class="legend-line burger-line">🍔 Burgeri</span>
-                        <span class="legend-line pancake-line">🥞 Palačinke</span>
-                        <span class="legend-line avg-time-line">⏱️ Prosečno vreme</span>
-                        <span class="legend-line max-time-line">🔴 Max vreme</span>
-                    </div>
-                </div>
-                <div class="line-chart-container">
-                    <div class="chart-y-axis" id="chartYAxis"></div>
-                    <div class="chart-area">
-                        <svg id="itemsLineChart" preserveAspectRatio="xMidYMid meet"></svg>
-                        <div class="chart-x-axis" id="chartXAxis"></div>
-                    </div>
-                    <div class="chart-y-axis-right" id="chartYAxisRight"></div>
-                </div>
-                <div class="chart-tooltip" id="chartTooltip"></div>
-            </div>
-
-            <!-- 5-Minute Slot Analysis -->
-            <div class="time-slots-section">
-                <div class="time-slots-header">
-                    <span>⏰ Prosečno vreme pripreme po slotovima (5 min)</span>
-                    <div class="slot-legend">
-                        <span class="legend-item"><span class="legend-dot fast"></span> &lt;10 min</span>
-                        <span class="legend-item"><span class="legend-dot normal"></span> 10-15 min</span>
-                        <span class="legend-item"><span class="legend-dot slow"></span> 15-20 min</span>
-                        <span class="legend-item"><span class="legend-dot very-slow"></span> &gt;20 min</span>
-                    </div>
-                </div>
-                <div class="time-slots-grid" id="timeSlotsGrid">
-                    <!-- Slots will be generated -->
-                </div>
-            </div>
-
-            <div class="hourly-chart">
-                <div class="hourly-chart-title">📈 Porudžbine po satu</div>
-                <div class="hourly-bars" id="hourlyBars">
-                    <!-- Bars will be generated -->
-                </div>
-                <div class="hourly-labels" id="hourlyLabels">
-                    <!-- Labels will be generated -->
-                </div>
-            </div>
-
-            <div class="estimates-table-container">
-                <div class="estimates-table-header">
-                    <span>📋 Detalji po danima</span>
-                    <span id="tableRowCount"></span>
-                </div>
-                <div class="estimates-table-scroll">
-                    <table class="estimates-table">
-                        <thead>
-                            <tr>
-                                <th>Datum</th>
-                                <th>🍔 Burgeri</th>
-                                <th>🥞 Palačinke</th>
-                                <th>🍽️ Ostalo</th>
-                                <th>Ukupno</th>
-                                <th>Prosečno vreme</th>
-                            </tr>
-                        </thead>
-                        <tbody id="estimatesTableBody">
-                            <tr>
-                                <td colspan="6" style="text-align: center; color: #666; padding: 40px;">
-                                    Izaberite period i kliknite "Učitaj podatke"
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+    <!-- Predato Side Panel -->
+    <div class="panel-overlay" id="panelOverlay"></div>
+    <aside class="predato-panel" id="predatoPanel">
+        <div class="predato-header">
+            <span>📦 Predato danas</span>
+            <button class="predato-close" id="predatoClose">✕</button>
+        </div>
+        <div class="predato-content" id="predatoContent">
+            <div class="empty-state">
+                <div class="icon">📦</div>
+                <div>Nema predatih porudžbina</div>
             </div>
         </div>
-    </div>
+    </aside>
 
     <script>
-        // Supabase config
+        // ============================================
+        // SUPABASE CONFIG
+        // ============================================
         const SUPABASE_URL = 'https://bbnbbbpofelbkyuffslj.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJibmJiYnBvZmVsYmt5dWZmc2xqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUwNTI0MzQsImV4cCI6MjA4MDYyODQzNH0.koW44soAB-bEfh8OzqjGBwdgov4Snscw1ITsg5OureU';
 
@@ -1492,87 +838,29 @@
                     'Authorization': `Bearer ${SUPABASE_KEY}`
                 }
             });
-            if (!res.ok) {
-                throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-            }
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
             return res.json();
         }
 
-        // State
+        // ============================================
+        // STATE
+        // ============================================
         let allOrders = [];
         let locations = {};
         let selectedLocation = '';
-        let estimatesOrders = []; // Store for resize redraw
+        let currentView = 'oba';
+        
+        // Local state for immediate UI feedback (before DB confirms)
+        let localSpremno = new Set();
 
-        // Status groups
-        const PRODUCTION_STATUSES = [3, 4];
-
-        // Keywords to identify item types
+        // ============================================
+        // CLASSIFICATION
+        // ============================================
         const BURGER_KEYWORDS = ['burger', 'smash', 'collina', 'chicken', 'wrap', 'big', 'double', 'baconator', 'vege', 'original', 'triple', 'nuggets', 'caesar'];
         const PANCAKE_KEYWORDS = ['palačink', 'palacink', 'nutella', 'eurokrem', 'plazma', 'krem', 'američka', 'americka'];
 
-        // ============================================
-        // Tab Navigation
-        // ============================================
-        document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-                
-                btn.classList.add('active');
-                document.getElementById(`tab-${btn.dataset.tab}`).classList.add('active');
-            });
-        });
-
-        // ============================================
-        // Time & Clock
-        // ============================================
-        function updateTime() {
-            const now = new Date();
-            document.getElementById('currentTime').textContent = 
-                now.toLocaleTimeString('sr-RS', { hour: '2-digit', minute: '2-digit' });
-        }
-        setInterval(updateTime, 1000);
-        updateTime();
-
-        // ============================================
-        // Load Locations
-        // ============================================
-        async function loadLocations() {
-            try {
-                const url = `${SUPABASE_URL}/rest/v1/emeni_locations?select=company_id,location_name&order=location_name`;
-                const data = await supabaseFetch(url);
-                
-                if (data && Array.isArray(data) && data.length > 0) {
-                    const select = document.getElementById('locationSelect');
-                    const estimatesSelect = document.getElementById('estimatesLocation');
-                    
-                    data.forEach((loc, index) => {
-                        locations[loc.company_id] = loc.location_name;
-                        
-                        const option = document.createElement('option');
-                        option.value = loc.company_id;
-                        option.textContent = loc.location_name;
-                        select.appendChild(option);
-                        
-                        const option2 = option.cloneNode(true);
-                        estimatesSelect.appendChild(option2);
-                    });
-                    
-                    selectedLocation = data[0].company_id;
-                    select.value = selectedLocation;
-                }
-            } catch (err) {
-                console.error('Error loading locations:', err);
-            }
-        }
-
-        // ============================================
-        // Classify Item Type
-        // ============================================
         function classifyItem(itemName) {
             const name = (itemName || '').toLowerCase();
-            
             for (const kw of BURGER_KEYWORDS) {
                 if (name.includes(kw)) return 'burger';
             }
@@ -1582,1032 +870,578 @@
             return 'other';
         }
 
-        // ============================================
-        // Classify Order Type
-        // ============================================
         function classifyOrder(items) {
-            let hasBurger = false;
-            let hasPancake = false;
-            
+            let hasBurger = false, hasPancake = false;
             for (const item of items) {
                 const type = classifyItem(item.name);
                 if (type === 'burger') hasBurger = true;
                 if (type === 'pancake') hasPancake = true;
             }
-            
             if (hasBurger && hasPancake) return 'mixed';
             if (hasBurger) return 'burger';
             if (hasPancake) return 'pancake';
             return 'other';
         }
 
-        // ============================================
-        // Calculate Wait Time
-        // ============================================
         function getWaitMinutes(createdAt) {
-            const created = new Date(createdAt);
-            const now = new Date();
-            return Math.floor((now - created) / 60000);
+            return Math.floor((new Date() - new Date(createdAt)) / 60000);
         }
 
         // ============================================
-        // Render Order Card
+        // TIME DISPLAY
         // ============================================
-        function renderOrderCard(order) {
-            // Items are in raw_payload.items
-            let items = order.raw_payload?.items || [];
-            if (items.length === 0 && order.raw_payload?.invalidOrderDetails?.items) {
-                items = order.raw_payload.invalidOrderDetails.items;
-            }
-            
-            const orderType = classifyOrder(items);
-            const waitMinutes = getWaitMinutes(order.created_at);
-            const isUrgent = waitMinutes >= 20;
-            const time = new Date(order.created_at).toLocaleTimeString('sr-RS', { hour: '2-digit', minute: '2-digit' });
-            
-            const total = items.reduce((sum, item) => sum + (parseFloat(item.price) * parseFloat(item.quantity)), 0);
-            
-            const itemsHtml = items.map(item => {
-                const itemType = classifyItem(item.name || '');
-                const icon = itemType === 'burger' ? '🍔' : itemType === 'pancake' ? '🥞' : '🍽️';
-                
-                let modsHtml = '';
-                if (item.modifiers && item.modifiers.length > 0) {
-                    const modNames = item.modifiers.map(m => {
-                        if (typeof m === 'string') return m;
-                        if (m.name) return m.name;
-                        if (m.value) return m.value;
-                        if (m.modifierName) return m.modifierName;
-                        return null;
-                    }).filter(Boolean);
-                    if (modNames.length > 0) {
-                        modsHtml = `<div class="item-mods">+ ${modNames.join(', ')}</div>`;
-                    }
-                }
-                
-                let commentHtml = '';
-                if (item.note) {
-                    commentHtml = `<div class="item-comment">${item.note}</div>`;
-                }
-                
-                return `
-                    <div class="order-item ${itemType}-item">
-                        <div class="item-main">
-                            <span class="item-icon">${icon}</span>
-                            <span class="item-qty">${item.quantity}×</span>
-                            <span class="item-name">${item.name || 'Item'}</span>
-                        </div>
-                        ${modsHtml}
-                        ${commentHtml}
-                    </div>
-                `;
-            }).join('');
-
-            let orderNoteHtml = '';
-            if (order.raw_payload?.note) {
-                orderNoteHtml = `
-                    <div class="order-item other-item">
-                        <div class="item-comment" style="padding-left: 8px;">📝 ${order.raw_payload.note}</div>
-                    </div>
-                `;
-            }
-
-            const provider = order.provider || '';
-            const tableRef = order.table_reference_id || provider;
-
-            return `
-                <div class="order-card ${orderType} ${isUrgent ? 'urgent' : ''}" data-order-id="${order.order_id}">
-                    <div class="order-header">
-                        <span class="order-time">${time}</span>
-                        <span class="order-wait">${waitMinutes}'</span>
-                    </div>
-                    <div class="order-content">
-                        ${itemsHtml || `<div class="order-item other-item"><div class="item-main"><span class="item-name">${total.toFixed(0)} RSD</span></div></div>`}
-                        ${orderNoteHtml}
-                    </div>
-                    <div class="order-footer">
-                        <span class="order-number">#${order.order_no}</span>
-                        <span class="order-table">${tableRef}</span>
-                    </div>
-                </div>
-            `;
+        function updateTime() {
+            document.getElementById('currentTime').textContent = 
+                new Date().toLocaleTimeString('sr-RS', { hour: '2-digit', minute: '2-digit' });
         }
+        setInterval(updateTime, 1000);
+        updateTime();
 
         // ============================================
-        // Update Stats
+        // LOAD LOCATIONS
         // ============================================
-        function updateStats(orders) {
-            let burgerCount = 0;
-            let pancakeCount = 0;
-            let urgentCount = 0;
-            
-            const itemsMap = {};
-
-            orders.forEach(order => {
-                // Items are in raw_payload.items
-                let items = order.raw_payload?.items || [];
-                if (items.length === 0 && order.raw_payload?.invalidOrderDetails?.items) {
-                    items = order.raw_payload.invalidOrderDetails.items;
-                }
+        async function loadLocations() {
+            try {
+                const url = `${SUPABASE_URL}/rest/v1/emeni_locations?select=company_id,location_name&order=location_name`;
+                const data = await supabaseFetch(url);
                 
-                const waitMinutes = getWaitMinutes(order.created_at);
-                
-                if (waitMinutes >= 20) urgentCount++;
-                
-                items.forEach(item => {
-                    const name = item.name || 'Unknown';
-                    const type = classifyItem(name);
-                    const qty = parseFloat(item.quantity) || 1;
-                    
-                    if (type === 'burger') burgerCount += qty;
-                    if (type === 'pancake') pancakeCount += qty;
-                    
-                    const key = name.trim();
-                    if (!itemsMap[key]) {
-                        itemsMap[key] = { name: key, qty: 0, type: type };
-                    }
-                    itemsMap[key].qty += qty;
+                const select = document.getElementById('locationSelect');
+                data.forEach(loc => {
+                    locations[loc.company_id] = loc.location_name;
+                    const option = document.createElement('option');
+                    option.value = loc.company_id;
+                    option.textContent = loc.location_name;
+                    select.appendChild(option);
                 });
-            });
-
-            document.getElementById('burgerCount').textContent = burgerCount;
-            document.getElementById('pancakeCount').textContent = pancakeCount;
-            document.getElementById('urgentCount').textContent = urgentCount;
-
-            const avgBurgerPrepTime = 5;
-            const avgPancakePrepTime = 4;
-            const burgerStations = 2;
-            const pancakeStations = 1;
-            
-            const burgerETA = Math.ceil((burgerCount / burgerStations) * avgBurgerPrepTime) + avgBurgerPrepTime;
-            const pancakeETA = Math.ceil((pancakeCount / pancakeStations) * avgPancakePrepTime) + avgPancakePrepTime;
-            
-            document.getElementById('burgerEta').textContent = `~${burgerETA || 5} min`;
-            document.getElementById('pancakeEta').textContent = `~${pancakeETA || 4} min`;
-            
-            renderItemsSummary(itemsMap);
+            } catch (err) {
+                console.error('Error loading locations:', err);
+            }
         }
+
+        // ============================================
+        // LOAD MODIFIERS MAP (wolt_products_map)
+        // ============================================
+        let modifiersMap = {}; // wolt_reference_id -> {name, price, isModifier}
         
-        // ============================================
-        // Render Items Summary
-        // ============================================
-        function renderItemsSummary(itemsMap) {
-            const list = document.getElementById('itemsSummaryList');
-            
-            const itemsArray = Object.values(itemsMap)
-                .sort((a, b) => b.qty - a.qty);
-            
-            if (itemsArray.length === 0) {
-                list.innerHTML = '<div class="items-summary-empty">Nema stavki</div>';
-                return;
+        async function loadModifiersMap() {
+            try {
+                const url = `${SUPABASE_URL}/rest/v1/wolt_products_map?select=wolt_reference_id,name,price,is_modifier`;
+                const data = await supabaseFetch(url);
+                
+                if (data && Array.isArray(data)) {
+                    data.forEach(item => {
+                        modifiersMap[item.wolt_reference_id] = {
+                            name: item.name,
+                            price: item.price,
+                            isModifier: item.is_modifier
+                        };
+                    });
+                    console.log(`✅ Loaded ${data.length} items from wolt_products_map`);
+                }
+            } catch (err) {
+                console.error('Error loading modifiers map:', err);
             }
-            
-            list.innerHTML = itemsArray.map(item => {
-                const qtyDisplay = Number.isInteger(item.qty) ? item.qty : item.qty.toFixed(2);
-                return `
-                    <div class="items-summary-item ${item.type}">
-                        <span class="items-summary-qty">${qtyDisplay}×</span>
-                        <span class="items-summary-name" title="${item.name}">${item.name}</span>
-                    </div>
-                `;
-            }).join('');
         }
 
         // ============================================
-        // Render Orders
-        // ============================================
-        function renderOrders() {
-            const grid = document.getElementById('ordersGrid');
-            
-            let filteredOrders = allOrders;
-            if (selectedLocation) {
-                filteredOrders = allOrders.filter(o => o.company_id == selectedLocation);
-            }
-
-            filteredOrders = filteredOrders.filter(o => PRODUCTION_STATUSES.includes(o.status));
-            
-            filteredOrders = filteredOrders.filter(o => {
-                const provider = (o.provider || '').toLowerCase();
-                const isEbar = provider === 'ebar';
-                const isGloriafood = provider === 'gloriafood';
-                const isPaid = o.is_paid === true || o.is_paid === 'true';
-                // Hide eBar and Gloriafood orders that are paid
-                if ((isEbar || isGloriafood) && isPaid) return false;
-                return true;
-            });
-
-            filteredOrders.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
-
-            if (filteredOrders.length === 0) {
-                grid.innerHTML = `
-                    <div class="empty-state">
-                        <div class="icon">✅</div>
-                        <div>Nema porudžbina u pripremi</div>
-                    </div>
-                `;
-            } else {
-                grid.innerHTML = filteredOrders.map(o => renderOrderCard(o)).join('');
-            }
-
-            updateStats(filteredOrders);
-        }
-
-        // ============================================
-        // Load Orders
+        // LOAD ORDERS
         // ============================================
         async function loadOrders() {
             try {
                 const twoHoursAgo = new Date();
                 twoHoursAgo.setHours(twoHoursAgo.getHours() - 2);
 
-                const url = `${SUPABASE_URL}/rest/v1/emeni_orders?select=*&created_at=gte.${encodeURIComponent(twoHoursAgo.toISOString())}&or=(status.eq.3,status.eq.4)&order=created_at.asc`;
+                const url = `${SUPABASE_URL}/rest/v1/emeni_orders?select=*&created_at=gte.${encodeURIComponent(twoHoursAgo.toISOString())}&or=(status.eq.3,status.eq.4,status.eq.5)&order=created_at.asc`;
                 
                 const data = await supabaseFetch(url);
-
                 if (data && Array.isArray(data)) {
                     allOrders = data;
-                    renderOrders();
-                } else {
-                    console.error('Error loading orders:', data);
+                    
+                    // Load lifecycle data for these orders
+                    if (allOrders.length > 0) {
+                        await loadLifecycleData(allOrders.map(o => o.order_id));
+                    }
+                    
+                    renderAll();
                 }
             } catch (err) {
                 console.error('Error loading orders:', err);
             }
         }
 
-        // ============================================
-        // Poll for Updates
-        // ============================================
-        function startPolling() {
-            setInterval(async () => {
-                await loadOrders();
-            }, 5000);
+        // Load lifecycle data to determine which column each order belongs to
+        let lifecycleMap = {}; // order_id -> { hasStatus5, hasStatus6, hasStatus7 }
+        
+        async function loadLifecycleData(orderIds) {
+            try {
+                const idsString = orderIds.join(',');
+                const url = `${SUPABASE_URL}/rest/v1/emeni_order_lifecycle?select=order_id,status,timestamp&order_id=in.(${idsString})&status=in.(5,6,7)&order=timestamp.desc`;
+                
+                const data = await supabaseFetch(url);
+                
+                lifecycleMap = {};
+                if (data && Array.isArray(data)) {
+                    data.forEach(event => {
+                        if (!lifecycleMap[event.order_id]) {
+                            lifecycleMap[event.order_id] = { hasStatus5: false, hasStatus6: false, hasStatus7: false };
+                        }
+                        if (event.status === 5) lifecycleMap[event.order_id].hasStatus5 = true;
+                        if (event.status === 6) lifecycleMap[event.order_id].hasStatus6 = true;
+                        if (event.status === 7) lifecycleMap[event.order_id].hasStatus7 = true;
+                    });
+                }
+            } catch (err) {
+                console.error('Error loading lifecycle:', err);
+            }
+        }
+
+        // Load all delivered orders for today (for Predato panel)
+        let predatoOrders = [];
+        
+        async function loadPredatoOrders() {
+            try {
+                // Get today's start
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                
+                // First get order_ids with status 6 or 7 from lifecycle today
+                const lifecycleUrl = `${SUPABASE_URL}/rest/v1/emeni_order_lifecycle?select=order_id,status,timestamp&timestamp=gte.${encodeURIComponent(today.toISOString())}&status=in.(6,7)&order=timestamp.desc`;
+                
+                const lifecycleData = await supabaseFetch(lifecycleUrl);
+                
+                if (!lifecycleData || lifecycleData.length === 0) {
+                    predatoOrders = [];
+                    return;
+                }
+                
+                // Get unique order_ids (keep first occurrence = most recent)
+                const seenIds = new Set();
+                const uniqueOrderIds = [];
+                lifecycleData.forEach(event => {
+                    if (!seenIds.has(event.order_id)) {
+                        seenIds.add(event.order_id);
+                        uniqueOrderIds.push(event.order_id);
+                    }
+                });
+                
+                // Fetch order details
+                const orderIdsString = uniqueOrderIds.join(',');
+                const ordersUrl = `${SUPABASE_URL}/rest/v1/emeni_orders?select=*&order_id=in.(${orderIdsString})`;
+                
+                const ordersData = await supabaseFetch(ordersUrl);
+                
+                if (ordersData && Array.isArray(ordersData)) {
+                    // Sort by the lifecycle timestamp (most recent first)
+                    const orderMap = {};
+                    ordersData.forEach(o => orderMap[o.order_id] = o);
+                    
+                    predatoOrders = uniqueOrderIds
+                        .map(id => orderMap[id])
+                        .filter(Boolean);
+                }
+            } catch (err) {
+                console.error('Error loading predato orders:', err);
+            }
         }
 
         // ============================================
-        // Location Filter
+        // RENDER ORDER CARD
+        // ============================================
+        function renderOrderCard(order, columnType) {
+            let items = order.raw_payload?.items || [];
+            if (items.length === 0 && order.raw_payload?.invalidOrderDetails?.items) {
+                items = order.raw_payload.invalidOrderDetails.items;
+            }
+
+            const orderType = classifyOrder(items);
+            const waitMinutes = getWaitMinutes(order.created_at);
+            const isUrgent = waitMinutes >= 20;
+            const time = new Date(order.created_at).toLocaleTimeString('sr-RS', { hour: '2-digit', minute: '2-digit' });
+
+            const itemsHtml = items.map(item => {
+                const itemType = classifyItem(item.name || '');
+                const icon = itemType === 'burger' ? '🍔' : itemType === 'pancake' ? '🥞' : '🍽️';
+                
+                // Get modifiers
+                let modifiersHtml = '';
+                if (item.modifiers && item.modifiers.length > 0) {
+                    const modTags = item.modifiers.map(m => {
+                        // Try to get modifier name from multiple sources
+                        let modName = null;
+                        
+                        // 1. Direct name from payload
+                        if (m.name && m.name.trim()) {
+                            modName = m.name;
+                        }
+                        // 2. Lookup in wolt_products_map by referenceID
+                        else {
+                            const refId = m.productReferenceID || m.referenceID || m.product_reference_id;
+                            if (refId && modifiersMap[refId]) {
+                                modName = modifiersMap[refId].name;
+                            }
+                        }
+                        // 3. Fallback - show price if available
+                        if (!modName && m.price) {
+                            modName = `${m.price} RSD`;
+                        }
+                        
+                        return modName;
+                    }).filter(Boolean);
+                    
+                    if (modTags.length > 0) {
+                        modifiersHtml = `
+                            <div class="item-modifiers">
+                                ${modTags.map(name => `<span class="modifier-tag">${name}</span>`).join('')}
+                            </div>
+                        `;
+                    }
+                }
+                
+                // Item-level note/comment
+                let itemNoteHtml = '';
+                if (item.note && item.note.trim()) {
+                    itemNoteHtml = `<div class="item-note">${item.note}</div>`;
+                }
+                if (item.comment && item.comment.trim()) {
+                    itemNoteHtml = `<div class="item-note">${item.comment}</div>`;
+                }
+                
+                return `
+                    <div class="card-item ${itemType}-item">
+                        <span class="item-icon">${icon}</span>
+                        <span class="item-qty">${item.quantity}×</span>
+                        <span class="item-name" title="${item.name || 'Item'}">${item.name || 'Item'}</span>
+                    </div>
+                    ${modifiersHtml}
+                    ${itemNoteHtml}
+                `;
+            }).join('');
+
+            // Order-level note/comment
+            let orderCommentHtml = '';
+            const orderNote = order.raw_payload?.note || order.raw_payload?.comment || order.raw_payload?.specialRequests;
+            if (orderNote && orderNote.trim()) {
+                orderCommentHtml = `<div class="order-comment">${orderNote}</div>`;
+            }
+
+            // Action button based on column
+            const actionBtn = columnType === 'priprema' 
+                ? `<button class="card-action to-spremno" onclick="event.stopPropagation(); moveToSpremno('${order.order_id}')">✅ SPREMNO</button>`
+                : `<button class="card-action to-predato" onclick="event.stopPropagation(); moveToPredato('${order.order_id}')">📦 PREDATO</button>`;
+
+            return `
+                <div class="order-card ${orderType} ${isUrgent ? 'urgent' : ''}" data-order-id="${order.order_id}">
+                    <div class="card-header">
+                        <span class="card-time">${time}</span>
+                        <span class="card-wait">${waitMinutes}'</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="card-items">
+                            ${itemsHtml || '<div class="card-item other-item"><span class="item-name">Bez stavki</span></div>'}
+                        </div>
+                        ${orderCommentHtml}
+                    </div>
+                    <div class="card-footer">
+                        <span class="card-order-no">#${order.order_no}</span>
+                        <span class="card-provider">${order.provider || ''}</span>
+                    </div>
+                    ${actionBtn}
+                </div>
+            `;
+        }
+
+        // ============================================
+        // RENDER PREDATO CARD
+        // ============================================
+        function renderPredatoCard(order) {
+            let items = order.raw_payload?.items || [];
+            const time = new Date(order.created_at).toLocaleTimeString('sr-RS', { hour: '2-digit', minute: '2-digit' });
+            const itemsSummary = items.map(i => `${i.quantity}× ${i.name}`).join(', ') || 'Bez stavki';
+
+            return `
+                <div class="predato-card">
+                    <div class="predato-card-header">
+                        <span class="predato-card-time">${time}</span>
+                        <span class="predato-card-no">#${order.order_no}</span>
+                    </div>
+                    <div class="predato-card-items">${itemsSummary}</div>
+                </div>
+            `;
+        }
+
+        // ============================================
+        // RENDER ITEMS SUMMARY
+        // ============================================
+        function renderItemsSummary(orders) {
+            const itemsMap = {};
+
+            orders.forEach(order => {
+                const items = order.raw_payload?.items || [];
+                items.forEach(item => {
+                    const name = item.name || 'Unknown';
+                    const type = classifyItem(name);
+                    const qty = parseFloat(item.quantity) || 1;
+                    
+                    if (!itemsMap[name]) {
+                        itemsMap[name] = { name, qty: 0, type };
+                    }
+                    itemsMap[name].qty += qty;
+                });
+            });
+
+            const list = document.getElementById('itemsSummaryList');
+            const itemsArray = Object.values(itemsMap).sort((a, b) => b.qty - a.qty);
+
+            if (itemsArray.length === 0) {
+                list.innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">✅</div>
+                        <div>Nema stavki</div>
+                    </div>
+                `;
+                return;
+            }
+
+            list.innerHTML = itemsArray.map(item => `
+                <div class="summary-item ${item.type}">
+                    <span class="summary-qty">${item.qty}×</span>
+                    <span class="summary-name" title="${item.name}">${item.name}</span>
+                </div>
+            `).join('');
+        }
+
+        // ============================================
+        // RENDER ALL
+        // ============================================
+        function renderAll() {
+            let filteredOrders = allOrders;
+            
+            if (selectedLocation) {
+                filteredOrders = filteredOrders.filter(o => o.company_id == selectedLocation);
+            }
+
+            // Filter paid eBar/Gloriafood
+            filteredOrders = filteredOrders.filter(o => {
+                const provider = (o.provider || '').toLowerCase();
+                const isPaid = o.is_paid === true || o.is_paid === 'true';
+                if ((provider === 'ebar' || provider === 'gloriafood') && isPaid) return false;
+                return true;
+            });
+
+            // Use lifecycle data to determine column
+            // Priprema: no status 5/6/7 in lifecycle (or only local state)
+            // Spremno: has status 5 but not 6/7
+            // Predato: has status 6 or 7
+            
+            const pripremaOrders = filteredOrders.filter(o => {
+                const lc = lifecycleMap[o.order_id];
+                // In priprema if: no lifecycle 5/6/7 AND not locally moved
+                const hasDeliveryStatus = lc && (lc.hasStatus5 || lc.hasStatus6 || lc.hasStatus7);
+                return !hasDeliveryStatus && !localSpremno.has(o.order_id);
+            });
+
+            const spremnoOrders = filteredOrders.filter(o => {
+                const lc = lifecycleMap[o.order_id];
+                // In spremno if: has status 5 (or locally moved) but not 6/7
+                const hasReady = (lc && lc.hasStatus5) || localSpremno.has(o.order_id);
+                const hasDelivered = lc && (lc.hasStatus6 || lc.hasStatus7);
+                return hasReady && !hasDelivered;
+            });
+
+            // Render columns
+            const pripremaEl = document.getElementById('columnPriprema');
+            const spremnoEl = document.getElementById('columnSpremno');
+
+            pripremaEl.innerHTML = pripremaOrders.length 
+                ? pripremaOrders.map(o => renderOrderCard(o, 'priprema')).join('')
+                : '<div class="empty-state"><div class="icon">✅</div><div>Sve spremljeno!</div></div>';
+
+            spremnoEl.innerHTML = spremnoOrders.length
+                ? spremnoOrders.map(o => renderOrderCard(o, 'spremno')).join('')
+                : '<div class="empty-state"><div class="icon">📦</div><div>Čeka se priprema</div></div>';
+
+            // Render predato from database
+            const predatoContent = document.getElementById('predatoContent');
+            
+            // Filter predato by location if selected
+            let filteredPredato = predatoOrders;
+            if (selectedLocation) {
+                filteredPredato = predatoOrders.filter(o => o.company_id == selectedLocation);
+            }
+            
+            predatoContent.innerHTML = filteredPredato.length
+                ? filteredPredato.map(o => renderPredatoCard(o)).join('')
+                : '<div class="empty-state"><div class="icon">📦</div><div>Nema predatih porudžbina danas</div></div>';
+
+            // Update counts
+            document.getElementById('predatoCount').textContent = filteredPredato.length;
+            document.getElementById('predatoCountHeader').textContent = filteredPredato.length;
+
+            // Update stats
+            updateStats([...pripremaOrders, ...spremnoOrders]);
+
+            // Render items summary (only priprema)
+            renderItemsSummary(pripremaOrders);
+        }
+
+        // ============================================
+        // UPDATE STATS
+        // ============================================
+        function updateStats(orders) {
+            let burgerCount = 0, pancakeCount = 0, urgentCount = 0;
+
+            orders.forEach(order => {
+                const items = order.raw_payload?.items || [];
+                const waitMinutes = getWaitMinutes(order.created_at);
+                if (waitMinutes >= 20) urgentCount++;
+
+                items.forEach(item => {
+                    const type = classifyItem(item.name || '');
+                    const qty = parseFloat(item.quantity) || 1;
+                    if (type === 'burger') burgerCount += qty;
+                    if (type === 'pancake') pancakeCount += qty;
+                });
+            });
+
+            document.getElementById('burgerCount').textContent = burgerCount;
+            document.getElementById('pancakeCount').textContent = pancakeCount;
+            document.getElementById('urgentCount').textContent = urgentCount;
+        }
+
+        // ============================================
+        // ACTIONS
+        // ============================================
+        
+        // Write lifecycle event to Supabase
+        async function writeLifecycleEvent(orderId, status, eventType) {
+            try {
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/emeni_order_lifecycle`, {
+                    method: 'POST',
+                    headers: {
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': `Bearer ${SUPABASE_KEY}`,
+                        'Content-Type': 'application/json',
+                        'Prefer': 'return=representation'
+                    },
+                    body: JSON.stringify({
+                        order_id: orderId,
+                        status: status,
+                        timestamp: new Date().toISOString(),
+                        event_type: eventType
+                    })
+                });
+                
+                if (!response.ok) {
+                    const error = await response.text();
+                    console.error('Lifecycle write failed:', error);
+                    return false;
+                }
+                
+                console.log(`✅ Lifecycle: order ${orderId} → status ${status} (${eventType})`);
+                return true;
+            } catch (err) {
+                console.error('Lifecycle write error:', err);
+                return false;
+            }
+        }
+
+        async function moveToSpremno(orderId) {
+            // Write status 5 (READY) to lifecycle
+            const success = await writeLifecycleEvent(orderId, 5, 'kds.spremno');
+            
+            if (success) {
+                // Immediate UI feedback
+                localSpremno.add(orderId);
+                renderAll();
+                
+                // Reload lifecycle to sync with DB
+                await loadLifecycleData(allOrders.map(o => o.order_id));
+                localSpremno.delete(orderId); // DB has it now
+                renderAll();
+            } else {
+                alert('Greška pri upisu! Pokušajte ponovo.');
+            }
+        }
+
+        async function moveToPredato(orderId) {
+            // Write status 6 (DELIVERY) to lifecycle
+            const success = await writeLifecycleEvent(orderId, 6, 'kds.predato');
+            
+            if (success) {
+                localSpremno.delete(orderId);
+                // Reload from database
+                await loadLifecycleData(allOrders.map(o => o.order_id));
+                await loadPredatoOrders();
+                renderAll();
+            } else {
+                alert('Greška pri upisu! Pokušajte ponovo.');
+            }
+        }
+
+        // ============================================
+        // VIEW TOGGLE
+        // ============================================
+        function setView(view) {
+            currentView = view;
+            
+            document.querySelectorAll('.toggle-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.view === view);
+            });
+
+            const priprema = document.getElementById('columnPriprema');
+            const spremno = document.getElementById('columnSpremno');
+
+            priprema.classList.remove('hidden');
+            spremno.classList.remove('hidden');
+
+            if (view === 'priprema') {
+                spremno.classList.add('hidden');
+            } else if (view === 'spremno') {
+                priprema.classList.add('hidden');
+            }
+        }
+
+        // ============================================
+        // PREDATO PANEL
+        // ============================================
+        function togglePredatoPanel(open) {
+            document.getElementById('predatoPanel').classList.toggle('open', open);
+            document.getElementById('panelOverlay').classList.toggle('visible', open);
+        }
+
+        // ============================================
+        // EVENT LISTENERS
         // ============================================
         document.getElementById('locationSelect').addEventListener('change', (e) => {
             selectedLocation = e.target.value;
-            renderOrders();
+            renderAll();
         });
 
-        // ============================================
-        // Update wait times every minute
-        // ============================================
-        setInterval(() => {
-            renderOrders();
-        }, 60000);
+        document.querySelectorAll('.toggle-btn').forEach(btn => {
+            btn.addEventListener('click', () => setView(btn.dataset.view));
+        });
+
+        document.getElementById('predatoToggle').addEventListener('click', () => togglePredatoPanel(true));
+        document.getElementById('predatoBtnSidebar').addEventListener('click', () => togglePredatoPanel(true));
+        document.getElementById('predatoClose').addEventListener('click', () => togglePredatoPanel(false));
+        document.getElementById('panelOverlay').addEventListener('click', () => togglePredatoPanel(false));
 
         // ============================================
-        // ESTIMATES TAB FUNCTIONALITY
+        // POLLING
         // ============================================
-        
-        // Set default dates (last 7 days)
-        const today = new Date();
-        const weekAgo = new Date(today);
-        weekAgo.setDate(weekAgo.getDate() - 7);
-        
-        document.getElementById('endDate').value = today.toISOString().split('T')[0];
-        document.getElementById('startDate').value = weekAgo.toISOString().split('T')[0];
-
-        // Load estimates button
-        document.getElementById('loadEstimates').addEventListener('click', loadEstimates);
-
-        async function loadEstimates() {
-            const startDate = document.getElementById('startDate').value;
-            const endDate = document.getElementById('endDate').value;
-            const locationFilter = document.getElementById('estimatesLocation').value;
-            
-            if (!startDate || !endDate) {
-                alert('Molimo izaberite period');
-                return;
-            }
-
-            const btn = document.getElementById('loadEstimates');
-            btn.disabled = true;
-            btn.textContent = '⏳ Učitavanje...';
-
-            try {
-                // Load ALL orders for the date range
-                let url = `${SUPABASE_URL}/rest/v1/emeni_orders?select=*&created_at=gte.${startDate}T00:00:00&created_at=lte.${endDate}T23:59:59&order=created_at.asc`;
-                
-                if (locationFilter) {
-                    url += `&company_id=eq.${locationFilter}`;
-                }
-
-                const orders = await supabaseFetch(url);
-                
-                if (!orders || !Array.isArray(orders)) {
-                    throw new Error('Invalid response');
-                }
-                
-                // Fetch lifecycle data to get accurate status timestamps
-                const orderIds = orders.map(o => o.order_id).filter(id => id);
-                let lifecycleMap = {};
-                
-                if (orderIds.length > 0) {
-                    // Fetch lifecycle events for status 3 and 5
-                    const lifecycleUrl = `${SUPABASE_URL}/rest/v1/emeni_order_lifecycle?select=order_id,status,timestamp&order_id=in.(${orderIds.join(',')})&status=in.(3,5)&order=timestamp.asc`;
-                    const lifecycleData = await supabaseFetch(lifecycleUrl);
-                    
-                    if (lifecycleData && Array.isArray(lifecycleData)) {
-                        // Group by order_id
-                        lifecycleData.forEach(event => {
-                            if (!lifecycleMap[event.order_id]) {
-                                lifecycleMap[event.order_id] = {};
-                            }
-                            // Store first occurrence of each status
-                            if (!lifecycleMap[event.order_id][event.status]) {
-                                lifecycleMap[event.order_id][event.status] = event.timestamp;
-                            }
-                        });
-                        console.log('Loaded lifecycle data for', Object.keys(lifecycleMap).length, 'orders');
-                    }
-                }
-                
-                // Attach lifecycle timestamps to orders
-                orders.forEach(order => {
-                    if (order.order_id && lifecycleMap[order.order_id]) {
-                        order.accepted_at_lifecycle = lifecycleMap[order.order_id][3]; // status 3 = accepted
-                        order.ready_at_lifecycle = lifecycleMap[order.order_id][5];    // status 5 = ready
-                    }
-                });
-                
-                // Count by status for debugging
-                const statusCounts = orders.reduce((acc, o) => {
-                    acc[o.status] = (acc[o.status] || 0) + 1;
-                    return acc;
-                }, {});
-                
-                console.log('Loaded ALL orders:', orders.length, 'by status:', statusCounts);
-                
-                // Debug: show sample items
-                if (orders.length > 0) {
-                    const sampleOrder = orders[0];
-                    let sampleItems = sampleOrder.raw_payload?.items || [];
-                    console.log('Sample order items:', sampleItems);
-                    console.log('Sample lifecycle:', sampleOrder.accepted_at_lifecycle, '->', sampleOrder.ready_at_lifecycle);
-                }
-
-                processEstimatesData(orders);
-                
-            } catch (err) {
-                console.error('Error loading estimates:', err);
-                alert('Greška pri učitavanju podataka: ' + err.message);
-            } finally {
-                btn.disabled = false;
-                btn.textContent = '📊 Učitaj podatke';
-            }
-        }
-
-        function processEstimatesData(orders) {
-            // Filter to valid statuses: 3=accepted, 4=production, 5=ready, 7=delivered
-            const validOrders = orders.filter(o => [3, 4, 5, 7].includes(o.status));
-            console.log('Valid orders (status 3,4,5,7):', validOrders.length, 'out of', orders.length);
-            
-            let totalBurgers = 0;
-            let totalPancakes = 0;
-            let totalOther = 0;
-            let totalPrepTime = 0;
-            let ordersWithPrepTime = 0;
-
-            const burgerTimes = [];
-            const pancakeTimes = [];
-            const otherTimes = [];
-            
-            const dailyStats = {};
-            const hourlyStats = {};
-            
-            // For concurrent analysis
-            const orderEvents = []; // {time, type: 'start'|'end', burgers, pancakes}
-            
-            // For 5-minute slot analysis
-            const timeSlotStats = {}; // key: "HH:MM" (5-min slots), value: {times: [], burgers: 0, pancakes: 0}
-            
-            // Initialize hourly stats (8am - 11pm)
-            for (let h = 8; h <= 23; h++) {
-                hourlyStats[h] = 0;
-            }
-            
-            // Initialize 5-minute slots (8:00 - 23:55)
-            for (let h = 8; h <= 23; h++) {
-                for (let m = 0; m < 60; m += 5) {
-                    const slotKey = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
-                    timeSlotStats[slotKey] = { times: [], burgers: 0, pancakes: 0, orders: 0 };
-                }
-            }
-            
-            // Debug: check first order structure
-            let debugCount = 0;
-
-            validOrders.forEach(order => {
-                // Items are ONLY in raw_payload.items (there's no items column)
-                let items = order.raw_payload?.items || [];
-                
-                const orderType = classifyOrder(items);
-                const created = new Date(order.created_at);
-                
-                // Skip if invalid date
-                if (isNaN(created.getTime())) return;
-                
-                const dateKey = created.toISOString().split('T')[0];
-                const hour = created.getHours();
-                
-                // Count items for this order
-                let orderBurgers = 0, orderPancakes = 0;
-                items.forEach(item => {
-                    const type = classifyItem(item.name || '');
-                    const qty = parseFloat(item.quantity) || parseFloat(item.count) || 1;
-                    if (type === 'burger') orderBurgers += qty;
-                    else if (type === 'pancake') orderPancakes += qty;
-                });
-                
-                // Debug first few orders with items
-                if (debugCount < 10 && orderBurgers > 0) {
-                    console.log(`Order with burgers:`, {
-                        id: order.id,
-                        created_at: order.created_at,
-                        status: order.status,
-                        burgers: orderBurgers,
-                        items: items.map(i => ({ name: i.name, qty: i.quantity || i.count }))
-                    });
-                    debugCount++;
-                }
-                
-                // Count hourly orders
-                if (hour >= 8 && hour <= 23) {
-                    hourlyStats[hour]++;
-                }
-                
-                // Try multiple possible time fields for prep time calculation
-                // Priority: lifecycle data > order fields
-                let acceptedTime = order.accepted_at_lifecycle || order.accepted_at || order.created_at;
-                let readyTime;
-                
-                // For completed/delivered orders (status 5, 7), use lifecycle ready time
-                // For in-progress orders (status 3, 4), use current time
-                if (order.status === 5 || order.status === 7) {
-                    readyTime = order.ready_at_lifecycle || order.modified_at;
-                } else {
-                    // In-progress order - use current time to show how long it's been waiting
-                    readyTime = new Date().toISOString();
-                }
-                
-                // Calculate prep time
-                let prepTime = 0;
-                if (readyTime && acceptedTime) {
-                    const acceptedDate = new Date(acceptedTime);
-                    const readyDate = new Date(readyTime);
-                    // Check for valid dates
-                    if (!isNaN(acceptedDate.getTime()) && !isNaN(readyDate.getTime())) {
-                        prepTime = Math.round((readyDate - acceptedDate) / 60000); // minutes
-                    }
-                }
-                
-                // Accept prep times up to 180 minutes (orders can wait long during rush)
-                // Only estimate if we have no valid time data
-                if (prepTime <= 0 || prepTime > 180) {
-                    // Estimate based on typical queue times during busy periods
-                    prepTime = 15 + (orderBurgers * 3) + (orderPancakes * 2);
-                }
-                
-                // Only use reasonable prep times for statistics (1-180 min)
-                // Exclude gloriafood orders from prep time stats (different workflow)
-                const isGloriafood = order.provider === 'gloriafood';
-                if (prepTime >= 1 && prepTime <= 180 && !isGloriafood) {
-                    totalPrepTime += prepTime;
-                    ordersWithPrepTime++;
-                    
-                    // Add to concurrent analysis - use created_at as start
-                    const startTime = new Date(order.created_at);
-                    const endTime = new Date(startTime.getTime() + prepTime * 60000);
-                    
-                    if (orderBurgers > 0 || orderPancakes > 0) {
-                        orderEvents.push({
-                            time: startTime.getTime(),
-                            type: 'start',
-                            burgers: orderBurgers,
-                            pancakes: orderPancakes
-                        });
-                        orderEvents.push({
-                            time: endTime.getTime(),
-                            type: 'end',
-                            burgers: orderBurgers,
-                            pancakes: orderPancakes
-                        });
-                    }
-                    
-                    // Add to 5-minute slot analysis
-                    const slotMinute = Math.floor(startTime.getMinutes() / 5) * 5;
-                    const slotHour = startTime.getHours();
-                    const slotKey = `${slotHour.toString().padStart(2, '0')}:${slotMinute.toString().padStart(2, '0')}`;
-                    if (timeSlotStats[slotKey]) {
-                        timeSlotStats[slotKey].times.push(prepTime);
-                        timeSlotStats[slotKey].burgers += orderBurgers;
-                        timeSlotStats[slotKey].pancakes += orderPancakes;
-                        timeSlotStats[slotKey].orders++;
-                    }
-                    
-                    if (orderType === 'burger' || orderType === 'mixed') {
-                        burgerTimes.push(prepTime);
-                    }
-                    if (orderType === 'pancake' || orderType === 'mixed') {
-                        pancakeTimes.push(prepTime);
-                    }
-                    if (orderType === 'other') {
-                        otherTimes.push(prepTime);
-                    }
-                }
-                
-                // Count items
-                let dayBurgers = 0, dayPancakes = 0, dayOther = 0;
-                
-                items.forEach(item => {
-                    const type = classifyItem(item.name || '');
-                    const qty = parseFloat(item.quantity) || parseFloat(item.count) || 1;
-                    
-                    if (type === 'burger') {
-                        totalBurgers += qty;
-                        dayBurgers += qty;
-                    } else if (type === 'pancake') {
-                        totalPancakes += qty;
-                        dayPancakes += qty;
-                    } else {
-                        totalOther += qty;
-                        dayOther += qty;
-                    }
-                });
-                
-                // Daily aggregation
-                if (!dailyStats[dateKey]) {
-                    dailyStats[dateKey] = {
-                        burgers: 0,
-                        pancakes: 0,
-                        other: 0,
-                        orders: 0,
-                        totalPrepTime: 0,
-                        prepTimeCount: 0
-                    };
-                }
-                
-                dailyStats[dateKey].burgers += dayBurgers;
-                dailyStats[dateKey].pancakes += dayPancakes;
-                dailyStats[dateKey].other += dayOther;
-                dailyStats[dateKey].orders++;
-                
-                if (prepTime >= 1 && prepTime <= 180) {
-                    dailyStats[dateKey].totalPrepTime += prepTime;
-                    dailyStats[dateKey].prepTimeCount++;
-                }
-            });
-            
-            console.log('Processing complete:', {
-                totalBurgers,
-                totalPancakes,
-                totalOther,
-                totalOrders: orders.length,
-                orderEvents: orderEvents.length,
-                ordersWithPrepTime,
-                avgPrepTime: ordersWithPrepTime > 0 ? (totalPrepTime / ordersWithPrepTime).toFixed(1) : 0
-            });
-            
-            // Debug: show prep time distribution
-            const allPrepTimes = [];
-            Object.values(dailyStats).forEach(day => {
-                if (day.prepTimeCount > 0) {
-                    allPrepTimes.push(day.totalPrepTime / day.prepTimeCount);
-                }
-            });
-            console.log('Prep time range:', {
-                min: Math.min(...allPrepTimes).toFixed(1),
-                max: Math.max(...allPrepTimes).toFixed(1),
-                samples: allPrepTimes.length
-            });
-
-            // Calculate concurrent stats
-            const concurrentStats = calculateConcurrentStats(orderEvents);
-
-            // Calculate averages
-            const avgBurgerTime = burgerTimes.length > 0 
-                ? Math.round(burgerTimes.reduce((a, b) => a + b, 0) / burgerTimes.length) 
-                : 0;
-            const avgPancakeTime = pancakeTimes.length > 0 
-                ? Math.round(pancakeTimes.reduce((a, b) => a + b, 0) / pancakeTimes.length) 
-                : 0;
-            const avgOtherTime = otherTimes.length > 0 
-                ? Math.round(otherTimes.reduce((a, b) => a + b, 0) / otherTimes.length) 
-                : 0;
-            const avgOrderTime = ordersWithPrepTime > 0 
-                ? Math.round(totalPrepTime / ordersWithPrepTime) 
-                : 0;
-
-            // Update UI
-            document.getElementById('estBurgerCount').textContent = totalBurgers.toLocaleString();
-            document.getElementById('estPancakeCount').textContent = totalPancakes.toLocaleString();
-            document.getElementById('estOtherCount').textContent = totalOther.toLocaleString();
-            document.getElementById('estTotalOrders').textContent = orders.length.toLocaleString();
-            
-            document.getElementById('estBurgerAvgTime').textContent = avgBurgerTime ? `~${avgBurgerTime} min` : '-';
-            document.getElementById('estPancakeAvgTime').textContent = avgPancakeTime ? `~${avgPancakeTime} min` : '-';
-            document.getElementById('estOtherAvgTime').textContent = avgOtherTime ? `~${avgOtherTime} min` : '-';
-            document.getElementById('estAvgOrderTime').textContent = avgOrderTime ? `~${avgOrderTime} min` : '-';
-
-            // Update concurrent stats
-            document.getElementById('concurrentBurgers').textContent = concurrentStats.avgBurgers.toFixed(1);
-            document.getElementById('concurrentPancakes').textContent = concurrentStats.avgPancakes.toFixed(1);
-            document.getElementById('concurrentOrders').textContent = concurrentStats.avgOrders.toFixed(1);
-            document.getElementById('peakConcurrent').textContent = concurrentStats.peakOrders;
-
-            // Render time slots
-            renderTimeSlots(timeSlotStats);
-            
-            // Render items line chart (concurrent items over time)
-            renderItemsLineChart(orders);
-
-            // Render hourly chart
-            renderHourlyChart(hourlyStats);
-            
-            // Render daily table
-            renderDailyTable(dailyStats);
-        }
-
-        function calculateConcurrentStats(events) {
-            if (events.length === 0) {
-                return { avgBurgers: 0, avgPancakes: 0, avgOrders: 0, peakOrders: 0 };
-            }
-
-            // Sort events by time
-            events.sort((a, b) => a.time - b.time);
-
-            let currentOrders = 0;
-            let currentBurgers = 0;
-            let currentPancakes = 0;
-            
-            let peakOrders = 0;
-            let totalWeightedOrders = 0;
-            let totalWeightedBurgers = 0;
-            let totalWeightedPancakes = 0;
-            let totalDuration = 0;
-            
-            let lastTime = events[0].time;
-
-            events.forEach(event => {
-                // Add weighted values for the time period since last event
-                const duration = event.time - lastTime;
-                if (duration > 0 && currentOrders > 0) {
-                    totalWeightedOrders += currentOrders * duration;
-                    totalWeightedBurgers += currentBurgers * duration;
-                    totalWeightedPancakes += currentPancakes * duration;
-                    totalDuration += duration;
-                }
-                
-                // Update current counts
-                if (event.type === 'start') {
-                    currentOrders++;
-                    currentBurgers += event.burgers;
-                    currentPancakes += event.pancakes;
-                    peakOrders = Math.max(peakOrders, currentOrders);
-                } else {
-                    currentOrders--;
-                    currentBurgers -= event.burgers;
-                    currentPancakes -= event.pancakes;
-                }
-                
-                lastTime = event.time;
-            });
-
-            return {
-                avgBurgers: totalDuration > 0 ? totalWeightedBurgers / totalDuration : 0,
-                avgPancakes: totalDuration > 0 ? totalWeightedPancakes / totalDuration : 0,
-                avgOrders: totalDuration > 0 ? totalWeightedOrders / totalDuration : 0,
-                peakOrders: peakOrders
-            };
-        }
-
-        function renderTimeSlots(timeSlotStats) {
-            const grid = document.getElementById('timeSlotsGrid');
-            
-            // Only show slots that have data or are in peak hours (10-22)
-            const slots = Object.entries(timeSlotStats)
-                .filter(([key, data]) => {
-                    const hour = parseInt(key.split(':')[0]);
-                    return hour >= 10 && hour <= 22;
-                });
-            
-            grid.innerHTML = slots.map(([slotKey, data]) => {
-                const avgTime = data.times.length > 0 
-                    ? Math.round(data.times.reduce((a, b) => a + b, 0) / data.times.length)
-                    : 0;
-                
-                const avgBurgers = data.orders > 0 ? (data.burgers / data.orders).toFixed(1) : 0;
-                const avgPancakes = data.orders > 0 ? (data.pancakes / data.orders).toFixed(1) : 0;
-                
-                let slotClass = 'no-data';
-                if (avgTime > 0) {
-                    if (avgTime < 10) slotClass = 'fast';
-                    else if (avgTime < 15) slotClass = 'normal';
-                    else if (avgTime < 20) slotClass = 'slow';
-                    else slotClass = 'very-slow';
-                }
-                
-                const [h, m] = slotKey.split(':');
-                const endMinute = (parseInt(m) + 5) % 60;
-                const endHour = endMinute === 0 ? parseInt(h) + 1 : parseInt(h);
-                const endSlot = `${endHour.toString().padStart(2, '0')}:${endMinute.toString().padStart(2, '0')}`;
-                
-                return `
-                    <div class="time-slot ${slotClass}">
-                        <div class="slot-range">${slotKey} - ${endSlot}</div>
-                        <div class="slot-time">${avgTime > 0 ? avgTime + ' min' : '-'}</div>
-                        <div class="slot-orders">${data.orders} por.</div>
-                        ${data.orders > 0 ? `
-                            <div class="slot-items">
-                                <span class="slot-item burger">🍔 ${avgBurgers}</span>
-                                <span class="slot-item pancake">🥞 ${avgPancakes}</span>
-                            </div>
-                        ` : ''}
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function renderItemsLineChart(orders) {
-            estimatesOrders = orders;
-            
-            // Filter valid orders (status 3=accepted, 4=production, 5=ready, 7=delivered)
-            const validOrders = orders.filter(o => 
-                [3, 4, 5, 7].includes(o.status) && o.created_at
-            );
-            
-            console.log('Chart: processing', validOrders.length, 'valid orders');
-            
-            // Create 5-minute slots from 11:00 to 23:55
-            const slots = [];
-            for (let h = 11; h <= 23; h++) {
-                for (let m = 0; m < 60; m += 5) {
-                    slots.push({ h, m, burgers: 0, pancakes: 0, prepTimes: [], orderCount: 0 });
-                }
-            }
-            
-            // Process each order
-            validOrders.forEach(order => {
-                // Start time = when order was accepted (started being prepared)
-                // Priority: lifecycle data > order fields
-                const startTimeStr = order.accepted_at_lifecycle || order.accepted_at || order.created_at;
-                const startTime = new Date(startTimeStr);
-                if (isNaN(startTime.getTime())) return;
-                
-                // End time = when order was ready
-                // Priority: lifecycle data > modified_at
-                let endTime;
-                if (order.status === 5 || order.status === 7) {
-                    const endTimeStr = order.ready_at_lifecycle || order.modified_at;
-                    endTime = new Date(endTimeStr);
-                } else {
-                    endTime = new Date(); // Still in progress (status 3, 4)
-                }
-                if (isNaN(endTime.getTime())) return;
-                
-                // Count items - use raw_payload.items
-                let items = [];
-                if (order.raw_payload?.items) {
-                    items = order.raw_payload.items;
-                }
-                
-                let burgers = 0, pancakes = 0;
-                items.forEach(item => {
-                    const type = classifyItem(item.name || '');
-                    const qty = parseFloat(item.quantity) || parseFloat(item.count) || 1;
-                    if (type === 'burger') burgers += qty;
-                    else if (type === 'pancake') pancakes += qty;
-                });
-                
-                if (burgers === 0 && pancakes === 0) return;
-                
-                const prepMins = (endTime - startTime) / 60000;
-                if (prepMins < 0 || prepMins > 300) return;
-                
-                // Convert to minutes from midnight
-                const startMins = startTime.getHours() * 60 + startTime.getMinutes();
-                const endMins = endTime.getHours() * 60 + endTime.getMinutes();
-                
-                // Add to ALL overlapping slots
-                slots.forEach(slot => {
-                    const slotStart = slot.h * 60 + slot.m;
-                    const slotEnd = slotStart + 5;
-                    
-                    // Order overlaps if: starts before slot ends AND ends after slot starts
-                    if (startMins < slotEnd && endMins >= slotStart) {
-                        slot.burgers += burgers;
-                        slot.pancakes += pancakes;
-                        slot.orderCount++;
-                        
-                        // Track prep time only where order STARTS (exclude gloriafood)
-                        if (startMins >= slotStart && startMins < slotEnd && order.provider !== 'gloriafood') {
-                            slot.prepTimes.push(prepMins);
-                        }
-                    }
-                });
-            });
-            
-            // Calculate prep time averages
-            slots.forEach(slot => {
-                slot.avgPrep = slot.prepTimes.length ? slot.prepTimes.reduce((a,b)=>a+b,0)/slot.prepTimes.length : 0;
-                slot.maxPrep = slot.prepTimes.length ? Math.max(...slot.prepTimes) : 0;
-            });
-            
-            // Debug
-            const maxSlot = slots.reduce((best, s) => s.burgers > best.burgers ? s : best, slots[0]);
-            console.log('Chart: Max burgers =', maxSlot.burgers, 'at', maxSlot.h + ':' + maxSlot.m);
-            
-            // Render
-            const svg = document.getElementById('itemsLineChart');
-            const yAxisEl = document.getElementById('chartYAxis');
-            const yAxisRightEl = document.getElementById('chartYAxisRight');
-            const xAxisEl = document.getElementById('chartXAxis');
-            const tooltip = document.getElementById('chartTooltip');
-            
-            const width = svg.clientWidth || svg.parentElement?.clientWidth || 800;
-            const height = 300;
-            svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
-            
-            const pad = { top: 20, right: 20, bottom: 10, left: 10 };
-            const cw = width - pad.left - pad.right;
-            const ch = height - pad.top - pad.bottom;
-            
-            const maxB = Math.max(...slots.map(s => s.burgers), 1);
-            const maxP = Math.max(...slots.map(s => s.pancakes), 1);
-            const yMax = Math.ceil(Math.max(maxB, maxP) / 10) * 10 || 10;
-            const maxT = Math.max(...slots.map(s => s.maxPrep), 1);
-            const yMaxT = Math.ceil(maxT / 30) * 30 || 60;
-            
-            // Y axis labels
-            yAxisEl.innerHTML = [0,1,2,3,4,5].map(i => `<span>${Math.round(yMax*(1-i/5))}</span>`).join('');
-            yAxisRightEl.innerHTML = [0,1,2,3,4,5].map(i => `<span>${Math.round(yMaxT*(1-i/5))}min</span>`).join('');
-            
-            // X axis
-            xAxisEl.innerHTML = [11,12,13,14,15,16,17,18,19,20,21,22,23].map(h => 
-                `<span class="chart-x-label">${h}:00</span>`).join('');
-            
-            // Helper functions
-            const getX = i => pad.left + (i / (slots.length - 1)) * cw;
-            const getY = (v, max) => pad.top + ch - (v / max) * ch;
-            
-            // Paths
-            const bPath = slots.map((s,i) => `${i?'L':'M'} ${getX(i)} ${getY(s.burgers,yMax)}`).join(' ');
-            const pPath = slots.map((s,i) => `${i?'L':'M'} ${getX(i)} ${getY(s.pancakes,yMax)}`).join(' ');
-            const aPath = slots.map((s,i) => `${i?'L':'M'} ${getX(i)} ${getY(s.avgPrep,yMaxT)}`).join(' ');
-            const mPath = slots.map((s,i) => `${i?'L':'M'} ${getX(i)} ${getY(s.maxPrep,yMaxT)}`).join(' ');
-            
-            const bArea = `${bPath} L ${getX(slots.length-1)} ${pad.top+ch} L ${getX(0)} ${pad.top+ch} Z`;
-            const pArea = `${pPath} L ${getX(slots.length-1)} ${pad.top+ch} L ${getX(0)} ${pad.top+ch} Z`;
-            
-            // Grid
-            let grid = '';
-            for (let i = 0; i <= 5; i++) {
-                const y = pad.top + (i/5) * ch;
-                grid += `<line class="chart-grid-line" x1="${pad.left}" y1="${y}" x2="${width-pad.right}" y2="${y}"/>`;
-            }
-            
-            svg.innerHTML = `${grid}
-                <path class="chart-area-fill burger" d="${bArea}"/>
-                <path class="chart-area-fill pancake" d="${pArea}"/>
-                <path class="chart-line burger" d="${bPath}"/>
-                <path class="chart-line pancake" d="${pPath}"/>
-                <path class="chart-line avg-time" d="${aPath}"/>
-                <path class="chart-line max-time" d="${mPath}"/>`;
-            
-            // Hover areas
-            const hw = cw / slots.length;
-            slots.forEach((slot, i) => {
-                const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-                rect.setAttribute('x', getX(i) - hw/2);
-                rect.setAttribute('y', pad.top);
-                rect.setAttribute('width', hw);
-                rect.setAttribute('height', ch);
-                rect.setAttribute('fill', 'transparent');
-                rect.style.cursor = 'crosshair';
-                
-                rect.addEventListener('mouseenter', () => {
-                    tooltip.innerHTML = `
-                        <div class="tooltip-time">${slot.h}:${slot.m.toString().padStart(2,'0')} (${slot.orderCount} por.)</div>
-                        <div class="tooltip-item"><span class="tooltip-dot burger"></span> Burgeri: <strong>${slot.burgers}</strong></div>
-                        <div class="tooltip-item"><span class="tooltip-dot pancake"></span> Palačinke: <strong>${slot.pancakes}</strong></div>
-                        ${slot.prepTimes.length ? `
-                        <div class="tooltip-item" style="margin-top:6px;padding-top:6px;border-top:1px solid #3a3a38;">
-                            Prosečno: <strong>${slot.avgPrep.toFixed(0)} min</strong> | Max: <strong>${slot.maxPrep.toFixed(0)} min</strong>
-                        </div>` : ''}`;
-                    tooltip.classList.add('visible');
-                });
-                
-                rect.addEventListener('mousemove', e => {
-                    const r = svg.parentElement.getBoundingClientRect();
-                    tooltip.style.left = (e.clientX - r.left + 15) + 'px';
-                    tooltip.style.top = (e.clientY - r.top - 30) + 'px';
-                });
-                
-                rect.addEventListener('mouseleave', () => tooltip.classList.remove('visible'));
-                svg.appendChild(rect);
-            });
-        }
-        function renderHourlyChart(hourlyStats) {
-            const barsContainer = document.getElementById('hourlyBars');
-            const labelsContainer = document.getElementById('hourlyLabels');
-            
-            const maxOrders = Math.max(...Object.values(hourlyStats), 1);
-            
-            let barsHtml = '';
-            let labelsHtml = '';
-            
-            for (let h = 8; h <= 23; h++) {
-                const count = hourlyStats[h] || 0;
-                const height = (count / maxOrders) * 100;
-                
-                barsHtml += `
-                    <div class="hourly-bar" style="height: ${Math.max(height, 2)}%">
-                        <div class="tooltip">${h}:00 - ${count} porudžbina</div>
-                    </div>
-                `;
-                
-                labelsHtml += `<div class="hourly-label">${h}</div>`;
-            }
-            
-            barsContainer.innerHTML = barsHtml;
-            labelsContainer.innerHTML = labelsHtml;
-        }
-
-        function renderDailyTable(dailyStats) {
-            const tbody = document.getElementById('estimatesTableBody');
-            const rowCount = document.getElementById('tableRowCount');
-            
-            const sortedDays = Object.keys(dailyStats).sort().reverse();
-            
-            if (sortedDays.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="6" style="text-align: center; color: #666; padding: 40px;">
-                            Nema podataka za izabrani period
-                        </td>
-                    </tr>
-                `;
-                rowCount.textContent = '';
-                return;
-            }
-            
-            rowCount.textContent = `${sortedDays.length} dana`;
-            
-            tbody.innerHTML = sortedDays.map(dateKey => {
-                const day = dailyStats[dateKey];
-                const avgTime = day.prepTimeCount > 0 
-                    ? Math.round(day.totalPrepTime / day.prepTimeCount) 
-                    : 0;
-                const total = day.burgers + day.pancakes + day.other;
-                
-                const timeBadgeClass = avgTime <= 10 ? 'fast' 
-                    : avgTime <= 20 ? 'normal' 
-                    : avgTime <= 30 ? 'slow' 
-                    : 'very-slow';
-                
-                const formattedDate = new Date(dateKey).toLocaleDateString('sr-RS', {
-                    weekday: 'short',
-                    day: 'numeric',
-                    month: 'short'
-                });
-                
-                return `
-                    <tr>
-                        <td><strong>${formattedDate}</strong></td>
-                        <td>${day.burgers}</td>
-                        <td>${day.pancakes}</td>
-                        <td>${day.other}</td>
-                        <td><strong>${total}</strong> (${day.orders} por.)</td>
-                        <td>
-                            ${avgTime ? `<span class="prep-time-badge ${timeBadgeClass}">${avgTime} min</span>` : '-'}
-                        </td>
-                    </tr>
-                `;
-            }).join('');
-        }
+        setInterval(async () => {
+            await loadOrders();
+            await loadPredatoOrders();
+        }, 5000);
 
         // ============================================
-        // Initialize
+        // INIT
         // ============================================
         async function init() {
             await loadLocations();
+            await loadModifiersMap();
+            await loadPredatoOrders();
             await loadOrders();
-            startPolling();
-            
-            // Redraw chart on window resize
-            let resizeTimeout;
-            window.addEventListener('resize', () => {
-                clearTimeout(resizeTimeout);
-                resizeTimeout = setTimeout(() => {
-                    if (estimatesOrders.length > 0) {
-                        renderItemsLineChart(estimatesOrders);
-                    }
-                }, 250);
-            });
         }
 
         init();
