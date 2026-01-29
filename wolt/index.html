@@ -771,23 +771,25 @@
     }
 
     // ============================================
-    // Load modifiers from database
+    // Load modifiers from database (wolt_products_map)
     // ============================================
     async function loadModifiers() {
       const { data, error } = await supabaseClient
-        .from('shop_modifiers')
-        .select('name, emeni_reference_id, emeni_product_id');
+        .from('wolt_products_map')
+        .select('wolt_reference_id, name, price, is_modifier');
       
       if (!error && data) {
-        data.forEach(mod => {
-          if (mod.emeni_reference_id) {
-            modifiersMap[mod.emeni_reference_id] = mod.name;
-          }
-          if (mod.emeni_product_id) {
-            modifiersMap[String(mod.emeni_product_id)] = mod.name;
-          }
+        data.forEach(item => {
+          // Map by wolt_reference_id (which is productReferenceID in order items)
+          modifiersMap[String(item.wolt_reference_id)] = {
+            name: item.name,
+            price: item.price,
+            isModifier: item.is_modifier
+          };
         });
-        console.log('📦 Loaded modifiers:', Object.keys(modifiersMap).length, 'items');
+        console.log('📦 Loaded modifiers from wolt_products_map:', Object.keys(modifiersMap).length, 'items');
+      } else if (error) {
+        console.error('❌ Error loading modifiers:', error);
       }
     }
 
@@ -801,9 +803,14 @@
       let modifierText = '';
       if (modifiers.length > 0) {
         const modNames = modifiers.map(m => {
-          // Try to find name by reference ID or product ID
-          const name = modifiersMap[m.productReferenceID] || modifiersMap[String(m.productID)];
-          return name || `+${m.price}`;
+          // Lookup by productReferenceID in wolt_products_map
+          const refId = String(m.productReferenceID);
+          const mapped = modifiersMap[refId];
+          if (mapped && mapped.name) {
+            return mapped.name;
+          }
+          // Fallback - show price
+          return `+${m.price}`;
         });
         modifierText = ` <span class="item-modifiers">(${modNames.join(', ')})</span>`;
       }
@@ -1135,8 +1142,14 @@
       let modifierText = '';
       if (modifiers.length > 0) {
         const modNames = modifiers.map(m => {
-          const name = modifiersMap[m.productReferenceID] || modifiersMap[String(m.productID)];
-          return name || `+${m.price}`;
+          // Lookup by productReferenceID in wolt_products_map
+          const refId = String(m.productReferenceID);
+          const mapped = modifiersMap[refId];
+          if (mapped && mapped.name) {
+            return mapped.name;
+          }
+          // Fallback - show price
+          return `+${m.price}`;
         });
         modifierText = ` <span class="item-modifiers">(${modNames.join(', ')})</span>`;
       }
