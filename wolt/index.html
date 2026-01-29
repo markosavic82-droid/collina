@@ -352,6 +352,39 @@
       font-weight: 600;
     }
 
+    /* Item row with modifiers */
+    .item-row {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .item-modifiers {
+      color: #888;
+      font-size: 10px;
+      font-weight: 400;
+    }
+
+    .item-note {
+      font-size: 10px;
+      color: #f59e0b;
+      background: rgba(245, 158, 11, 0.1);
+      padding: 3px 6px;
+      border-radius: 4px;
+      margin-top: 2px;
+      border-left: 2px solid #f59e0b;
+    }
+
+    .new-item-row {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .new-item-row .item-note {
+      margin-left: 6px;
+    }
+
     /* Prep timer */
     .prep-timer {
       font-size: 11px;
@@ -676,6 +709,7 @@
 
     let allOrders = [];
     let productCategoryMap = {};
+    let modifiersMap = {}; // emeni_reference_id -> name
 
     // ============================================
     // Utilities
@@ -737,25 +771,84 @@
     }
 
     // ============================================
+    // Load modifiers from database
+    // ============================================
+    async function loadModifiers() {
+      const { data, error } = await supabaseClient
+        .from('shop_modifiers')
+        .select('name, emeni_reference_id, emeni_product_id');
+      
+      if (!error && data) {
+        data.forEach(mod => {
+          if (mod.emeni_reference_id) {
+            modifiersMap[mod.emeni_reference_id] = mod.name;
+          }
+          if (mod.emeni_product_id) {
+            modifiersMap[String(mod.emeni_product_id)] = mod.name;
+          }
+        });
+        console.log('📦 Loaded modifiers:', Object.keys(modifiersMap).length, 'items');
+      }
+    }
+
+    // ============================================
+    // Render item with modifiers and note
+    // ============================================
+    function renderItemWithModifiers(item) {
+      const modifiers = item.modifiers || [];
+      const note = item.note;
+      
+      let modifierText = '';
+      if (modifiers.length > 0) {
+        const modNames = modifiers.map(m => {
+          // Try to find name by reference ID or product ID
+          const name = modifiersMap[m.productReferenceID] || modifiersMap[String(m.productID)];
+          return name || `+${m.price}`;
+        });
+        modifierText = ` <span class="item-modifiers">(${modNames.join(', ')})</span>`;
+      }
+      
+      let noteText = '';
+      if (note && note.trim()) {
+        noteText = `<div class="item-note">📝 ${note}</div>`;
+      }
+      
+      return `
+        <div class="item-row">
+          <span class="active-item"><span class="qty">${item.quantity}×</span> ${item.name}${modifierText}</span>
+          ${noteText}
+        </div>
+      `;
+    }
+
+    // ============================================
     // Data Fetching
     // ============================================
     async function fetchOrders() {
-      const startDate = new Date();
-      startDate.setHours(0, 0, 0, 0);
-      const endDate = new Date();
-      endDate.setHours(23, 59, 59, 999);
+      // Use Belgrade timezone (UTC+1 in winter, UTC+2 in summer)
+      const now = new Date();
+      const startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+      const endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
 
+      console.log('📅 Fetching orders from:', startDate.toISOString(), 'to:', endDate.toISOString());
+
+      // Only fetch active statuses (1=new, 3=accepted, 4=in_production, 5=ready)
+      // Skip completed (7) and cancelled orders to avoid 1000 row limit
       const { data: orders, error } = await supabaseClient
         .from('emeni_orders')
         .select('*')
         .gte('created_at', startDate.toISOString())
         .lte('created_at', endDate.toISOString())
-        .order('created_at', { ascending: true });
+        .in('status', [STATUS_NEW, STATUS_ACCEPTED, STATUS_IN_PRODUCTION, 5])
+        .order('created_at', { ascending: false });
 
       if (error) {
+        console.error('❌ Error fetching orders:', error);
         updateStatus(false);
         return [];
       }
+
+      console.log('📦 Orders count:', orders?.length || 0);
 
       const orderIds = orders.map(o => o.order_id).filter(Boolean);
       const chunkSize = 100;
@@ -838,6 +931,11 @@
       const container = document.getElementById('mainContainer');
       const activeOrders = orders.filter(o => o.status === STATUS_ACCEPTED || o.status === STATUS_IN_PRODUCTION);
       const newWoltOrders = orders.filter(o => o.status === STATUS_NEW && (o.provider || '').toLowerCase() === 'wolt');
+
+      console.log('🔥 Total orders:', orders.length);
+      console.log('🔥 Active orders (status 3 or 4):', activeOrders.length);
+      console.log('🔥 New Wolt orders (status 1):', newWoltOrders.length);
+      console.log('🔥 Sample order statuses:', orders.slice(0, 5).map(o => ({ order_no: o.order_no, status: o.status, provider: o.provider })));
 
       // Render big locations
       const bigLocationsHtml = BIG_LOCATIONS.map(loc => {
@@ -987,7 +1085,7 @@
             </div>
           </div>
           <div class="active-items">
-            ${items.map(i => `<span class="active-item"><span class="qty">${i.quantity}×</span> ${i.name}</span>`).join('')}
+            ${items.map(i => renderItemWithModifiers(i)).join('')}
           </div>
         </div>
       `;
@@ -1001,7 +1099,7 @@
       const time = createdAt.toLocaleTimeString('sr-RS', { hour: '2-digit', minute: '2-digit' });
 
       return `
-        <div class="new-card" data-order-id="${order.order_id}" data-company-id="${order.company_id}">
+        <div class="new-card" data-order-id="${order.order_id}">
           <div class="new-card-header">
             <div class="new-order-info">
               <span class="new-order-number">#${order.order_no}</span>
@@ -1012,22 +1110,46 @@
             </span>
           </div>
           <div class="new-items">
-            ${items.map(i => {
-              const cat = categorizeItem(i.name);
-              return `<span class="new-item ${cat}"><span class="qty">${i.quantity}×</span> ${i.name}</span>`;
-            }).join('')}
+            ${items.map(i => renderNewItemWithModifiers(i)).join('')}
           </div>
           <div class="new-card-footer">
             <span class="new-order-total">💰 ${Math.round(total).toLocaleString('sr-RS')} RSD</span>
             <div class="time-buttons">
-              <button class="time-btn" onclick="acceptOrder(${order.order_id}, 5, this)">5</button>
-              <button class="time-btn" onclick="acceptOrder(${order.order_id}, 10, this)">10</button>
-              <button class="time-btn" onclick="acceptOrder(${order.order_id}, 15, this)">15</button>
-              <button class="time-btn" onclick="acceptOrder(${order.order_id}, 20, this)">20</button>
-              <button class="time-btn" onclick="acceptOrder(${order.order_id}, 25, this)">25</button>
-              <button class="time-btn" onclick="acceptOrder(${order.order_id}, 30, this)">30</button>
+              <button class="time-btn" onclick="acceptOrder(${order.order_id}, 5, '${order.company_id}', this)">5</button>
+              <button class="time-btn" onclick="acceptOrder(${order.order_id}, 10, '${order.company_id}', this)">10</button>
+              <button class="time-btn" onclick="acceptOrder(${order.order_id}, 15, '${order.company_id}', this)">15</button>
+              <button class="time-btn" onclick="acceptOrder(${order.order_id}, 20, '${order.company_id}', this)">20</button>
+              <button class="time-btn" onclick="acceptOrder(${order.order_id}, 25, '${order.company_id}', this)">25</button>
+              <button class="time-btn" onclick="acceptOrder(${order.order_id}, 30, '${order.company_id}', this)">30</button>
             </div>
           </div>
+        </div>
+      `;
+    }
+    
+    function renderNewItemWithModifiers(item) {
+      const cat = categorizeItem(item.name);
+      const modifiers = item.modifiers || [];
+      const note = item.note;
+      
+      let modifierText = '';
+      if (modifiers.length > 0) {
+        const modNames = modifiers.map(m => {
+          const name = modifiersMap[m.productReferenceID] || modifiersMap[String(m.productID)];
+          return name || `+${m.price}`;
+        });
+        modifierText = ` <span class="item-modifiers">(${modNames.join(', ')})</span>`;
+      }
+      
+      let noteText = '';
+      if (note && note.trim()) {
+        noteText = `<div class="item-note">📝 ${note}</div>`;
+      }
+      
+      return `
+        <div class="new-item-row">
+          <span class="new-item ${cat}"><span class="qty">${item.quantity}×</span> ${item.name}${modifierText}</span>
+          ${noteText}
         </div>
       `;
     }
@@ -1035,10 +1157,8 @@
     // ============================================
     // Actions
     // ============================================
-    async function acceptOrder(orderId, prepTime, btn) {
+    async function acceptOrder(orderId, prepTime, companyId, btn) {
       const card = btn.closest('.new-card');
-      const locationId = card.dataset.companyId; // Izvlačimo iz data-company-id atributa
-      
       card.classList.add('processing');
       btn.classList.add('loading');
 
@@ -1077,7 +1197,7 @@
         const payload = {
           orderID: orderId,
           preparationTime: prepTime,
-          companyId: locationId  // Edge Function očekuje companyId
+          companyId: companyId
         };
         
         console.log('📤 Calling Edge Function with:', payload);
@@ -1138,6 +1258,7 @@
 
     async function init() {
       await loadProductCategories();
+      await loadModifiers();
       await loadOrders();
       
       supabaseClient
