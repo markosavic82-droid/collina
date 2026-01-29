@@ -844,21 +844,18 @@
     // Data Fetching
     // ============================================
     async function fetchOrders() {
-      // Use Belgrade timezone (UTC+1 in winter, UTC+2 in summer)
-      const now = new Date();
-      const startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
-      const endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+      // Get orders from last 60 minutes
+      const oneHourAgo = new Date();
+      oneHourAgo.setMinutes(oneHourAgo.getMinutes() - 60);
 
-      console.log('📅 Fetching orders from:', startDate.toISOString(), 'to:', endDate.toISOString());
+      console.log('📅 Fetching active orders from last 60 min...');
 
       // Only fetch active statuses (1=new, 3=accepted, 4=in_production, 5=ready)
-      // Skip completed (7) and cancelled orders to avoid 1000 row limit
       const { data: orders, error } = await supabaseClient
         .from('emeni_orders')
         .select('*')
-        .gte('created_at', startDate.toISOString())
-        .lte('created_at', endDate.toISOString())
         .in('status', [STATUS_NEW, STATUS_ACCEPTED, STATUS_IN_PRODUCTION, 5])
+        .gte('created_at', oneHourAgo.toISOString())
         .order('created_at', { ascending: false });
 
       if (error) {
