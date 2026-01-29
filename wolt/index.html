@@ -661,9 +661,21 @@
 <body>
   <header class="header">
     <h1>🚀 Dispatch <span class="wolt-badge">WOLT</span></h1>
-    <div class="status-indicator">
-      <div class="status-dot" id="statusDot"></div>
-      <span id="lastUpdated">--:--:--</span>
+    <div style="display: flex; align-items: center; gap: 15px;">
+      <button id="soundToggleBtn" onclick="toggleSound()" style="
+        background: #22c55e;
+        color: #fff;
+        border: none;
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-weight: 700;
+        cursor: pointer;
+        font-size: 14px;
+      ">🔊</button>
+      <div class="status-indicator">
+        <div class="status-dot" id="statusDot"></div>
+        <span id="lastUpdated">--:--:--</span>
+      </div>
     </div>
   </header>
 
@@ -989,7 +1001,7 @@
               </div>
               
               <div class="new-section">
-                <div class="section-label">🆕 Nove Wolt narudžbe</div>
+                <div class="section-label">🆕 Nove Wolt Narudžbine</div>
                 <div class="new-orders-list">
                   ${locNew.length === 0 ? `
                     <div class="empty-state">
@@ -1262,14 +1274,121 @@
     }
 
     // ============================================
+    // Sound Notification
+    // ============================================
+    let previousNewOrderIds = new Set();
+    let notificationSound = null;
+    let soundEnabled = true;
+
+    function toggleSound() {
+      soundEnabled = !soundEnabled;
+      const btn = document.getElementById('soundToggleBtn');
+      if (soundEnabled) {
+        btn.textContent = '🔊';
+        btn.style.background = '#22c55e';
+      } else {
+        btn.textContent = '🔇';
+        btn.style.background = '#666';
+      }
+      console.log('🔔 Sound:', soundEnabled ? 'ON' : 'OFF');
+    }
+
+    function initSound() {
+      // Create audio context and oscillator for notification sound
+      notificationSound = {
+        play: function() {
+          try {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            
+            // Play loud attention-grabbing ping (repeated twice)
+            const playTone = (freq, startTime, duration) => {
+              const oscillator = audioCtx.createOscillator();
+              const gainNode = audioCtx.createGain();
+              
+              oscillator.connect(gainNode);
+              gainNode.connect(audioCtx.destination);
+              
+              oscillator.frequency.value = freq;
+              oscillator.type = 'square'; // Louder waveform
+              
+              gainNode.gain.setValueAtTime(1.0, startTime);
+              gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
+              
+              oscillator.start(startTime);
+              oscillator.stop(startTime + duration);
+            };
+            
+            const now = audioCtx.currentTime;
+            
+            // First ping sequence
+            playTone(1000, now, 0.2);
+            playTone(1500, now + 0.2, 0.2);
+            playTone(2000, now + 0.4, 0.3);
+            
+            // Repeat after short pause
+            playTone(1000, now + 0.9, 0.2);
+            playTone(1500, now + 1.1, 0.2);
+            playTone(2000, now + 1.3, 0.3);
+            
+            console.log('🔔 Notification sound played');
+          } catch (e) {
+            console.warn('Could not play sound:', e);
+          }
+        }
+      };
+    }
+
+    // Test sound function - accessible from button
+    function testSound() {
+      console.log('🔔 Testing sound...');
+      if (notificationSound) {
+        notificationSound.play();
+      } else {
+        initSound();
+        notificationSound.play();
+      }
+    }
+
+    function checkForNewOrders(orders) {
+      const newWoltOrders = orders.filter(o => 
+        o.status === STATUS_NEW && 
+        (o.provider || '').toLowerCase() === 'wolt'
+      );
+      
+      const currentNewOrderIds = new Set(newWoltOrders.map(o => o.order_id));
+      
+      // Check if there are any NEW orders that weren't there before
+      let hasNewOrder = false;
+      currentNewOrderIds.forEach(id => {
+        if (!previousNewOrderIds.has(id)) {
+          hasNewOrder = true;
+          console.log('🆕 New order detected:', id);
+        }
+      });
+      
+      if (hasNewOrder && soundEnabled && notificationSound) {
+        notificationSound.play();
+        // Also show visual flash
+        document.body.style.backgroundColor = '#1a2a1a';
+        setTimeout(() => {
+          document.body.style.backgroundColor = '#0a0a0f';
+        }, 200);
+      }
+      
+      previousNewOrderIds = currentNewOrderIds;
+    }
+
+    // ============================================
     // Init
     // ============================================
     async function loadOrders() {
       allOrders = await fetchOrders();
+      checkForNewOrders(allOrders);
       renderMain(allOrders);
     }
 
     async function init() {
+      initSound();
       await loadProductCategories();
       await loadModifiers();
       await loadOrders();
