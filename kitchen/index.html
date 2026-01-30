@@ -226,6 +226,46 @@
             background: linear-gradient(135deg, #9B59B6 0%, #8E44AD 100%);
         }
 
+        /* Split FRONT DESK view */
+        .split-frontdesk {
+            display: flex;
+            flex: 1;
+            gap: 12px;
+            min-width: 0;
+        }
+
+        .split-frontdesk.hidden {
+            display: none;
+        }
+
+        .split-frontdesk .kanban-column {
+            flex: 1;
+        }
+
+        .split-frontdesk .column-ebar {
+            flex: 1;
+        }
+
+        .split-frontdesk .column-dostava {
+            flex: 2;
+        }
+
+        .column-header.ebar-header {
+            background: linear-gradient(135deg, #BBF7D0 0%, #86EFAC 100%);
+            color: #166534;
+        }
+
+        .column-header.dostava-header {
+            background: linear-gradient(135deg, #BFDBFE 0%, #93C5FD 100%);
+            color: #1E3A5F;
+        }
+        
+        .column-header.ebar-header .column-count,
+        .column-header.dostava-header .column-count {
+            background: rgba(0,0,0,0.15);
+            color: inherit;
+        }
+
         .column-count {
             background: rgba(255,255,255,0.25);
             padding: 4px 12px;
@@ -510,6 +550,27 @@
             padding: 8px 10px;
             background: #1D1D1B;
             gap: 8px;
+        }
+
+        /* eBar cards - full red header in KUHINJA and split LOKAL view */
+        .column-priprema .order-card.priority .card-header,
+        .column-ebar .order-card.priority .card-header {
+            background: linear-gradient(135deg, #DC2626 0%, #B91C1C 100%);
+        }
+
+        .column-priprema .order-card.priority .card-header .card-order-no,
+        .column-priprema .order-card.priority .card-header .card-time,
+        .column-priprema .order-card.priority .card-header .card-wait,
+        .column-ebar .order-card.priority .card-header .card-order-no,
+        .column-ebar .order-card.priority .card-header .card-time,
+        .column-ebar .order-card.priority .card-header .card-wait {
+            color: white;
+        }
+
+        .column-priprema .order-card.priority .card-header .provider-label,
+        .column-ebar .order-card.priority .card-header .provider-label {
+            background: rgba(255,255,255,0.2);
+            color: white;
         }
 
         .card-header-left {
@@ -1072,7 +1133,7 @@
                 </div>
             </div>
 
-            <!-- Pakovanje Column (was Spremno) -->
+            <!-- Pakovanje Column (was Spremno) - used in OBA view -->
             <div class="kanban-column column-spremno" id="columnSpremno">
                 <div class="column-header pakovanje-header">
                     <span>📦 FRONT DESK</span>
@@ -1080,6 +1141,31 @@
                 </div>
                 <div class="column-content" id="pakovanjeContent">
                     <!-- Cards will be rendered here -->
+                </div>
+            </div>
+
+            <!-- Split FRONT DESK - used in FRONT DESK only view -->
+            <div class="split-frontdesk hidden" id="splitFrontdesk">
+                <!-- LOKAL Column (eBar orders) -->
+                <div class="kanban-column column-ebar">
+                    <div class="column-header ebar-header">
+                        <span>🏪 LOKAL</span>
+                        <span class="column-count" id="ebarCount">0</span>
+                    </div>
+                    <div class="column-content" id="ebarContent">
+                        <!-- eBar cards -->
+                    </div>
+                </div>
+
+                <!-- DOSTAVA Column -->
+                <div class="kanban-column column-dostava">
+                    <div class="column-header dostava-header">
+                        <span>🚚 DOSTAVA</span>
+                        <span class="column-count" id="dostavaCount">0</span>
+                    </div>
+                    <div class="column-content" id="dostavaContent">
+                        <!-- Wolt/Glovo/Gloria/eMeni cards -->
+                    </div>
                 </div>
             </div>
         </div>
@@ -1183,6 +1269,7 @@
         // Sound state
         let soundEnabled = true;
         let lastOrderIds = new Set();
+        let lastReadyIds = new Set(); // Track orders that became ready (for FRONT DESK notifications)
 
         // ============================================
         // CLASSIFICATION
@@ -1329,6 +1416,9 @@
             
             // Update all timers
             updateWaitingTimers();
+            
+            // Check for eBar auto-predato (every second is fine, actual update happens rarely)
+            checkEbarAutoPredato();
         }
         
         function updateWaitingTimers() {
@@ -1336,9 +1426,11 @@
             const paymentTimers = document.querySelectorAll('.waiting-timer');
             paymentTimers.forEach(timer => {
                 const readyAt = timer.dataset.readyAt;
-                if (readyAt) {
-                    const readyTime = new Date(readyAt);
-                    const waitingMinutes = Math.floor((Date.now() - readyTime.getTime()) / 60000);
+                const createdAt = timer.dataset.createdAt;
+                const timestamp = readyAt || createdAt;
+                if (timestamp) {
+                    const time = new Date(timestamp);
+                    const waitingMinutes = Math.floor((Date.now() - time.getTime()) / 60000);
                     timer.textContent = `${waitingMinutes}'`;
                 }
             });
@@ -1347,12 +1439,52 @@
             const courierTimers = document.querySelectorAll('.courier-timer');
             courierTimers.forEach(timer => {
                 const paidAt = timer.dataset.paidAt;
-                if (paidAt) {
-                    const paidTime = new Date(paidAt);
-                    const waitingMinutes = Math.floor((Date.now() - paidTime.getTime()) / 60000);
+                const readyAt = timer.dataset.readyAt;
+                const timestamp = paidAt || readyAt;
+                if (timestamp) {
+                    const time = new Date(timestamp);
+                    const waitingMinutes = Math.floor((Date.now() - time.getTime()) / 60000);
                     timer.textContent = `${waitingMinutes}'`;
                 }
             });
+        }
+        
+        // Auto-predato for eBar orders after 5 minutes
+        let autoPredatoProcessing = new Set(); // Prevent duplicate processing
+        
+        async function checkEbarAutoPredato() {
+            const now = Date.now();
+            const fiveMinutes = 5 * 60 * 1000;
+            
+            for (const order of allOrders) {
+                // Skip if already processing or already handed
+                if (autoPredatoProcessing.has(order.order_id)) continue;
+                if (order.kds_handed_at) continue;
+                
+                // Only eBar orders
+                const isEbar = (order.provider || '').toLowerCase() === 'ebar';
+                if (!isEbar) continue;
+                
+                // Must have food ready (kds_ready_at set)
+                if (!order.kds_ready_at) continue;
+                
+                // Check if 5 minutes passed since ready
+                const readyTime = new Date(order.kds_ready_at).getTime();
+                if (now - readyTime >= fiveMinutes) {
+                    console.log(`⏰ Auto-predato eBar #${order.order_no} (5 min passed)`);
+                    autoPredatoProcessing.add(order.order_id);
+                    
+                    // Auto mark as handed
+                    const success = await updateKdsTimestamp(order.order_id, 'kds_handed_at');
+                    if (success) {
+                        await loadOrders();
+                        await loadPredatoOrders();
+                        renderAll();
+                    }
+                    
+                    autoPredatoProcessing.delete(order.order_id);
+                }
+            }
         }
         
         setInterval(updateTime, 1000);
@@ -1649,13 +1781,10 @@
                         </div>
                     `;
                 } else if (isEbar) {
-                    // eBar: No payment check needed - can hand over immediately
-                    const readyTime = order.kds_ready_at ? new Date(order.kds_ready_at) : new Date(order.created_at);
-                    const waitingMinutes = Math.floor((Date.now() - readyTime.getTime()) / 60000);
+                    // eBar: No payment check needed, no timer - can hand over immediately or auto after 5min
                     actionBtn = `
                         <div class="card-action waiting-courier" onclick="event.stopPropagation(); moveToPredato('${order.order_id}')">
                             <span class="waiting-text">🚴 PREDATO</span>
-                            <span class="courier-timer" data-ready-at="${order.kds_ready_at || order.created_at}">${waitingMinutes}'</span>
                         </div>
                     `;
                 } else if (isClosed) {
@@ -1890,6 +2019,39 @@
             document.getElementById('pripremaCount').textContent = pripremaCards.length;
             document.getElementById('pakovanjeCount').textContent = pakovanjeCards.length;
 
+            // Split FRONT DESK rendering (LOKAL | DOSTAVA)
+            if (currentView === 'pakovanje') {
+                // Sort by created_at (oldest first) for split view
+                const sortByTime = (a, b) => new Date(a.created_at) - new Date(b.created_at);
+                
+                // Filter eBar orders
+                const ebarOrders = pakovanjeOrders.filter(o => 
+                    (o.provider || '').toLowerCase() === 'ebar'
+                ).sort(sortByTime);
+                
+                // Filter delivery orders (Wolt, Glovo, GloriaFood, eMeni)
+                const dostavaOrders = pakovanjeOrders.filter(o => {
+                    const provider = (o.provider || '').toLowerCase();
+                    return provider !== 'ebar';
+                }).sort(sortByTime);
+                
+                // Render LOKAL column
+                const ebarEl = document.getElementById('ebarContent');
+                const ebarCards = ebarOrders.map(o => renderOrderCard(o, 'pakovanje')).filter(html => html.trim() !== '');
+                ebarEl.innerHTML = ebarCards.length
+                    ? ebarCards.join('')
+                    : '<div class="empty-state"><div class="icon">🏪</div><div>Nema lokalnih porudžbina</div></div>';
+                document.getElementById('ebarCount').textContent = ebarCards.length;
+                
+                // Render DOSTAVA column
+                const dostavaEl = document.getElementById('dostavaContent');
+                const dostavaCards = dostavaOrders.map(o => renderOrderCard(o, 'pakovanje')).filter(html => html.trim() !== '');
+                dostavaEl.innerHTML = dostavaCards.length
+                    ? dostavaCards.join('')
+                    : '<div class="empty-state"><div class="icon">🚚</div><div>Nema dostava porudžbina</div></div>';
+                document.getElementById('dostavaCount').textContent = dostavaCards.length;
+            }
+
             // Render predato from database (kds_handed_at today)
             const predatoContent = document.getElementById('predatoContent');
             
@@ -1906,8 +2068,8 @@
             // Update count
             document.getElementById('predatoCount').textContent = filteredPredato.length;
 
-            // Update stats (priprema + pakovanje)
-            updateStats([...pripremaOrders, ...pakovanjeOrders]);
+            // Update stats (only priprema - what needs to be cooked)
+            updateStats(pripremaOrders);
 
             // Render items summary (only priprema - what needs to be cooked)
             renderItemsSummary(pripremaOrders);
@@ -2008,15 +2170,26 @@
 
             const priprema = document.getElementById('columnPriprema');
             const pakovanje = document.getElementById('columnSpremno');
+            const splitFrontdesk = document.getElementById('splitFrontdesk');
 
+            // Reset all
             priprema.classList.remove('hidden');
             pakovanje.classList.remove('hidden');
+            splitFrontdesk.classList.add('hidden');
 
             if (view === 'priprema') {
+                // KUHINJA only
                 pakovanje.classList.add('hidden');
+                splitFrontdesk.classList.add('hidden');
             } else if (view === 'pakovanje') {
+                // FRONT DESK split view (LOKAL | DOSTAVA)
                 priprema.classList.add('hidden');
+                pakovanje.classList.add('hidden');
+                splitFrontdesk.classList.remove('hidden');
             }
+            // 'oba' - both KUHINJA and regular FRONT DESK shown
+            
+            renderAll();
         }
 
         // ============================================
@@ -2069,22 +2242,60 @@
 
         function checkForNewOrders(orders) {
             const currentIds = new Set(orders.map(o => o.order_id));
+            const currentReadyIds = new Set(orders.filter(o => o.kds_ready_at).map(o => o.order_id));
             
-            // Find new orders (in current but not in last)
-            let newOrderCount = 0;
-            for (const id of currentIds) {
-                if (!lastOrderIds.has(id)) {
-                    newOrderCount++;
+            // Find new orders or orders that became ready
+            let shouldPlaySound = false;
+            
+            for (const order of orders) {
+                // 1. Check location filter
+                if (selectedLocation && order.company_id != selectedLocation) {
+                    continue; // Skip - wrong location
+                }
+                
+                const hasFood = orderHasFood(order);
+                const hasDrinks = orderHasDrinks(order);
+                
+                // Check if this is a NEW order
+                const isNewOrder = !lastOrderIds.has(order.order_id);
+                
+                // Check if food just became ready (was not ready before, is ready now)
+                const justBecameReady = order.kds_ready_at && !lastReadyIds.has(order.order_id);
+                
+                // Determine what triggers sound for each view
+                if (currentView === 'priprema') {
+                    // KUHINJA: only new orders with food (not yet ready)
+                    if (isNewOrder && hasFood && !order.kds_ready_at) {
+                        shouldPlaySound = true;
+                        break;
+                    }
+                } else if (currentView === 'pakovanje') {
+                    // FRONT DESK: new drinks OR food just became ready
+                    if ((isNewOrder && hasDrinks) || (justBecameReady && hasFood)) {
+                        shouldPlaySound = true;
+                        break;
+                    }
+                } else {
+                    // OBA: all of the above
+                    if (isNewOrder && (hasFood || hasDrinks)) {
+                        shouldPlaySound = true;
+                        break;
+                    }
+                    if (justBecameReady && hasFood) {
+                        shouldPlaySound = true;
+                        break;
+                    }
                 }
             }
             
-            // Play sound if new orders appeared (and not first load)
-            if (newOrderCount > 0 && lastOrderIds.size > 0) {
+            // Play sound if matching event occurred (and not first load)
+            if (shouldPlaySound && lastOrderIds.size > 0) {
                 playNotificationSound();
             }
             
-            // Update last known IDs
+            // Update last known state
             lastOrderIds = currentIds;
+            lastReadyIds = currentReadyIds;
         }
 
         // ============================================
