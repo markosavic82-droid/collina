@@ -1230,6 +1230,27 @@
             'koktel', 'cocktail', 'mojito', 'margarita', 'aperol', 'spritz', 'kuvani', 'kuvano'
         ];
 
+        // Table ID to Name mapping (eBar Banovo Brdo)
+        const TABLE_NAMES = {
+            '480': 'B 1', '482': 'B 2', '483': 'B 3', '487': 'B 4', '488': 'B 5', '489': 'B 6',
+            '486': 'BP 1', '501': 'BP 2',
+            '518': 'GAL 1', '517': 'GAL 2',
+            '497': 'HB 1', '496': 'HB 2', '495': 'HB 3',
+            '522': 'HG 1', '521': 'HG 2',
+            '499': 'HP 1', '481': 'HP 1', '506': 'HP 2', '505': 'HP 3', '504': 'HP 4', '503': 'HP 5',
+            '525': 'HS 1', '524': 'HS 2', '520': 'HS 3', '523': 'HS 4',
+            '479': 'PR 1', '494': 'PR 2',
+            '512': 'S 10', '511': 'S 11', '516': 'S 6', '515': 'S 7', '514': 'S 8', '513': 'S 9',
+            '519': 'SP 1', '507': 'SP 2', '508': 'SP 3', '509': 'SP 4', '510': 'SP 5'
+        };
+
+        // Helper: Get table display name
+        function getTableName(tableId) {
+            if (!tableId) return null;
+            const id = String(tableId);
+            return TABLE_NAMES[id] || tableId; // Return mapped name or original ID
+        }
+
         function classifyItemType(itemName) {
             const name = (itemName || '').toLowerCase();
             
@@ -1568,16 +1589,17 @@
             if (isEbar) {
                 const footerLabels = [];
                 
-                // Table ID label
-                const tableId = order.raw_payload?.tableId 
+                // Table ID label - use tableReferenceId and mapped name
+                const tableId = order.raw_payload?.tableReferenceId
+                    || order.raw_payload?.tableReferenceID
+                    || order.raw_payload?.table_reference_id
+                    || order.raw_payload?.tableId 
                     || order.raw_payload?.table_id 
                     || order.raw_payload?.TableID 
-                    || order.raw_payload?.tableNo
-                    || order.raw_payload?.tableNumber
-                    || order.raw_payload?.table
                     || order.table_id;
                 if (tableId) {
-                    footerLabels.push(`<span class="table-label">🪑 Sto ${tableId}</span>`);
+                    const tableName = getTableName(tableId);
+                    footerLabels.push(`<span class="table-label">🪑 ${tableName}</span>`);
                 }
                 
                 // Delivery type label
