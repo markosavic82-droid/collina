@@ -1772,7 +1772,11 @@
         const orderId = Number(order.order_id);
         order.lifecycle = lifecycle?.filter(l => Number(l.order_id) === orderId) || [];
         
-        const acceptedEvent = order.lifecycle.find(l => Number(l.status) === 3);
+        // Find dispatch.accepted event (has prep_time_given)
+        const acceptedEvent = order.lifecycle.find(l => 
+          l.event_type === 'dispatch.accepted' && l.prep_time_given
+        ) || order.lifecycle.find(l => Number(l.status) === 3);
+        
         if (acceptedEvent) {
           order.accepted_at = acceptedEvent.timestamp;
           if (acceptedEvent.prep_time_given) {
