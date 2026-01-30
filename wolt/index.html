@@ -375,6 +375,29 @@
       border-left: 2px solid #f59e0b;
     }
 
+    /* Order-level notes (comments) */
+    .order-note {
+      font-size: 10px;
+      color: #f59e0b;
+      background: rgba(245, 158, 11, 0.15);
+      padding: 5px 8px;
+      border-radius: 4px;
+      margin: 4px 0 6px 0;
+      border-left: 3px solid #f59e0b;
+      font-weight: 500;
+    }
+
+    .new-order-note {
+      font-size: 10px;
+      color: #fbbf24;
+      background: rgba(251, 191, 36, 0.15);
+      padding: 5px 8px;
+      border-radius: 4px;
+      margin-bottom: 6px;
+      border-left: 3px solid #fbbf24;
+      font-weight: 500;
+    }
+
     .new-item-row {
       display: flex;
       flex-direction: column;
@@ -718,6 +741,39 @@
     // Fallback keywords
     const BURGER_KEYWORDS = ['burger', 'smash', 'baconator', 'cheese'];
     const PANCAKE_KEYWORDS = ['palačink', 'palacink', 'palačnk', 'američka', 'americka'];
+    
+    // Drink category keywords (from eBar categories)
+    const DRINK_KEYWORDS = [
+      // Pivo
+      'pivo', 'heineken', 'lav', 'jelen', 'zaječarsko', 'zajecarsko', 'becks', 'stella',
+      'corona', 'budweiser', 'tuborg', 'carlsberg', 'guinness', 'erdinger', 'paulaner',
+      // Vino
+      'vino', 'rose', 'belo vino', 'crno vino', 'šampanjac', 'sampanjac', 'prosecco',
+      // Žestina / Rakija
+      'rakija', 'viski', 'whisky', 'whiskey', 'vodka', 'votka', 'džin', 'gin', 
+      'rum', 'tekila', 'tequila', 'likér', 'liker', 'brandy', 'konjak', 'cognac',
+      'žarić', 'zaric', 'viljamovka', 'šljivovica', 'sljivovica', 'loza', 'dunja',
+      'tamnavulin', 'jägermeister', 'jagermeister', 'aperol', 'campari', 'martini',
+      // Kokteli
+      'spritz', 'mojito', 'margarita', 'koktél', 'koktel', 'cocktail', 'long island',
+      // Kafa / Topli napici
+      'kafa', 'kafu', 'espreso', 'espresso', 'cappuccino', 'kapućino', 'kapucino',
+      'latte', 'macchiato', 'makijato', 'americano', 'ristretto', 'nes', 'nescafe',
+      'čaj', 'caj', 'tea', 'topla čokolada', 'topla cokolada',
+      // Sokovi i воде
+      'sok', 'juice', 'cola', 'kola', 'fanta', 'sprite', 'pepsi', 'schweppes', 
+      'tonic', 'coca', 'koka', 'guarana', 'nektar', 'bitter', 'cedevita',
+      'gusto', 'next', 'fruvita', 'rauch', 'cappy',
+      // Воде
+      'voda', 'aqua', 'rosa', 'prolom', 'knjaz', 'mineralna', 'gazirana', 'negazirana',
+      'evian', 'perrier', 'san pellegrino',
+      // Ostalo
+      'red bull', 'energy', 'ledeni čaj', 'ice tea', 'limunada', 'lemonade', 
+      'smuti', 'smoothie', 'milkshake', 'frape', 'frappe',
+      // Količine (indikatori pića)
+      '0.25', '0.2l', '0.25l', '0.3l', '0.33', '0.33l', '0.5l', '0.7l', '1l', '2l',
+      'flasica', 'flaša', 'casa', 'čaša', 'krigla', 'točeno', 'toceno'
+    ];
 
     let allOrders = [];
     let productCategoryMap = {};
@@ -752,6 +808,35 @@
       if (BURGER_KEYWORDS.some(k => lowerName.includes(k))) return 'burger';
       if (PANCAKE_KEYWORDS.some(k => lowerName.includes(k))) return 'pancake';
       return 'other';
+    }
+
+    // Check if an item is a drink based on keywords
+    function isDrinkItem(itemName) {
+      const lowerName = (itemName || '').toLowerCase().trim();
+      return DRINK_KEYWORDS.some(keyword => lowerName.includes(keyword));
+    }
+
+    // Check if an order contains ONLY drinks (no food items)
+    function isOnlyDrinksOrder(order) {
+      const items = order.items || [];
+      if (items.length === 0) return false;
+      
+      // Check if ALL items are drinks
+      return items.every(item => isDrinkItem(item.name));
+    }
+
+    // Filter function: should this order be displayed?
+    function shouldShowOrder(order) {
+      const provider = (order.provider || '').toLowerCase();
+      
+      // If it's an eBar order with only drinks, hide it
+      if (provider === 'ebar' && isOnlyDrinksOrder(order)) {
+        console.log(`🍺 Hiding drinks-only eBar order #${order.order_no}:`, 
+          (order.items || []).map(i => i.name).join(', '));
+        return false;
+      }
+      
+      return true;
     }
 
     function updateStatus(ok) {
@@ -844,18 +929,21 @@
     // Data Fetching
     // ============================================
     async function fetchOrders() {
-      // Get orders from last 60 minutes
-      const oneHourAgo = new Date();
-      oneHourAgo.setMinutes(oneHourAgo.getMinutes() - 60);
+      // Use Belgrade timezone (UTC+1 in winter, UTC+2 in summer)
+      const now = new Date();
+      const startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+      const endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
 
-      console.log('📅 Fetching active orders from last 60 min...');
+      console.log('📅 Fetching orders from:', startDate.toISOString(), 'to:', endDate.toISOString());
 
       // Only fetch active statuses (1=new, 3=accepted, 4=in_production, 5=ready)
+      // Skip completed (7) and cancelled orders to avoid 1000 row limit
       const { data: orders, error } = await supabaseClient
         .from('emeni_orders')
         .select('*')
+        .gte('created_at', startDate.toISOString())
+        .lte('created_at', endDate.toISOString())
         .in('status', [STATUS_NEW, STATUS_ACCEPTED, STATUS_IN_PRODUCTION, 5])
-        .gte('created_at', oneHourAgo.toISOString())
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -945,13 +1033,17 @@
 
     function renderMain(orders) {
       const container = document.getElementById('mainContainer');
-      const activeOrders = orders.filter(o => o.status === STATUS_ACCEPTED || o.status === STATUS_IN_PRODUCTION);
-      const newWoltOrders = orders.filter(o => o.status === STATUS_NEW && (o.provider || '').toLowerCase() === 'wolt');
+      
+      // Filter out drinks-only eBar orders
+      const filteredOrders = orders.filter(shouldShowOrder);
+      
+      const activeOrders = filteredOrders.filter(o => o.status === STATUS_ACCEPTED || o.status === STATUS_IN_PRODUCTION);
+      const newWoltOrders = filteredOrders.filter(o => o.status === STATUS_NEW && (o.provider || '').toLowerCase() === 'wolt');
 
-      console.log('🔥 Total orders:', orders.length);
+      console.log('🔥 Total orders:', orders.length, '→ After drinks filter:', filteredOrders.length);
       console.log('🔥 Active orders (status 3 or 4):', activeOrders.length);
       console.log('🔥 New Wolt orders (status 1):', newWoltOrders.length);
-      console.log('🔥 Sample order statuses:', orders.slice(0, 5).map(o => ({ order_no: o.order_no, status: o.status, provider: o.provider })));
+      console.log('🔥 Sample order statuses:', filteredOrders.slice(0, 5).map(o => ({ order_no: o.order_no, status: o.status, provider: o.provider })));
 
       // Render big locations
       const bigLocationsHtml = BIG_LOCATIONS.map(loc => {
@@ -1066,6 +1158,7 @@
     function renderActiveCard(order) {
       const items = order.items || [];
       const provider = (order.provider || 'ebar').toLowerCase();
+      const orderNote = order.note || '';
       
       let prepTimeDisplay = '';
       let givenTimeDisplay = '';
@@ -1090,6 +1183,12 @@
         prepTimeDisplay = `<span class="prep-timer ${timeClass}" data-accepted="${order.accepted_at}">⏱️ ${prepMinutes}m</span>`;
       }
       
+      // Order note display
+      let noteDisplay = '';
+      if (orderNote && orderNote.trim()) {
+        noteDisplay = `<div class="order-note">📝 ${orderNote}</div>`;
+      }
+      
       return `
         <div class="active-card">
           <div class="active-card-header">
@@ -1100,6 +1199,7 @@
               <span class="active-order-provider ${provider}">${provider}</span>
             </div>
           </div>
+          ${noteDisplay}
           <div class="active-items">
             ${items.map(i => renderItemWithModifiers(i)).join('')}
           </div>
@@ -1113,6 +1213,13 @@
       const createdAt = new Date(order.created_at);
       const waitMin = Math.floor((Date.now() - createdAt) / 60000);
       const time = createdAt.toLocaleTimeString('sr-RS', { hour: '2-digit', minute: '2-digit' });
+      const orderNote = order.note || '';
+      
+      // Order note display
+      let noteDisplay = '';
+      if (orderNote && orderNote.trim()) {
+        noteDisplay = `<div class="new-order-note">📝 ${orderNote}</div>`;
+      }
 
       return `
         <div class="new-card" data-order-id="${order.order_id}">
@@ -1125,6 +1232,7 @@
               ⏳ <span class="wt">${waitMin}</span>m
             </span>
           </div>
+          ${noteDisplay}
           <div class="new-items">
             ${items.map(i => renderNewItemWithModifiers(i)).join('')}
           </div>
