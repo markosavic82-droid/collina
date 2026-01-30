@@ -742,37 +742,67 @@
     const BURGER_KEYWORDS = ['burger', 'smash', 'baconator', 'cheese'];
     const PANCAKE_KEYWORDS = ['palačink', 'palacink', 'palačnk', 'američka', 'americka'];
     
-    // Drink category keywords (from eBar categories)
+    // Drink category keywords (complete list from eBar categories)
     const DRINK_KEYWORDS = [
-      // Pivo
+      // === PIVO / BEER ===
       'pivo', 'heineken', 'lav', 'jelen', 'zaječarsko', 'zajecarsko', 'becks', 'stella',
       'corona', 'budweiser', 'tuborg', 'carlsberg', 'guinness', 'erdinger', 'paulaner',
-      // Vino
-      'vino', 'rose', 'belo vino', 'crno vino', 'šampanjac', 'sampanjac', 'prosecco',
-      // Žestina / Rakija
-      'rakija', 'viski', 'whisky', 'whiskey', 'vodka', 'votka', 'džin', 'gin', 
+      'salto', 'pale ale', 'stout', 'ipa', 'lager', 'wit', 'tamno pivo',
+      
+      // === VINO / WINE ===
+      'vino', 'belo vino', 'crno vino', 'crveno vino', 'roze vino', 'rose',
+      'šampanjac', 'sampanjac', 'prosecco', 'proseco', 'kuvano vino',
+      
+      // === ŽESTINA / SPIRITS ===
+      'rakija', 'viski', 'whisky', 'whiskey', 'vodka', 'votka', 'džin', 'gin',
       'rum', 'tekila', 'tequila', 'likér', 'liker', 'brandy', 'konjak', 'cognac',
       'žarić', 'zaric', 'viljamovka', 'šljivovica', 'sljivovica', 'loza', 'dunja',
-      'tamnavulin', 'jägermeister', 'jagermeister', 'aperol', 'campari', 'martini',
-      // Kokteli
+      'tamnavulin', 'jägermeister', 'jagermeister', 'jegermeister', 'aperol', 'campari', 'martini',
+      'havana', 'four roses', 'jack daniels', 'jim beam', 'hubert', 'beefeater',
+      'gorki list', 'vinjak', 'rubin', 'absolut', 'jameson', 'kuvani viski',
+      
+      // === KOKTELI ===
       'spritz', 'mojito', 'margarita', 'koktél', 'koktel', 'cocktail', 'long island',
-      // Kafa / Topli napici
-      'kafa', 'kafu', 'espreso', 'espresso', 'cappuccino', 'kapućino', 'kapucino',
-      'latte', 'macchiato', 'makijato', 'americano', 'ristretto', 'nes', 'nescafe',
-      'čaj', 'caj', 'tea', 'topla čokolada', 'topla cokolada',
-      // Sokovi i воде
-      'sok', 'juice', 'cola', 'kola', 'fanta', 'sprite', 'pepsi', 'schweppes', 
-      'tonic', 'coca', 'koka', 'guarana', 'nektar', 'bitter', 'cedevita',
-      'gusto', 'next', 'fruvita', 'rauch', 'cappy',
-      // Воде
+      
+      // === KAFA / COFFEE ===
+      'kafa', 'kafu', 'espreso', 'espresso', 'cappuccino', 'cappucino', 'kapućino', 'kapucino',
+      'latte', 'caffe latte', 'macchiato', 'makijato', 'americano', 'ristretto', 
+      'nes', 'nescafe', 'nes kafa', 'dupli espreso', 'ice kafa', 'ice moka',
+      
+      // === ČAJ / TEA ===
+      'čaj', 'caj', 'tea', 'ice tea', 'fuze tea', 'nestea', 'ledeni čaj',
+      
+      // === TOPLI NAPICI ===
+      'topla čokolada', 'topla cokolada', 'mleko casa',
+      
+      // === SOKOVI / JUICES ===
+      'sok', 'juice', 'djus', 'gusto', 'nektar', 'cappy', 'rauch', 'fruvita', 'next',
+      'cedjeni', 'cedjena', 'ceđeni', 'ceđena', 'grejp', 'citrus mix',
+      'jabuka gusto', 'jagoda gusto', 'breskva gusto', 'borovnica gusto',
+      
+      // === LIMUNADE / LEMONADES ===
+      'limunada', 'lemonade', 'limunana', 'lubenada', 'breskvanada',
+      
+      // === GAZIRANI / CARBONATED ===
+      'cola', 'kola', 'coca', 'koka', 'pepsi', 'fanta', 'sprite', '7up', '7 up',
+      'schweppes', 'tonic', 'guarana', 'bitter', 'evervess', 'mirinda',
+      
+      // === VODE / WATER ===
       'voda', 'aqua', 'rosa', 'prolom', 'knjaz', 'mineralna', 'gazirana', 'negazirana',
-      'evian', 'perrier', 'san pellegrino',
-      // Ostalo
-      'red bull', 'energy', 'ledeni čaj', 'ice tea', 'limunada', 'lemonade', 
-      'smuti', 'smoothie', 'milkshake', 'frape', 'frappe',
-      // Količine (indikatori pića)
-      '0.25', '0.2l', '0.25l', '0.3l', '0.33', '0.33l', '0.5l', '0.7l', '1l', '2l',
-      'flasica', 'flaša', 'casa', 'čaša', 'krigla', 'točeno', 'toceno'
+      'kisela voda', 'evian', 'perrier', 'san pellegrino',
+      
+      // === ENERGY / VITAMINI ===
+      'red bull', 'energy', 'ultra', 'cedevita', 'vitaminska',
+      
+      // === MLEČNI / DAIRY DRINKS ===
+      'jogurt', 'kiselo mleko', 'cokoladno mleko', 'čokoladno mleko', 'balans',
+      'plazma sejk', 'milkshake', 'smuti', 'smoothie', 'frape', 'frappe',
+      
+      // === KOLIČINE (indikatori pića) ===
+      '0.03l', '0.15', '0.18', '0.2l', '0.25', '0.25l', '0.3l', '0.33', '0.33l', 
+      '0.5l', '0.5 l', '0.75', '0.7l', '1l', '2l',
+      'flasica', 'flaša', 'casa', 'čaša', 'krigla', 'točeno', 'toceno',
+      'limenka', 'lim', 'pvc', 'staklo', 'bokal'
     ];
 
     let allOrders = [];
@@ -816,24 +846,62 @@
       return DRINK_KEYWORDS.some(keyword => lowerName.includes(keyword));
     }
 
+    // Get items from order - check both items array and raw_payload
+    function getOrderItems(order) {
+      // First try order.items (from emeni_order_items table)
+      if (order.items && order.items.length > 0) {
+        return order.items;
+      }
+      
+      // Fallback: try raw_payload.items
+      if (order.raw_payload && order.raw_payload.items && order.raw_payload.items.length > 0) {
+        return order.raw_payload.items;
+      }
+      
+      return [];
+    }
+
     // Check if an order contains ONLY drinks (no food items)
     function isOnlyDrinksOrder(order) {
-      const items = order.items || [];
-      if (items.length === 0) return false;
+      const items = getOrderItems(order);
+      
+      // If no items found, assume it's not a food order (likely drinks or empty)
+      if (items.length === 0) {
+        console.log(`🍺 Order #${order.order_no} has no items - hiding`);
+        return true;
+      }
       
       // Check if ALL items are drinks
-      return items.every(item => isDrinkItem(item.name));
+      const allDrinks = items.every(item => isDrinkItem(item.name));
+      
+      if (allDrinks) {
+        console.log(`🍺 Order #${order.order_no} is drinks-only:`, items.map(i => i.name).join(', '));
+      }
+      
+      return allDrinks;
     }
 
     // Filter function: should this order be displayed?
+    // For eBar orders:
+    //   - Hide if contains ONLY drinks (no food) - never show these
+    //   - Hide if kds_ready_at has value (kitchen marked as done)
+    // Wolt, Gloria, eMeniWaiter always visible
+    // Filter function: should this order be displayed?
+    // For eBar: hide drinks-only orders always, hide food orders when kds_ready_at is set
+    // Wolt, Gloria, eMeniWaiter always visible
     function shouldShowOrder(order) {
       const provider = (order.provider || '').toLowerCase();
       
-      // If it's an eBar order with only drinks, hide it
-      if (provider === 'ebar' && isOnlyDrinksOrder(order)) {
-        console.log(`🍺 Hiding drinks-only eBar order #${order.order_no}:`, 
-          (order.items || []).map(i => i.name).join(', '));
-        return false;
+      if (provider === 'ebar') {
+        // Always hide drinks-only eBar orders (no food = not for kitchen display)
+        if (isOnlyDrinksOrder(order)) {
+          return false;
+        }
+        
+        // Hide food orders once kitchen marks them ready
+        if (order.kds_ready_at) {
+          return false;
+        }
       }
       
       return true;
