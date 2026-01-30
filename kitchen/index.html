@@ -7,6 +7,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
+    <!-- Supabase JS for Realtime -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * {
             margin: 0;
@@ -54,6 +56,29 @@
         .tab-btn.secondary:hover {
             background: #3a3a38;
             color: #EAE4DA;
+        }
+
+        /* Realtime connection indicator */
+        .realtime-indicator {
+            display: inline-block;
+            margin-right: 6px;
+            font-size: 0.9rem;
+            animation: pulse-connecting 1s ease-in-out infinite;
+        }
+
+        .realtime-indicator.connected {
+            color: #10B981;
+            animation: none;
+        }
+
+        .realtime-indicator.disconnected {
+            color: #EF4444;
+            animation: pulse-connecting 1s ease-in-out infinite;
+        }
+
+        @keyframes pulse-connecting {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
         }
 
         .view-toggle {
@@ -227,7 +252,7 @@
             background: #2a2a28;
             border-radius: 6px;
             overflow: hidden;
-            border: 2px solid #3a3a38;
+            border: 1px solid #3a3a38;
             transition: transform 0.15s, box-shadow 0.15s;
             user-select: none;
         }
@@ -238,24 +263,24 @@
 
         /* Card type borders */
         .order-card.burger {
-            border-left: 5px solid #808BC5;
+            border-left: 3px solid #808BC5;
         }
 
         .order-card.pancake {
-            border-left: 5px solid #ED773C;
+            border-left: 3px solid #ED773C;
         }
 
         .order-card.mixed {
-            border-left: 5px solid;
+            border-left: 3px solid;
             border-image: linear-gradient(to bottom, #808BC5 50%, #ED773C 50%) 1;
         }
 
         .order-card.other {
-            border-left: 5px solid #888;
+            border-left: 3px solid #666;
         }
 
         .order-card.urgent {
-            background: #3d2a2a;
+            background: #2a2a28;
         }
 
         .order-card.urgent .card-wait {
@@ -269,18 +294,11 @@
             border-color: #5a4a5a;
         }
 
-        .card-header {
-            padding: 8px 10px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
         .card-time {
             font-family: 'Montserrat', sans-serif;
-            font-weight: 700;
-            font-size: 1rem;
-            color: #9ED6DF;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: #888;
         }
 
         .card-wait {
@@ -288,8 +306,8 @@
             border-radius: 4px;
             background: #3a3a38;
             font-family: 'Montserrat', sans-serif;
-            font-size: 0.85rem;
             font-weight: 700;
+            font-size: 0.85rem;
             color: #888;
         }
 
@@ -307,21 +325,21 @@
             display: flex;
             align-items: flex-start;
             gap: 6px;
-            padding: 6px 8px;
-            border-radius: 4px;
+            padding: 4px 0;
             font-size: 0.9rem;
+            background: transparent;
         }
 
         .card-item.burger-item {
-            background: rgba(128, 139, 197, 0.2);
+            /* no extra styling */
         }
 
         .card-item.pancake-item {
-            background: rgba(237, 119, 60, 0.2);
+            /* no extra styling */
         }
 
         .card-item.other-item {
-            background: rgba(136, 136, 136, 0.15);
+            /* no extra styling */
         }
 
         .item-icon {
@@ -331,7 +349,7 @@
 
         .item-qty {
             font-weight: 700;
-            color: #9ED6DF;
+            color: #EAE4DA;
             font-size: 0.95rem;
             flex-shrink: 0;
         }
@@ -344,71 +362,188 @@
         }
 
         .item-note {
-            font-size: 0.8rem;
+            font-size: 0.85rem;
             color: #FF6B6B;
-            padding: 6px 10px;
-            font-weight: 600;
-            background: rgba(255, 107, 107, 0.15);
-            border-left: 3px solid #FF6B6B;
-            border-radius: 0 4px 4px 0;
-            margin-top: 4px;
+            padding: 8px 12px;
+            font-weight: 700;
+            background: rgba(255, 107, 107, 0.2);
+            border-left: 4px solid #FF6B6B;
+            border-radius: 0 6px 6px 0;
+            margin: 6px 0;
         }
 
-        /* Modifiers - very visible */
+        /* Modifiers - VERY visible */
         .item-modifiers {
             display: flex;
             flex-direction: column;
-            gap: 3px;
-            margin-top: 4px;
-            padding-left: 28px;
+            gap: 4px;
+            margin: 6px 0 6px 20px;
         }
 
         .modifier-tag {
             display: inline-flex;
             align-items: center;
             gap: 4px;
-            padding: 4px 8px;
-            background: rgba(251, 191, 36, 0.2);
-            border-left: 3px solid #FBBF24;
-            border-radius: 0 4px 4px 0;
-            font-size: 0.8rem;
-            font-weight: 600;
+            padding: 6px 12px;
+            background: rgba(251, 191, 36, 0.25);
+            border-left: 4px solid #FBBF24;
+            border-radius: 0 6px 6px 0;
+            font-size: 0.9rem;
+            font-weight: 700;
             color: #FBBF24;
         }
 
         .modifier-tag::before {
             content: '+';
-            font-weight: 700;
+            font-weight: 800;
+            font-size: 1rem;
         }
 
-        /* Order-level comment */
+        /* Order-level comment - VERY visible */
         .order-comment {
-            padding: 8px 10px;
-            background: rgba(255, 107, 107, 0.2);
-            border-left: 4px solid #FF6B6B;
-            margin: 6px 0 0 0;
-            font-size: 0.85rem;
-            font-weight: 600;
+            padding: 10px 12px;
+            background: rgba(255, 107, 107, 0.25);
+            border-left: 5px solid #FF6B6B;
+            margin: 8px 0 0 0;
+            font-size: 0.95rem;
+            font-weight: 700;
             color: #FF6B6B;
+            border-radius: 0 6px 6px 0;
         }
 
         .order-comment::before {
             content: '📝 ';
+            font-size: 1.1rem;
+        }
+
+        /* Table number label - for footer */
+        .table-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: #4a4a48;
+            color: #ccc;
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 3px;
+        }
+
+        /* Delivery type label - for footer */
+        .delivery-type-label {
+            display: inline-block;
+            background: #4a4a48;
+            color: #ccc;
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 3px;
+            text-transform: uppercase;
+        }
+
+        .delivery-type-label.in-house {
+            background: #EF4444;
+            color: white;
+        }
+
+        .delivery-type-label.pickup {
+            /* gray base */
+        }
+
+        .delivery-type-label.delivery {
+            /* gray base */
+        }
+
+        /* eBar priority card styling - subtle */
+        .order-card.priority {
+            border: 1px solid #555;
+        }
+
+        /* Provider labels - colored */
+        .provider-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 3px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .provider-label.ebar {
+            background: #EF4444;
+            color: white;
+        }
+
+        .provider-label.wolt {
+            background: #00C2E8;
+            color: white;
+        }
+
+        .provider-label.glovo {
+            background: #FFC244;
+            color: #1a1a1a;
+        }
+
+        .provider-label.gloriafood {
+            background: #FF6B35;
+            color: white;
+        }
+
+        .provider-label.emeni {
+            background: #10B981;
+            color: white;
+        }
+
+        .provider-label.other {
+            background: #4a4a48;
+            color: #ccc;
+        }
+
+        /* Updated card header to include provider */
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 10px;
+            background: #1D1D1B;
+            gap: 8px;
+        }
+
+        .card-header-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-header-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .card-footer {
             padding: 6px 10px;
             background: #252523;
             display: flex;
-            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 6px;
             align-items: center;
             font-size: 0.8rem;
+            min-height: 0;
+        }
+
+        .card-footer:empty {
+            display: none;
         }
 
         .card-order-no {
             font-family: 'Montserrat', sans-serif;
             font-weight: 700;
-            color: #EAE4DA;
+            font-size: 0.85rem;
+            color: #888;
         }
 
         .card-provider {
@@ -416,7 +551,7 @@
             font-size: 0.75rem;
         }
 
-        /* Action Buttons */
+        /* Action Buttons - subtle */
         .card-action {
             width: 100%;
             padding: 10px;
@@ -431,6 +566,13 @@
             align-items: center;
             justify-content: center;
             gap: 6px;
+            background: #3a3a38;
+            color: #888;
+        }
+
+        .card-action:hover {
+            background: #4a4a48;
+            color: #EAE4DA;
         }
 
         .card-action:active {
@@ -438,21 +580,82 @@
         }
 
         .card-action.to-spremno {
-            background: #4a9e8e;
-            color: white;
+            /* same as base */
         }
 
         .card-action.to-spremno:hover {
-            background: #3d8577;
+            background: #4a4a48;
+            color: #EAE4DA;
         }
 
         .card-action.to-predato {
-            background: #8B5CF6;
+            background: #10B981;
             color: white;
         }
 
         .card-action.to-predato:hover {
+            background: #059669;
+        }
+
+        /* Waiting for payment state */
+        .card-action.waiting-payment {
+            background: #3a3a38;
+            color: #F59E0B;
+            cursor: default;
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 14px;
+        }
+
+        .waiting-text {
+            font-weight: 600;
+        }
+
+        .waiting-timer {
+            background: #F59E0B;
+            color: #1a1a1a;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 700;
+            font-size: 0.85rem;
+        }
+
+        /* Waiting for courier state (paid, ready to hand over) */
+        .card-action.waiting-courier {
+            background: #10B981;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 14px;
+        }
+
+        .card-action.waiting-courier:hover {
+            background: #059669;
+        }
+
+        .courier-timer {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 700;
+            font-size: 0.85rem;
+        }
+
+        /* Waiting for food from kitchen */
+        .card-action.waiting-food {
             background: #7C3AED;
+            color: white;
+            cursor: default;
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 14px;
+        }
+
+        .card-action.waiting-food .waiting-timer {
+            background: rgba(255,255,255,0.2);
+            color: white;
         }
 
         /* ============================================
@@ -703,13 +906,20 @@
         .predato-card-header {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 6px;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+
+        .predato-card-provider {
+            font-weight: 700;
+            font-size: 0.85rem;
         }
 
         .predato-card-time {
             font-family: 'Montserrat', sans-serif;
-            font-weight: 700;
+            font-size: 0.8rem;
             color: #9ED6DF;
+            margin-bottom: 4px;
         }
 
         .predato-card-no {
@@ -831,22 +1041,15 @@
 <body>
     <!-- Header -->
     <header class="header">
-        <button class="tab-btn">🟢 Kitchen Monitor</button>
-        <button class="tab-btn secondary" id="predatoToggle">📋 Predato <span id="predatoCountHeader">0</span></button>
+        <button class="tab-btn">
+            <span id="realtimeIndicator" class="realtime-indicator" title="Realtime status">⚡</span>
+            Kitchen Monitor
+        </button>
         
         <div class="view-toggle">
             <button class="toggle-btn active" data-view="oba">OBA</button>
             <button class="toggle-btn" data-view="priprema">KUHINJA</button>
             <button class="toggle-btn" data-view="pakovanje">FRONT DESK</button>
-        </div>
-
-        <div class="filter-toggle">
-            <button class="filter-btn active" id="filterHrana" onclick="toggleFilter('hrana')">
-                <span class="icon">🍔</span> HRANA
-            </button>
-            <button class="filter-btn active" id="filterPice" onclick="toggleFilter('pice')">
-                <span class="icon">🥤</span> PIĆE
-            </button>
         </div>
 
         <button class="sound-btn active" id="soundToggle" onclick="toggleSound()" title="Zvučna notifikacija">
@@ -924,7 +1127,7 @@
             </div>
 
             <button class="predato-btn" id="predatoBtnSidebar">
-                📦 Predato danas
+                🚴 Predato
                 <span class="badge" id="predatoCount">0</span>
             </button>
         </div>
@@ -934,7 +1137,7 @@
     <div class="panel-overlay" id="panelOverlay"></div>
     <aside class="predato-panel" id="predatoPanel">
         <div class="predato-header">
-            <span>📦 Predato danas</span>
+            <span>🚴 Predato (poslednji sat)</span>
             <button class="predato-close" id="predatoClose">✕</button>
         </div>
         <div class="predato-content" id="predatoContent">
@@ -952,6 +1155,9 @@
         const SUPABASE_URL = 'https://bbnbbbpofelbkyuffslj.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJibmJiYnBvZmVsYmt5dWZmc2xqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUwNTI0MzQsImV4cCI6MjA4MDYyODQzNH0.koW44soAB-bEfh8OzqjGBwdgov4Snscw1ITsg5OureU';
 
+        // Initialize Supabase client for Realtime
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
         async function supabaseFetch(endpoint) {
             const res = await fetch(endpoint, {
                 headers: {
@@ -963,6 +1169,9 @@
             return res.json();
         }
 
+        // Track realtime subscription status
+        let realtimeConnected = false;
+
         // ============================================
         // STATE
         // ============================================
@@ -970,10 +1179,6 @@
         let locations = {};
         let selectedLocation = '';
         let currentView = 'oba';
-        
-        // Filter state
-        let showHrana = true;
-        let showPice = true;
         
         // Sound state
         let soundEnabled = true;
@@ -983,41 +1188,87 @@
         // CLASSIFICATION
         // ============================================
         const BURGER_KEYWORDS = ['burger', 'smash', 'collina', 'chicken', 'wrap', 'big', 'double', 'baconator', 'vege', 'original', 'triple', 'nuggets', 'caesar'];
-        const PANCAKE_KEYWORDS = ['palačink', 'palacink', 'nutella', 'eurokrem', 'plazma', 'krem', 'američka', 'americka'];
+        const PANCAKE_KEYWORDS = ['palačink', 'palacink', 'nutella', 'eurokrem', 'krem', 'američka', 'americka'];
         
-        // Drinks classification
+        // Drinks classification - from eBar product database
         const DRINK_KEYWORDS = [
-            'kafa', 'kafe', 'coffee', 'espreso', 'espresso', 'cappuccino', 'kapućino', 'kapucino',
-            'latte', 'macchiato', 'makijato', 'americano', 'nes', 'nescafe',
-            'čaj', 'caj', 'tea',
-            'sok', 'juice', 'ceđeni', 'cedjeni', 'fresh', 'smoothie',
-            'voda', 'water', 'aqua', 'rosa', 'mineralna', 'gazirana', 'negazirana',
-            'cola', 'kola', 'fanta', 'sprite', 'schweppes', 'tonic', 'bitter',
-            'pivo', 'beer', 'lager', 'ale',
-            'vino', 'wine',
-            'rakija', 'viski', 'whisky', 'whiskey', 'vodka', 'džin', 'gin', 'rum', 'tequila',
-            'koktel', 'cocktail', 'mojito', 'margarita', 'aperol', 'spritz',
-            'milkshake', 'milk shake', 'shake',
-            'limonada', 'lemonade', 'ice tea', 'ledeni čaj',
-            'red bull', 'energy', 'energetski'
+            // Kafa / Topli napici
+            'kafa', 'kafe', 'coffee', 'espreso', 'espresso', 'dupli espreso',
+            'cappuccino', 'cappucino', 'capuccino', 'kapućino', 'kapucino',
+            'latte', 'caffe latte', 'macchiato', 'makijato', 'americano', 
+            'nes', 'nescafe', 'neskafe', 'ice kafa', 'ice moka',
+            'topla cokolada', 'cokoladno mleko',
+            // Čaj
+            'čaj', 'caj', 'tea', 'ice tea', 'fuze tea', 'nestea',
+            // Sokovi / Djus
+            'sok', 'juice', 'djus', 'gusto', 'ceđeni', 'cedjeni', 'cedjena',
+            'borovnica', 'breskva', 'jabuka', 'jagoda', 'pomorandza', 'grejp',
+            'citrus mix', 'vitaminska', 'fresh', 'smoothie',
+            // Limunade
+            'limunada', 'limunana', 'lubenada', 'breskvanada', 'cedevita',
+            // Voda
+            'voda', 'water', 'aqua', 'aqua viva', 'rosa', 'kisela',
+            'balans', 'mineralna', 'gazirana', 'negazirana',
+            // Gazirano
+            'cola', 'coca', 'pepsi', 'fanta', 'sprite', '7up', '7 up',
+            'mirinda', 'schweppes', 'tonic', 'bitter', 'evervess',
+            'guarana', 'ultra', 'energy', 'red bull',
+            // Pivo
+            'pivo', 'beer', 'lager', 'heineken', 'salto', 'zajecarsko', 'zaječar',
+            'stout', 'pale ale', 'ipa', 'wit',
+            // Vino
+            'vino', 'wine', 'belo vino', 'crveno vino', 'roze vino', 'proseco',
+            // Žestoko / Alkohol
+            'rakija', 'viski', 'whisky', 'whiskey', 'vodka', 'absolut',
+            'džin', 'dzin', 'gin', 'beefeater', 'rum', 'havana', 'tequila',
+            'jack daniels', 'jim beam', 'jameson', 'jegermeister', 'jager',
+            'vinjak', 'konjak', 'cognac', 'brandy', 'liker',
+            'martini', 'gorki list', 'four roses', 'zaric', 'hubert',
+            // Mlečno
+            'mleko', 'jogurt', 'kravica', 'kiselo mleko', 'plazma sejk',
+            // Kokteli
+            'koktel', 'cocktail', 'mojito', 'margarita', 'aperol', 'spritz', 'kuvani', 'kuvano'
         ];
 
         function classifyItemType(itemName) {
             const name = (itemName || '').toLowerCase();
+            
+            // FOOD keywords have priority - check first
+            // If it's a burger/pancake combo with drink, it's still food
+            for (const kw of BURGER_KEYWORDS) {
+                if (name.includes(kw)) return 'hrana';
+            }
+            for (const kw of PANCAKE_KEYWORDS) {
+                if (name.includes(kw)) return 'hrana';
+            }
+            
+            // Then check if it's a drink
             for (const kw of DRINK_KEYWORDS) {
                 if (name.includes(kw)) return 'pice';
             }
+            
             return 'hrana';
         }
 
-        function classifyOrderType(items) {
-            let hasHrana = false, hasPice = false;
-            for (const item of items) {
-                const type = classifyItemType(item.name);
-                if (type === 'hrana') hasHrana = true;
-                if (type === 'pice') hasPice = true;
+        // Helper: Get items from order
+        function getOrderItems(order) {
+            let items = order.raw_payload?.items || [];
+            if (items.length === 0 && order.raw_payload?.invalidOrderDetails?.items) {
+                items = order.raw_payload.invalidOrderDetails.items;
             }
-            return { hasHrana, hasPice };
+            return items;
+        }
+
+        // Helper: Check if order has food items
+        function orderHasFood(order) {
+            const items = getOrderItems(order);
+            return items.some(item => classifyItemType(item.name) !== 'pice');
+        }
+
+        // Helper: Check if order has drink items
+        function orderHasDrinks(order) {
+            const items = getOrderItems(order);
+            return items.some(item => classifyItemType(item.name) === 'pice');
         }
 
         function classifyItem(itemName) {
@@ -1054,7 +1305,35 @@
         function updateTime() {
             document.getElementById('currentTime').textContent = 
                 new Date().toLocaleTimeString('sr-RS', { hour: '2-digit', minute: '2-digit' });
+            
+            // Update all timers
+            updateWaitingTimers();
         }
+        
+        function updateWaitingTimers() {
+            // Update waiting for payment timers
+            const paymentTimers = document.querySelectorAll('.waiting-timer');
+            paymentTimers.forEach(timer => {
+                const readyAt = timer.dataset.readyAt;
+                if (readyAt) {
+                    const readyTime = new Date(readyAt);
+                    const waitingMinutes = Math.floor((Date.now() - readyTime.getTime()) / 60000);
+                    timer.textContent = `${waitingMinutes}'`;
+                }
+            });
+            
+            // Update waiting for courier timers (since paid)
+            const courierTimers = document.querySelectorAll('.courier-timer');
+            courierTimers.forEach(timer => {
+                const paidAt = timer.dataset.paidAt;
+                if (paidAt) {
+                    const paidTime = new Date(paidAt);
+                    const waitingMinutes = Math.floor((Date.now() - paidTime.getTime()) / 60000);
+                    timer.textContent = `${waitingMinutes}'`;
+                }
+            });
+        }
+        
         setInterval(updateTime, 1000);
         updateTime();
 
@@ -1122,6 +1401,11 @@
                     checkForNewOrders(ordersInPriprema);
                     
                     allOrders = data;
+                    
+                    // Check paid status for orders in Front Desk (kds_ready_at but not handed)
+                    const frontDeskOrders = data.filter(o => o.kds_ready_at && !o.kds_handed_at);
+                    await loadPaidStatus(frontDeskOrders.map(o => o.order_id));
+                    
                     renderAll();
                 }
             } catch (err) {
@@ -1129,17 +1413,17 @@
             }
         }
 
-        // Load handed orders for today (Predato panel)
+        // Load handed orders (last 1 hour)
         let predatoOrders = [];
         
         async function loadPredatoOrders() {
             try {
-                // Get today's start
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
+                // Get 1 hour ago
+                const oneHourAgo = new Date();
+                oneHourAgo.setHours(oneHourAgo.getHours() - 1);
                 
-                // Get orders with kds_handed_at today
-                const url = `${SUPABASE_URL}/rest/v1/emeni_orders?select=*&kds_handed_at=gte.${encodeURIComponent(today.toISOString())}&order=kds_handed_at.desc`;
+                // Get orders with kds_handed_at in last hour
+                const url = `${SUPABASE_URL}/rest/v1/emeni_orders?select=*&kds_handed_at=gte.${encodeURIComponent(oneHourAgo.toISOString())}&order=kds_handed_at.desc`;
                 
                 const data = await supabaseFetch(url);
                 if (data && Array.isArray(data)) {
@@ -1150,13 +1434,61 @@
             }
         }
 
+        // Track which orders are paid/closed (from lifecycle) with timestamp
+        let paidOrderIds = new Set();
+        let paidOrderTimestamps = {}; // order_id -> paid_at timestamp
+        
+        async function loadPaidStatus(orderIds) {
+            // Clear and rebuild
+            paidOrderIds = new Set();
+            paidOrderTimestamps = {};
+            
+            if (!orderIds || orderIds.length === 0) return;
+            
+            try {
+                // Check lifecycle for closed status (status 5 or 7)
+                const idsString = orderIds.join(',');
+                const url = `${SUPABASE_URL}/rest/v1/emeni_order_lifecycle?select=order_id,status,event_type,timestamp&order_id=in.(${idsString})&status=in.(5,7)&order=timestamp.desc`;
+                
+                const data = await supabaseFetch(url);
+                
+                if (data && Array.isArray(data)) {
+                    data.forEach(event => {
+                        paidOrderIds.add(event.order_id);
+                        // Store the timestamp (first one wins - most recent)
+                        if (!paidOrderTimestamps[event.order_id]) {
+                            paidOrderTimestamps[event.order_id] = event.timestamp;
+                        }
+                    });
+                }
+                console.log(`💰 Closed orders (status 5/7): ${paidOrderIds.size} / ${orderIds.length}`);
+            } catch (err) {
+                console.error('Error loading paid status:', err);
+            }
+        }
+
         // ============================================
         // RENDER ORDER CARD
         // ============================================
         function renderOrderCard(order, columnType) {
-            let items = order.raw_payload?.items || [];
-            if (items.length === 0 && order.raw_payload?.invalidOrderDetails?.items) {
-                items = order.raw_payload.invalidOrderDetails.items;
+            let items = getOrderItems(order);
+            
+            const hasFood = orderHasFood(order);
+            const hasDrinks = orderHasDrinks(order);
+            const foodReady = !!order.kds_ready_at;
+            const isEbar = (order.provider || '').toLowerCase() === 'ebar';
+            
+            // Filter items based on column
+            if (columnType === 'priprema') {
+                // KUHINJA: only show FOOD items (never drinks)
+                items = items.filter(item => classifyItemType(item.name) !== 'pice');
+            }
+            // FRONT DESK: show ALL items (drinks + food)
+            // Button state changes based on whether food is ready
+
+            // If no items left after filtering, don't render the card
+            if (items.length === 0) {
+                return '';
             }
 
             const orderType = classifyOrder(items);
@@ -1166,7 +1498,8 @@
 
             const itemsHtml = items.map(item => {
                 const itemType = classifyItem(item.name || '');
-                const icon = itemType === 'burger' ? '🍔' : itemType === 'pancake' ? '🥞' : '🍽️';
+                const itemCategory = classifyItemType(item.name || '');
+                const icon = itemCategory === 'pice' ? '🥤' : (itemType === 'burger' ? '🍔' : itemType === 'pancake' ? '🥞' : '🍽️');
                 
                 // Get modifiers
                 let modifiersHtml = '';
@@ -1229,17 +1562,143 @@
             if (orderNote && orderNote.trim()) {
                 orderCommentHtml = `<div class="order-comment">${orderNote}</div>`;
             }
+            
+            // Build footer labels for eBar orders (table + delivery type)
+            let footerLabelsHtml = '';
+            if (isEbar) {
+                const footerLabels = [];
+                
+                // Table ID label
+                const tableId = order.raw_payload?.tableId 
+                    || order.raw_payload?.table_id 
+                    || order.raw_payload?.TableID 
+                    || order.raw_payload?.tableNo
+                    || order.raw_payload?.tableNumber
+                    || order.raw_payload?.table
+                    || order.table_id;
+                if (tableId) {
+                    footerLabels.push(`<span class="table-label">🪑 Sto ${tableId}</span>`);
+                }
+                
+                // Delivery type label
+                const deliveryType = order.raw_payload?.deliveryType || order.raw_payload?.delivery_type || order.raw_payload?.orderType || '';
+                if (deliveryType) {
+                    let typeClass = '';
+                    let typeText = deliveryType;
+                    
+                    const typeLower = deliveryType.toLowerCase();
+                    if (typeLower === 'inhouse' || typeLower === 'in_house' || typeLower === 'in-house' || typeLower.includes('dine')) {
+                        typeClass = 'in-house';
+                        typeText = 'IN-HOUSE';
+                    } else if (typeLower === 'pickup' || typeLower === 'pick_up' || typeLower === 'takeaway' || typeLower === 'take_away') {
+                        typeClass = 'pickup';
+                        typeText = 'PICKUP';
+                    } else if (typeLower === 'delivery' || typeLower.includes('dostava')) {
+                        typeClass = 'delivery';
+                        typeText = 'DELIVERY';
+                    }
+                    
+                    footerLabels.push(`<span class="delivery-type-label ${typeClass}">${typeText}</span>`);
+                }
+                
+                if (footerLabels.length > 0) {
+                    footerLabelsHtml = footerLabels.join('');
+                }
+            }
 
-            // Action button based on column
-            const actionBtn = columnType === 'priprema' 
-                ? `<button class="card-action to-spremno" onclick="event.stopPropagation(); moveToSpremno('${order.order_id}')">✅ SPREMNO</button>`
-                : `<button class="card-action to-predato" onclick="event.stopPropagation(); moveToPredato('${order.order_id}')">🚴 PREDATO</button>`;
+            // Action button based on column, provider, and state
+            let actionBtn = '';
+            if (columnType === 'priprema') {
+                // KUHINJA: SPREMNO button
+                actionBtn = `<button class="card-action to-spremno" onclick="event.stopPropagation(); moveToSpremno('${order.order_id}')">✅ SPREMNO</button>`;
+            } else {
+                // FRONT DESK - complex logic based on food/drinks and provider
+                const waitingForFood = hasFood && !foodReady;
+                const isClosed = paidOrderIds.has(order.order_id); // status 5 or 7
+                
+                if (waitingForFood) {
+                    // Waiting for kitchen to prepare food
+                    const orderTime = new Date(order.created_at);
+                    const waitingMinutes = Math.floor((Date.now() - orderTime.getTime()) / 60000);
+                    actionBtn = `
+                        <div class="card-action waiting-food">
+                            <span class="waiting-text">⏳ Čeka hranu</span>
+                            <span class="waiting-timer" data-created-at="${order.created_at}">${waitingMinutes}'</span>
+                        </div>
+                    `;
+                } else if (isEbar) {
+                    // eBar: No payment check needed - can hand over immediately
+                    const readyTime = order.kds_ready_at ? new Date(order.kds_ready_at) : new Date(order.created_at);
+                    const waitingMinutes = Math.floor((Date.now() - readyTime.getTime()) / 60000);
+                    actionBtn = `
+                        <div class="card-action waiting-courier" onclick="event.stopPropagation(); moveToPredato('${order.order_id}')">
+                            <span class="waiting-text">🚴 PREDATO</span>
+                            <span class="courier-timer" data-ready-at="${order.kds_ready_at || order.created_at}">${waitingMinutes}'</span>
+                        </div>
+                    `;
+                } else if (isClosed) {
+                    // Wolt/eMeni/Gloria: Payment confirmed (status 5/7) - can hand over
+                    const paidAt = paidOrderTimestamps[order.order_id];
+                    const paidTime = paidAt ? new Date(paidAt) : new Date();
+                    const waitingMinutes = Math.floor((Date.now() - paidTime.getTime()) / 60000);
+                    actionBtn = `
+                        <div class="card-action waiting-courier" onclick="event.stopPropagation(); moveToPredato('${order.order_id}')">
+                            <span class="waiting-text">🚴 PREDATO</span>
+                            <span class="courier-timer" data-paid-at="${paidAt || ''}">${waitingMinutes}'</span>
+                        </div>
+                    `;
+                } else {
+                    // Wolt/eMeni/Gloria: Waiting for payment
+                    const readyTime = order.kds_ready_at ? new Date(order.kds_ready_at) : new Date(order.created_at);
+                    const waitingMinutes = Math.floor((Date.now() - readyTime.getTime()) / 60000);
+                    actionBtn = `
+                        <div class="card-action waiting-payment">
+                            <span class="waiting-text">💳 ZATVORI RAČUN</span>
+                            <span class="waiting-timer" data-ready-at="${order.kds_ready_at || order.created_at}">${waitingMinutes}'</span>
+                        </div>
+                    `;
+                }
+            }
+
+            // Provider label with styling
+            const provider = (order.provider || '').toLowerCase();
+            let providerClass = 'other';
+            let providerIcon = '📋';
+            let providerName = order.provider || 'N/A';
+            
+            if (provider === 'ebar') {
+                providerClass = 'ebar';
+                providerIcon = '🏪';
+                providerName = 'eBar';
+            } else if (provider === 'wolt') {
+                providerClass = 'wolt';
+                providerIcon = '🔵';
+                providerName = 'Wolt';
+            } else if (provider === 'glovo') {
+                providerClass = 'glovo';
+                providerIcon = '🟡';
+                providerName = 'Glovo';
+            } else if (provider === 'gloriafood' || provider === 'gloria') {
+                providerClass = 'gloriafood';
+                providerIcon = '🍕';
+                providerName = 'Gloria';
+            } else if (provider === 'emeni' || provider === 'collina') {
+                providerClass = 'emeni';
+                providerIcon = '🌐';
+                providerName = 'eMeni';
+            }
 
             return `
-                <div class="order-card ${orderType} ${isUrgent ? 'urgent' : ''}" data-order-id="${order.order_id}">
+                <div class="order-card ${orderType} ${isUrgent ? 'urgent' : ''} ${isEbar ? 'priority' : ''}" data-order-id="${order.order_id}">
                     <div class="card-header">
-                        <span class="card-time">${time}</span>
-                        <span class="card-wait">${waitMinutes}'</span>
+                        <div class="card-header-left">
+                            <span class="provider-label ${providerClass}">${providerIcon} ${providerName}</span>
+                            <span class="card-order-no">#${order.order_no}</span>
+                        </div>
+                        <div class="card-header-right">
+                            <span class="card-time">${time}</span>
+                            <span class="card-wait">${waitMinutes}'</span>
+                        </div>
                     </div>
                     <div class="card-body">
                         <div class="card-items">
@@ -1247,10 +1706,7 @@
                         </div>
                         ${orderCommentHtml}
                     </div>
-                    <div class="card-footer">
-                        <span class="card-order-no">#${order.order_no}</span>
-                        <span class="card-provider">${order.provider || ''}</span>
-                    </div>
+                    ${footerLabelsHtml ? `<div class="card-footer">${footerLabelsHtml}</div>` : ''}
                     ${actionBtn}
                 </div>
             `;
@@ -1267,12 +1723,22 @@
                 : '-';
             const itemsSummary = items.map(i => `${i.quantity}× ${i.name}`).join(', ') || 'Bez stavki';
 
+            // Provider badge for predato
+            const provider = (order.provider || '').toLowerCase();
+            let providerBadge = order.provider || '';
+            if (provider === 'ebar') providerBadge = '🏪 eBar';
+            else if (provider === 'wolt') providerBadge = '🔵 Wolt';
+            else if (provider === 'glovo') providerBadge = '🟡 Glovo';
+            else if (provider === 'gloriafood' || provider === 'gloria') providerBadge = '🍕 Gloria';
+            else if (provider === 'emeni') providerBadge = '🌐 eMeni';
+
             return `
                 <div class="predato-card">
                     <div class="predato-card-header">
-                        <span class="predato-card-time">${orderTime} → 🚴 ${handedTime}</span>
+                        <span class="predato-card-provider">${providerBadge}</span>
                         <span class="predato-card-no">#${order.order_no}</span>
                     </div>
+                    <div class="predato-card-time">${orderTime} → 🚴 ${handedTime}</div>
                     <div class="predato-card-items">${itemsSummary}</div>
                 </div>
             `;
@@ -1285,7 +1751,11 @@
             const itemsMap = {};
 
             orders.forEach(order => {
-                const items = order.raw_payload?.items || [];
+                let items = order.raw_payload?.items || [];
+                
+                // Only count food items (drinks go to FRONT DESK directly)
+                items = items.filter(item => classifyItemType(item.name) !== 'pice');
+                
                 items.forEach(item => {
                     const name = item.name || 'Unknown';
                     const type = classifyItem(name);
@@ -1337,48 +1807,66 @@
                 return true;
             });
 
-            // Filter by HRANA / PIĆE
-            if (!showHrana || !showPice) {
-                filteredOrders = filteredOrders.filter(o => {
-                    const items = o.raw_payload?.items || [];
-                    const { hasHrana, hasPice } = classifyOrderType(items);
-                    
-                    // Show order if it matches any active filter
-                    if (showHrana && hasHrana) return true;
-                    if (showPice && hasPice) return true;
-                    
-                    // If order has only drinks and we show drinks
-                    if (showPice && !hasHrana && hasPice) return true;
-                    // If order has only food and we show food
-                    if (showHrana && hasHrana && !hasPice) return true;
-                    
-                    return false;
-                });
-            }
-
             // Column logic based on KDS timestamps:
             // KUHINJA: kds_ready_at IS NULL (not marked ready yet)
             // FRONT DESK: kds_ready_at IS NOT NULL AND kds_handed_at IS NULL
             // PREDATO: kds_handed_at IS NOT NULL (loaded separately)
             
-            const pripremaOrders = filteredOrders.filter(o => !o.kds_ready_at);
-            const pakovanjeOrders = filteredOrders.filter(o => o.kds_ready_at && !o.kds_handed_at);
+            // Sort function: eBar (priority) first, then by created_at
+            const sortByPriority = (a, b) => {
+                const aIsEbar = (a.provider || '').toLowerCase() === 'ebar';
+                const bIsEbar = (b.provider || '').toLowerCase() === 'ebar';
+                
+                // eBar first
+                if (aIsEbar && !bIsEbar) return -1;
+                if (!aIsEbar && bIsEbar) return 1;
+                
+                // Then by created_at (oldest first)
+                return new Date(a.created_at) - new Date(b.created_at);
+            };
+            
+            // Time filter for FRONT DESK - only show orders less than 1:30h old
+            const ninetyMinutesAgo = new Date();
+            ninetyMinutesAgo.setMinutes(ninetyMinutesAgo.getMinutes() - 90);
+            
+            // NEW LOGIC:
+            // KUHINJA: Orders with FOOD items that haven't been marked ready
+            // - Shows only FOOD items (not drinks)
+            // - Orders with ONLY drinks skip kuhinja entirely
+            const pripremaOrders = filteredOrders.filter(o => {
+                if (o.kds_ready_at) return false; // Already marked ready
+                return orderHasFood(o); // Must have food items
+            }).sort(sortByPriority);
+            
+            // FRONT DESK: 
+            // - Shows ALL orders immediately (with all items)
+            // - Button is purple "Čeka hranu" until kds_ready_at is set
+            // - Then changes to PREDATO (eBar) or ZATVORI RAČUN (others)
+            const pakovanjeOrders = filteredOrders.filter(o => {
+                if (o.kds_handed_at) return false; // Already handed
+                if (new Date(o.created_at) < ninetyMinutesAgo) return false; // Too old
+                return true; // Show all orders
+            }).sort(sortByPriority);
 
             // Render columns
             const pripremaEl = document.getElementById('pripremaContent');
             const pakovanjeEl = document.getElementById('pakovanjeContent');
 
-            pripremaEl.innerHTML = pripremaOrders.length 
-                ? pripremaOrders.map(o => renderOrderCard(o, 'priprema')).join('')
+            // Render priprema cards (only food items - empty cards filtered out)
+            const pripremaCards = pripremaOrders.map(o => renderOrderCard(o, 'priprema')).filter(html => html.trim() !== '');
+            pripremaEl.innerHTML = pripremaCards.length 
+                ? pripremaCards.join('')
                 : '<div class="empty-state"><div class="icon">✅</div><div>Sve spremljeno!</div></div>';
 
-            pakovanjeEl.innerHTML = pakovanjeOrders.length
-                ? pakovanjeOrders.map(o => renderOrderCard(o, 'pakovanje')).join('')
+            // Render FRONT DESK cards (may have drinks waiting, or complete orders)
+            const pakovanjeCards = pakovanjeOrders.map(o => renderOrderCard(o, 'pakovanje')).filter(html => html.trim() !== '');
+            pakovanjeEl.innerHTML = pakovanjeCards.length
+                ? pakovanjeCards.join('')
                 : '<div class="empty-state"><div class="icon">⏳</div><div>Čeka se iz kuhinje</div></div>';
 
             // Update column counts
-            document.getElementById('pripremaCount').textContent = pripremaOrders.length;
-            document.getElementById('pakovanjeCount').textContent = pakovanjeOrders.length;
+            document.getElementById('pripremaCount').textContent = pripremaCards.length;
+            document.getElementById('pakovanjeCount').textContent = pakovanjeCards.length;
 
             // Render predato from database (kds_handed_at today)
             const predatoContent = document.getElementById('predatoContent');
@@ -1391,11 +1879,10 @@
             
             predatoContent.innerHTML = filteredPredato.length
                 ? filteredPredato.map(o => renderPredatoCard(o)).join('')
-                : '<div class="empty-state"><div class="icon">📦</div><div>Nema predatih porudžbina danas</div></div>';
+                : '<div class="empty-state"><div class="icon">📦</div><div>Nema predatih porudžbina u poslednjih sat vremena</div></div>';
 
-            // Update counts
+            // Update count
             document.getElementById('predatoCount').textContent = filteredPredato.length;
-            document.getElementById('predatoCountHeader').textContent = filteredPredato.length;
 
             // Update stats (priprema + pakovanje)
             updateStats([...pripremaOrders, ...pakovanjeOrders]);
@@ -1511,20 +1998,6 @@
         }
 
         // ============================================
-        // FILTER TOGGLE (HRANA / PIĆE)
-        // ============================================
-        function toggleFilter(type) {
-            if (type === 'hrana') {
-                showHrana = !showHrana;
-                document.getElementById('filterHrana').classList.toggle('active', showHrana);
-            } else if (type === 'pice') {
-                showPice = !showPice;
-                document.getElementById('filterPice').classList.toggle('active', showPice);
-            }
-            renderAll();
-        }
-
-        // ============================================
         // SOUND NOTIFICATION
         // ============================================
         function toggleSound() {
@@ -1612,28 +2085,118 @@
             btn.addEventListener('click', () => setView(btn.dataset.view));
         });
 
-        document.getElementById('predatoToggle').addEventListener('click', () => togglePredatoPanel(true));
         document.getElementById('predatoBtnSidebar').addEventListener('click', () => togglePredatoPanel(true));
         document.getElementById('predatoClose').addEventListener('click', () => togglePredatoPanel(false));
         document.getElementById('panelOverlay').addEventListener('click', () => togglePredatoPanel(false));
 
         // ============================================
-        // POLLING
+        // REALTIME SUBSCRIPTIONS (replaces polling)
         // ============================================
+        function setupRealtimeSubscriptions() {
+            console.log('🔌 Setting up Realtime subscriptions...');
+            
+            // Subscribe to emeni_orders changes
+            const ordersChannel = supabaseClient
+                .channel('kds-orders')
+                .on(
+                    'postgres_changes',
+                    {
+                        event: '*', // INSERT, UPDATE, DELETE
+                        schema: 'public',
+                        table: 'emeni_orders'
+                    },
+                    async (payload) => {
+                        console.log('📦 Order change:', payload.eventType, payload.new?.order_id || payload.old?.order_id);
+                        
+                        // Reload orders on any change
+                        await loadOrders();
+                        
+                        // If it's a handed order, also reload predato
+                        if (payload.new?.kds_handed_at) {
+                            await loadPredatoOrders();
+                        }
+                        
+                        renderAll();
+                    }
+                )
+                .subscribe((status, err) => {
+                    console.log('📡 Orders subscription status:', status);
+                    if (status === 'SUBSCRIBED') {
+                        realtimeConnected = true;
+                        updateConnectionStatus(true);
+                    } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+                        console.error('❌ Orders subscription error:', err);
+                        realtimeConnected = false;
+                        updateConnectionStatus(false);
+                    }
+                });
+
+            // Subscribe to emeni_order_lifecycle changes (for paid status)
+            const lifecycleChannel = supabaseClient
+                .channel('kds-lifecycle')
+                .on(
+                    'postgres_changes',
+                    {
+                        event: 'INSERT',
+                        schema: 'public',
+                        table: 'emeni_order_lifecycle'
+                    },
+                    async (payload) => {
+                        console.log('💳 Lifecycle event:', payload.new?.event_type, payload.new?.status);
+                        
+                        // Check if this is a closed/paid event (status 5 or 7)
+                        const isClosedEvent = payload.new?.status === 5 || payload.new?.status === 7;
+                        
+                        if (isClosedEvent && payload.new?.order_id) {
+                            console.log('💰 Order closed (status ' + payload.new?.status + '):', payload.new?.order_id);
+                            paidOrderIds.add(payload.new.order_id);
+                            paidOrderTimestamps[payload.new.order_id] = payload.new.timestamp || new Date().toISOString();
+                            renderAll();
+                        }
+                    }
+                )
+                .subscribe((status, err) => {
+                    console.log('📡 Lifecycle subscription status:', status);
+                    if (err) {
+                        console.error('❌ Lifecycle subscription error:', err);
+                    }
+                });
+        }
+
+        function updateConnectionStatus(connected) {
+            const indicator = document.getElementById('realtimeIndicator');
+            if (indicator) {
+                indicator.className = connected ? 'realtime-indicator connected' : 'realtime-indicator disconnected';
+                indicator.title = connected ? 'Realtime povezan' : 'Realtime nije povezan';
+            }
+        }
+
+        // Fallback: minimal polling every 30 seconds as safety net
         setInterval(async () => {
-            await loadOrders();
-            await loadPredatoOrders();
-            renderAll();
-        }, 5000);
+            if (!realtimeConnected) {
+                console.log('⚠️ Realtime not connected, using fallback polling...');
+                await loadOrders();
+                await loadPredatoOrders();
+                renderAll();
+            }
+        }, 30000);
 
         // ============================================
         // INIT
         // ============================================
         async function init() {
+            console.log('🚀 Initializing KDS v2 with Realtime...');
+            
+            // Initial data load
             await loadLocations();
             await loadModifiersMap();
             await loadPredatoOrders();
             await loadOrders();
+            
+            // Setup realtime subscriptions
+            setupRealtimeSubscriptions();
+            
+            console.log('✅ KDS Ready');
         }
 
         init();
