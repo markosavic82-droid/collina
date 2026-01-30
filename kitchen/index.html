@@ -65,6 +65,66 @@
             margin-left: auto;
         }
 
+        .filter-toggle {
+            display: flex;
+            background: #2a2a28;
+            border-radius: 4px;
+            padding: 3px;
+            gap: 3px;
+            margin-left: 12px;
+        }
+
+        .filter-btn {
+            padding: 8px 14px;
+            border: none;
+            background: transparent;
+            color: #888;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 700;
+            font-size: 0.75rem;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .filter-btn:hover {
+            background: #3a3a38;
+            color: #EAE4DA;
+        }
+
+        .filter-btn.active {
+            background: #10B981;
+            color: white;
+        }
+
+        .filter-btn .icon {
+            font-size: 1rem;
+        }
+
+        .sound-btn {
+            padding: 8px 12px;
+            border: none;
+            background: #2a2a28;
+            color: #888;
+            font-size: 1.1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-left: 8px;
+            transition: all 0.2s;
+        }
+
+        .sound-btn:hover {
+            background: #3a3a38;
+        }
+
+        .sound-btn.active {
+            background: #10B981;
+            color: white;
+        }
+
         .toggle-btn {
             padding: 8px 16px;
             border: none;
@@ -776,9 +836,22 @@
         
         <div class="view-toggle">
             <button class="toggle-btn active" data-view="oba">OBA</button>
-            <button class="toggle-btn" data-view="priprema">PRIPREMA</button>
-            <button class="toggle-btn" data-view="pakovanje">PAKOVANJE</button>
+            <button class="toggle-btn" data-view="priprema">KUHINJA</button>
+            <button class="toggle-btn" data-view="pakovanje">FRONT DESK</button>
         </div>
+
+        <div class="filter-toggle">
+            <button class="filter-btn active" id="filterHrana" onclick="toggleFilter('hrana')">
+                <span class="icon">🍔</span> HRANA
+            </button>
+            <button class="filter-btn active" id="filterPice" onclick="toggleFilter('pice')">
+                <span class="icon">🥤</span> PIĆE
+            </button>
+        </div>
+
+        <button class="sound-btn active" id="soundToggle" onclick="toggleSound()" title="Zvučna notifikacija">
+            🔔
+        </button>
     </header>
 
     <!-- Main Layout -->
@@ -788,7 +861,7 @@
             <!-- U Pripremi Column -->
             <div class="kanban-column column-priprema" id="columnPriprema">
                 <div class="column-header priprema-header">
-                    <span>🔥 U PRIPREMI</span>
+                    <span>🔥 KUHINJA</span>
                     <span class="column-count" id="pripremaCount">0</span>
                 </div>
                 <div class="column-content" id="pripremaContent">
@@ -799,7 +872,7 @@
             <!-- Pakovanje Column (was Spremno) -->
             <div class="kanban-column column-spremno" id="columnSpremno">
                 <div class="column-header pakovanje-header">
-                    <span>📦 PAKOVANJE</span>
+                    <span>📦 FRONT DESK</span>
                     <span class="column-count" id="pakovanjeCount">0</span>
                 </div>
                 <div class="column-content" id="pakovanjeContent">
@@ -897,12 +970,55 @@
         let locations = {};
         let selectedLocation = '';
         let currentView = 'oba';
+        
+        // Filter state
+        let showHrana = true;
+        let showPice = true;
+        
+        // Sound state
+        let soundEnabled = true;
+        let lastOrderIds = new Set();
 
         // ============================================
         // CLASSIFICATION
         // ============================================
         const BURGER_KEYWORDS = ['burger', 'smash', 'collina', 'chicken', 'wrap', 'big', 'double', 'baconator', 'vege', 'original', 'triple', 'nuggets', 'caesar'];
         const PANCAKE_KEYWORDS = ['palačink', 'palacink', 'nutella', 'eurokrem', 'plazma', 'krem', 'američka', 'americka'];
+        
+        // Drinks classification
+        const DRINK_KEYWORDS = [
+            'kafa', 'kafe', 'coffee', 'espreso', 'espresso', 'cappuccino', 'kapućino', 'kapucino',
+            'latte', 'macchiato', 'makijato', 'americano', 'nes', 'nescafe',
+            'čaj', 'caj', 'tea',
+            'sok', 'juice', 'ceđeni', 'cedjeni', 'fresh', 'smoothie',
+            'voda', 'water', 'aqua', 'rosa', 'mineralna', 'gazirana', 'negazirana',
+            'cola', 'kola', 'fanta', 'sprite', 'schweppes', 'tonic', 'bitter',
+            'pivo', 'beer', 'lager', 'ale',
+            'vino', 'wine',
+            'rakija', 'viski', 'whisky', 'whiskey', 'vodka', 'džin', 'gin', 'rum', 'tequila',
+            'koktel', 'cocktail', 'mojito', 'margarita', 'aperol', 'spritz',
+            'milkshake', 'milk shake', 'shake',
+            'limonada', 'lemonade', 'ice tea', 'ledeni čaj',
+            'red bull', 'energy', 'energetski'
+        ];
+
+        function classifyItemType(itemName) {
+            const name = (itemName || '').toLowerCase();
+            for (const kw of DRINK_KEYWORDS) {
+                if (name.includes(kw)) return 'pice';
+            }
+            return 'hrana';
+        }
+
+        function classifyOrderType(items) {
+            let hasHrana = false, hasPice = false;
+            for (const item of items) {
+                const type = classifyItemType(item.name);
+                if (type === 'hrana') hasHrana = true;
+                if (type === 'pice') hasPice = true;
+            }
+            return { hasHrana, hasPice };
+        }
 
         function classifyItem(itemName) {
             const name = (itemName || '').toLowerCase();
@@ -1001,6 +1117,10 @@
                 
                 const data = await supabaseFetch(url);
                 if (data && Array.isArray(data)) {
+                    // Check for new orders (for sound notification)
+                    const ordersInPriprema = data.filter(o => !o.kds_ready_at);
+                    checkForNewOrders(ordersInPriprema);
+                    
                     allOrders = data;
                     renderAll();
                 }
@@ -1217,9 +1337,28 @@
                 return true;
             });
 
+            // Filter by HRANA / PIĆE
+            if (!showHrana || !showPice) {
+                filteredOrders = filteredOrders.filter(o => {
+                    const items = o.raw_payload?.items || [];
+                    const { hasHrana, hasPice } = classifyOrderType(items);
+                    
+                    // Show order if it matches any active filter
+                    if (showHrana && hasHrana) return true;
+                    if (showPice && hasPice) return true;
+                    
+                    // If order has only drinks and we show drinks
+                    if (showPice && !hasHrana && hasPice) return true;
+                    // If order has only food and we show food
+                    if (showHrana && hasHrana && !hasPice) return true;
+                    
+                    return false;
+                });
+            }
+
             // Column logic based on KDS timestamps:
-            // U PRIPREMI: kds_ready_at IS NULL (not marked ready yet)
-            // PAKOVANJE: kds_ready_at IS NOT NULL AND kds_handed_at IS NULL
+            // KUHINJA: kds_ready_at IS NULL (not marked ready yet)
+            // FRONT DESK: kds_ready_at IS NOT NULL AND kds_handed_at IS NULL
             // PREDATO: kds_handed_at IS NOT NULL (loaded separately)
             
             const pripremaOrders = filteredOrders.filter(o => !o.kds_ready_at);
@@ -1235,7 +1374,7 @@
 
             pakovanjeEl.innerHTML = pakovanjeOrders.length
                 ? pakovanjeOrders.map(o => renderOrderCard(o, 'pakovanje')).join('')
-                : '<div class="empty-state"><div class="icon">⏳</div><div>Čeka se priprema</div></div>';
+                : '<div class="empty-state"><div class="icon">⏳</div><div>Čeka se iz kuhinje</div></div>';
 
             // Update column counts
             document.getElementById('pripremaCount').textContent = pripremaOrders.length;
@@ -1369,6 +1508,88 @@
             } else if (view === 'pakovanje') {
                 priprema.classList.add('hidden');
             }
+        }
+
+        // ============================================
+        // FILTER TOGGLE (HRANA / PIĆE)
+        // ============================================
+        function toggleFilter(type) {
+            if (type === 'hrana') {
+                showHrana = !showHrana;
+                document.getElementById('filterHrana').classList.toggle('active', showHrana);
+            } else if (type === 'pice') {
+                showPice = !showPice;
+                document.getElementById('filterPice').classList.toggle('active', showPice);
+            }
+            renderAll();
+        }
+
+        // ============================================
+        // SOUND NOTIFICATION
+        // ============================================
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            document.getElementById('soundToggle').classList.toggle('active', soundEnabled);
+            document.getElementById('soundToggle').textContent = soundEnabled ? '🔔' : '🔕';
+        }
+
+        // Create audio context for notification sound
+        let audioContext = null;
+        
+        function playNotificationSound() {
+            if (!soundEnabled) return;
+            
+            try {
+                if (!audioContext) {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                
+                // Play two short beeps
+                const playBeep = (startTime, frequency) => {
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+                    
+                    oscillator.frequency.value = frequency;
+                    oscillator.type = 'sine';
+                    
+                    gainNode.gain.setValueAtTime(0.3, startTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + 0.15);
+                    
+                    oscillator.start(startTime);
+                    oscillator.stop(startTime + 0.15);
+                };
+                
+                const now = audioContext.currentTime;
+                playBeep(now, 880);        // First beep (A5)
+                playBeep(now + 0.2, 1100);  // Second beep (higher)
+                
+                console.log('🔔 New order notification sound');
+            } catch (err) {
+                console.error('Sound error:', err);
+            }
+        }
+
+        function checkForNewOrders(orders) {
+            const currentIds = new Set(orders.map(o => o.order_id));
+            
+            // Find new orders (in current but not in last)
+            let newOrderCount = 0;
+            for (const id of currentIds) {
+                if (!lastOrderIds.has(id)) {
+                    newOrderCount++;
+                }
+            }
+            
+            // Play sound if new orders appeared (and not first load)
+            if (newOrderCount > 0 && lastOrderIds.size > 0) {
+                playNotificationSound();
+            }
+            
+            // Update last known IDs
+            lastOrderIds = currentIds;
         }
 
         // ============================================
