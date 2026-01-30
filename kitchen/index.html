@@ -112,15 +112,51 @@
             flex: 1;
             display: flex;
             flex-direction: column;
-            flex-wrap: wrap;
-            align-content: flex-start;
-            gap: 8px;
+            background: #252523;
+            border-radius: 8px;
             overflow: hidden;
             min-width: 0;
         }
 
         .kanban-column.hidden {
             display: none;
+        }
+
+        .column-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 700;
+            font-size: 1rem;
+            color: white;
+        }
+
+        .column-header.priprema-header {
+            background: linear-gradient(135deg, #808BC5 0%, #6B75A8 100%);
+        }
+
+        .column-header.pakovanje-header {
+            background: linear-gradient(135deg, #9B59B6 0%, #8E44AD 100%);
+        }
+
+        .column-count {
+            background: rgba(255,255,255,0.25);
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+        }
+
+        .column-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            flex-wrap: wrap;
+            align-content: flex-start;
+            gap: 8px;
+            padding: 12px;
+            overflow: auto;
         }
 
         /* ============================================
@@ -167,10 +203,10 @@
             color: white;
         }
 
-        /* Spremno column cards - different background */
+        /* Pakovanje column cards - waiting for courier */
         .column-spremno .order-card {
-            background: #2d2d2a;
-            border-color: #4a4a45;
+            background: #2d2a2d;
+            border-color: #5a4a5a;
         }
 
         .card-header {
@@ -741,7 +777,7 @@
         <div class="view-toggle">
             <button class="toggle-btn active" data-view="oba">OBA</button>
             <button class="toggle-btn" data-view="priprema">PRIPREMA</button>
-            <button class="toggle-btn" data-view="spremno">SPREMNO</button>
+            <button class="toggle-btn" data-view="pakovanje">PAKOVANJE</button>
         </div>
     </header>
 
@@ -751,12 +787,24 @@
         <div class="columns-container">
             <!-- U Pripremi Column -->
             <div class="kanban-column column-priprema" id="columnPriprema">
-                <!-- Cards will be rendered here -->
+                <div class="column-header priprema-header">
+                    <span>🔥 U PRIPREMI</span>
+                    <span class="column-count" id="pripremaCount">0</span>
+                </div>
+                <div class="column-content" id="pripremaContent">
+                    <!-- Cards will be rendered here -->
+                </div>
             </div>
 
-            <!-- Spremno Column -->
+            <!-- Pakovanje Column (was Spremno) -->
             <div class="kanban-column column-spremno" id="columnSpremno">
-                <!-- Cards will be rendered here -->
+                <div class="column-header pakovanje-header">
+                    <span>📦 PAKOVANJE</span>
+                    <span class="column-count" id="pakovanjeCount">0</span>
+                </div>
+                <div class="column-content" id="pakovanjeContent">
+                    <!-- Cards will be rendered here -->
+                </div>
             </div>
         </div>
 
@@ -849,9 +897,6 @@
         let locations = {};
         let selectedLocation = '';
         let currentView = 'oba';
-        
-        // Local state for immediate UI feedback (before DB confirms)
-        let localSpremno = new Set();
 
         // ============================================
         // CLASSIFICATION
@@ -951,17 +996,12 @@
                 const twoHoursAgo = new Date();
                 twoHoursAgo.setHours(twoHoursAgo.getHours() - 2);
 
-                const url = `${SUPABASE_URL}/rest/v1/emeni_orders?select=*&created_at=gte.${encodeURIComponent(twoHoursAgo.toISOString())}&or=(status.eq.3,status.eq.4,status.eq.5)&order=created_at.asc`;
+                // Load orders with KDS columns - include those in production OR with kds_ready but not handed
+                const url = `${SUPABASE_URL}/rest/v1/emeni_orders?select=*&created_at=gte.${encodeURIComponent(twoHoursAgo.toISOString())}&or=(status.in.(3,4,5),and(kds_ready_at.not.is.null,kds_handed_at.is.null))&order=created_at.asc`;
                 
                 const data = await supabaseFetch(url);
                 if (data && Array.isArray(data)) {
                     allOrders = data;
-                    
-                    // Load lifecycle data for these orders
-                    if (allOrders.length > 0) {
-                        await loadLifecycleData(allOrders.map(o => o.order_id));
-                    }
-                    
                     renderAll();
                 }
             } catch (err) {
@@ -969,33 +1009,7 @@
             }
         }
 
-        // Load lifecycle data to determine which column each order belongs to
-        let lifecycleMap = {}; // order_id -> { hasStatus5, hasStatus6, hasStatus7 }
-        
-        async function loadLifecycleData(orderIds) {
-            try {
-                const idsString = orderIds.join(',');
-                const url = `${SUPABASE_URL}/rest/v1/emeni_order_lifecycle?select=order_id,status,timestamp&order_id=in.(${idsString})&status=in.(5,6,7)&order=timestamp.desc`;
-                
-                const data = await supabaseFetch(url);
-                
-                lifecycleMap = {};
-                if (data && Array.isArray(data)) {
-                    data.forEach(event => {
-                        if (!lifecycleMap[event.order_id]) {
-                            lifecycleMap[event.order_id] = { hasStatus5: false, hasStatus6: false, hasStatus7: false };
-                        }
-                        if (event.status === 5) lifecycleMap[event.order_id].hasStatus5 = true;
-                        if (event.status === 6) lifecycleMap[event.order_id].hasStatus6 = true;
-                        if (event.status === 7) lifecycleMap[event.order_id].hasStatus7 = true;
-                    });
-                }
-            } catch (err) {
-                console.error('Error loading lifecycle:', err);
-            }
-        }
-
-        // Load all delivered orders for today (for Predato panel)
+        // Load handed orders for today (Predato panel)
         let predatoOrders = [];
         
         async function loadPredatoOrders() {
@@ -1004,40 +1018,12 @@
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
                 
-                // First get order_ids with status 6 or 7 from lifecycle today
-                const lifecycleUrl = `${SUPABASE_URL}/rest/v1/emeni_order_lifecycle?select=order_id,status,timestamp&timestamp=gte.${encodeURIComponent(today.toISOString())}&status=in.(6,7)&order=timestamp.desc`;
+                // Get orders with kds_handed_at today
+                const url = `${SUPABASE_URL}/rest/v1/emeni_orders?select=*&kds_handed_at=gte.${encodeURIComponent(today.toISOString())}&order=kds_handed_at.desc`;
                 
-                const lifecycleData = await supabaseFetch(lifecycleUrl);
-                
-                if (!lifecycleData || lifecycleData.length === 0) {
-                    predatoOrders = [];
-                    return;
-                }
-                
-                // Get unique order_ids (keep first occurrence = most recent)
-                const seenIds = new Set();
-                const uniqueOrderIds = [];
-                lifecycleData.forEach(event => {
-                    if (!seenIds.has(event.order_id)) {
-                        seenIds.add(event.order_id);
-                        uniqueOrderIds.push(event.order_id);
-                    }
-                });
-                
-                // Fetch order details
-                const orderIdsString = uniqueOrderIds.join(',');
-                const ordersUrl = `${SUPABASE_URL}/rest/v1/emeni_orders?select=*&order_id=in.(${orderIdsString})`;
-                
-                const ordersData = await supabaseFetch(ordersUrl);
-                
-                if (ordersData && Array.isArray(ordersData)) {
-                    // Sort by the lifecycle timestamp (most recent first)
-                    const orderMap = {};
-                    ordersData.forEach(o => orderMap[o.order_id] = o);
-                    
-                    predatoOrders = uniqueOrderIds
-                        .map(id => orderMap[id])
-                        .filter(Boolean);
+                const data = await supabaseFetch(url);
+                if (data && Array.isArray(data)) {
+                    predatoOrders = data;
                 }
             } catch (err) {
                 console.error('Error loading predato orders:', err);
@@ -1127,7 +1113,7 @@
             // Action button based on column
             const actionBtn = columnType === 'priprema' 
                 ? `<button class="card-action to-spremno" onclick="event.stopPropagation(); moveToSpremno('${order.order_id}')">✅ SPREMNO</button>`
-                : `<button class="card-action to-predato" onclick="event.stopPropagation(); moveToPredato('${order.order_id}')">📦 PREDATO</button>`;
+                : `<button class="card-action to-predato" onclick="event.stopPropagation(); moveToPredato('${order.order_id}')">🚴 PREDATO</button>`;
 
             return `
                 <div class="order-card ${orderType} ${isUrgent ? 'urgent' : ''}" data-order-id="${order.order_id}">
@@ -1155,13 +1141,16 @@
         // ============================================
         function renderPredatoCard(order) {
             let items = order.raw_payload?.items || [];
-            const time = new Date(order.created_at).toLocaleTimeString('sr-RS', { hour: '2-digit', minute: '2-digit' });
+            const orderTime = new Date(order.created_at).toLocaleTimeString('sr-RS', { hour: '2-digit', minute: '2-digit' });
+            const handedTime = order.kds_handed_at 
+                ? new Date(order.kds_handed_at).toLocaleTimeString('sr-RS', { hour: '2-digit', minute: '2-digit' })
+                : '-';
             const itemsSummary = items.map(i => `${i.quantity}× ${i.name}`).join(', ') || 'Bez stavki';
 
             return `
                 <div class="predato-card">
                     <div class="predato-card-header">
-                        <span class="predato-card-time">${time}</span>
+                        <span class="predato-card-time">${orderTime} → 🚴 ${handedTime}</span>
                         <span class="predato-card-no">#${order.order_no}</span>
                     </div>
                     <div class="predato-card-items">${itemsSummary}</div>
@@ -1228,39 +1217,31 @@
                 return true;
             });
 
-            // Use lifecycle data to determine column
-            // Priprema: no status 5/6/7 in lifecycle (or only local state)
-            // Spremno: has status 5 but not 6/7
-            // Predato: has status 6 or 7
+            // Column logic based on KDS timestamps:
+            // U PRIPREMI: kds_ready_at IS NULL (not marked ready yet)
+            // PAKOVANJE: kds_ready_at IS NOT NULL AND kds_handed_at IS NULL
+            // PREDATO: kds_handed_at IS NOT NULL (loaded separately)
             
-            const pripremaOrders = filteredOrders.filter(o => {
-                const lc = lifecycleMap[o.order_id];
-                // In priprema if: no lifecycle 5/6/7 AND not locally moved
-                const hasDeliveryStatus = lc && (lc.hasStatus5 || lc.hasStatus6 || lc.hasStatus7);
-                return !hasDeliveryStatus && !localSpremno.has(o.order_id);
-            });
-
-            const spremnoOrders = filteredOrders.filter(o => {
-                const lc = lifecycleMap[o.order_id];
-                // In spremno if: has status 5 (or locally moved) but not 6/7
-                const hasReady = (lc && lc.hasStatus5) || localSpremno.has(o.order_id);
-                const hasDelivered = lc && (lc.hasStatus6 || lc.hasStatus7);
-                return hasReady && !hasDelivered;
-            });
+            const pripremaOrders = filteredOrders.filter(o => !o.kds_ready_at);
+            const pakovanjeOrders = filteredOrders.filter(o => o.kds_ready_at && !o.kds_handed_at);
 
             // Render columns
-            const pripremaEl = document.getElementById('columnPriprema');
-            const spremnoEl = document.getElementById('columnSpremno');
+            const pripremaEl = document.getElementById('pripremaContent');
+            const pakovanjeEl = document.getElementById('pakovanjeContent');
 
             pripremaEl.innerHTML = pripremaOrders.length 
                 ? pripremaOrders.map(o => renderOrderCard(o, 'priprema')).join('')
                 : '<div class="empty-state"><div class="icon">✅</div><div>Sve spremljeno!</div></div>';
 
-            spremnoEl.innerHTML = spremnoOrders.length
-                ? spremnoOrders.map(o => renderOrderCard(o, 'spremno')).join('')
-                : '<div class="empty-state"><div class="icon">📦</div><div>Čeka se priprema</div></div>';
+            pakovanjeEl.innerHTML = pakovanjeOrders.length
+                ? pakovanjeOrders.map(o => renderOrderCard(o, 'pakovanje')).join('')
+                : '<div class="empty-state"><div class="icon">⏳</div><div>Čeka se priprema</div></div>';
 
-            // Render predato from database
+            // Update column counts
+            document.getElementById('pripremaCount').textContent = pripremaOrders.length;
+            document.getElementById('pakovanjeCount').textContent = pakovanjeOrders.length;
+
+            // Render predato from database (kds_handed_at today)
             const predatoContent = document.getElementById('predatoContent');
             
             // Filter predato by location if selected
@@ -1277,10 +1258,10 @@
             document.getElementById('predatoCount').textContent = filteredPredato.length;
             document.getElementById('predatoCountHeader').textContent = filteredPredato.length;
 
-            // Update stats
-            updateStats([...pripremaOrders, ...spremnoOrders]);
+            // Update stats (priprema + pakovanje)
+            updateStats([...pripremaOrders, ...pakovanjeOrders]);
 
-            // Render items summary (only priprema)
+            // Render items summary (only priprema - what needs to be cooked)
             renderItemsSummary(pripremaOrders);
         }
 
@@ -1312,11 +1293,11 @@
         // ACTIONS
         // ============================================
         
-        // Write lifecycle event to Supabase
-        async function writeLifecycleEvent(orderId, status, eventType) {
+        // Update KDS timestamp on emeni_orders
+        async function updateKdsTimestamp(orderId, column) {
             try {
-                const response = await fetch(`${SUPABASE_URL}/rest/v1/emeni_order_lifecycle`, {
-                    method: 'POST',
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/emeni_orders?order_id=eq.${orderId}`, {
+                    method: 'PATCH',
                     headers: {
                         'apikey': SUPABASE_KEY,
                         'Authorization': `Bearer ${SUPABASE_KEY}`,
@@ -1324,55 +1305,44 @@
                         'Prefer': 'return=representation'
                     },
                     body: JSON.stringify({
-                        order_id: orderId,
-                        status: status,
-                        timestamp: new Date().toISOString(),
-                        event_type: eventType
+                        [column]: new Date().toISOString()
                     })
                 });
                 
                 if (!response.ok) {
                     const error = await response.text();
-                    console.error('Lifecycle write failed:', error);
+                    console.error('KDS update failed:', error);
                     return false;
                 }
                 
-                console.log(`✅ Lifecycle: order ${orderId} → status ${status} (${eventType})`);
+                console.log(`✅ KDS: order ${orderId} → ${column} = NOW()`);
                 return true;
             } catch (err) {
-                console.error('Lifecycle write error:', err);
+                console.error('KDS update error:', err);
                 return false;
             }
         }
 
         async function moveToSpremno(orderId) {
-            // Write status 5 (READY) to lifecycle
-            const success = await writeLifecycleEvent(orderId, 5, 'kds.spremno');
+            // Write kds_ready_at timestamp
+            const success = await updateKdsTimestamp(orderId, 'kds_ready_at');
             
             if (success) {
-                // Immediate UI feedback
-                localSpremno.add(orderId);
-                renderAll();
-                
-                // Reload lifecycle to sync with DB
-                await loadLifecycleData(allOrders.map(o => o.order_id));
-                localSpremno.delete(orderId); // DB has it now
-                renderAll();
+                // Reload orders to get updated data
+                await loadOrders();
             } else {
                 alert('Greška pri upisu! Pokušajte ponovo.');
             }
         }
 
         async function moveToPredato(orderId) {
-            // Write status 6 (DELIVERY) to lifecycle
-            const success = await writeLifecycleEvent(orderId, 6, 'kds.predato');
+            // Write kds_handed_at timestamp
+            const success = await updateKdsTimestamp(orderId, 'kds_handed_at');
             
             if (success) {
-                localSpremno.delete(orderId);
-                // Reload from database
-                await loadLifecycleData(allOrders.map(o => o.order_id));
+                // Reload orders to get updated data
+                await loadOrders();
                 await loadPredatoOrders();
-                renderAll();
             } else {
                 alert('Greška pri upisu! Pokušajte ponovo.');
             }
@@ -1389,14 +1359,14 @@
             });
 
             const priprema = document.getElementById('columnPriprema');
-            const spremno = document.getElementById('columnSpremno');
+            const pakovanje = document.getElementById('columnSpremno');
 
             priprema.classList.remove('hidden');
-            spremno.classList.remove('hidden');
+            pakovanje.classList.remove('hidden');
 
             if (view === 'priprema') {
-                spremno.classList.add('hidden');
-            } else if (view === 'spremno') {
+                pakovanje.classList.add('hidden');
+            } else if (view === 'pakovanje') {
                 priprema.classList.add('hidden');
             }
         }
@@ -1432,6 +1402,7 @@
         setInterval(async () => {
             await loadOrders();
             await loadPredatoOrders();
+            renderAll();
         }, 5000);
 
         // ============================================
