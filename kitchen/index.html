@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Collina Kitchen Display v2</title>
+    <title>Collina Kitchen Display v2.1 (+ Dispatcher Comments)</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
@@ -439,7 +439,7 @@
             font-size: 1rem;
         }
 
-        /* Order-level comment - VERY visible */
+        /* Order-level comment - VERY visible (from platform - red) */
         .order-comment {
             padding: 10px 12px;
             background: rgba(255, 107, 107, 0.25);
@@ -454,6 +454,55 @@
         .order-comment::before {
             content: '📝 ';
             font-size: 1.1rem;
+        }
+
+        /* DISPATCHER comment - order level (orange, smaller like other text) */
+        .dispatcher-order-comment {
+            padding: 6px 10px;
+            background: rgba(249, 115, 22, 0.2);
+            border-left: 3px solid #F97316;
+            margin: 6px 0;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #FB923C;
+            border-radius: 0 4px 4px 0;
+        }
+
+        .dispatcher-order-comment::before {
+            content: '📢 ';
+        }
+
+        /* DISPATCHER comment - item level (orange, smaller) */
+        .dispatcher-item-comment {
+            font-size: 0.8rem;
+            color: #FB923C;
+            padding: 4px 8px;
+            font-weight: 600;
+            background: rgba(249, 115, 22, 0.15);
+            border-left: 3px solid #F97316;
+            border-radius: 0 4px 4px 0;
+            margin: 2px 0 2px 16px;
+        }
+
+        .dispatcher-item-comment::before {
+            content: '💬 ';
+        }
+
+        /* Container for all dispatcher comments on items */
+        .dispatcher-items-comments {
+            background: rgba(249, 115, 22, 0.08);
+            border-radius: 4px;
+            padding: 6px;
+            margin: 6px 0;
+        }
+
+        .dispatcher-items-comments-header {
+            font-size: 0.7rem;
+            color: #F97316;
+            font-weight: 600;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
         }
 
         /* Table number label - for footer */
@@ -1319,6 +1368,7 @@
 
         // Table ID to Name mapping (eBar Banovo Brdo)
         const TABLE_NAMES = {
+            // Banovo Brdo stolovi
             '480': 'B 1', '482': 'B 2', '483': 'B 3', '487': 'B 4', '488': 'B 5', '489': 'B 6',
             '486': 'BP 1', '501': 'BP 2',
             '518': 'GAL 1', '517': 'GAL 2',
@@ -1328,7 +1378,15 @@
             '525': 'HS 1', '524': 'HS 2', '520': 'HS 3', '523': 'HS 4',
             '479': 'PR 1', '494': 'PR 2',
             '512': 'S 10', '511': 'S 11', '516': 'S 6', '515': 'S 7', '514': 'S 8', '513': 'S 9',
-            '519': 'SP 1', '507': 'SP 2', '508': 'SP 3', '509': 'SP 4', '510': 'SP 5'
+            '519': 'SP 1', '507': 'SP 2', '508': 'SP 3', '509': 'SP 4', '510': 'SP 5',
+            // Specijalni / Interni
+            '585': 'Hotel GOSTI', '586': 'Hotel ZAP', '587': 'EPS',
+            '588': 'T.O. Kuhinja', '589': 'T.O. Kuhinja',
+            '590': 'T.O. SANK', '591': 'T.O. SANK',
+            '592': 'NATASA', '593': 'ANA', '594': 'MARKO',
+            '596': 'T.O. Magacin', '597': 'T.O. Vozac',
+            '598': 'T.O. Kanc', '599': 'T.O. Kanc',
+            '602': 'TC 1', '605': 'Cervesija', '606': 'HSS'
         };
 
         // Helper: Get table display name
@@ -1537,6 +1595,47 @@
         }
 
         // ============================================
+        // LOAD DISPATCHER ITEM COMMENTS (restos_komentar)
+        // ============================================
+        let itemsCommentsMap = {}; // order_id -> [{item_name, quantity, restos_komentar}]
+        
+        async function loadItemsComments(orderIds) {
+            if (!orderIds || orderIds.length === 0) {
+                itemsCommentsMap = {};
+                return;
+            }
+            
+            try {
+                const idsString = orderIds.join(',');
+                const url = `${SUPABASE_URL}/rest/v1/emeni_order_items?select=order_id,name,quantity,restos_komentar&order_id=in.(${idsString})&restos_komentar=not.is.null`;
+                
+                const data = await supabaseFetch(url);
+                
+                // Reset map
+                itemsCommentsMap = {};
+                
+                if (data && Array.isArray(data)) {
+                    data.forEach(item => {
+                        if (item.restos_komentar && item.restos_komentar.trim()) {
+                            const orderId = String(item.order_id);
+                            if (!itemsCommentsMap[orderId]) {
+                                itemsCommentsMap[orderId] = [];
+                            }
+                            itemsCommentsMap[orderId].push({
+                                name: item.name,
+                                quantity: item.quantity,
+                                comment: item.restos_komentar.trim()
+                            });
+                        }
+                    });
+                    console.log(`📝 Loaded dispatcher item comments for ${Object.keys(itemsCommentsMap).length} orders`);
+                }
+            } catch (err) {
+                console.error('Error loading items comments:', err);
+            }
+        }
+
+        // ============================================
         // LOAD ORDERS
         // ============================================
         async function loadOrders() {
@@ -1554,6 +1653,10 @@
                     checkForNewOrders(ordersInPriprema);
                     
                     allOrders = data;
+                    
+                    // Load dispatcher item comments for these orders
+                    const orderIds = data.map(o => o.order_id);
+                    await loadItemsComments(orderIds);
                     
                     // Check paid status for orders in Front Desk (kds_ready_at but not handed)
                     const frontDeskOrders = data.filter(o => o.kds_ready_at && !o.kds_handed_at);
@@ -1709,11 +1812,32 @@
                 `;
             }).join('');
 
-            // Order-level note/comment
+            // Order-level note/comment from platform (Wolt, Glovo, etc.)
             let orderCommentHtml = '';
             const orderNote = order.raw_payload?.note || order.raw_payload?.comment || order.raw_payload?.specialRequests;
             if (orderNote && orderNote.trim()) {
                 orderCommentHtml = `<div class="order-comment">${orderNote}</div>`;
+            }
+            
+            // DISPATCHER order-level comment (restos_order_komentar) - MORE PROMINENT
+            let dispatcherOrderCommentHtml = '';
+            if (order.restos_order_komentar && order.restos_order_komentar.trim()) {
+                dispatcherOrderCommentHtml = `<div class="dispatcher-order-comment">${order.restos_order_komentar}</div>`;
+            }
+            
+            // DISPATCHER item-level comments (from itemsCommentsMap)
+            let dispatcherItemsCommentsHtml = '';
+            const orderId = String(order.order_id);
+            if (itemsCommentsMap[orderId] && itemsCommentsMap[orderId].length > 0) {
+                const itemComments = itemsCommentsMap[orderId].map(ic => 
+                    `<div class="dispatcher-item-comment"><strong>${ic.quantity}× ${ic.name}:</strong> ${ic.comment}</div>`
+                ).join('');
+                dispatcherItemsCommentsHtml = `
+                    <div class="dispatcher-items-comments">
+                        <div class="dispatcher-items-comments-header">Napomene za stavke:</div>
+                        ${itemComments}
+                    </div>
+                `;
             }
             
             // Build footer labels for eBar orders (table + delivery type)
@@ -1852,9 +1976,11 @@
                         </div>
                     </div>
                     <div class="card-body">
+                        ${dispatcherOrderCommentHtml}
                         <div class="card-items">
                             ${itemsHtml || '<div class="card-item other-item"><span class="item-name">Bez stavki</span></div>'}
                         </div>
+                        ${dispatcherItemsCommentsHtml}
                         ${orderCommentHtml}
                     </div>
                     ${footerLabelsHtml ? `<div class="card-footer">${footerLabelsHtml}</div>` : ''}
@@ -2394,6 +2520,32 @@
                         console.error('❌ Lifecycle subscription error:', err);
                     }
                 });
+
+            // Subscribe to emeni_order_items changes (for dispatcher comments)
+            const itemsChannel = supabaseClient
+                .channel('kds-items-comments')
+                .on(
+                    'postgres_changes',
+                    {
+                        event: 'UPDATE',
+                        schema: 'public',
+                        table: 'emeni_order_items'
+                    },
+                    async (payload) => {
+                        // Check if restos_komentar was updated
+                        if (payload.new?.restos_komentar !== payload.old?.restos_komentar) {
+                            console.log('📝 Item comment updated:', payload.new?.order_id, payload.new?.name);
+                            await loadOrders();
+                            renderAll();
+                        }
+                    }
+                )
+                .subscribe((status, err) => {
+                    console.log('📡 Items comments subscription status:', status);
+                    if (err) {
+                        console.error('❌ Items comments subscription error:', err);
+                    }
+                });
         }
 
         function updateConnectionStatus(connected) {
@@ -2418,7 +2570,7 @@
         // INIT
         // ============================================
         async function init() {
-            console.log('🚀 Initializing KDS v2 with Realtime...');
+            console.log('🚀 Initializing KDS v2.1 with Dispatcher Comments...');
             
             // Initial data load
             await loadLocations();
