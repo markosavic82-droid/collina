@@ -1554,8 +1554,15 @@
     }
 
     // Check if an item is a drink based on keywords
+    // Items with "+" are combos (burger+drink) and should NOT be treated as drinks
     function isDrinkItem(itemName) {
       const lowerName = (itemName || '').toLowerCase().trim();
+      
+      // If name contains "+", it's a combo (e.g., "Burger + Pomfrit + Pepsi") - NOT a drink
+      if (lowerName.includes('+')) {
+        return false;
+      }
+      
       return DRINK_KEYWORDS.some(keyword => lowerName.includes(keyword));
     }
 
