@@ -1717,10 +1717,22 @@
     // Data Fetching
     // ============================================
     async function fetchOrders() {
-      // Use Belgrade timezone (UTC+1 in winter, UTC+2 in summer)
+      // Restaurant working day: 06:00 to 05:59 next day
+      // If it's before 06:00, we're still in "yesterday's" working day
       const now = new Date();
-      const startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
-      const endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+      const hour = now.getHours();
+      
+      let startDate;
+      if (hour < 6) {
+        // Before 6 AM - use yesterday 06:00 as start
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 6, 0, 0);
+      } else {
+        // After 6 AM - use today 06:00 as start
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 6, 0, 0);
+      }
+      
+      // End date is always "now" (we want all orders up to current moment)
+      const endDate = now;
 
       console.log('📅 Fetching orders from:', startDate.toISOString(), 'to:', endDate.toISOString());
 
