@@ -1230,6 +1230,7 @@
     const STATUS_NEW = 1;
     const STATUS_ACCEPTED = 3;
     const STATUS_IN_PRODUCTION = 4;
+    const STATUS_NEW_PREORDER = 12;
 
     // Big locations (2-column style)
     const BIG_LOCATIONS = [
@@ -1736,14 +1737,14 @@
 
       console.log('📅 Fetching orders from:', startDate.toISOString(), 'to:', endDate.toISOString());
 
-      // Only fetch active statuses (1=new, 3=accepted, 4=in_production, 5=ready)
+      // Only fetch active statuses (1=new, 3=accepted, 4=in_production, 5=ready, 12=preorder)
       // Skip completed (7) and cancelled orders to avoid 1000 row limit
       const { data: orders, error } = await supabaseClient
         .from('emeni_orders')
         .select('*')
         .gte('created_at', startDate.toISOString())
         .lte('created_at', endDate.toISOString())
-        .in('status', [STATUS_NEW, STATUS_ACCEPTED, STATUS_IN_PRODUCTION, 5])
+        .in('status', [STATUS_NEW, STATUS_ACCEPTED, STATUS_IN_PRODUCTION, 5, STATUS_NEW_PREORDER])
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -1853,7 +1854,7 @@
           return aTime - bTime;
         });
       const newWoltOrders = filteredOrders
-        .filter(o => o.status === STATUS_NEW && (o.provider || '').toLowerCase() === 'wolt')
+        .filter(o => (o.status === STATUS_NEW || o.status === STATUS_NEW_PREORDER) && (o.provider || '').toLowerCase() === 'wolt')
         .sort((a, b) => {
           // Sort by created_at ascending (oldest first = longest waiting on top)
           return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
@@ -2324,7 +2325,7 @@
 
     function checkForNewOrders(orders) {
       const newWoltOrders = orders.filter(o => 
-        o.status === STATUS_NEW && 
+        (o.status === STATUS_NEW || o.status === STATUS_NEW_PREORDER) && 
         (o.provider || '').toLowerCase() === 'wolt'
       );
       
