@@ -2169,7 +2169,8 @@
       11: 'Invalid',
       12: 'New Preorder',
       13: 'Pending',
-      14: 'Pending Payment'
+      14: 'Pending Payment',
+      15: 'KDS Ready'
     };
 
     // ============================================
@@ -2428,8 +2429,38 @@
       // Calculate correct total including modifiers
       const correctTotal = items.reduce((sum, item) => sum + calculateItemTotal(item), 0);
 
+      // Build lifecycle with KDS events from emeni_orders
+      let allEvents = [...lifecycle];
+      
+      // Add kds_ready_at from emeni_orders if not already in lifecycle
+      if (order.kds_ready_at) {
+        const hasKdsReady = lifecycle.some(e => e.event_type === 'kds_ready' || e.status === 15);
+        if (!hasKdsReady) {
+          allEvents.push({
+            event_type: 'kds_ready',
+            status: 15,
+            timestamp: order.kds_ready_at
+          });
+        }
+      }
+      
+      // Add kds_handed_at from emeni_orders if not already in lifecycle
+      if (order.kds_handed_at) {
+        const hasKdsHanded = lifecycle.some(e => e.event_type === 'kds_handed' || (e.event_type === 'order.statusChanged' && e.status === 6));
+        if (!hasKdsHanded) {
+          allEvents.push({
+            event_type: 'kds_handed',
+            status: 6,
+            timestamp: order.kds_handed_at
+          });
+        }
+      }
+      
+      // Sort by timestamp
+      allEvents.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
       // Lifecycle timeline
-      const lifecycleHtml = lifecycle.map(event => `
+      const lifecycleHtml = allEvents.map(event => `
         <div class="lifecycle-event">
           <div class="event-type">${event.event_type}</div>
           ${event.status ? `<div class="event-status">Status: ${STATUS_NAMES[event.status] || event.status}</div>` : ''}
