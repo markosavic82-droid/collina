@@ -1,1 +1,2382 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wolt Dispatch - Collina</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0a0a0f;
+      color: #ffffff;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 16px;
+      background: #111118;
+      border-bottom: 1px solid #1f1f2e;
+      flex-shrink: 0;
+    }
+
+    .header h1 {
+      font-size: 16px;
+      font-weight: 600;
+      color: #f97316;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .header h1 .wolt-badge {
+      background: #00c2e8;
+      color: #000;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 9px;
+      font-weight: 700;
+    }
+
+    .status-indicator {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: #888;
+      font-size: 11px;
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #22c55e;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    /* Main Layout - 7 columns: 2+2+2+1(stacked) */
+    .main-container {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 2fr 2fr 2fr 1fr;
+      gap: 8px;
+      padding: 8px;
+      overflow: hidden;
+    }
+
+    /* Big Location (Vračar, NBG, B.Brdo) */
+    .location-big {
+      display: flex;
+      flex-direction: column;
+      background: #111116;
+      border: 1px solid #1f1f2e;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .location-big .location-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 12px;
+      background: #18181f;
+      border-bottom: 1px solid #1f1f2e;
+    }
+
+    .location-big .location-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: #f97316;
+    }
+
+    .location-big .location-stats {
+      display: flex;
+      gap: 6px;
+    }
+
+    .stat-pill {
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-weight: 600;
+    }
+
+    .stat-pill.active {
+      background: #f97316;
+      color: #000;
+    }
+
+    .stat-pill.new {
+      background: #22c55e;
+      color: #000;
+    }
+
+    .stat-pill.empty {
+      background: #1f1f2e;
+      color: #666;
+    }
+
+    /* Kitchen Stats */
+    .kitchen-stats-bar {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      padding: 8px;
+      background: #0d0d12;
+      border-bottom: 1px solid #1f1f2e;
+    }
+
+    .kitchen-stat {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .kitchen-stat.burgers { color: #f97316; }
+    .kitchen-stat.pancakes { color: #a855f7; }
+    .kitchen-stat.other { color: #3b82f6; }
+    .kitchen-stat.zero { opacity: 0.3; }
+
+    /* Content area - split into active (top) and new (bottom) */
+    .location-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Active section - takes most space */
+    .active-section {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      min-height: 0;
+    }
+
+    .section-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: #666;
+      padding: 6px 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      background: #0d0d12;
+      flex-shrink: 0;
+    }
+
+    .active-orders-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 6px;
+      align-content: start;
+    }
+
+    /* New section - fixed height at bottom, max 2 visible */
+    .new-section {
+      flex-shrink: 0;
+      max-height: 180px;
+      display: flex;
+      flex-direction: column;
+      border-top: 2px solid #22c55e;
+      background: #0f1f0f;
+    }
+
+    .new-section .section-label {
+      background: #0a150a;
+      color: #22c55e;
+    }
+
+    .new-orders-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 6px;
+      align-content: start;
+    }
+
+    /* Small locations stacked container */
+    .small-locations-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      overflow: hidden;
+    }
+
+    /* Small Location (Kuhinjica, Pekarica, Girosito) */
+    .location-small {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: #111116;
+      border: 1px solid #1f1f2e;
+      border-radius: 10px;
+      overflow: hidden;
+      min-height: 0;
+    }
+
+    .location-small .location-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 10px;
+      background: #18181f;
+      border-bottom: 1px solid #1f1f2e;
+    }
+
+    .location-small .location-name {
+      font-size: 12px;
+      font-weight: 600;
+      color: #f97316;
+    }
+
+    .location-small .location-stats {
+      display: flex;
+      gap: 4px;
+    }
+
+    .location-small .stat-pill {
+      font-size: 9px;
+      padding: 2px 6px;
+    }
+
+    .location-small .kitchen-stats-bar {
+      padding: 4px;
+      gap: 8px;
+    }
+
+    .location-small .kitchen-stat {
+      font-size: 11px;
+    }
+
+    .location-small .location-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 6px;
+    }
+
+    .location-small .section-label {
+      font-size: 9px;
+      padding: 4px 8px;
+    }
+
+    .location-small .active-section {
+      flex: 1;
+    }
+
+    .location-small .new-section {
+      max-height: 80px;
+    }
+
+    /* Active Card */
+    .active-card {
+      background: #1a1a22;
+      border: 1px solid #2a2a3a;
+      border-radius: 6px;
+      padding: 8px 10px;
+    }
+
+    .active-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .active-order-number {
+      font-weight: 700;
+      font-size: 14px;
+      color: #f97316;
+    }
+
+    .active-card-badges {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+
+    .active-order-provider {
+      font-size: 9px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .active-order-provider.wolt { background: #00c2e8; color: #000; }
+    .active-order-provider.ebar { background: #a855f7; color: #fff; }
+    .active-order-provider.glovo { background: #ffc107; color: #000; }
+    .active-order-provider.gloriafood { background: #ff6b35; color: #fff; }
+
+    .active-items {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+
+    .active-item {
+      font-size: 11px;
+      background: #252530;
+      padding: 3px 6px;
+      border-radius: 4px;
+      color: #ccc;
+    }
+
+    .active-item .qty {
+      color: #f97316;
+      font-weight: 600;
+    }
+
+    /* Item row with modifiers */
+    .item-row {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .item-modifiers {
+      color: #888;
+      font-size: 10px;
+      font-weight: 400;
+    }
+
+    /* Customer item note (from Wolt/eBar - yellow) */
+    .item-note {
+      font-size: 11px;
+      color: #fbbf24;
+      background: rgba(251, 191, 36, 0.15);
+      padding: 4px 8px;
+      border-radius: 4px;
+      margin-top: 3px;
+      border-left: 3px solid #fbbf24;
+      font-weight: 600;
+    }
+
+    /* Customer order-level note (yellow box) */
+    .customer-note {
+      font-size: 12px;
+      color: #fbbf24;
+      background: rgba(251, 191, 36, 0.15);
+      padding: 8px 10px;
+      border-radius: 6px;
+      margin-top: 6px;
+      border: 2px solid #fbbf24;
+      font-weight: 600;
+    }
+
+    /* Customer item-level notes (yellow box) */
+    .customer-item-notes {
+      font-size: 11px;
+      color: #fbbf24;
+      background: rgba(251, 191, 36, 0.1);
+      padding: 6px 8px;
+      border-radius: 4px;
+      margin-top: 4px;
+      border: 1px solid #fbbf24;
+      line-height: 1.4;
+    }
+
+    .customer-item-notes .cust-item-name {
+      color: #a3a3a3;
+      font-weight: 400;
+    }
+
+    .customer-item-notes .cust-item-note {
+      color: #fbbf24;
+      font-weight: 600;
+    }
+
+    /* Order-level notes (comments) */
+    .order-note {
+      font-size: 10px;
+      color: #f59e0b;
+      background: rgba(245, 158, 11, 0.15);
+      padding: 5px 8px;
+      border-radius: 4px;
+      margin: 4px 0 6px 0;
+      border-left: 3px solid #f59e0b;
+      font-weight: 500;
+    }
+
+    .new-order-note {
+      font-size: 10px;
+      color: #fbbf24;
+      background: rgba(251, 191, 36, 0.15);
+      padding: 5px 8px;
+      border-radius: 4px;
+      margin-bottom: 6px;
+      border-left: 3px solid #fbbf24;
+      font-weight: 500;
+    }
+
+    .new-item-row {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .new-item-row .item-note {
+      margin-left: 6px;
+    }
+
+    /* Prep timer */
+    .prep-timer {
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+    }
+
+    .prep-timer.prep-ok {
+      background: #22c55e;
+      color: #000;
+    }
+
+    .prep-timer.prep-warning {
+      background: #f59e0b;
+      color: #000;
+    }
+
+    .prep-timer.prep-danger {
+      background: #ef4444;
+      color: #fff;
+      animation: blink 1s infinite;
+    }
+
+    .given-time {
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-weight: 700;
+      background: #3b82f6;
+      color: #fff;
+    }
+
+    .table-badge {
+      font-size: 10px;
+      padding: 3px 6px;
+      border-radius: 4px;
+      font-weight: 600;
+      background: #6366f1;
+      color: #fff;
+    }
+
+    .edit-note-btn {
+      font-size: 12px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: transparent;
+      border: 1px solid #555;
+      color: #888;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .edit-note-btn:hover {
+      background: #333;
+      color: #fff;
+      border-color: #888;
+    }
+
+    /* RestOS komentar box - bottom of card, larger font */
+    .restos-komentar-box {
+      margin-top: 8px;
+      padding: 10px 12px;
+      background: rgba(249, 115, 22, 0.15);
+      border: 2px solid #f97316;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #fb923c;
+      line-height: 1.4;
+    }
+
+    /* Customer note (from Wolt/delivery) - yellow */
+    .customer-note {
+      margin-top: 8px;
+      padding: 8px 10px;
+      background: rgba(234, 179, 8, 0.15);
+      border: 1px solid #eab308;
+      border-left: 3px solid #eab308;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 500;
+      color: #fde047;
+      line-height: 1.3;
+    }
+
+    /* Order-level comment from dispatcher (orange) */
+    .restos-order-komentar {
+      font-size: 11px;
+      color: #fb923c;
+      background: rgba(249, 115, 22, 0.15);
+      padding: 6px 8px;
+      border-radius: 4px;
+      margin-top: 4px;
+      border: 1px solid #f97316;
+      font-weight: 600;
+      line-height: 1.4;
+    }
+
+    /* Item-level comments - smaller */
+    .restos-item-komentari {
+      margin-top: 4px;
+      padding: 6px 8px;
+      background: rgba(249, 115, 22, 0.1);
+      border: 1px solid #f97316;
+      border-radius: 4px;
+      font-size: 11px;
+      line-height: 1.4;
+    }
+
+    .restos-item-komentari .item-name {
+      color: #666;
+      font-weight: 400;
+    }
+
+    .restos-item-komentari .item-comment {
+      color: #fb923c;
+      font-weight: 600;
+    }
+
+    .new-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    /* New Card */
+    .new-card {
+      background: #1a2a1a;
+      border: 1px solid #2a4a2a;
+      border-radius: 6px;
+      padding: 8px 10px;
+      transition: all 0.2s ease;
+    }
+
+    .new-card.processing {
+      opacity: 0.6;
+      pointer-events: none;
+    }
+
+    .new-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .new-order-info {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .new-order-number {
+      font-weight: 700;
+      font-size: 14px;
+      color: #22c55e;
+    }
+
+    .new-order-time {
+      font-size: 10px;
+      color: #666;
+    }
+
+    .waiting-badge {
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: #22c55e;
+      color: #000;
+      font-weight: 600;
+    }
+
+    .waiting-badge.urgent {
+      background: #ef4444;
+      color: #fff;
+      animation: blink 1s infinite;
+    }
+
+    .new-items {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-bottom: 8px;
+    }
+
+    .new-item {
+      font-size: 11px;
+      background: #253025;
+      padding: 3px 6px;
+      border-radius: 4px;
+      color: #ccc;
+    }
+
+    .new-item.burger {
+      border-left: 2px solid #f97316;
+    }
+
+    .new-item.pancake {
+      border-left: 2px solid #a855f7;
+    }
+
+    .new-card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .new-order-total {
+      font-size: 12px;
+      color: #22c55e;
+      font-weight: 600;
+    }
+
+    .time-buttons {
+      display: flex;
+      gap: 4px;
+    }
+
+    .time-btn {
+      width: 28px;
+      height: 24px;
+      border: none;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .time-btn:nth-child(1) { background: #166534; color: #fff; }
+    .time-btn:nth-child(2) { background: #15803d; color: #fff; }
+    .time-btn:nth-child(3) { background: #16a34a; color: #fff; }
+    .time-btn:nth-child(4) { background: #22c55e; color: #000; }
+    .time-btn:nth-child(5) { background: #f59e0b; color: #000; }
+    .time-btn:nth-child(6) { background: #ef4444; color: #fff; }
+
+    .time-btn:hover {
+      transform: scale(1.1);
+    }
+
+    .time-btn.loading {
+      opacity: 0.5;
+      pointer-events: none;
+    }
+
+    /* Empty state */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      color: #444;
+      text-align: center;
+      grid-column: span 2;
+    }
+
+    .empty-state .icon {
+      font-size: 24px;
+      margin-bottom: 8px;
+      opacity: 0.5;
+    }
+
+    .empty-state p {
+      font-size: 11px;
+    }
+
+    /* Small location compact styles */
+    .location-small .active-card,
+    .location-small .new-card {
+      padding: 6px 8px;
+    }
+
+    .location-small .active-order-number,
+    .location-small .new-order-number {
+      font-size: 12px;
+    }
+
+    .location-small .active-items,
+    .location-small .new-items {
+      gap: 3px;
+    }
+
+    .location-small .active-item,
+    .location-small .new-item {
+      font-size: 10px;
+      padding: 2px 5px;
+    }
+
+    .location-small .time-btn {
+      width: 24px;
+      height: 20px;
+      font-size: 9px;
+    }
+
+    .location-small .empty-state {
+      padding: 10px;
+    }
+
+    .location-small .empty-state .icon {
+      font-size: 16px;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #0a0a0f;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #333;
+      border-radius: 2px;
+    }
+
+    /* Toast */
+    .toast-container {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .toast {
+      background: #1a1a22;
+      border: 1px solid #2a2a3a;
+      border-radius: 8px;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+      animation: slideUp 0.3s ease;
+    }
+
+    .toast.success {
+      border-color: #22c55e;
+      background: #0f1f0f;
+    }
+
+    .toast.error {
+      border-color: #ef4444;
+      background: #1f0f0f;
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    /* Order Edit Modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.2s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .modal {
+      background: #1a1a22;
+      border: 1px solid #2a2a3a;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 400px;
+      max-height: 80vh;
+      overflow-y: auto;
+      transform: scale(0.9);
+      transition: transform 0.2s ease;
+    }
+
+    .modal.modal-wide {
+      max-width: 550px;
+    }
+
+    .modal-overlay.active .modal {
+      transform: scale(1);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 20px;
+      border-bottom: 1px solid #2a2a3a;
+    }
+
+    .modal-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #f97316;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      color: #666;
+      font-size: 24px;
+      cursor: pointer;
+      padding: 0;
+      line-height: 1;
+    }
+
+    .modal-close:hover {
+      color: #fff;
+    }
+
+    .modal-body {
+      padding: 20px;
+    }
+
+    .modal-order-info {
+      background: #111118;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 16px;
+    }
+
+    .modal-order-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .modal-order-number {
+      font-size: 16px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .modal-order-provider {
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .modal-order-provider.wolt {
+      background: #00c2e8;
+      color: #000;
+    }
+
+    .modal-order-provider.ebar {
+      background: #f97316;
+      color: #000;
+    }
+
+    .modal-order-items {
+      font-size: 12px;
+      color: #888;
+      line-height: 1.5;
+    }
+
+    .modal-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #888;
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    .modal-textarea {
+      width: 100%;
+      min-height: 100px;
+      background: #111118;
+      border: 1px solid #2a2a3a;
+      border-radius: 8px;
+      padding: 12px;
+      color: #fff;
+      font-size: 14px;
+      font-family: inherit;
+      resize: vertical;
+    }
+
+    .modal-textarea:focus {
+      outline: none;
+      border-color: #f97316;
+    }
+
+    .modal-textarea::placeholder {
+      color: #555;
+    }
+
+    /* Item notes list */
+    .modal-items-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    /* Order-level comment section */
+    .modal-order-comment-section {
+      margin-bottom: 12px;
+    }
+
+    .modal-order-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: #f97316;
+      margin-bottom: 6px;
+    }
+
+    .modal-order-input {
+      width: 100%;
+      background: #0a0a0f;
+      border: 2px solid #f97316;
+      border-radius: 6px;
+      padding: 10px 12px;
+      color: #fb923c;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .modal-order-input:focus {
+      outline: none;
+      border-color: #fb923c;
+      background: rgba(249, 115, 22, 0.1);
+    }
+
+    .modal-order-input::placeholder {
+      color: #555;
+      font-weight: 400;
+      font-size: 12px;
+    }
+
+    /* Item-level comments section */
+    .modal-items-section {
+      border-top: 1px solid #2a2a3a;
+      padding-top: 10px;
+    }
+
+    .modal-items-label {
+      display: block;
+      font-size: 11px;
+      font-weight: 500;
+      color: #555;
+      margin-bottom: 6px;
+    }
+
+    .modal-item-row {
+      background: #111118;
+      border-radius: 4px;
+      padding: 6px 8px;
+      border: 1px solid #2a2a3a;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .modal-item-top {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .modal-item-header {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      min-width: 150px;
+    }
+
+    .modal-item-qty {
+      background: #333;
+      color: #888;
+      font-weight: 600;
+      font-size: 9px;
+      padding: 2px 5px;
+      border-radius: 3px;
+      min-width: 20px;
+      text-align: center;
+    }
+
+    .modal-item-name {
+      font-size: 11px;
+      color: #555;
+      font-weight: 400;
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .modal-item-input {
+      flex: 1;
+      background: #0a0a0f;
+      border: 1px solid #2a2a3a;
+      border-radius: 4px;
+      padding: 5px 7px;
+      color: #fb923c;
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .modal-item-input:focus {
+      outline: none;
+      border-color: #f97316;
+    }
+
+    .modal-item-input::placeholder {
+      color: #444;
+      font-size: 10px;
+    }
+
+    .modal-item-input.has-note {
+      border-color: #f97316;
+      background: rgba(249, 115, 22, 0.05);
+    }
+
+    /* Customer note in modal (read-only, yellow) */
+    .modal-customer-note {
+      font-size: 10px;
+      color: #fbbf24;
+      background: rgba(251, 191, 36, 0.1);
+      padding: 3px 6px;
+      border-radius: 3px;
+      margin: 4px 0;
+      border-left: 2px solid #fbbf24;
+    }
+
+    .modal-footer {
+      display: flex;
+      gap: 10px;
+      padding: 16px 20px;
+      border-top: 1px solid #2a2a3a;
+    }
+
+    .modal-btn {
+      flex: 1;
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s ease;
+    }
+
+    .modal-btn-cancel {
+      background: #2a2a3a;
+      color: #888;
+    }
+
+    .modal-btn-cancel:hover {
+      background: #3a3a4a;
+      color: #fff;
+    }
+
+    .modal-btn-save {
+      background: #f97316;
+      color: #000;
+    }
+
+    .modal-btn-save:hover {
+      background: #fb923c;
+    }
+
+    .modal-btn-save:disabled {
+      background: #555;
+      color: #888;
+      cursor: not-allowed;
+    }
+
+    /* Make cards clickable */
+    .active-card {
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .active-card:hover {
+      border-color: #f97316;
+      transform: translateY(-2px);
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <h1>🚀 Dispatch <span class="wolt-badge">WOLT</span></h1>
+    <div style="display: flex; align-items: center; gap: 15px;">
+      <button id="soundToggleBtn" onclick="toggleSound()" style="
+        background: #22c55e;
+        color: #fff;
+        border: none;
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-weight: 700;
+        cursor: pointer;
+        font-size: 14px;
+      ">🔊</button>
+      <div class="status-indicator">
+        <div class="status-dot" id="statusDot"></div>
+        <span id="lastUpdated">--:--:--</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-container" id="mainContainer">
+    <!-- Will be rendered by JS -->
+  </main>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Order Edit Modal -->
+  <div class="modal-overlay" id="orderModal">
+    <div class="modal modal-wide">
+      <div class="modal-header">
+        <span class="modal-title">📝 Komentari za kuhinju</span>
+        <button class="modal-close" onclick="closeModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-order-info">
+          <div class="modal-order-meta">
+            <span class="modal-order-number" id="modalOrderNumber">#000</span>
+            <span class="modal-order-provider" id="modalOrderProvider">EBAR</span>
+          </div>
+        </div>
+        
+        <!-- Order-level comment (top, bigger) -->
+        <div class="modal-order-comment-section">
+          <label class="modal-order-label">Komentar za celu narudžbinu:</label>
+          <input 
+            type="text"
+            class="modal-order-input" 
+            id="modalOrderComment"
+            placeholder="Npr: HITNO, Alergija na kikiriki, Bez kontakta..."
+          />
+        </div>
+        
+        <!-- Item-level comments (below, smaller) -->
+        <div class="modal-items-section">
+          <label class="modal-items-label">Komentari po stavkama:</label>
+          <div class="modal-items-list" id="modalItemsList">
+            <!-- Items with notes will be inserted here dynamically -->
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn modal-btn-cancel" onclick="closeModal()">Otkaži</button>
+        <button class="modal-btn modal-btn-save" id="modalSaveBtn" onclick="saveAllComments()">Sačuvaj sve</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ============================================
+    // Config
+    // ============================================
+    const SUPABASE_URL = 'https://bbnbbbpofelbkyuffslj.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJibmJiYnBvZmVsYmt5dWZmc2xqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUwNTI0MzQsImV4cCI6MjA4MDYyODQzNH0.koW44soAB-bEfh8OzqjGBwdgov4Snscw1ITsg5OureU';
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const STATUS_NEW = 1;
+    const STATUS_ACCEPTED = 3;
+    const STATUS_IN_PRODUCTION = 4;
+    const STATUS_NEW_PREORDER = 12;
+
+    // Big locations (2-column style)
+    const BIG_LOCATIONS = [
+      { id: '310', name: 'Collina B.Brdo' },
+      { id: '2120', name: 'Collina Vračar' },
+      { id: '1514', name: 'Collina NBG' }
+    ];
+
+    // Small locations (stacked in one column)
+    const SMALL_LOCATIONS = [
+      { id: '2209', name: 'Kuhinjica' },
+      { id: '1513', name: 'Pekarica' },
+      { id: '1919', name: 'Girosito' }
+    ];
+
+    // Table ID to Name mapping (eBar tables)
+    const TABLE_NAMES = {
+      585: 'Hotel GOSTI',
+      586: 'Hotel ZAP',
+      587: 'EPS',
+      588: 'T.O. Kuhinja',
+      589: 'T.O. Kuhinja',
+      590: 'T.O. ŠANK',
+      591: 'T.O. ŠANK',
+      592: 'NATAŠA',
+      593: 'ANA',
+      594: 'MARKO',
+      596: 'T.O. Magacin',
+      597: 'T.O. Vozač',
+      598: 'T.O. Kanc',
+      599: 'T.O. Kanc',
+      602: 'TC 1',
+      605: 'Cervesija',
+      606: 'HSS'
+    };
+
+    // Get table name from order
+    function getTableName(order) {
+      // Try table_id first
+      const tableId = order.table_id || order.raw_payload?.table?.id;
+      if (tableId && TABLE_NAMES[tableId]) {
+        return TABLE_NAMES[tableId];
+      }
+      // Try table_number
+      const tableNum = order.table_number || order.raw_payload?.table?.name;
+      if (tableNum) {
+        return tableNum;
+      }
+      return null;
+    }
+
+    // Category IDs from database
+    const BURGER_CATEGORY_ID = '444e7f83-f97f-4a06-9a3e-60fa4ea10384';
+    const PANCAKE_CATEGORY_ID = '27b2e327-d2f0-440e-a151-44bc335dafee';
+    
+    // Fallback keywords
+    const BURGER_KEYWORDS = ['burger', 'smash', 'baconator', 'cheese'];
+    const PANCAKE_KEYWORDS = ['palačink', 'palacink', 'palačnk', 'američka', 'americka'];
+    
+    // Drink category keywords (complete list from eBar categories)
+    const DRINK_KEYWORDS = [
+      // === PIVO / BEER ===
+      'pivo', 'heineken', 'lav', 'jelen', 'zaječarsko', 'zajecarsko', 'becks', 'stella',
+      'corona', 'budweiser', 'tuborg', 'carlsberg', 'guinness', 'erdinger', 'paulaner',
+      'salto', 'pale ale', 'stout', 'ipa', 'lager', 'wit', 'tamno pivo',
+      
+      // === VINO / WINE ===
+      'vino', 'belo vino', 'crno vino', 'crveno vino', 'roze vino', 'rose',
+      'šampanjac', 'sampanjac', 'prosecco', 'proseco', 'kuvano vino',
+      
+      // === ŽESTINA / SPIRITS ===
+      'rakija', 'viski', 'whisky', 'whiskey', 'vodka', 'votka', 'džin', 'gin',
+      'rum', 'tekila', 'tequila', 'likér', 'liker', 'brandy', 'konjak', 'cognac',
+      'žarić', 'zaric', 'viljamovka', 'šljivovica', 'sljivovica', 'loza', 'dunja',
+      'tamnavulin', 'jägermeister', 'jagermeister', 'jegermeister', 'aperol', 'campari', 'martini',
+      'havana', 'four roses', 'jack daniels', 'jim beam', 'hubert', 'beefeater',
+      'gorki list', 'vinjak', 'rubin', 'absolut', 'jameson', 'kuvani viski',
+      
+      // === KOKTELI ===
+      'spritz', 'mojito', 'margarita', 'koktél', 'koktel', 'cocktail', 'long island',
+      
+      // === KAFA / COFFEE ===
+      'kafa', 'kafu', 'espreso', 'espresso', 'cappuccino', 'cappucino', 'kapućino', 'kapucino',
+      'latte', 'caffe latte', 'macchiato', 'makijato', 'americano', 'ristretto', 
+      'nes', 'nescafe', 'nes kafa', 'dupli espreso', 'ice kafa', 'ice moka',
+      
+      // === ČAJ / TEA ===
+      'čaj', 'caj', 'tea', 'ice tea', 'fuze tea', 'nestea', 'ledeni čaj',
+      
+      // === TOPLI NAPICI ===
+      'topla čokolada', 'topla cokolada', 'mleko casa',
+      
+      // === SOKOVI / JUICES ===
+      'sok', 'juice', 'djus', 'gusto', 'nektar', 'cappy', 'rauch', 'fruvita', 'next',
+      'cedjeni', 'cedjena', 'ceđeni', 'ceđena', 'grejp', 'citrus mix',
+      'jabuka gusto', 'jagoda gusto', 'breskva gusto', 'borovnica gusto',
+      
+      // === LIMUNADE / LEMONADES ===
+      'limunada', 'lemonade', 'limunana', 'lubenada', 'breskvanada',
+      
+      // === GAZIRANI / CARBONATED ===
+      'cola', 'kola', 'coca', 'koka', 'pepsi', 'fanta', 'sprite', '7up', '7 up',
+      'schweppes', 'tonic', 'guarana', 'bitter', 'evervess', 'mirinda',
+      
+      // === VODE / WATER ===
+      'voda', 'aqua', 'rosa', 'prolom', 'knjaz', 'mineralna', 'gazirana', 'negazirana',
+      'kisela voda', 'evian', 'perrier', 'san pellegrino',
+      
+      // === ENERGY / VITAMINI ===
+      'red bull', 'energy', 'ultra', 'cedevita', 'vitaminska',
+      
+      // === MLEČNI / DAIRY DRINKS ===
+      'jogurt', 'kiselo mleko', 'cokoladno mleko', 'čokoladno mleko', 'balans',
+      'plazma sejk', 'milkshake', 'smuti', 'smoothie', 'frape', 'frappe',
+      
+      // === KOLIČINE (indikatori pića) ===
+      '0.03l', '0.15', '0.18', '0.2l', '0.25', '0.25l', '0.3l', '0.33', '0.33l', 
+      '0.5l', '0.5 l', '0.75', '0.7l', '1l', '2l',
+      'flasica', 'flaša', 'casa', 'čaša', 'krigla', 'točeno', 'toceno',
+      'limenka', 'lim', 'pvc', 'staklo', 'bokal'
+    ];
+
+    let allOrders = [];
+    let ordersMap = {};  // Map order_id -> order object for modal access
+    let productCategoryMap = {};
+    let modifiersMap = {}; // emeni_reference_id -> name
+
+    // ============================================
+    // Utilities
+    // ============================================
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.innerHTML = `<span>${type === 'success' ? '✅' : '❌'}</span><span>${message}</span>`;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+
+    // ============================================
+    // Order Edit Modal - Item-level notes
+    // ============================================
+    let currentEditOrderId = null;
+    let currentEditOrderNo = null;
+    let currentEditItems = [];
+
+    // Wrapper to open modal by order ID (looks up from ordersMap)
+    function openOrderModalById(orderId) {
+      const order = ordersMap[orderId];
+      if (!order) {
+        console.error('Order not found:', orderId);
+        return;
+      }
+      openOrderModal(
+        orderId, 
+        order.order_no, 
+        order.provider || 'ebar', 
+        order.items || [],
+        order.restos_order_komentar || ''
+      );
+    }
+
+    function openOrderModal(orderId, orderNo, provider, items, orderComment) {
+      currentEditOrderId = orderId;
+      currentEditOrderNo = orderNo;
+      currentEditItems = items || [];
+      
+      // Populate modal header
+      document.getElementById('modalOrderNumber').textContent = `#${orderNo}`;
+      document.getElementById('modalOrderProvider').textContent = provider.toUpperCase();
+      document.getElementById('modalOrderProvider').className = `modal-order-provider ${provider}`;
+      
+      // Order-level comment
+      document.getElementById('modalOrderComment').value = orderComment || '';
+      
+      // Build items list with note inputs
+      const itemsListEl = document.getElementById('modalItemsList');
+      
+      if (currentEditItems.length === 0) {
+        itemsListEl.innerHTML = '<div style="color: #444; text-align: center; padding: 10px; font-size: 12px;">Nema stavki</div>';
+      } else {
+        itemsListEl.innerHTML = currentEditItems.map((item, index) => {
+          // Use restos_komentar field
+          const currentNote = (item.restos_komentar || '').replace(/"/g, '&quot;');
+          const hasNote = item.restos_komentar && item.restos_komentar.trim();
+          
+          // Customer note (from Wolt/eBar) - read-only display
+          const customerNote = item.note && item.note.trim() 
+            ? `<div class="modal-customer-note">🛒 Mušterija: ${item.note}</div>` 
+            : '';
+          
+          return `
+            <div class="modal-item-row">
+              <div class="modal-item-top">
+                <div class="modal-item-header">
+                  <span class="modal-item-qty">${item.quantity}×</span>
+                  <span class="modal-item-name">${item.name}</span>
+                </div>
+                <input 
+                  type="text"
+                  class="modal-item-input ${hasNote ? 'has-note' : ''}" 
+                  data-item-id="${item.id}"
+                  data-index="${index}"
+                  value="${currentNote}"
+                  placeholder="Komentar..."
+                  onchange="this.classList.toggle('has-note', this.value.trim().length > 0)"
+                />
+              </div>
+              ${customerNote}
+            </div>
+          `;
+        }).join('');
+      }
+      
+      // Show modal
+      document.getElementById('orderModal').classList.add('active');
+      
+      // Focus on order comment input
+      setTimeout(() => {
+        document.getElementById('modalOrderComment').focus();
+      }, 100);
+    }
+
+    function closeModal() {
+      document.getElementById('orderModal').classList.remove('active');
+      currentEditOrderId = null;
+      currentEditOrderNo = null;
+      currentEditItems = [];
+    }
+
+    async function saveAllComments() {
+      if (!currentEditOrderId) return;
+      
+      const saveBtn = document.getElementById('modalSaveBtn');
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Čuvam...';
+      
+      try {
+        // 1. Save order-level comment
+        const orderComment = document.getElementById('modalOrderComment').value.trim();
+        
+        const { error: orderError } = await supabaseClient
+          .from('emeni_orders')
+          .update({ restos_order_komentar: orderComment || null })
+          .eq('order_id', currentEditOrderId);
+        
+        if (orderError) {
+          console.error('Order comment error:', orderError);
+        }
+        
+        // 2. Save item-level comments
+        const inputs = document.querySelectorAll('.modal-item-input');
+        const updates = [];
+        
+        inputs.forEach(input => {
+          const itemId = input.dataset.itemId;
+          const newNote = input.value.trim();
+          if (itemId) {
+            updates.push({ id: itemId, restos_komentar: newNote || null });
+          }
+        });
+        
+        let successCount = 0;
+        for (const update of updates) {
+          const numericId = parseInt(update.id, 10);
+          
+          const { data, error } = await supabaseClient
+            .from('emeni_order_items')
+            .update({ restos_komentar: update.restos_komentar })
+            .eq('id', numericId)
+            .select();
+          
+          if (!error && data && data.length > 0) successCount++;
+        }
+        
+        showToast(`Komentari za #${currentEditOrderNo} sačuvani`, 'success');
+        closeModal();
+        
+        // Reload orders to show updated comments
+        await loadOrders();
+        
+      } catch (e) {
+        console.error('❌ Error saving comments:', e);
+        showToast(`Greška: ${e.message}`, 'error');
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Sačuvaj sve';
+      }
+    }
+
+    // Close modal on overlay click
+    document.addEventListener('click', (e) => {
+      if (e.target.id === 'orderModal') {
+        closeModal();
+      }
+    });
+
+    // Close modal on Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeModal();
+      }
+    });
+
+    function categorizeItem(name) {
+      const lowerName = (name || '').toLowerCase().trim();
+      
+      for (const [productName, category] of Object.entries(productCategoryMap)) {
+        const lowerProduct = productName.toLowerCase();
+        if (lowerName.includes(lowerProduct) || lowerProduct.includes(lowerName)) {
+          return category;
+        }
+        const itemWords = lowerName.split(/[\s+\-]/)[0];
+        if (itemWords.length > 3 && lowerProduct.startsWith(itemWords)) {
+          return category;
+        }
+      }
+      
+      if (BURGER_KEYWORDS.some(k => lowerName.includes(k))) return 'burger';
+      if (PANCAKE_KEYWORDS.some(k => lowerName.includes(k))) return 'pancake';
+      return 'other';
+    }
+
+    // Check if an item is a drink based on keywords
+    // Items with "+" are combos (burger+drink) and should NOT be treated as drinks
+    function isDrinkItem(itemName) {
+      const lowerName = (itemName || '').toLowerCase().trim();
+      
+      // If name contains "+", it's a combo (e.g., "Burger + Pomfrit + Pepsi") - NOT a drink
+      if (lowerName.includes('+')) {
+        return false;
+      }
+      
+      return DRINK_KEYWORDS.some(keyword => lowerName.includes(keyword));
+    }
+
+    // Get items from order - check both items array and raw_payload
+    function getOrderItems(order) {
+      // First try order.items (from emeni_order_items table)
+      if (order.items && order.items.length > 0) {
+        return order.items;
+      }
+      
+      // Fallback: try raw_payload.items
+      if (order.raw_payload && order.raw_payload.items && order.raw_payload.items.length > 0) {
+        return order.raw_payload.items;
+      }
+      
+      return [];
+    }
+
+    // Check if an order contains ONLY drinks (no food items)
+    function isOnlyDrinksOrder(order) {
+      const items = getOrderItems(order);
+      
+      // If no items found, assume it's not a food order (likely drinks or empty)
+      if (items.length === 0) {
+        console.log(`🍺 Order #${order.order_no} has no items - hiding`);
+        return true;
+      }
+      
+      // Check if ALL items are drinks
+      const allDrinks = items.every(item => isDrinkItem(item.name));
+      
+      if (allDrinks) {
+        console.log(`🍺 Order #${order.order_no} is drinks-only:`, items.map(i => i.name).join(', '));
+      }
+      
+      return allDrinks;
+    }
+
+    // Filter function: should this order be displayed?
+    // For eBar orders:
+    //   - Hide if contains ONLY drinks (no food) - never show these
+    //   - Hide if kds_ready_at has value (kitchen marked as done)
+    // Wolt, Gloria, eMeniWaiter always visible
+    // Filter function: should this order be displayed?
+    // For eBar: hide drinks-only orders always, hide food orders when kds_ready_at is set
+    // Wolt, Gloria, eMeniWaiter always visible
+    function shouldShowOrder(order) {
+      const provider = (order.provider || '').toLowerCase();
+      
+      if (provider === 'ebar') {
+        // Always hide drinks-only eBar orders (no food = not for kitchen display)
+        if (isOnlyDrinksOrder(order)) {
+          return false;
+        }
+        
+        // Hide food orders once kitchen marks them ready
+        if (order.kds_ready_at) {
+          return false;
+        }
+      }
+      
+      return true;
+    }
+
+    function updateStatus(ok) {
+      document.getElementById('statusDot').style.background = ok ? '#22c55e' : '#ef4444';
+      document.getElementById('lastUpdated').textContent = ok 
+        ? `${new Date().toLocaleTimeString('sr-RS')}` 
+        : 'Greška';
+    }
+
+    // ============================================
+    // Load product categories from database
+    // ============================================
+    async function loadProductCategories() {
+      const { data, error } = await supabaseClient
+        .from('shop_menu_items')
+        .select('name, category_id')
+        .in('category_id', [BURGER_CATEGORY_ID, PANCAKE_CATEGORY_ID]);
+      
+      if (!error && data) {
+        data.forEach(item => {
+          if (item.category_id === BURGER_CATEGORY_ID) {
+            productCategoryMap[item.name] = 'burger';
+          } else if (item.category_id === PANCAKE_CATEGORY_ID) {
+            productCategoryMap[item.name] = 'pancake';
+          }
+        });
+        console.log('📦 Loaded product categories:', Object.keys(productCategoryMap).length, 'items');
+      }
+    }
+
+    // ============================================
+    // Load modifiers from database (wolt_products_map)
+    // ============================================
+    async function loadModifiers() {
+      const { data, error } = await supabaseClient
+        .from('wolt_products_map')
+        .select('wolt_reference_id, name, price, is_modifier');
+      
+      if (!error && data) {
+        data.forEach(item => {
+          // Map by wolt_reference_id (which is productReferenceID in order items)
+          modifiersMap[String(item.wolt_reference_id)] = {
+            name: item.name,
+            price: item.price,
+            isModifier: item.is_modifier
+          };
+        });
+        console.log('📦 Loaded modifiers from wolt_products_map:', Object.keys(modifiersMap).length, 'items');
+      } else if (error) {
+        console.error('❌ Error loading modifiers:', error);
+      }
+    }
+
+    // ============================================
+    // Render item with modifiers and note
+    // ============================================
+    function renderItemWithModifiers(item) {
+      const modifiers = item.modifiers || [];
+      const note = item.note;
+      
+      let modifierText = '';
+      if (modifiers.length > 0) {
+        const modNames = modifiers.map(m => {
+          // Lookup by productReferenceID in wolt_products_map
+          const refId = String(m.productReferenceID);
+          const mapped = modifiersMap[refId];
+          if (mapped && mapped.name) {
+            return mapped.name;
+          }
+          // Fallback - show price
+          return `+${m.price}`;
+        });
+        modifierText = ` <span class="item-modifiers">(${modNames.join(', ')})</span>`;
+      }
+      
+      let noteText = '';
+      if (note && note.trim()) {
+        noteText = `<div class="item-note">📝 ${note}</div>`;
+      }
+      
+      return `
+        <div class="item-row">
+          <span class="active-item"><span class="qty">${item.quantity}×</span> ${item.name}${modifierText}</span>
+          ${noteText}
+        </div>
+      `;
+    }
+
+    // ============================================
+    // Data Fetching
+    // ============================================
+    async function fetchOrders() {
+      // Restaurant working day: 06:00 to 05:59 next day
+      // If it's before 06:00, we're still in "yesterday's" working day
+      const now = new Date();
+      const hour = now.getHours();
+      
+      let startDate;
+      if (hour < 6) {
+        // Before 6 AM - use yesterday 06:00 as start
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 6, 0, 0);
+      } else {
+        // After 6 AM - use today 06:00 as start
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 6, 0, 0);
+      }
+      
+      // End date is always "now" (we want all orders up to current moment)
+      const endDate = now;
+
+      console.log('📅 Fetching orders from:', startDate.toISOString(), 'to:', endDate.toISOString());
+
+      // Only fetch active statuses (1=new, 3=accepted, 4=in_production, 5=ready, 12=preorder)
+      // Skip completed (7) and cancelled orders to avoid 1000 row limit
+      const { data: orders, error } = await supabaseClient
+        .from('emeni_orders')
+        .select('*')
+        .gte('created_at', startDate.toISOString())
+        .lte('created_at', endDate.toISOString())
+        .in('status', [STATUS_NEW, STATUS_ACCEPTED, STATUS_IN_PRODUCTION, 5, STATUS_NEW_PREORDER])
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('❌ Error fetching orders:', error);
+        updateStatus(false);
+        return [];
+      }
+
+      console.log('📦 Loaded orders:', orders?.length || 0);
+
+      const orderIds = orders.map(o => o.order_id).filter(Boolean);
+      const chunkSize = 100;
+      
+      // Fetch order items - need to chunk if too many orders
+      let items = [];
+      for (let i = 0; i < orderIds.length; i += chunkSize) {
+        const chunk = orderIds.slice(i, i + chunkSize);
+        const { data: chunkData } = await supabaseClient
+          .from('emeni_order_items')
+          .select('*')
+          .in('order_id', chunk);
+        if (chunkData) {
+          items = items.concat(chunkData);
+        }
+      }
+      
+      console.log('📦 Loaded items:', items?.length || 0);
+      
+      // Fetch lifecycle events in chunks
+      let lifecycle = [];
+      for (let i = 0; i < orderIds.length; i += chunkSize) {
+        const chunk = orderIds.slice(i, i + chunkSize);
+        const { data: chunkData } = await supabaseClient
+          .from('emeni_order_lifecycle')
+          .select('*')
+          .in('order_id', chunk);
+        if (chunkData) {
+          lifecycle = lifecycle.concat(chunkData);
+        }
+      }
+
+      orders.forEach(order => {
+        order.items = items?.filter(i => String(i.order_id) === String(order.order_id)) || [];
+        
+        const orderId = Number(order.order_id);
+        order.lifecycle = lifecycle?.filter(l => Number(l.order_id) === orderId) || [];
+        
+        // Find dispatch.accepted event (has prep_time_given)
+        const acceptedEvent = order.lifecycle.find(l => 
+          l.event_type === 'dispatch.accepted' && l.prep_time_given
+        ) || order.lifecycle.find(l => Number(l.status) === 3);
+        
+        if (acceptedEvent) {
+          order.accepted_at = acceptedEvent.timestamp;
+          if (acceptedEvent.prep_time_given) {
+            order.given_prep_time = acceptedEvent.prep_time_given;
+          }
+        }
+      });
+
+      updateStatus(true);
+      return orders;
+    }
+
+    // ============================================
+    // Render
+    // ============================================
+    function calculateStats(orders) {
+      let burgers = 0, pancakes = 0, other = 0;
+      orders.forEach(order => {
+        (order.items || []).forEach(item => {
+          const itemQty = parseInt(item.quantity) || 1;
+          const name = (item.name || '').toLowerCase();
+          const cat = categorizeItem(item.name);
+          
+          let multiplier = 1;
+          const prefixMatch = name.match(/^(\d+)\s*x\s+/i);
+          if (prefixMatch) {
+            multiplier = parseInt(prefixMatch[1]) || 1;
+          }
+          
+          const totalQty = itemQty * multiplier;
+          
+          if (cat === 'burger') burgers += totalQty;
+          else if (cat === 'pancake') pancakes += totalQty;
+          else other += totalQty;
+        });
+      });
+      return { burgers, pancakes, other };
+    }
+
+    function renderMain(orders) {
+      const container = document.getElementById('mainContainer');
+      
+      // Reset orders map for modal access
+      ordersMap = {};
+      
+      // Filter out drinks-only eBar orders
+      const filteredOrders = orders.filter(shouldShowOrder);
+      
+      const activeOrders = filteredOrders
+        .filter(o => o.status === STATUS_ACCEPTED || o.status === STATUS_IN_PRODUCTION)
+        .sort((a, b) => {
+          // Sort by accepted_at ascending (oldest first = longest prep time on top)
+          const aTime = a.accepted_at ? new Date(a.accepted_at).getTime() : new Date(a.created_at).getTime();
+          const bTime = b.accepted_at ? new Date(b.accepted_at).getTime() : new Date(b.created_at).getTime();
+          return aTime - bTime;
+        });
+      const newWoltOrders = filteredOrders
+        .filter(o => (o.status === STATUS_NEW || o.status === STATUS_NEW_PREORDER) && (o.provider || '').toLowerCase() === 'wolt')
+        .sort((a, b) => {
+          // Sort by created_at ascending (oldest first = longest waiting on top)
+          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        });
+
+      console.log('📦 Orders:', orders.length, '| Active:', activeOrders.length, '| New Wolt:', newWoltOrders.length);
+
+      // Render big locations
+      const bigLocationsHtml = BIG_LOCATIONS.map(loc => {
+        const locActive = activeOrders.filter(o => String(o.company_id) === loc.id);
+        const locNew = newWoltOrders.filter(o => String(o.company_id) === loc.id);
+        const stats = calculateStats(locActive);
+
+        return `
+          <div class="location-big">
+            <div class="location-header">
+              <div class="location-name">📍 ${loc.name}</div>
+              <div class="location-stats">
+                <span class="stat-pill ${locActive.length > 0 ? 'active' : 'empty'}">${locActive.length} 🍳</span>
+                <span class="stat-pill ${locNew.length > 0 ? 'new' : 'empty'}">${locNew.length} 🆕</span>
+              </div>
+            </div>
+            
+            <div class="kitchen-stats-bar">
+              <div class="kitchen-stat burgers ${stats.burgers === 0 ? 'zero' : ''}">
+                <span class="icon">🍔</span>
+                <span class="count">${stats.burgers}</span>
+              </div>
+              <div class="kitchen-stat pancakes ${stats.pancakes === 0 ? 'zero' : ''}">
+                <span class="icon">🥞</span>
+                <span class="count">${stats.pancakes}</span>
+              </div>
+              <div class="kitchen-stat other ${stats.other === 0 ? 'zero' : ''}">
+                <span class="icon">🍽️</span>
+                <span class="count">${stats.other}</span>
+              </div>
+            </div>
+            
+            <div class="location-content">
+              <div class="active-section">
+                <div class="section-label">🍳 U pripremi</div>
+                <div class="active-orders-list">
+                  ${locActive.length === 0 ? `
+                    <div class="empty-state">
+                      <div class="icon">😴</div>
+                      <p>Kuhinja prazna</p>
+                    </div>
+                  ` : locActive.map(o => renderActiveCard(o)).join('')}
+                </div>
+              </div>
+              
+              <div class="new-section">
+                <div class="section-label">🆕 Nove Wolt Narudžbine</div>
+                <div class="new-orders-list">
+                  ${locNew.length === 0 ? `
+                    <div class="empty-state">
+                      <div class="icon">✨</div>
+                      <p>Nema novih</p>
+                    </div>
+                  ` : locNew.map(o => renderNewCard(o)).join('')}
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // Render small locations stacked
+      const smallLocationsHtml = `
+        <div class="small-locations-stack">
+          ${SMALL_LOCATIONS.map(loc => {
+            const locActive = activeOrders.filter(o => String(o.company_id) === loc.id);
+            const locNew = newWoltOrders.filter(o => String(o.company_id) === loc.id);
+            const stats = calculateStats(locActive);
+
+            return `
+              <div class="location-small">
+                <div class="location-header">
+                  <div class="location-name">📍 ${loc.name}</div>
+                  <div class="location-stats">
+                    <span class="stat-pill ${locActive.length > 0 ? 'active' : 'empty'}">${locActive.length}🍳</span>
+                    <span class="stat-pill ${locNew.length > 0 ? 'new' : 'empty'}">${locNew.length}🆕</span>
+                  </div>
+                </div>
+                
+                <div class="kitchen-stats-bar">
+                  <div class="kitchen-stat burgers ${stats.burgers === 0 ? 'zero' : ''}">🍔 ${stats.burgers}</div>
+                  <div class="kitchen-stat pancakes ${stats.pancakes === 0 ? 'zero' : ''}">🥞 ${stats.pancakes}</div>
+                  <div class="kitchen-stat other ${stats.other === 0 ? 'zero' : ''}">🍽️ ${stats.other}</div>
+                </div>
+                
+                <div class="location-content">
+                  <div class="active-section">
+                    <div class="active-orders-list">
+                      ${locActive.length === 0 ? `
+                        <div class="empty-state"><p>Prazno</p></div>
+                      ` : locActive.map(o => renderActiveCard(o)).join('')}
+                    </div>
+                  </div>
+                  
+                  ${locNew.length > 0 ? `
+                    <div class="new-section">
+                      <div class="new-orders-list">
+                        ${locNew.map(o => renderNewCard(o)).join('')}
+                      </div>
+                    </div>
+                  ` : ''}
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `;
+
+      container.innerHTML = bigLocationsHtml + smallLocationsHtml;
+    }
+
+    function renderActiveCard(order) {
+      const items = order.items || [];
+      const provider = (order.provider || 'ebar').toLowerCase();
+      const tableName = getTableName(order);
+      
+      // Store order in global map for modal access
+      ordersMap[order.order_id] = order;
+      
+      let prepTimeDisplay = '';
+      let givenTimeDisplay = '';
+      
+      if (order.accepted_at) {
+        const acceptedTime = new Date(order.accepted_at);
+        const now = new Date();
+        const prepMinutes = Math.floor((now - acceptedTime) / 60000);
+        
+        let timeClass = 'prep-ok';
+        const givenTime = order.given_prep_time || null;
+        
+        if (givenTime) {
+          if (prepMinutes > givenTime * 0.8) timeClass = 'prep-warning';
+          if (prepMinutes > givenTime) timeClass = 'prep-danger';
+          givenTimeDisplay = `<span class="given-time">📋 ${givenTime}m</span>`;
+        } else {
+          if (prepMinutes > 15) timeClass = 'prep-warning';
+          if (prepMinutes > 25) timeClass = 'prep-danger';
+        }
+        
+        prepTimeDisplay = `<span class="prep-timer ${timeClass}" data-accepted="${order.accepted_at}">⏱️ ${prepMinutes}m</span>`;
+      }
+      
+      // Table name display (for eBar orders)
+      let tableDisplay = '';
+      if (tableName && provider === 'ebar') {
+        tableDisplay = `<span class="table-badge">🪑 ${tableName}</span>`;
+      }
+      
+      // Customer order-level note (from Wolt/delivery platform) - yellow
+      let customerOrderNoteDisplay = '';
+      if (order.note && order.note.trim()) {
+        customerOrderNoteDisplay = `<div class="customer-note">🛒 Mušterija: ${order.note}</div>`;
+      }
+      
+      // Note: Item-level customer notes are shown inline via renderItemWithModifiers()
+      
+      // Order-level comment from dispatcher - orange
+      let orderKomentarDisplay = '';
+      if (order.restos_order_komentar && order.restos_order_komentar.trim()) {
+        orderKomentarDisplay = `<div class="restos-order-komentar">Dispečer: ${order.restos_order_komentar}</div>`;
+      }
+      
+      // Item-level RestOS comments (smaller) - orange
+      const restosKomentari = items
+        .filter(i => i.restos_komentar && i.restos_komentar.trim())
+        .map(i => `<span class="item-name">${i.quantity}× ${i.name}:</span> <span class="item-comment">${i.restos_komentar}</span>`);
+      
+      let itemKomentarDisplay = '';
+      if (restosKomentari.length > 0) {
+        itemKomentarDisplay = `<div class="restos-item-komentari">${restosKomentari.join('<br>')}</div>`;
+      }
+      
+      return `
+        <div class="active-card" 
+             onclick="openOrderModalById('${order.order_id}')"
+             data-order-id="${order.order_id}">
+          <div class="active-card-header">
+            <span class="active-order-number">#${order.order_no}</span>
+            <div class="active-card-badges">
+              ${tableDisplay}
+              ${givenTimeDisplay}
+              ${prepTimeDisplay}
+              <span class="active-order-provider ${provider}">${provider}</span>
+            </div>
+          </div>
+          <div class="active-items">
+            ${items.map(i => renderItemWithModifiers(i)).join('')}
+          </div>
+          ${customerOrderNoteDisplay}
+          ${orderKomentarDisplay}
+          ${itemKomentarDisplay}
+        </div>
+      `;
+    }
+
+    function renderNewCard(order) {
+      const items = order.items || [];
+      const total = items.reduce((s, i) => s + (parseFloat(i.price) || 0) * (parseInt(i.quantity) || 1), 0);
+      const createdAt = new Date(order.created_at);
+      const waitMin = Math.floor((Date.now() - createdAt) / 60000);
+      const time = createdAt.toLocaleTimeString('sr-RS', { hour: '2-digit', minute: '2-digit' });
+      
+      // Store order in global map for modal access
+      ordersMap[order.order_id] = order;
+      
+      // Customer order-level note (from Wolt/delivery platform) - yellow
+      let customerOrderNoteDisplay = '';
+      if (order.note && order.note.trim()) {
+        customerOrderNoteDisplay = `<div class="customer-note">🛒 Mušterija: ${order.note}</div>`;
+      }
+      
+      // Note: Item-level customer notes are shown inline via renderNewItemWithModifiers()
+      
+      // Order-level comment from dispatcher - orange
+      let orderKomentarDisplay = '';
+      if (order.restos_order_komentar && order.restos_order_komentar.trim()) {
+        orderKomentarDisplay = `<div class="restos-order-komentar">Dispečer: ${order.restos_order_komentar}</div>`;
+      }
+      
+      // Item-level RestOS comments (smaller) - orange
+      const restosKomentari = items
+        .filter(i => i.restos_komentar && i.restos_komentar.trim())
+        .map(i => `<span class="item-name">${i.quantity}× ${i.name}:</span> <span class="item-comment">${i.restos_komentar}</span>`);
+      
+      let itemKomentarDisplay = '';
+      if (restosKomentari.length > 0) {
+        itemKomentarDisplay = `<div class="restos-item-komentari">${restosKomentari.join('<br>')}</div>`;
+      }
+
+      return `
+        <div class="new-card" data-order-id="${order.order_id}">
+          <div class="new-card-header">
+            <div class="new-order-info">
+              <span class="new-order-number">#${order.order_no}</span>
+              <span class="new-order-time">${time}</span>
+              <button class="edit-note-btn" onclick="event.stopPropagation(); openOrderModalById('${order.order_id}')" title="Izmeni komentare">✏️</button>
+            </div>
+            <span class="waiting-badge ${waitMin >= 5 ? 'urgent' : ''}" data-created="${order.created_at}">
+              ⏳ <span class="wt">${waitMin}</span>m
+            </span>
+          </div>
+          <div class="new-items">
+            ${items.map(i => renderNewItemWithModifiers(i)).join('')}
+          </div>
+          ${customerOrderNoteDisplay}
+          ${orderKomentarDisplay}
+          ${itemKomentarDisplay}
+          <div class="new-card-footer">
+            <span class="new-order-total">💰 ${Math.round(total).toLocaleString('sr-RS')} RSD</span>
+            <div class="time-buttons">
+              <button class="time-btn" onclick="acceptOrder(${order.order_id}, 5, '${order.company_id}', this)">5</button>
+              <button class="time-btn" onclick="acceptOrder(${order.order_id}, 10, '${order.company_id}', this)">10</button>
+              <button class="time-btn" onclick="acceptOrder(${order.order_id}, 15, '${order.company_id}', this)">15</button>
+              <button class="time-btn" onclick="acceptOrder(${order.order_id}, 20, '${order.company_id}', this)">20</button>
+              <button class="time-btn" onclick="acceptOrder(${order.order_id}, 25, '${order.company_id}', this)">25</button>
+              <button class="time-btn" onclick="acceptOrder(${order.order_id}, 30, '${order.company_id}', this)">30</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+    
+    function renderNewItemWithModifiers(item) {
+      const cat = categorizeItem(item.name);
+      const modifiers = item.modifiers || [];
+      const note = item.note;
+      
+      let modifierText = '';
+      if (modifiers.length > 0) {
+        const modNames = modifiers.map(m => {
+          // Lookup by productReferenceID in wolt_products_map
+          const refId = String(m.productReferenceID);
+          const mapped = modifiersMap[refId];
+          if (mapped && mapped.name) {
+            return mapped.name;
+          }
+          // Fallback - show price
+          return `+${m.price}`;
+        });
+        modifierText = ` <span class="item-modifiers">(${modNames.join(', ')})</span>`;
+      }
+      
+      let noteText = '';
+      if (note && note.trim()) {
+        noteText = `<div class="item-note">📝 ${note}</div>`;
+      }
+      
+      return `
+        <div class="new-item-row">
+          <span class="new-item ${cat}"><span class="qty">${item.quantity}×</span> ${item.name}${modifierText}</span>
+          ${noteText}
+        </div>
+      `;
+    }
+
+    // ============================================
+    // Actions
+    // ============================================
+    async function acceptOrder(orderId, prepTime, companyId, btn) {
+      const card = btn.closest('.new-card');
+      card.classList.add('processing');
+      btn.classList.add('loading');
+
+      // FIRST: Save prep_time_given to database (before API call)
+      try {
+        const { data: existingLifecycle } = await supabaseClient
+          .from('emeni_order_lifecycle')
+          .select('*')
+          .eq('order_id', orderId)
+          .eq('status', 3)
+          .single();
+        
+        if (existingLifecycle) {
+          await supabaseClient
+            .from('emeni_order_lifecycle')
+            .update({ prep_time_given: prepTime })
+            .eq('id', existingLifecycle.id);
+        } else {
+          await supabaseClient
+            .from('emeni_order_lifecycle')
+            .insert({
+              order_id: orderId,
+              status: 3,
+              event_type: 'dispatch.accepted',
+              timestamp: new Date().toISOString(),
+              prep_time_given: prepTime
+            });
+        }
+        console.log('✅ Saved prep_time_given to database:', prepTime);
+      } catch (dbError) {
+        console.error('❌ DB Error:', dbError);
+      }
+
+      // THEN: Try to call eMeni API
+      try {
+        const payload = {
+          orderID: orderId,
+          preparationTime: prepTime,
+          companyId: companyId
+        };
+        
+        console.log('📤 Calling Edge Function with:', payload);
+        
+        const response = await fetch(`${SUPABASE_URL}/functions/v1/accept-wolt-order`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+          },
+          body: JSON.stringify(payload)
+        });
+        
+        const result = await response.json();
+        console.log('📥 Edge Function response:', result);
+        
+        if (result.success) {
+          showToast(`#${orderId} → ${prepTime} min ✓`, 'success');
+        } else {
+          // API failed but we saved to DB - show warning
+          showToast(`#${orderId} → ${prepTime} min (API error)`, 'error');
+          console.warn('⚠️ API error but prep_time saved:', result.apiResponse);
+        }
+        
+        card.style.transform = 'scale(0.9)';
+        card.style.opacity = '0';
+        setTimeout(() => loadOrders(), 300);
+      } catch (e) {
+        console.error('❌ Error:', e);
+        showToast(`#${orderId} → ${prepTime} min (offline)`, 'error');
+        card.style.transform = 'scale(0.9)';
+        card.style.opacity = '0';
+        setTimeout(() => loadOrders(), 300);
+      }
+    }
+
+    function updateWaitingTimes() {
+      document.querySelectorAll('.waiting-badge[data-created]').forEach(badge => {
+        const mins = Math.floor((Date.now() - new Date(badge.dataset.created)) / 60000);
+        const span = badge.querySelector('.wt');
+        if (span) span.textContent = mins;
+        badge.classList.toggle('urgent', mins >= 5);
+      });
+      
+      document.querySelectorAll('.prep-timer[data-accepted]').forEach(timer => {
+        const mins = Math.floor((Date.now() - new Date(timer.dataset.accepted)) / 60000);
+        timer.innerHTML = `⏱️ ${mins}m`;
+      });
+    }
+
+    // ============================================
+    // Sound Notification
+    // ============================================
+    let previousNewOrderIds = new Set();
+    let notificationSound = null;
+    let soundEnabled = true;
+
+    function toggleSound() {
+      soundEnabled = !soundEnabled;
+      const btn = document.getElementById('soundToggleBtn');
+      if (soundEnabled) {
+        btn.textContent = '🔊';
+        btn.style.background = '#22c55e';
+      } else {
+        btn.textContent = '🔇';
+        btn.style.background = '#666';
+      }
+      console.log('🔔 Sound:', soundEnabled ? 'ON' : 'OFF');
+    }
+
+    function initSound() {
+      // Create audio context and oscillator for notification sound
+      notificationSound = {
+        play: function() {
+          try {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            
+            const createBuzz = (startTime, duration) => {
+              const oscillator = audioCtx.createOscillator();
+              const gainNode = audioCtx.createGain();
+              
+              oscillator.connect(gainNode);
+              gainNode.connect(audioCtx.destination);
+              
+              // Low frequency buzz
+              oscillator.frequency.value = 150;
+              oscillator.type = 'sawtooth';
+              
+              // Pulsing effect
+              gainNode.gain.setValueAtTime(0.6, startTime);
+              gainNode.gain.setValueAtTime(0.6, startTime + duration - 0.02);
+              gainNode.gain.linearRampToValueAtTime(0, startTime + duration);
+              
+              oscillator.start(startTime);
+              oscillator.stop(startTime + duration);
+            };
+            
+            const now = audioCtx.currentTime;
+            
+            // Buzz buzz buzz pattern (like phone vibration)
+            createBuzz(now, 0.2);
+            createBuzz(now + 0.3, 0.2);
+            createBuzz(now + 0.6, 0.2);
+            
+            console.log('📳 Vibration sound played');
+          } catch (e) {
+            console.warn('Could not play sound:', e);
+          }
+        }
+      };
+    }
+
+    // Test sound function - accessible from button
+    function testSound() {
+      console.log('🔔 Testing sound...');
+      if (notificationSound) {
+        notificationSound.play();
+      } else {
+        initSound();
+        notificationSound.play();
+      }
+    }
+
+    function checkForNewOrders(orders) {
+      const newWoltOrders = orders.filter(o => 
+        (o.status === STATUS_NEW || o.status === STATUS_NEW_PREORDER) && 
+        (o.provider || '').toLowerCase() === 'wolt'
+      );
+      
+      const currentNewOrderIds = new Set(newWoltOrders.map(o => o.order_id));
+      
+      // Check if there are any NEW orders that weren't there before
+      let hasNewOrder = false;
+      currentNewOrderIds.forEach(id => {
+        if (!previousNewOrderIds.has(id)) {
+          hasNewOrder = true;
+          console.log('🆕 New order detected:', id);
+        }
+      });
+      
+      if (hasNewOrder && soundEnabled && notificationSound) {
+        notificationSound.play();
+        // Also show visual flash
+        document.body.style.backgroundColor = '#1a2a1a';
+        setTimeout(() => {
+          document.body.style.backgroundColor = '#0a0a0f';
+        }, 200);
+      }
+      
+      previousNewOrderIds = currentNewOrderIds;
+    }
+
+    // ============================================
+    // Init
+    // ============================================
+    async function loadOrders() {
+      allOrders = await fetchOrders();
+      checkForNewOrders(allOrders);
+      renderMain(allOrders);
+    }
+
+    async function init() {
+      initSound();
+      await loadProductCategories();
+      await loadModifiers();
+      await loadOrders();
+      
+      supabaseClient
+        .channel('dispatch-v5')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'emeni_orders' }, () => loadOrders())
+        .subscribe();
+      
+      setInterval(loadOrders, 10000);
+      setInterval(updateWaitingTimes, 1000);
+    }
+
+    init();
+  </script>
+</body>
+</html>
