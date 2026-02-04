@@ -1,2382 +1,2679 @@
 <!DOCTYPE html>
 <html lang="sr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Wolt Dispatch - Collina</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #0a0a0f;
-      color: #ffffff;
-      height: 100vh;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-    }
-
-    /* Header */
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 8px 16px;
-      background: #111118;
-      border-bottom: 1px solid #1f1f2e;
-      flex-shrink: 0;
-    }
-
-    .header h1 {
-      font-size: 16px;
-      font-weight: 600;
-      color: #f97316;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .header h1 .wolt-badge {
-      background: #00c2e8;
-      color: #000;
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-size: 9px;
-      font-weight: 700;
-    }
-
-    .status-indicator {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      color: #888;
-      font-size: 11px;
-    }
-
-    .status-dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: #22c55e;
-      animation: pulse 2s infinite;
-    }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.5; }
-    }
-
-    /* Main Layout - 7 columns: 2+2+2+1(stacked) */
-    .main-container {
-      flex: 1;
-      display: grid;
-      grid-template-columns: 2fr 2fr 2fr 1fr;
-      gap: 8px;
-      padding: 8px;
-      overflow: hidden;
-    }
-
-    /* Big Location (Vračar, NBG, B.Brdo) */
-    .location-big {
-      display: flex;
-      flex-direction: column;
-      background: #111116;
-      border: 1px solid #1f1f2e;
-      border-radius: 10px;
-      overflow: hidden;
-    }
-
-    .location-big .location-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 10px 12px;
-      background: #18181f;
-      border-bottom: 1px solid #1f1f2e;
-    }
-
-    .location-big .location-name {
-      font-size: 14px;
-      font-weight: 600;
-      color: #f97316;
-    }
-
-    .location-big .location-stats {
-      display: flex;
-      gap: 6px;
-    }
-
-    .stat-pill {
-      font-size: 11px;
-      padding: 3px 8px;
-      border-radius: 12px;
-      font-weight: 600;
-    }
-
-    .stat-pill.active {
-      background: #f97316;
-      color: #000;
-    }
-
-    .stat-pill.new {
-      background: #22c55e;
-      color: #000;
-    }
-
-    .stat-pill.empty {
-      background: #1f1f2e;
-      color: #666;
-    }
-
-    /* Kitchen Stats */
-    .kitchen-stats-bar {
-      display: flex;
-      justify-content: center;
-      gap: 16px;
-      padding: 8px;
-      background: #0d0d12;
-      border-bottom: 1px solid #1f1f2e;
-    }
-
-    .kitchen-stat {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      font-size: 13px;
-      font-weight: 600;
-    }
-
-    .kitchen-stat.burgers { color: #f97316; }
-    .kitchen-stat.pancakes { color: #a855f7; }
-    .kitchen-stat.other { color: #3b82f6; }
-    .kitchen-stat.zero { opacity: 0.3; }
-
-    /* Content area - split into active (top) and new (bottom) */
-    .location-content {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-
-    /* Active section - takes most space */
-    .active-section {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      min-height: 0;
-    }
-
-    .section-label {
-      font-size: 10px;
-      font-weight: 600;
-      color: #666;
-      padding: 6px 10px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      background: #0d0d12;
-      flex-shrink: 0;
-    }
-
-    .active-orders-list {
-      flex: 1;
-      overflow-y: auto;
-      padding: 8px;
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 6px;
-      align-content: start;
-    }
-
-    /* New section - fixed height at bottom, max 2 visible */
-    .new-section {
-      flex-shrink: 0;
-      max-height: 180px;
-      display: flex;
-      flex-direction: column;
-      border-top: 2px solid #22c55e;
-      background: #0f1f0f;
-    }
-
-    .new-section .section-label {
-      background: #0a150a;
-      color: #22c55e;
-    }
-
-    .new-orders-list {
-      flex: 1;
-      overflow-y: auto;
-      padding: 8px;
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 6px;
-      align-content: start;
-    }
-
-    /* Small locations stacked container */
-    .small-locations-stack {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      overflow: hidden;
-    }
-
-    /* Small Location (Kuhinjica, Pekarica, Girosito) */
-    .location-small {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      background: #111116;
-      border: 1px solid #1f1f2e;
-      border-radius: 10px;
-      overflow: hidden;
-      min-height: 0;
-    }
-
-    .location-small .location-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 6px 10px;
-      background: #18181f;
-      border-bottom: 1px solid #1f1f2e;
-    }
-
-    .location-small .location-name {
-      font-size: 12px;
-      font-weight: 600;
-      color: #f97316;
-    }
-
-    .location-small .location-stats {
-      display: flex;
-      gap: 4px;
-    }
-
-    .location-small .stat-pill {
-      font-size: 9px;
-      padding: 2px 6px;
-    }
-
-    .location-small .kitchen-stats-bar {
-      padding: 4px;
-      gap: 8px;
-    }
-
-    .location-small .kitchen-stat {
-      font-size: 11px;
-    }
-
-    .location-small .location-content {
-      flex: 1;
-      overflow-y: auto;
-      padding: 6px;
-    }
-
-    .location-small .section-label {
-      font-size: 9px;
-      padding: 4px 8px;
-    }
-
-    .location-small .active-section {
-      flex: 1;
-    }
-
-    .location-small .new-section {
-      max-height: 80px;
-    }
-
-    /* Active Card */
-    .active-card {
-      background: #1a1a22;
-      border: 1px solid #2a2a3a;
-      border-radius: 6px;
-      padding: 8px 10px;
-    }
-
-    .active-card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 6px;
-    }
-
-    .active-order-number {
-      font-weight: 700;
-      font-size: 14px;
-      color: #f97316;
-    }
-
-    .active-card-badges {
-      display: flex;
-      gap: 4px;
-      align-items: center;
-    }
-
-    .active-order-provider {
-      font-size: 9px;
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-weight: 700;
-      text-transform: uppercase;
-    }
-
-    .active-order-provider.wolt { background: #00c2e8; color: #000; }
-    .active-order-provider.ebar { background: #a855f7; color: #fff; }
-    .active-order-provider.glovo { background: #ffc107; color: #000; }
-    .active-order-provider.gloriafood { background: #ff6b35; color: #fff; }
-
-    .active-items {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 4px;
-    }
-
-    .active-item {
-      font-size: 11px;
-      background: #252530;
-      padding: 3px 6px;
-      border-radius: 4px;
-      color: #ccc;
-    }
-
-    .active-item .qty {
-      color: #f97316;
-      font-weight: 600;
-    }
-
-    /* Item row with modifiers */
-    .item-row {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-
-    .item-modifiers {
-      color: #888;
-      font-size: 10px;
-      font-weight: 400;
-    }
-
-    /* Customer item note (from Wolt/eBar - yellow) */
-    .item-note {
-      font-size: 11px;
-      color: #fbbf24;
-      background: rgba(251, 191, 36, 0.15);
-      padding: 4px 8px;
-      border-radius: 4px;
-      margin-top: 3px;
-      border-left: 3px solid #fbbf24;
-      font-weight: 600;
-    }
-
-    /* Customer order-level note (yellow box) */
-    .customer-note {
-      font-size: 12px;
-      color: #fbbf24;
-      background: rgba(251, 191, 36, 0.15);
-      padding: 8px 10px;
-      border-radius: 6px;
-      margin-top: 6px;
-      border: 2px solid #fbbf24;
-      font-weight: 600;
-    }
-
-    /* Customer item-level notes (yellow box) */
-    .customer-item-notes {
-      font-size: 11px;
-      color: #fbbf24;
-      background: rgba(251, 191, 36, 0.1);
-      padding: 6px 8px;
-      border-radius: 4px;
-      margin-top: 4px;
-      border: 1px solid #fbbf24;
-      line-height: 1.4;
-    }
-
-    .customer-item-notes .cust-item-name {
-      color: #a3a3a3;
-      font-weight: 400;
-    }
-
-    .customer-item-notes .cust-item-note {
-      color: #fbbf24;
-      font-weight: 600;
-    }
-
-    /* Order-level notes (comments) */
-    .order-note {
-      font-size: 10px;
-      color: #f59e0b;
-      background: rgba(245, 158, 11, 0.15);
-      padding: 5px 8px;
-      border-radius: 4px;
-      margin: 4px 0 6px 0;
-      border-left: 3px solid #f59e0b;
-      font-weight: 500;
-    }
-
-    .new-order-note {
-      font-size: 10px;
-      color: #fbbf24;
-      background: rgba(251, 191, 36, 0.15);
-      padding: 5px 8px;
-      border-radius: 4px;
-      margin-bottom: 6px;
-      border-left: 3px solid #fbbf24;
-      font-weight: 500;
-    }
-
-    .new-item-row {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-
-    .new-item-row .item-note {
-      margin-left: 6px;
-    }
-
-    /* Prep timer */
-    .prep-timer {
-      font-size: 11px;
-      padding: 3px 8px;
-      border-radius: 4px;
-      font-weight: 700;
-      display: inline-flex;
-      align-items: center;
-      gap: 2px;
-    }
-
-    .prep-timer.prep-ok {
-      background: #22c55e;
-      color: #000;
-    }
-
-    .prep-timer.prep-warning {
-      background: #f59e0b;
-      color: #000;
-    }
-
-    .prep-timer.prep-danger {
-      background: #ef4444;
-      color: #fff;
-      animation: blink 1s infinite;
-    }
-
-    .given-time {
-      font-size: 11px;
-      padding: 3px 8px;
-      border-radius: 4px;
-      font-weight: 700;
-      background: #3b82f6;
-      color: #fff;
-    }
-
-    .table-badge {
-      font-size: 10px;
-      padding: 3px 6px;
-      border-radius: 4px;
-      font-weight: 600;
-      background: #6366f1;
-      color: #fff;
-    }
-
-    .edit-note-btn {
-      font-size: 12px;
-      padding: 2px 6px;
-      border-radius: 4px;
-      background: transparent;
-      border: 1px solid #555;
-      color: #888;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .edit-note-btn:hover {
-      background: #333;
-      color: #fff;
-      border-color: #888;
-    }
-
-    /* RestOS komentar box - bottom of card, larger font */
-    .restos-komentar-box {
-      margin-top: 8px;
-      padding: 10px 12px;
-      background: rgba(249, 115, 22, 0.15);
-      border: 2px solid #f97316;
-      border-radius: 6px;
-      font-size: 14px;
-      font-weight: 600;
-      color: #fb923c;
-      line-height: 1.4;
-    }
-
-    /* Customer note (from Wolt/delivery) - yellow */
-    .customer-note {
-      margin-top: 8px;
-      padding: 8px 10px;
-      background: rgba(234, 179, 8, 0.15);
-      border: 1px solid #eab308;
-      border-left: 3px solid #eab308;
-      border-radius: 4px;
-      font-size: 12px;
-      font-weight: 500;
-      color: #fde047;
-      line-height: 1.3;
-    }
-
-    /* Order-level comment from dispatcher (orange) */
-    .restos-order-komentar {
-      font-size: 11px;
-      color: #fb923c;
-      background: rgba(249, 115, 22, 0.15);
-      padding: 6px 8px;
-      border-radius: 4px;
-      margin-top: 4px;
-      border: 1px solid #f97316;
-      font-weight: 600;
-      line-height: 1.4;
-    }
-
-    /* Item-level comments - smaller */
-    .restos-item-komentari {
-      margin-top: 4px;
-      padding: 6px 8px;
-      background: rgba(249, 115, 22, 0.1);
-      border: 1px solid #f97316;
-      border-radius: 4px;
-      font-size: 11px;
-      line-height: 1.4;
-    }
-
-    .restos-item-komentari .item-name {
-      color: #666;
-      font-weight: 400;
-    }
-
-    .restos-item-komentari .item-comment {
-      color: #fb923c;
-      font-weight: 600;
-    }
-
-    .new-card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 6px;
-    }
-
-    @keyframes blink {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.5; }
-    }
-
-    /* New Card */
-    .new-card {
-      background: #1a2a1a;
-      border: 1px solid #2a4a2a;
-      border-radius: 6px;
-      padding: 8px 10px;
-      transition: all 0.2s ease;
-    }
-
-    .new-card.processing {
-      opacity: 0.6;
-      pointer-events: none;
-    }
-
-    .new-card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 6px;
-    }
-
-    .new-order-info {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .new-order-number {
-      font-weight: 700;
-      font-size: 14px;
-      color: #22c55e;
-    }
-
-    .new-order-time {
-      font-size: 10px;
-      color: #666;
-    }
-
-    .waiting-badge {
-      font-size: 10px;
-      padding: 2px 6px;
-      border-radius: 4px;
-      background: #22c55e;
-      color: #000;
-      font-weight: 600;
-    }
-
-    .waiting-badge.urgent {
-      background: #ef4444;
-      color: #fff;
-      animation: blink 1s infinite;
-    }
-
-    .new-items {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 4px;
-      margin-bottom: 8px;
-    }
-
-    .new-item {
-      font-size: 11px;
-      background: #253025;
-      padding: 3px 6px;
-      border-radius: 4px;
-      color: #ccc;
-    }
-
-    .new-item.burger {
-      border-left: 2px solid #f97316;
-    }
-
-    .new-item.pancake {
-      border-left: 2px solid #a855f7;
-    }
-
-    .new-card-footer {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .new-order-total {
-      font-size: 12px;
-      color: #22c55e;
-      font-weight: 600;
-    }
-
-    .time-buttons {
-      display: flex;
-      gap: 4px;
-    }
-
-    .time-btn {
-      width: 28px;
-      height: 24px;
-      border: none;
-      border-radius: 4px;
-      font-size: 10px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: all 0.15s ease;
-    }
-
-    .time-btn:nth-child(1) { background: #166534; color: #fff; }
-    .time-btn:nth-child(2) { background: #15803d; color: #fff; }
-    .time-btn:nth-child(3) { background: #16a34a; color: #fff; }
-    .time-btn:nth-child(4) { background: #22c55e; color: #000; }
-    .time-btn:nth-child(5) { background: #f59e0b; color: #000; }
-    .time-btn:nth-child(6) { background: #ef4444; color: #fff; }
-
-    .time-btn:hover {
-      transform: scale(1.1);
-    }
-
-    .time-btn.loading {
-      opacity: 0.5;
-      pointer-events: none;
-    }
-
-    /* Empty state */
-    .empty-state {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-      color: #444;
-      text-align: center;
-      grid-column: span 2;
-    }
-
-    .empty-state .icon {
-      font-size: 24px;
-      margin-bottom: 8px;
-      opacity: 0.5;
-    }
-
-    .empty-state p {
-      font-size: 11px;
-    }
-
-    /* Small location compact styles */
-    .location-small .active-card,
-    .location-small .new-card {
-      padding: 6px 8px;
-    }
-
-    .location-small .active-order-number,
-    .location-small .new-order-number {
-      font-size: 12px;
-    }
-
-    .location-small .active-items,
-    .location-small .new-items {
-      gap: 3px;
-    }
-
-    .location-small .active-item,
-    .location-small .new-item {
-      font-size: 10px;
-      padding: 2px 5px;
-    }
-
-    .location-small .time-btn {
-      width: 24px;
-      height: 20px;
-      font-size: 9px;
-    }
-
-    .location-small .empty-state {
-      padding: 10px;
-    }
-
-    .location-small .empty-state .icon {
-      font-size: 16px;
-    }
-
-    /* Scrollbar */
-    ::-webkit-scrollbar {
-      width: 4px;
-    }
-
-    ::-webkit-scrollbar-track {
-      background: #0a0a0f;
-    }
-
-    ::-webkit-scrollbar-thumb {
-      background: #333;
-      border-radius: 2px;
-    }
-
-    /* Toast */
-    .toast-container {
-      position: fixed;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 9999;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .toast {
-      background: #1a1a22;
-      border: 1px solid #2a2a3a;
-      border-radius: 8px;
-      padding: 12px 20px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-      animation: slideUp 0.3s ease;
-    }
-
-    .toast.success {
-      border-color: #22c55e;
-      background: #0f1f0f;
-    }
-
-    .toast.error {
-      border-color: #ef4444;
-      background: #1f0f0f;
-    }
-
-    @keyframes slideUp {
-      from { transform: translateY(20px); opacity: 0; }
-      to { transform: translateY(0); opacity: 1; }
-    }
-
-    /* Order Edit Modal */
-    .modal-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.8);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 10000;
-      opacity: 0;
-      visibility: hidden;
-      transition: all 0.2s ease;
-    }
-
-    .modal-overlay.active {
-      opacity: 1;
-      visibility: visible;
-    }
-
-    .modal {
-      background: #1a1a22;
-      border: 1px solid #2a2a3a;
-      border-radius: 12px;
-      width: 90%;
-      max-width: 400px;
-      max-height: 80vh;
-      overflow-y: auto;
-      transform: scale(0.9);
-      transition: transform 0.2s ease;
-    }
-
-    .modal.modal-wide {
-      max-width: 550px;
-    }
-
-    .modal-overlay.active .modal {
-      transform: scale(1);
-    }
-
-    .modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 16px 20px;
-      border-bottom: 1px solid #2a2a3a;
-    }
-
-    .modal-title {
-      font-size: 18px;
-      font-weight: 700;
-      color: #f97316;
-    }
-
-    .modal-close {
-      background: none;
-      border: none;
-      color: #666;
-      font-size: 24px;
-      cursor: pointer;
-      padding: 0;
-      line-height: 1;
-    }
-
-    .modal-close:hover {
-      color: #fff;
-    }
-
-    .modal-body {
-      padding: 20px;
-    }
-
-    .modal-order-info {
-      background: #111118;
-      border-radius: 8px;
-      padding: 12px;
-      margin-bottom: 16px;
-    }
-
-    .modal-order-meta {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 10px;
-    }
-
-    .modal-order-number {
-      font-size: 16px;
-      font-weight: 700;
-      color: #fff;
-    }
-
-    .modal-order-provider {
-      font-size: 11px;
-      padding: 3px 8px;
-      border-radius: 4px;
-      font-weight: 600;
-      text-transform: uppercase;
-    }
-
-    .modal-order-provider.wolt {
-      background: #00c2e8;
-      color: #000;
-    }
-
-    .modal-order-provider.ebar {
-      background: #f97316;
-      color: #000;
-    }
-
-    .modal-order-items {
-      font-size: 12px;
-      color: #888;
-      line-height: 1.5;
-    }
-
-    .modal-label {
-      font-size: 12px;
-      font-weight: 600;
-      color: #888;
-      margin-bottom: 8px;
-      display: block;
-    }
-
-    .modal-textarea {
-      width: 100%;
-      min-height: 100px;
-      background: #111118;
-      border: 1px solid #2a2a3a;
-      border-radius: 8px;
-      padding: 12px;
-      color: #fff;
-      font-size: 14px;
-      font-family: inherit;
-      resize: vertical;
-    }
-
-    .modal-textarea:focus {
-      outline: none;
-      border-color: #f97316;
-    }
-
-    .modal-textarea::placeholder {
-      color: #555;
-    }
-
-    /* Item notes list */
-    .modal-items-list {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    /* Order-level comment section */
-    .modal-order-comment-section {
-      margin-bottom: 12px;
-    }
-
-    .modal-order-label {
-      display: block;
-      font-size: 12px;
-      font-weight: 600;
-      color: #f97316;
-      margin-bottom: 6px;
-    }
-
-    .modal-order-input {
-      width: 100%;
-      background: #0a0a0f;
-      border: 2px solid #f97316;
-      border-radius: 6px;
-      padding: 10px 12px;
-      color: #fb923c;
-      font-size: 14px;
-      font-weight: 600;
-    }
-
-    .modal-order-input:focus {
-      outline: none;
-      border-color: #fb923c;
-      background: rgba(249, 115, 22, 0.1);
-    }
-
-    .modal-order-input::placeholder {
-      color: #555;
-      font-weight: 400;
-      font-size: 12px;
-    }
-
-    /* Item-level comments section */
-    .modal-items-section {
-      border-top: 1px solid #2a2a3a;
-      padding-top: 10px;
-    }
-
-    .modal-items-label {
-      display: block;
-      font-size: 11px;
-      font-weight: 500;
-      color: #555;
-      margin-bottom: 6px;
-    }
-
-    .modal-item-row {
-      background: #111118;
-      border-radius: 4px;
-      padding: 6px 8px;
-      border: 1px solid #2a2a3a;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    .modal-item-top {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .modal-item-header {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      min-width: 150px;
-    }
-
-    .modal-item-qty {
-      background: #333;
-      color: #888;
-      font-weight: 600;
-      font-size: 9px;
-      padding: 2px 5px;
-      border-radius: 3px;
-      min-width: 20px;
-      text-align: center;
-    }
-
-    .modal-item-name {
-      font-size: 11px;
-      color: #555;
-      font-weight: 400;
-      flex: 1;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .modal-item-input {
-      flex: 1;
-      background: #0a0a0f;
-      border: 1px solid #2a2a3a;
-      border-radius: 4px;
-      padding: 5px 7px;
-      color: #fb923c;
-      font-size: 11px;
-      font-weight: 500;
-    }
-
-    .modal-item-input:focus {
-      outline: none;
-      border-color: #f97316;
-    }
-
-    .modal-item-input::placeholder {
-      color: #444;
-      font-size: 10px;
-    }
-
-    .modal-item-input.has-note {
-      border-color: #f97316;
-      background: rgba(249, 115, 22, 0.05);
-    }
-
-    /* Customer note in modal (read-only, yellow) */
-    .modal-customer-note {
-      font-size: 10px;
-      color: #fbbf24;
-      background: rgba(251, 191, 36, 0.1);
-      padding: 3px 6px;
-      border-radius: 3px;
-      margin: 4px 0;
-      border-left: 2px solid #fbbf24;
-    }
-
-    .modal-footer {
-      display: flex;
-      gap: 10px;
-      padding: 16px 20px;
-      border-top: 1px solid #2a2a3a;
-    }
-
-    .modal-btn {
-      flex: 1;
-      padding: 12px 16px;
-      border-radius: 8px;
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-      border: none;
-      transition: all 0.2s ease;
-    }
-
-    .modal-btn-cancel {
-      background: #2a2a3a;
-      color: #888;
-    }
-
-    .modal-btn-cancel:hover {
-      background: #3a3a4a;
-      color: #fff;
-    }
-
-    .modal-btn-save {
-      background: #f97316;
-      color: #000;
-    }
-
-    .modal-btn-save:hover {
-      background: #fb923c;
-    }
-
-    .modal-btn-save:disabled {
-      background: #555;
-      color: #888;
-      cursor: not-allowed;
-    }
-
-    /* Make cards clickable */
-    .active-card {
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-
-    .active-card:hover {
-      border-color: #f97316;
-      transform: translateY(-2px);
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Collina Kitchen Display v2.1 (+ Dispatcher Comments)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@600;700;800&family=Press+Start+2P&display=swap" rel="stylesheet">
+    <!-- Supabase JS for Realtime -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            font-family: 'Inter', sans-serif;
+            background: #1D1D1B;
+            color: #EAE4DA;
+            height: 100vh;
+            overflow: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* ============================================
+           TOP HEADER BAR
+           ============================================ */
+        .header {
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            background: #1D1D1B;
+            gap: 8px;
+        }
+
+        .tab-btn {
+            padding: 10px 20px;
+            border: none;
+            background: #8B5CF6;
+            color: white;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 700;
+            font-size: 0.85rem;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .tab-btn.secondary {
+            background: #2a2a28;
+            color: #888;
+        }
+
+        .tab-btn.secondary:hover {
+            background: #3a3a38;
+            color: #EAE4DA;
+        }
+
+        /* Realtime connection indicator */
+        .realtime-indicator {
+            display: inline-block;
+            margin-right: 6px;
+            font-size: 0.9rem;
+            animation: pulse-connecting 1s ease-in-out infinite;
+        }
+
+        .realtime-indicator.connected {
+            color: #10B981;
+            animation: none;
+        }
+
+        .realtime-indicator.disconnected {
+            color: #EF4444;
+            animation: pulse-connecting 1s ease-in-out infinite;
+        }
+
+        @keyframes pulse-connecting {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        .view-toggle {
+            display: flex;
+            background: #2a2a28;
+            border-radius: 4px;
+            padding: 3px;
+            gap: 3px;
+            margin-left: auto;
+        }
+
+        .filter-toggle {
+            display: flex;
+            background: #2a2a28;
+            border-radius: 4px;
+            padding: 3px;
+            gap: 3px;
+            margin-left: 12px;
+        }
+
+        .filter-btn {
+            padding: 8px 14px;
+            border: none;
+            background: transparent;
+            color: #888;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 700;
+            font-size: 0.75rem;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .filter-btn:hover {
+            background: #3a3a38;
+            color: #EAE4DA;
+        }
+
+        .filter-btn.active {
+            background: #10B981;
+            color: white;
+        }
+
+        .filter-btn .icon {
+            font-size: 1rem;
+        }
+
+        .sound-btn {
+            padding: 8px 12px;
+            border: none;
+            background: #2a2a28;
+            color: #888;
+            font-size: 1.1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-left: 8px;
+            transition: all 0.2s;
+        }
+
+        .sound-btn:hover {
+            background: #3a3a38;
+        }
+
+        .sound-btn.active {
+            background: #10B981;
+            color: white;
+        }
+
+        .toggle-btn {
+            padding: 8px 16px;
+            border: none;
+            background: transparent;
+            color: #888;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 700;
+            font-size: 0.75rem;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .toggle-btn:hover {
+            background: #3a3a38;
+            color: #EAE4DA;
+        }
+
+        .toggle-btn.active {
+            background: #8B5CF6;
+            color: white;
+        }
+
+        /* ============================================
+           MAIN LAYOUT
+           ============================================ */
+        .main-container {
+            display: flex;
+            height: calc(100vh - 52px);
+            padding: 0 12px 12px 12px;
+            gap: 12px;
+        }
+
+        /* ============================================
+           KANBAN COLUMNS
+           ============================================ */
+        .columns-container {
+            flex: 1;
+            display: flex;
+            gap: 12px;
+            min-width: 0;
+        }
+
+        .kanban-column {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #252523;
+            border-radius: 8px;
+            overflow: hidden;
+            min-width: 0;
+        }
+
+        .kanban-column.hidden {
+            display: none;
+        }
+
+        .column-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 700;
+            font-size: 1rem;
+            color: white;
+        }
+
+        .column-header.priprema-header {
+            background: linear-gradient(135deg, #808BC5 0%, #6B75A8 100%);
+        }
+
+        .column-header.pakovanje-header {
+            background: linear-gradient(135deg, #9B59B6 0%, #8E44AD 100%);
+        }
+
+        /* Split FRONT DESK view */
+        .split-frontdesk {
+            display: flex;
+            flex: 1;
+            gap: 12px;
+            min-width: 0;
+        }
+
+        .split-frontdesk.hidden {
+            display: none;
+        }
+
+        .split-frontdesk .kanban-column {
+            flex: 1;
+        }
+
+        .split-frontdesk .column-ebar {
+            flex: 1;
+        }
+
+        .split-frontdesk .column-dostava {
+            flex: 2;
+        }
+
+        .column-header.ebar-header {
+            background: linear-gradient(135deg, #BBF7D0 0%, #86EFAC 100%);
+            color: #166534;
+        }
+
+        .column-header.dostava-header {
+            background: linear-gradient(135deg, #BFDBFE 0%, #93C5FD 100%);
+            color: #1E3A5F;
+        }
+        
+        .column-header.ebar-header .column-count,
+        .column-header.dostava-header .column-count {
+            background: rgba(0,0,0,0.15);
+            color: inherit;
+        }
+
+        .column-count {
+            background: rgba(255,255,255,0.25);
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+        }
+
+        .column-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            flex-wrap: wrap;
+            align-content: flex-start;
+            gap: 8px;
+            padding: 12px;
+            overflow: auto;
+        }
+
+        /* ============================================
+           ORDER CARDS
+           ============================================ */
+        .order-card {
+            width: 260px;
+            background: #2a2a28;
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid #3a3a38;
+            transition: transform 0.15s, box-shadow 0.15s;
+            user-select: none;
+        }
+
+        .order-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        /* Card type borders */
+        .order-card.burger {
+            border-left: 3px solid #808BC5;
+        }
+
+        .order-card.pancake {
+            border-left: 3px solid #ED773C;
+        }
+
+        .order-card.mixed {
+            border-left: 3px solid;
+            border-image: linear-gradient(to bottom, #808BC5 50%, #ED773C 50%) 1;
+        }
+
+        .order-card.other {
+            border-left: 3px solid #666;
+        }
+
+        .order-card.urgent {
+            background: #2a2a28;
+        }
+
+        .order-card.urgent .card-wait {
+            background: #C63F3E;
+            color: white;
+        }
+
+        /* Pakovanje column cards - waiting for courier */
+        .column-spremno .order-card {
+            background: #2d2a2d;
+            border-color: #5a4a5a;
+        }
+
+        .card-time {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: #888;
+        }
+
+        .card-wait {
+            padding: 3px 8px;
+            border-radius: 4px;
+            background: #3a3a38;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: #888;
+        }
+
+        .card-body {
+            padding: 6px 10px 10px;
+        }
+
+        .card-items {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .card-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 6px;
+            padding: 4px 0;
+            font-size: 0.9rem;
+            background: transparent;
+        }
+
+        .card-item.burger-item {
+            /* no extra styling */
+        }
+
+        .card-item.pancake-item {
+            /* no extra styling */
+        }
+
+        .card-item.other-item {
+            /* no extra styling */
+        }
+
+        .item-icon {
+            font-size: 1rem;
+            flex-shrink: 0;
+        }
+
+        .item-qty {
+            font-weight: 700;
+            color: #EAE4DA;
+            font-size: 0.95rem;
+            flex-shrink: 0;
+        }
+
+        .item-name {
+            flex: 1;
+            font-weight: 500;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        .item-note {
+            font-size: 0.85rem;
+            color: #FF6B6B;
+            padding: 8px 12px;
+            font-weight: 700;
+            background: rgba(255, 107, 107, 0.2);
+            border-left: 4px solid #FF6B6B;
+            border-radius: 0 6px 6px 0;
+            margin: 6px 0;
+        }
+
+        /* Modifiers - VERY visible */
+        .item-modifiers {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            margin: 6px 0 6px 20px;
+        }
+
+        .modifier-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 6px 12px;
+            background: rgba(251, 191, 36, 0.25);
+            border-left: 4px solid #FBBF24;
+            border-radius: 0 6px 6px 0;
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #FBBF24;
+        }
+
+        .modifier-tag::before {
+            content: '+';
+            font-weight: 800;
+            font-size: 1rem;
+        }
+
+        /* Order-level comment - VERY visible (from platform - red) */
+        .order-comment {
+            padding: 10px 12px;
+            background: rgba(255, 107, 107, 0.25);
+            border-left: 5px solid #FF6B6B;
+            margin: 8px 0 0 0;
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #FF6B6B;
+            border-radius: 0 6px 6px 0;
+        }
+
+        .order-comment::before {
+            content: '📝 ';
+            font-size: 1.1rem;
+        }
+
+        /* DISPATCHER comment - 80s PIXEL STYLE */
+        .dispatcher-order-comment {
+            padding: 8px 10px;
+            background: #000;
+            border: 4px solid #0ff;
+            box-shadow: 
+                0 0 10px #0ff,
+                inset 0 0 20px rgba(0, 255, 255, 0.1);
+            margin: 8px 0;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 0.6rem;
+            line-height: 1.6;
+            color: #0ff;
+            text-shadow: 0 0 10px #0ff;
+            image-rendering: pixelated;
+            position: relative;
+        }
+
+        .dispatcher-order-comment::before {
+            content: '► ';
+            color: #f0f;
+            text-shadow: 0 0 10px #f0f;
+            animation: blink-cursor 0.8s infinite;
+        }
+
+        @keyframes blink-cursor {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        /* Scanline effect */
+        .dispatcher-order-comment::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0, 0, 0, 0.15),
+                rgba(0, 0, 0, 0.15) 1px,
+                transparent 1px,
+                transparent 2px
+            );
+            pointer-events: none;
+        }
+
+        /* DISPATCHER item comment - 80s PIXEL STYLE */
+        .dispatcher-item-comment {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 0.5rem;
+            line-height: 1.5;
+            color: #0f0;
+            text-shadow: 0 0 8px #0f0;
+            padding: 6px 8px;
+            background: #000;
+            border: 2px solid #0f0;
+            box-shadow: 0 0 8px rgba(0, 255, 0, 0.3);
+            margin: 4px 0 4px 12px;
+        }
+
+        .dispatcher-item-comment::before {
+            content: '>> ';
+            color: #ff0;
+            text-shadow: 0 0 8px #ff0;
+        }
+
+        /* Container - 80s style */
+        .dispatcher-items-comments {
+            background: linear-gradient(180deg, #1a0a2e 0%, #0d0015 100%);
+            border: 3px solid #f0f;
+            box-shadow: 
+                0 0 15px rgba(255, 0, 255, 0.4),
+                inset 0 0 30px rgba(255, 0, 255, 0.1);
+            padding: 8px;
+            margin: 8px 0;
+        }
+
+        .dispatcher-items-comments-header {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 0.45rem;
+            color: #f0f;
+            text-shadow: 0 0 10px #f0f;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            animation: flicker 3s infinite;
+        }
+
+        @keyframes flicker {
+            0%, 95%, 100% { opacity: 1; }
+            96% { opacity: 0.8; }
+            97% { opacity: 1; }
+            98% { opacity: 0.9; }
+        }
+
+        /* Table number label - for footer */
+        .table-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: #4a4a48;
+            color: #ccc;
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 3px;
+        }
+
+        /* Delivery type label - for footer */
+        .delivery-type-label {
+            display: inline-block;
+            background: #4a4a48;
+            color: #ccc;
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 3px;
+            text-transform: uppercase;
+        }
+
+        .delivery-type-label.in-house {
+            background: #EF4444;
+            color: white;
+        }
+
+        .delivery-type-label.pickup {
+            /* gray base */
+        }
+
+        .delivery-type-label.delivery {
+            /* gray base */
+        }
+
+        /* eBar priority card styling - subtle */
+        .order-card.priority {
+            border: 1px solid #555;
+        }
+
+        /* Provider labels - colored */
+        .provider-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 3px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .provider-label.ebar {
+            background: #EF4444;
+            color: white;
+        }
+
+        .provider-label.wolt {
+            background: #00C2E8;
+            color: white;
+        }
+
+        .provider-label.glovo {
+            background: #FFC244;
+            color: #1a1a1a;
+        }
+
+        .provider-label.gloriafood {
+            background: #FF6B35;
+            color: white;
+        }
+
+        .provider-label.emeni {
+            background: #10B981;
+            color: white;
+        }
+
+        .provider-label.other {
+            background: #4a4a48;
+            color: #ccc;
+        }
+
+        /* Updated card header to include provider */
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 10px;
+            background: #1D1D1B;
+            gap: 8px;
+        }
+
+        /* eBar cards - full red header in KUHINJA and split LOKAL view */
+        .column-priprema .order-card.priority .card-header,
+        .column-ebar .order-card.priority .card-header {
+            background: linear-gradient(135deg, #DC2626 0%, #B91C1C 100%);
+        }
+
+        .column-priprema .order-card.priority .card-header .card-order-no,
+        .column-priprema .order-card.priority .card-header .card-time,
+        .column-priprema .order-card.priority .card-header .card-wait,
+        .column-ebar .order-card.priority .card-header .card-order-no,
+        .column-ebar .order-card.priority .card-header .card-time,
+        .column-ebar .order-card.priority .card-header .card-wait {
+            color: white;
+        }
+
+        .column-priprema .order-card.priority .card-header .provider-label,
+        .column-ebar .order-card.priority .card-header .provider-label {
+            background: rgba(255,255,255,0.2);
+            color: white;
+        }
+
+        .card-header-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-header-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-footer {
+            padding: 6px 10px;
+            background: #252523;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            align-items: center;
+            font-size: 0.8rem;
+            min-height: 0;
+        }
+
+        .card-footer:empty {
+            display: none;
+        }
+
+        .card-order-no {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: #888;
+        }
+
+        .card-provider {
+            color: #666;
+            font-size: 0.75rem;
+        }
+
+        /* Action Buttons - subtle */
+        .card-action {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 0;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 700;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.15s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            background: #3a3a38;
+            color: #888;
+        }
+
+        .card-action:hover {
+            background: #4a4a48;
+            color: #EAE4DA;
+        }
+
+        .card-action:active {
+            transform: scale(0.98);
+        }
+
+        .card-action.to-spremno {
+            /* same as base */
+        }
+
+        .card-action.to-spremno:hover {
+            background: #4a4a48;
+            color: #EAE4DA;
+        }
+
+        .card-action.to-predato {
+            background: #10B981;
+            color: white;
+        }
+
+        .card-action.to-predato:hover {
+            background: #059669;
+        }
+
+        /* Waiting for payment state */
+        .card-action.waiting-payment {
+            background: #3a3a38;
+            color: #F59E0B;
+            cursor: default;
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 14px;
+        }
+
+        .waiting-text {
+            font-weight: 600;
+        }
+
+        .waiting-timer {
+            background: #F59E0B;
+            color: #1a1a1a;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 700;
+            font-size: 0.85rem;
+        }
+
+        /* Waiting for courier state (paid, ready to hand over) */
+        .card-action.waiting-courier {
+            background: #10B981;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 14px;
+        }
+
+        .card-action.waiting-courier:hover {
+            background: #059669;
+        }
+
+        .courier-timer {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 700;
+            font-size: 0.85rem;
+        }
+
+        /* Waiting for food from kitchen */
+        .card-action.waiting-food {
+            background: #7C3AED;
+            color: white;
+            cursor: default;
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 14px;
+        }
+
+        .card-action.waiting-food .waiting-timer {
+            background: rgba(255,255,255,0.2);
+            color: white;
+        }
+
+        /* ============================================
+           RIGHT SIDEBAR
+           ============================================ */
+        .sidebar {
+            width: 200px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+
+        .time-display {
+            background: #EAE4DA;
+            color: #1D1D1B;
+            padding: 14px;
+            border-radius: 6px;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 2rem;
+            font-weight: 800;
+            text-align: center;
+        }
+
+        .location-select {
+            background: #2a2a28;
+            border: 2px solid #3a3a38;
+            border-radius: 6px;
+            padding: 10px 12px;
+            color: #EAE4DA;
+            font-size: 0.85rem;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .location-select:focus {
+            outline: none;
+            border-color: #8B5CF6;
+        }
+
+        /* Stat Cards */
+        .stat-card {
+            padding: 12px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: white;
+        }
+
+        .stat-card .icon {
+            font-size: 1.4rem;
+        }
+
+        .stat-card .info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stat-card .count {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 1.6rem;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .stat-card .label {
+            font-size: 0.7rem;
+            opacity: 0.9;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 2px;
+        }
+
+        .stat-card.burgers {
+            background: #808BC5;
+        }
+
+        .stat-card.pancakes {
+            background: #ED773C;
+        }
+
+        .stat-card.urgent {
+            background: #C63F3E;
+        }
+
+        /* Items Summary */
+        .items-summary {
+            background: #2a2a28;
+            border-radius: 6px;
+            border: 2px solid #3a3a38;
+            overflow: hidden;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 150px;
+        }
+
+        .items-summary-header {
+            background: #3a3a38;
+            padding: 8px 12px;
+            font-weight: 600;
+            font-size: 0.8rem;
+            color: #EAE4DA;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .items-summary-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 6px;
+        }
+
+        .summary-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 8px;
+            border-radius: 3px;
+            margin-bottom: 3px;
+            font-size: 0.75rem;
+        }
+
+        .summary-item.burger {
+            background: rgba(128, 139, 197, 0.2);
+            border-left: 3px solid #808BC5;
+        }
+
+        .summary-item.pancake {
+            background: rgba(237, 119, 60, 0.2);
+            border-left: 3px solid #ED773C;
+        }
+
+        .summary-item.other {
+            background: rgba(136, 136, 136, 0.15);
+            border-left: 3px solid #666;
+        }
+
+        .summary-qty {
+            font-weight: 700;
+            color: #9ED6DF;
+            min-width: 24px;
+        }
+
+        .summary-name {
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Predato Button */
+        .predato-btn {
+            padding: 12px;
+            border: 2px solid #3a3a38;
+            background: #2a2a28;
+            color: #EAE4DA;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 700;
+            font-size: 0.8rem;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .predato-btn:hover {
+            background: #3a3a38;
+        }
+
+        .predato-btn .badge {
+            background: #8B5CF6;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.75rem;
+        }
+
+        /* ============================================
+           PREDATO SIDE PANEL
+           ============================================ */
+        .predato-panel {
+            position: fixed;
+            top: 0;
+            right: -400px;
+            width: 400px;
+            height: 100vh;
+            background: #252523;
+            border-left: 2px solid #3a3a38;
+            transition: right 0.3s ease;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .predato-panel.open {
+            right: 0;
+        }
+
+        .predato-header {
+            padding: 16px 20px;
+            background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
+            color: white;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 700;
+            font-size: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .predato-close {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1.1rem;
+        }
+
+        .predato-close:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .predato-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .predato-card {
+            background: #2a2a28;
+            border-radius: 6px;
+            padding: 10px 12px;
+            border-left: 4px solid #8B5CF6;
+        }
+
+        .predato-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+
+        .predato-card-provider {
+            font-weight: 700;
+            font-size: 0.85rem;
+        }
+
+        .predato-card-time {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 0.8rem;
+            color: #9ED6DF;
+            margin-bottom: 4px;
+        }
+
+        .predato-card-no {
+            color: #888;
+            font-size: 0.8rem;
+        }
+
+        .predato-card-items {
+            font-size: 0.8rem;
+            color: #aaa;
+        }
+
+        .panel-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0,0,0,0.5);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+            z-index: 99;
+        }
+
+        .panel-overlay.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* ============================================
+           EMPTY STATE
+           ============================================ */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #555;
+            font-size: 0.9rem;
+            gap: 8px;
+            text-align: center;
+            padding: 30px;
+            width: 100%;
+        }
+
+        .empty-state .icon {
+            font-size: 2.5rem;
+            opacity: 0.5;
+        }
+
+        .items-summary .empty-state {
+            padding: 20px 10px;
+            font-size: 0.75rem;
+        }
+
+        .items-summary .empty-state .icon {
+            font-size: 1.5rem;
+        }
+
+        /* ============================================
+           RESPONSIVE
+           ============================================ */
+        @media (max-width: 1100px) {
+            .sidebar {
+                width: 180px;
+            }
+
+            .order-card {
+                width: 230px;
+            }
+
+            .time-display {
+                font-size: 1.6rem;
+            }
+        }
+
+        @media (max-width: 800px) {
+            .main-container {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                flex-direction: row;
+                flex-wrap: wrap;
+                order: -1;
+            }
+
+            .time-display {
+                flex: 0;
+            }
+
+            .stat-card {
+                flex: 1;
+                min-width: 100px;
+            }
+
+            .items-summary {
+                display: none;
+            }
+
+            .columns-container {
+                flex: 1;
+                overflow-y: auto;
+            }
+
+            .kanban-column {
+                flex-wrap: nowrap;
+                flex-direction: column;
+            }
+
+            .order-card {
+                width: 100%;
+            }
+        }
+    </style>
 </head>
 <body>
-  <header class="header">
-    <h1>🚀 Dispatch <span class="wolt-badge">WOLT</span></h1>
-    <div style="display: flex; align-items: center; gap: 15px;">
-      <button id="soundToggleBtn" onclick="toggleSound()" style="
-        background: #22c55e;
-        color: #fff;
-        border: none;
-        padding: 8px 12px;
-        border-radius: 6px;
-        font-weight: 700;
-        cursor: pointer;
-        font-size: 14px;
-      ">🔊</button>
-      <div class="status-indicator">
-        <div class="status-dot" id="statusDot"></div>
-        <span id="lastUpdated">--:--:--</span>
-      </div>
-    </div>
-  </header>
-
-  <main class="main-container" id="mainContainer">
-    <!-- Will be rendered by JS -->
-  </main>
-
-  <div class="toast-container" id="toastContainer"></div>
-
-  <!-- Order Edit Modal -->
-  <div class="modal-overlay" id="orderModal">
-    <div class="modal modal-wide">
-      <div class="modal-header">
-        <span class="modal-title">📝 Komentari za kuhinju</span>
-        <button class="modal-close" onclick="closeModal()">&times;</button>
-      </div>
-      <div class="modal-body">
-        <div class="modal-order-info">
-          <div class="modal-order-meta">
-            <span class="modal-order-number" id="modalOrderNumber">#000</span>
-            <span class="modal-order-provider" id="modalOrderProvider">EBAR</span>
-          </div>
-        </div>
+    <!-- Header -->
+    <header class="header">
+        <button class="tab-btn">
+            <span id="realtimeIndicator" class="realtime-indicator" title="Realtime status">⚡</span>
+            Kitchen Monitor
+        </button>
         
-        <!-- Order-level comment (top, bigger) -->
-        <div class="modal-order-comment-section">
-          <label class="modal-order-label">Komentar za celu narudžbinu:</label>
-          <input 
-            type="text"
-            class="modal-order-input" 
-            id="modalOrderComment"
-            placeholder="Npr: HITNO, Alergija na kikiriki, Bez kontakta..."
-          />
+        <div class="view-toggle">
+            <button class="toggle-btn active" data-view="oba">OBA</button>
+            <button class="toggle-btn" data-view="priprema">KUHINJA</button>
+            <button class="toggle-btn" data-view="pakovanje">FRONT DESK</button>
         </div>
-        
-        <!-- Item-level comments (below, smaller) -->
-        <div class="modal-items-section">
-          <label class="modal-items-label">Komentari po stavkama:</label>
-          <div class="modal-items-list" id="modalItemsList">
-            <!-- Items with notes will be inserted here dynamically -->
-          </div>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="modal-btn modal-btn-cancel" onclick="closeModal()">Otkaži</button>
-        <button class="modal-btn modal-btn-save" id="modalSaveBtn" onclick="saveAllComments()">Sačuvaj sve</button>
-      </div>
-    </div>
-  </div>
 
-  <script>
-    // ============================================
-    // Config
-    // ============================================
-    const SUPABASE_URL = 'https://bbnbbbpofelbkyuffslj.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJibmJiYnBvZmVsYmt5dWZmc2xqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUwNTI0MzQsImV4cCI6MjA4MDYyODQzNH0.koW44soAB-bEfh8OzqjGBwdgov4Snscw1ITsg5OureU';
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        <button class="sound-btn active" id="soundToggle" onclick="toggleSound()" title="Zvučna notifikacija">
+            🔔
+        </button>
+    </header>
 
-    const STATUS_NEW = 1;
-    const STATUS_ACCEPTED = 3;
-    const STATUS_IN_PRODUCTION = 4;
-    const STATUS_NEW_PREORDER = 12;
-
-    // Big locations (2-column style)
-    const BIG_LOCATIONS = [
-      { id: '310', name: 'Collina B.Brdo' },
-      { id: '2120', name: 'Collina Vračar' },
-      { id: '1514', name: 'Collina NBG' }
-    ];
-
-    // Small locations (stacked in one column)
-    const SMALL_LOCATIONS = [
-      { id: '2209', name: 'Kuhinjica' },
-      { id: '1513', name: 'Pekarica' },
-      { id: '1919', name: 'Girosito' }
-    ];
-
-    // Table ID to Name mapping (eBar tables)
-    const TABLE_NAMES = {
-      585: 'Hotel GOSTI',
-      586: 'Hotel ZAP',
-      587: 'EPS',
-      588: 'T.O. Kuhinja',
-      589: 'T.O. Kuhinja',
-      590: 'T.O. ŠANK',
-      591: 'T.O. ŠANK',
-      592: 'NATAŠA',
-      593: 'ANA',
-      594: 'MARKO',
-      596: 'T.O. Magacin',
-      597: 'T.O. Vozač',
-      598: 'T.O. Kanc',
-      599: 'T.O. Kanc',
-      602: 'TC 1',
-      605: 'Cervesija',
-      606: 'HSS'
-    };
-
-    // Get table name from order
-    function getTableName(order) {
-      // Try table_id first
-      const tableId = order.table_id || order.raw_payload?.table?.id;
-      if (tableId && TABLE_NAMES[tableId]) {
-        return TABLE_NAMES[tableId];
-      }
-      // Try table_number
-      const tableNum = order.table_number || order.raw_payload?.table?.name;
-      if (tableNum) {
-        return tableNum;
-      }
-      return null;
-    }
-
-    // Category IDs from database
-    const BURGER_CATEGORY_ID = '444e7f83-f97f-4a06-9a3e-60fa4ea10384';
-    const PANCAKE_CATEGORY_ID = '27b2e327-d2f0-440e-a151-44bc335dafee';
-    
-    // Fallback keywords
-    const BURGER_KEYWORDS = ['burger', 'smash', 'baconator', 'cheese'];
-    const PANCAKE_KEYWORDS = ['palačink', 'palacink', 'palačnk', 'američka', 'americka'];
-    
-    // Drink category keywords (complete list from eBar categories)
-    const DRINK_KEYWORDS = [
-      // === PIVO / BEER ===
-      'pivo', 'heineken', 'lav', 'jelen', 'zaječarsko', 'zajecarsko', 'becks', 'stella',
-      'corona', 'budweiser', 'tuborg', 'carlsberg', 'guinness', 'erdinger', 'paulaner',
-      'salto', 'pale ale', 'stout', 'ipa', 'lager', 'wit', 'tamno pivo',
-      
-      // === VINO / WINE ===
-      'vino', 'belo vino', 'crno vino', 'crveno vino', 'roze vino', 'rose',
-      'šampanjac', 'sampanjac', 'prosecco', 'proseco', 'kuvano vino',
-      
-      // === ŽESTINA / SPIRITS ===
-      'rakija', 'viski', 'whisky', 'whiskey', 'vodka', 'votka', 'džin', 'gin',
-      'rum', 'tekila', 'tequila', 'likér', 'liker', 'brandy', 'konjak', 'cognac',
-      'žarić', 'zaric', 'viljamovka', 'šljivovica', 'sljivovica', 'loza', 'dunja',
-      'tamnavulin', 'jägermeister', 'jagermeister', 'jegermeister', 'aperol', 'campari', 'martini',
-      'havana', 'four roses', 'jack daniels', 'jim beam', 'hubert', 'beefeater',
-      'gorki list', 'vinjak', 'rubin', 'absolut', 'jameson', 'kuvani viski',
-      
-      // === KOKTELI ===
-      'spritz', 'mojito', 'margarita', 'koktél', 'koktel', 'cocktail', 'long island',
-      
-      // === KAFA / COFFEE ===
-      'kafa', 'kafu', 'espreso', 'espresso', 'cappuccino', 'cappucino', 'kapućino', 'kapucino',
-      'latte', 'caffe latte', 'macchiato', 'makijato', 'americano', 'ristretto', 
-      'nes', 'nescafe', 'nes kafa', 'dupli espreso', 'ice kafa', 'ice moka',
-      
-      // === ČAJ / TEA ===
-      'čaj', 'caj', 'tea', 'ice tea', 'fuze tea', 'nestea', 'ledeni čaj',
-      
-      // === TOPLI NAPICI ===
-      'topla čokolada', 'topla cokolada', 'mleko casa',
-      
-      // === SOKOVI / JUICES ===
-      'sok', 'juice', 'djus', 'gusto', 'nektar', 'cappy', 'rauch', 'fruvita', 'next',
-      'cedjeni', 'cedjena', 'ceđeni', 'ceđena', 'grejp', 'citrus mix',
-      'jabuka gusto', 'jagoda gusto', 'breskva gusto', 'borovnica gusto',
-      
-      // === LIMUNADE / LEMONADES ===
-      'limunada', 'lemonade', 'limunana', 'lubenada', 'breskvanada',
-      
-      // === GAZIRANI / CARBONATED ===
-      'cola', 'kola', 'coca', 'koka', 'pepsi', 'fanta', 'sprite', '7up', '7 up',
-      'schweppes', 'tonic', 'guarana', 'bitter', 'evervess', 'mirinda',
-      
-      // === VODE / WATER ===
-      'voda', 'aqua', 'rosa', 'prolom', 'knjaz', 'mineralna', 'gazirana', 'negazirana',
-      'kisela voda', 'evian', 'perrier', 'san pellegrino',
-      
-      // === ENERGY / VITAMINI ===
-      'red bull', 'energy', 'ultra', 'cedevita', 'vitaminska',
-      
-      // === MLEČNI / DAIRY DRINKS ===
-      'jogurt', 'kiselo mleko', 'cokoladno mleko', 'čokoladno mleko', 'balans',
-      'plazma sejk', 'milkshake', 'smuti', 'smoothie', 'frape', 'frappe',
-      
-      // === KOLIČINE (indikatori pića) ===
-      '0.03l', '0.15', '0.18', '0.2l', '0.25', '0.25l', '0.3l', '0.33', '0.33l', 
-      '0.5l', '0.5 l', '0.75', '0.7l', '1l', '2l',
-      'flasica', 'flaša', 'casa', 'čaša', 'krigla', 'točeno', 'toceno',
-      'limenka', 'lim', 'pvc', 'staklo', 'bokal'
-    ];
-
-    let allOrders = [];
-    let ordersMap = {};  // Map order_id -> order object for modal access
-    let productCategoryMap = {};
-    let modifiersMap = {}; // emeni_reference_id -> name
-
-    // ============================================
-    // Utilities
-    // ============================================
-    function showToast(message, type = 'success') {
-      const container = document.getElementById('toastContainer');
-      const toast = document.createElement('div');
-      toast.className = `toast ${type}`;
-      toast.innerHTML = `<span>${type === 'success' ? '✅' : '❌'}</span><span>${message}</span>`;
-      container.appendChild(toast);
-      setTimeout(() => toast.remove(), 3000);
-    }
-
-    // ============================================
-    // Order Edit Modal - Item-level notes
-    // ============================================
-    let currentEditOrderId = null;
-    let currentEditOrderNo = null;
-    let currentEditItems = [];
-
-    // Wrapper to open modal by order ID (looks up from ordersMap)
-    function openOrderModalById(orderId) {
-      const order = ordersMap[orderId];
-      if (!order) {
-        console.error('Order not found:', orderId);
-        return;
-      }
-      openOrderModal(
-        orderId, 
-        order.order_no, 
-        order.provider || 'ebar', 
-        order.items || [],
-        order.restos_order_komentar || ''
-      );
-    }
-
-    function openOrderModal(orderId, orderNo, provider, items, orderComment) {
-      currentEditOrderId = orderId;
-      currentEditOrderNo = orderNo;
-      currentEditItems = items || [];
-      
-      // Populate modal header
-      document.getElementById('modalOrderNumber').textContent = `#${orderNo}`;
-      document.getElementById('modalOrderProvider').textContent = provider.toUpperCase();
-      document.getElementById('modalOrderProvider').className = `modal-order-provider ${provider}`;
-      
-      // Order-level comment
-      document.getElementById('modalOrderComment').value = orderComment || '';
-      
-      // Build items list with note inputs
-      const itemsListEl = document.getElementById('modalItemsList');
-      
-      if (currentEditItems.length === 0) {
-        itemsListEl.innerHTML = '<div style="color: #444; text-align: center; padding: 10px; font-size: 12px;">Nema stavki</div>';
-      } else {
-        itemsListEl.innerHTML = currentEditItems.map((item, index) => {
-          // Use restos_komentar field
-          const currentNote = (item.restos_komentar || '').replace(/"/g, '&quot;');
-          const hasNote = item.restos_komentar && item.restos_komentar.trim();
-          
-          // Customer note (from Wolt/eBar) - read-only display
-          const customerNote = item.note && item.note.trim() 
-            ? `<div class="modal-customer-note">🛒 Mušterija: ${item.note}</div>` 
-            : '';
-          
-          return `
-            <div class="modal-item-row">
-              <div class="modal-item-top">
-                <div class="modal-item-header">
-                  <span class="modal-item-qty">${item.quantity}×</span>
-                  <span class="modal-item-name">${item.name}</span>
+    <!-- Main Layout -->
+    <div class="main-container">
+        <!-- Kanban Columns -->
+        <div class="columns-container">
+            <!-- U Pripremi Column -->
+            <div class="kanban-column column-priprema" id="columnPriprema">
+                <div class="column-header priprema-header">
+                    <span>🔥 KUHINJA</span>
+                    <span class="column-count" id="pripremaCount">0</span>
                 </div>
-                <input 
-                  type="text"
-                  class="modal-item-input ${hasNote ? 'has-note' : ''}" 
-                  data-item-id="${item.id}"
-                  data-index="${index}"
-                  value="${currentNote}"
-                  placeholder="Komentar..."
-                  onchange="this.classList.toggle('has-note', this.value.trim().length > 0)"
-                />
-              </div>
-              ${customerNote}
+                <div class="column-content" id="pripremaContent">
+                    <!-- Cards will be rendered here -->
+                </div>
             </div>
-          `;
-        }).join('');
-      }
-      
-      // Show modal
-      document.getElementById('orderModal').classList.add('active');
-      
-      // Focus on order comment input
-      setTimeout(() => {
-        document.getElementById('modalOrderComment').focus();
-      }, 100);
-    }
 
-    function closeModal() {
-      document.getElementById('orderModal').classList.remove('active');
-      currentEditOrderId = null;
-      currentEditOrderNo = null;
-      currentEditItems = [];
-    }
+            <!-- Pakovanje Column (was Spremno) - used in OBA view -->
+            <div class="kanban-column column-spremno" id="columnSpremno">
+                <div class="column-header pakovanje-header">
+                    <span>📦 FRONT DESK</span>
+                    <span class="column-count" id="pakovanjeCount">0</span>
+                </div>
+                <div class="column-content" id="pakovanjeContent">
+                    <!-- Cards will be rendered here -->
+                </div>
+            </div>
 
-    async function saveAllComments() {
-      if (!currentEditOrderId) return;
-      
-      const saveBtn = document.getElementById('modalSaveBtn');
-      saveBtn.disabled = true;
-      saveBtn.textContent = 'Čuvam...';
-      
-      try {
-        // 1. Save order-level comment
-        const orderComment = document.getElementById('modalOrderComment').value.trim();
-        
-        const { error: orderError } = await supabaseClient
-          .from('emeni_orders')
-          .update({ restos_order_komentar: orderComment || null })
-          .eq('order_id', currentEditOrderId);
-        
-        if (orderError) {
-          console.error('Order comment error:', orderError);
-        }
-        
-        // 2. Save item-level comments
-        const inputs = document.querySelectorAll('.modal-item-input');
-        const updates = [];
-        
-        inputs.forEach(input => {
-          const itemId = input.dataset.itemId;
-          const newNote = input.value.trim();
-          if (itemId) {
-            updates.push({ id: itemId, restos_komentar: newNote || null });
-          }
-        });
-        
-        let successCount = 0;
-        for (const update of updates) {
-          const numericId = parseInt(update.id, 10);
-          
-          const { data, error } = await supabaseClient
-            .from('emeni_order_items')
-            .update({ restos_komentar: update.restos_komentar })
-            .eq('id', numericId)
-            .select();
-          
-          if (!error && data && data.length > 0) successCount++;
-        }
-        
-        showToast(`Komentari za #${currentEditOrderNo} sačuvani`, 'success');
-        closeModal();
-        
-        // Reload orders to show updated comments
-        await loadOrders();
-        
-      } catch (e) {
-        console.error('❌ Error saving comments:', e);
-        showToast(`Greška: ${e.message}`, 'error');
-      } finally {
-        saveBtn.disabled = false;
-        saveBtn.textContent = 'Sačuvaj sve';
-      }
-    }
+            <!-- Split FRONT DESK - used in FRONT DESK only view -->
+            <div class="split-frontdesk hidden" id="splitFrontdesk">
+                <!-- LOKAL Column (eBar orders) -->
+                <div class="kanban-column column-ebar">
+                    <div class="column-header ebar-header">
+                        <span>🏪 LOKAL</span>
+                        <span class="column-count" id="ebarCount">0</span>
+                    </div>
+                    <div class="column-content" id="ebarContent">
+                        <!-- eBar cards -->
+                    </div>
+                </div>
 
-    // Close modal on overlay click
-    document.addEventListener('click', (e) => {
-      if (e.target.id === 'orderModal') {
-        closeModal();
-      }
-    });
-
-    // Close modal on Escape key
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
-        closeModal();
-      }
-    });
-
-    function categorizeItem(name) {
-      const lowerName = (name || '').toLowerCase().trim();
-      
-      for (const [productName, category] of Object.entries(productCategoryMap)) {
-        const lowerProduct = productName.toLowerCase();
-        if (lowerName.includes(lowerProduct) || lowerProduct.includes(lowerName)) {
-          return category;
-        }
-        const itemWords = lowerName.split(/[\s+\-]/)[0];
-        if (itemWords.length > 3 && lowerProduct.startsWith(itemWords)) {
-          return category;
-        }
-      }
-      
-      if (BURGER_KEYWORDS.some(k => lowerName.includes(k))) return 'burger';
-      if (PANCAKE_KEYWORDS.some(k => lowerName.includes(k))) return 'pancake';
-      return 'other';
-    }
-
-    // Check if an item is a drink based on keywords
-    // Items with "+" are combos (burger+drink) and should NOT be treated as drinks
-    function isDrinkItem(itemName) {
-      const lowerName = (itemName || '').toLowerCase().trim();
-      
-      // If name contains "+", it's a combo (e.g., "Burger + Pomfrit + Pepsi") - NOT a drink
-      if (lowerName.includes('+')) {
-        return false;
-      }
-      
-      return DRINK_KEYWORDS.some(keyword => lowerName.includes(keyword));
-    }
-
-    // Get items from order - check both items array and raw_payload
-    function getOrderItems(order) {
-      // First try order.items (from emeni_order_items table)
-      if (order.items && order.items.length > 0) {
-        return order.items;
-      }
-      
-      // Fallback: try raw_payload.items
-      if (order.raw_payload && order.raw_payload.items && order.raw_payload.items.length > 0) {
-        return order.raw_payload.items;
-      }
-      
-      return [];
-    }
-
-    // Check if an order contains ONLY drinks (no food items)
-    function isOnlyDrinksOrder(order) {
-      const items = getOrderItems(order);
-      
-      // If no items found, assume it's not a food order (likely drinks or empty)
-      if (items.length === 0) {
-        console.log(`🍺 Order #${order.order_no} has no items - hiding`);
-        return true;
-      }
-      
-      // Check if ALL items are drinks
-      const allDrinks = items.every(item => isDrinkItem(item.name));
-      
-      if (allDrinks) {
-        console.log(`🍺 Order #${order.order_no} is drinks-only:`, items.map(i => i.name).join(', '));
-      }
-      
-      return allDrinks;
-    }
-
-    // Filter function: should this order be displayed?
-    // For eBar orders:
-    //   - Hide if contains ONLY drinks (no food) - never show these
-    //   - Hide if kds_ready_at has value (kitchen marked as done)
-    // Wolt, Gloria, eMeniWaiter always visible
-    // Filter function: should this order be displayed?
-    // For eBar: hide drinks-only orders always, hide food orders when kds_ready_at is set
-    // Wolt, Gloria, eMeniWaiter always visible
-    function shouldShowOrder(order) {
-      const provider = (order.provider || '').toLowerCase();
-      
-      if (provider === 'ebar') {
-        // Always hide drinks-only eBar orders (no food = not for kitchen display)
-        if (isOnlyDrinksOrder(order)) {
-          return false;
-        }
-        
-        // Hide food orders once kitchen marks them ready
-        if (order.kds_ready_at) {
-          return false;
-        }
-      }
-      
-      return true;
-    }
-
-    function updateStatus(ok) {
-      document.getElementById('statusDot').style.background = ok ? '#22c55e' : '#ef4444';
-      document.getElementById('lastUpdated').textContent = ok 
-        ? `${new Date().toLocaleTimeString('sr-RS')}` 
-        : 'Greška';
-    }
-
-    // ============================================
-    // Load product categories from database
-    // ============================================
-    async function loadProductCategories() {
-      const { data, error } = await supabaseClient
-        .from('shop_menu_items')
-        .select('name, category_id')
-        .in('category_id', [BURGER_CATEGORY_ID, PANCAKE_CATEGORY_ID]);
-      
-      if (!error && data) {
-        data.forEach(item => {
-          if (item.category_id === BURGER_CATEGORY_ID) {
-            productCategoryMap[item.name] = 'burger';
-          } else if (item.category_id === PANCAKE_CATEGORY_ID) {
-            productCategoryMap[item.name] = 'pancake';
-          }
-        });
-        console.log('📦 Loaded product categories:', Object.keys(productCategoryMap).length, 'items');
-      }
-    }
-
-    // ============================================
-    // Load modifiers from database (wolt_products_map)
-    // ============================================
-    async function loadModifiers() {
-      const { data, error } = await supabaseClient
-        .from('wolt_products_map')
-        .select('wolt_reference_id, name, price, is_modifier');
-      
-      if (!error && data) {
-        data.forEach(item => {
-          // Map by wolt_reference_id (which is productReferenceID in order items)
-          modifiersMap[String(item.wolt_reference_id)] = {
-            name: item.name,
-            price: item.price,
-            isModifier: item.is_modifier
-          };
-        });
-        console.log('📦 Loaded modifiers from wolt_products_map:', Object.keys(modifiersMap).length, 'items');
-      } else if (error) {
-        console.error('❌ Error loading modifiers:', error);
-      }
-    }
-
-    // ============================================
-    // Render item with modifiers and note
-    // ============================================
-    function renderItemWithModifiers(item) {
-      const modifiers = item.modifiers || [];
-      const note = item.note;
-      
-      let modifierText = '';
-      if (modifiers.length > 0) {
-        const modNames = modifiers.map(m => {
-          // Lookup by productReferenceID in wolt_products_map
-          const refId = String(m.productReferenceID);
-          const mapped = modifiersMap[refId];
-          if (mapped && mapped.name) {
-            return mapped.name;
-          }
-          // Fallback - show price
-          return `+${m.price}`;
-        });
-        modifierText = ` <span class="item-modifiers">(${modNames.join(', ')})</span>`;
-      }
-      
-      let noteText = '';
-      if (note && note.trim()) {
-        noteText = `<div class="item-note">📝 ${note}</div>`;
-      }
-      
-      return `
-        <div class="item-row">
-          <span class="active-item"><span class="qty">${item.quantity}×</span> ${item.name}${modifierText}</span>
-          ${noteText}
+                <!-- DOSTAVA Column -->
+                <div class="kanban-column column-dostava">
+                    <div class="column-header dostava-header">
+                        <span>🚚 DOSTAVA</span>
+                        <span class="column-count" id="dostavaCount">0</span>
+                    </div>
+                    <div class="column-content" id="dostavaContent">
+                        <!-- Wolt/Glovo/Gloria/eMeni cards -->
+                    </div>
+                </div>
+            </div>
         </div>
-      `;
-    }
 
-    // ============================================
-    // Data Fetching
-    // ============================================
-    async function fetchOrders() {
-      // Restaurant working day: 06:00 to 05:59 next day
-      // If it's before 06:00, we're still in "yesterday's" working day
-      const now = new Date();
-      const hour = now.getHours();
-      
-      let startDate;
-      if (hour < 6) {
-        // Before 6 AM - use yesterday 06:00 as start
-        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 6, 0, 0);
-      } else {
-        // After 6 AM - use today 06:00 as start
-        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 6, 0, 0);
-      }
-      
-      // End date is always "now" (we want all orders up to current moment)
-      const endDate = now;
-
-      console.log('📅 Fetching orders from:', startDate.toISOString(), 'to:', endDate.toISOString());
-
-      // Only fetch active statuses (1=new, 3=accepted, 4=in_production, 5=ready, 12=preorder)
-      // Skip completed (7) and cancelled orders to avoid 1000 row limit
-      const { data: orders, error } = await supabaseClient
-        .from('emeni_orders')
-        .select('*')
-        .gte('created_at', startDate.toISOString())
-        .lte('created_at', endDate.toISOString())
-        .in('status', [STATUS_NEW, STATUS_ACCEPTED, STATUS_IN_PRODUCTION, 5, STATUS_NEW_PREORDER])
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('❌ Error fetching orders:', error);
-        updateStatus(false);
-        return [];
-      }
-
-      console.log('📦 Loaded orders:', orders?.length || 0);
-
-      const orderIds = orders.map(o => o.order_id).filter(Boolean);
-      const chunkSize = 100;
-      
-      // Fetch order items - need to chunk if too many orders
-      let items = [];
-      for (let i = 0; i < orderIds.length; i += chunkSize) {
-        const chunk = orderIds.slice(i, i + chunkSize);
-        const { data: chunkData } = await supabaseClient
-          .from('emeni_order_items')
-          .select('*')
-          .in('order_id', chunk);
-        if (chunkData) {
-          items = items.concat(chunkData);
-        }
-      }
-      
-      console.log('📦 Loaded items:', items?.length || 0);
-      
-      // Fetch lifecycle events in chunks
-      let lifecycle = [];
-      for (let i = 0; i < orderIds.length; i += chunkSize) {
-        const chunk = orderIds.slice(i, i + chunkSize);
-        const { data: chunkData } = await supabaseClient
-          .from('emeni_order_lifecycle')
-          .select('*')
-          .in('order_id', chunk);
-        if (chunkData) {
-          lifecycle = lifecycle.concat(chunkData);
-        }
-      }
-
-      orders.forEach(order => {
-        order.items = items?.filter(i => String(i.order_id) === String(order.order_id)) || [];
-        
-        const orderId = Number(order.order_id);
-        order.lifecycle = lifecycle?.filter(l => Number(l.order_id) === orderId) || [];
-        
-        // Find dispatch.accepted event (has prep_time_given)
-        const acceptedEvent = order.lifecycle.find(l => 
-          l.event_type === 'dispatch.accepted' && l.prep_time_given
-        ) || order.lifecycle.find(l => Number(l.status) === 3);
-        
-        if (acceptedEvent) {
-          order.accepted_at = acceptedEvent.timestamp;
-          if (acceptedEvent.prep_time_given) {
-            order.given_prep_time = acceptedEvent.prep_time_given;
-          }
-        }
-      });
-
-      updateStatus(true);
-      return orders;
-    }
-
-    // ============================================
-    // Render
-    // ============================================
-    function calculateStats(orders) {
-      let burgers = 0, pancakes = 0, other = 0;
-      orders.forEach(order => {
-        (order.items || []).forEach(item => {
-          const itemQty = parseInt(item.quantity) || 1;
-          const name = (item.name || '').toLowerCase();
-          const cat = categorizeItem(item.name);
-          
-          let multiplier = 1;
-          const prefixMatch = name.match(/^(\d+)\s*x\s+/i);
-          if (prefixMatch) {
-            multiplier = parseInt(prefixMatch[1]) || 1;
-          }
-          
-          const totalQty = itemQty * multiplier;
-          
-          if (cat === 'burger') burgers += totalQty;
-          else if (cat === 'pancake') pancakes += totalQty;
-          else other += totalQty;
-        });
-      });
-      return { burgers, pancakes, other };
-    }
-
-    function renderMain(orders) {
-      const container = document.getElementById('mainContainer');
-      
-      // Reset orders map for modal access
-      ordersMap = {};
-      
-      // Filter out drinks-only eBar orders
-      const filteredOrders = orders.filter(shouldShowOrder);
-      
-      const activeOrders = filteredOrders
-        .filter(o => o.status === STATUS_ACCEPTED || o.status === STATUS_IN_PRODUCTION)
-        .sort((a, b) => {
-          // Sort by accepted_at ascending (oldest first = longest prep time on top)
-          const aTime = a.accepted_at ? new Date(a.accepted_at).getTime() : new Date(a.created_at).getTime();
-          const bTime = b.accepted_at ? new Date(b.accepted_at).getTime() : new Date(b.created_at).getTime();
-          return aTime - bTime;
-        });
-      const newWoltOrders = filteredOrders
-        .filter(o => (o.status === STATUS_NEW || o.status === STATUS_NEW_PREORDER) && (o.provider || '').toLowerCase() === 'wolt')
-        .sort((a, b) => {
-          // Sort by created_at ascending (oldest first = longest waiting on top)
-          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
-        });
-
-      console.log('📦 Orders:', orders.length, '| Active:', activeOrders.length, '| New Wolt:', newWoltOrders.length);
-
-      // Render big locations
-      const bigLocationsHtml = BIG_LOCATIONS.map(loc => {
-        const locActive = activeOrders.filter(o => String(o.company_id) === loc.id);
-        const locNew = newWoltOrders.filter(o => String(o.company_id) === loc.id);
-        const stats = calculateStats(locActive);
-
-        return `
-          <div class="location-big">
-            <div class="location-header">
-              <div class="location-name">📍 ${loc.name}</div>
-              <div class="location-stats">
-                <span class="stat-pill ${locActive.length > 0 ? 'active' : 'empty'}">${locActive.length} 🍳</span>
-                <span class="stat-pill ${locNew.length > 0 ? 'new' : 'empty'}">${locNew.length} 🆕</span>
-              </div>
-            </div>
+        <!-- Right Sidebar -->
+        <div class="sidebar">
+            <div class="time-display" id="currentTime">00:00</div>
             
-            <div class="kitchen-stats-bar">
-              <div class="kitchen-stat burgers ${stats.burgers === 0 ? 'zero' : ''}">
-                <span class="icon">🍔</span>
-                <span class="count">${stats.burgers}</span>
-              </div>
-              <div class="kitchen-stat pancakes ${stats.pancakes === 0 ? 'zero' : ''}">
-                <span class="icon">🥞</span>
-                <span class="count">${stats.pancakes}</span>
-              </div>
-              <div class="kitchen-stat other ${stats.other === 0 ? 'zero' : ''}">
-                <span class="icon">🍽️</span>
-                <span class="count">${stats.other}</span>
-              </div>
-            </div>
-            
-            <div class="location-content">
-              <div class="active-section">
-                <div class="section-label">🍳 U pripremi</div>
-                <div class="active-orders-list">
-                  ${locActive.length === 0 ? `
-                    <div class="empty-state">
-                      <div class="icon">😴</div>
-                      <p>Kuhinja prazna</p>
-                    </div>
-                  ` : locActive.map(o => renderActiveCard(o)).join('')}
-                </div>
-              </div>
-              
-              <div class="new-section">
-                <div class="section-label">🆕 Nove Wolt Narudžbine</div>
-                <div class="new-orders-list">
-                  ${locNew.length === 0 ? `
-                    <div class="empty-state">
-                      <div class="icon">✨</div>
-                      <p>Nema novih</p>
-                    </div>
-                  ` : locNew.map(o => renderNewCard(o)).join('')}
-                </div>
-              </div>
-            </div>
-          </div>
-        `;
-      }).join('');
+            <select class="location-select" id="locationSelect">
+                <option value="">Sve lokacije</option>
+            </select>
 
-      // Render small locations stacked
-      const smallLocationsHtml = `
-        <div class="small-locations-stack">
-          ${SMALL_LOCATIONS.map(loc => {
-            const locActive = activeOrders.filter(o => String(o.company_id) === loc.id);
-            const locNew = newWoltOrders.filter(o => String(o.company_id) === loc.id);
-            const stats = calculateStats(locActive);
+            <div class="stat-card burgers">
+                <div class="icon">🍔</div>
+                <div class="info">
+                    <div class="count" id="burgerCount">0</div>
+                    <div class="label">Burgera</div>
+                </div>
+            </div>
 
-            return `
-              <div class="location-small">
-                <div class="location-header">
-                  <div class="location-name">📍 ${loc.name}</div>
-                  <div class="location-stats">
-                    <span class="stat-pill ${locActive.length > 0 ? 'active' : 'empty'}">${locActive.length}🍳</span>
-                    <span class="stat-pill ${locNew.length > 0 ? 'new' : 'empty'}">${locNew.length}🆕</span>
-                  </div>
+            <div class="stat-card pancakes">
+                <div class="icon">🥞</div>
+                <div class="info">
+                    <div class="count" id="pancakeCount">0</div>
+                    <div class="label">Palačinki</div>
                 </div>
-                
-                <div class="kitchen-stats-bar">
-                  <div class="kitchen-stat burgers ${stats.burgers === 0 ? 'zero' : ''}">🍔 ${stats.burgers}</div>
-                  <div class="kitchen-stat pancakes ${stats.pancakes === 0 ? 'zero' : ''}">🥞 ${stats.pancakes}</div>
-                  <div class="kitchen-stat other ${stats.other === 0 ? 'zero' : ''}">🍽️ ${stats.other}</div>
+            </div>
+
+            <div class="stat-card urgent">
+                <div class="icon">⚠️</div>
+                <div class="info">
+                    <div class="count" id="urgentCount">0</div>
+                    <div class="label">Preko 20'</div>
                 </div>
-                
-                <div class="location-content">
-                  <div class="active-section">
-                    <div class="active-orders-list">
-                      ${locActive.length === 0 ? `
-                        <div class="empty-state"><p>Prazno</p></div>
-                      ` : locActive.map(o => renderActiveCard(o)).join('')}
+            </div>
+
+            <div class="items-summary">
+                <div class="items-summary-header">📋 Za pripremu</div>
+                <div class="items-summary-list" id="itemsSummaryList">
+                    <div class="empty-state">
+                        <div class="icon">✅</div>
+                        <div>Nema stavki</div>
                     </div>
-                  </div>
-                  
-                  ${locNew.length > 0 ? `
-                    <div class="new-section">
-                      <div class="new-orders-list">
-                        ${locNew.map(o => renderNewCard(o)).join('')}
-                      </div>
-                    </div>
-                  ` : ''}
                 </div>
-              </div>
-            `;
-          }).join('')}
+            </div>
+
+            <button class="predato-btn" id="predatoBtnSidebar">
+                🚴 Predato
+                <span class="badge" id="predatoCount">0</span>
+            </button>
         </div>
-      `;
+    </div>
 
-      container.innerHTML = bigLocationsHtml + smallLocationsHtml;
-    }
+    <!-- Predato Side Panel -->
+    <div class="panel-overlay" id="panelOverlay"></div>
+    <aside class="predato-panel" id="predatoPanel">
+        <div class="predato-header">
+            <span>🚴 Predato (poslednji sat)</span>
+            <button class="predato-close" id="predatoClose">✕</button>
+        </div>
+        <div class="predato-content" id="predatoContent">
+            <div class="empty-state">
+                <div class="icon">📦</div>
+                <div>Nema predatih porudžbina</div>
+            </div>
+        </div>
+    </aside>
 
-    function renderActiveCard(order) {
-      const items = order.items || [];
-      const provider = (order.provider || 'ebar').toLowerCase();
-      const tableName = getTableName(order);
-      
-      // Store order in global map for modal access
-      ordersMap[order.order_id] = order;
-      
-      let prepTimeDisplay = '';
-      let givenTimeDisplay = '';
-      
-      if (order.accepted_at) {
-        const acceptedTime = new Date(order.accepted_at);
-        const now = new Date();
-        const prepMinutes = Math.floor((now - acceptedTime) / 60000);
-        
-        let timeClass = 'prep-ok';
-        const givenTime = order.given_prep_time || null;
-        
-        if (givenTime) {
-          if (prepMinutes > givenTime * 0.8) timeClass = 'prep-warning';
-          if (prepMinutes > givenTime) timeClass = 'prep-danger';
-          givenTimeDisplay = `<span class="given-time">📋 ${givenTime}m</span>`;
-        } else {
-          if (prepMinutes > 15) timeClass = 'prep-warning';
-          if (prepMinutes > 25) timeClass = 'prep-danger';
+    <script>
+        // ============================================
+        // SUPABASE CONFIG
+        // ============================================
+        const SUPABASE_URL = 'https://bbnbbbpofelbkyuffslj.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJibmJiYnBvZmVsYmt5dWZmc2xqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUwNTI0MzQsImV4cCI6MjA4MDYyODQzNH0.koW44soAB-bEfh8OzqjGBwdgov4Snscw1ITsg5OureU';
+
+        // Initialize Supabase client for Realtime
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        async function supabaseFetch(endpoint) {
+            const res = await fetch(endpoint, {
+                headers: {
+                    'apikey': SUPABASE_KEY,
+                    'Authorization': `Bearer ${SUPABASE_KEY}`
+                }
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            return res.json();
+        }
+
+        // Track realtime subscription status
+        let realtimeConnected = false;
+
+        // ============================================
+        // STATE
+        // ============================================
+        let allOrders = [];
+        let locations = {};
+        let selectedLocation = '';
+        let currentView = 'oba';
+        let flaggedOrderIds = new Set(); // Flagged orders - hidden from KDS
+
+        async function loadActiveFlags() {
+            try {
+                const url = `${SUPABASE_URL}/rest/v1/order_flags?select=order_id&is_active=eq.true`;
+                const data = await supabaseFetch(url);
+                if (data && Array.isArray(data)) {
+                    flaggedOrderIds = new Set(data.map(f => f.order_id));
+                }
+            } catch (err) {
+                console.error('Error loading flags:', err);
+            }
         }
         
-        prepTimeDisplay = `<span class="prep-timer ${timeClass}" data-accepted="${order.accepted_at}">⏱️ ${prepMinutes}m</span>`;
-      }
-      
-      // Table name display (for eBar orders)
-      let tableDisplay = '';
-      if (tableName && provider === 'ebar') {
-        tableDisplay = `<span class="table-badge">🪑 ${tableName}</span>`;
-      }
-      
-      // Customer order-level note (from Wolt/delivery platform) - yellow
-      let customerOrderNoteDisplay = '';
-      if (order.note && order.note.trim()) {
-        customerOrderNoteDisplay = `<div class="customer-note">🛒 Mušterija: ${order.note}</div>`;
-      }
-      
-      // Note: Item-level customer notes are shown inline via renderItemWithModifiers()
-      
-      // Order-level comment from dispatcher - orange
-      let orderKomentarDisplay = '';
-      if (order.restos_order_komentar && order.restos_order_komentar.trim()) {
-        orderKomentarDisplay = `<div class="restos-order-komentar">Dispečer: ${order.restos_order_komentar}</div>`;
-      }
-      
-      // Item-level RestOS comments (smaller) - orange
-      const restosKomentari = items
-        .filter(i => i.restos_komentar && i.restos_komentar.trim())
-        .map(i => `<span class="item-name">${i.quantity}× ${i.name}:</span> <span class="item-comment">${i.restos_komentar}</span>`);
-      
-      let itemKomentarDisplay = '';
-      if (restosKomentari.length > 0) {
-        itemKomentarDisplay = `<div class="restos-item-komentari">${restosKomentari.join('<br>')}</div>`;
-      }
-      
-      return `
-        <div class="active-card" 
-             onclick="openOrderModalById('${order.order_id}')"
-             data-order-id="${order.order_id}">
-          <div class="active-card-header">
-            <span class="active-order-number">#${order.order_no}</span>
-            <div class="active-card-badges">
-              ${tableDisplay}
-              ${givenTimeDisplay}
-              ${prepTimeDisplay}
-              <span class="active-order-provider ${provider}">${provider}</span>
-            </div>
-          </div>
-          <div class="active-items">
-            ${items.map(i => renderItemWithModifiers(i)).join('')}
-          </div>
-          ${customerOrderNoteDisplay}
-          ${orderKomentarDisplay}
-          ${itemKomentarDisplay}
-        </div>
-      `;
-    }
+        // Sound state
+        let soundEnabled = true;
+        let lastOrderIds = new Set();
+        let lastReadyIds = new Set(); // Track orders that became ready (for FRONT DESK notifications)
 
-    function renderNewCard(order) {
-      const items = order.items || [];
-      const total = items.reduce((s, i) => s + (parseFloat(i.price) || 0) * (parseInt(i.quantity) || 1), 0);
-      const createdAt = new Date(order.created_at);
-      const waitMin = Math.floor((Date.now() - createdAt) / 60000);
-      const time = createdAt.toLocaleTimeString('sr-RS', { hour: '2-digit', minute: '2-digit' });
-      
-      // Store order in global map for modal access
-      ordersMap[order.order_id] = order;
-      
-      // Customer order-level note (from Wolt/delivery platform) - yellow
-      let customerOrderNoteDisplay = '';
-      if (order.note && order.note.trim()) {
-        customerOrderNoteDisplay = `<div class="customer-note">🛒 Mušterija: ${order.note}</div>`;
-      }
-      
-      // Note: Item-level customer notes are shown inline via renderNewItemWithModifiers()
-      
-      // Order-level comment from dispatcher - orange
-      let orderKomentarDisplay = '';
-      if (order.restos_order_komentar && order.restos_order_komentar.trim()) {
-        orderKomentarDisplay = `<div class="restos-order-komentar">Dispečer: ${order.restos_order_komentar}</div>`;
-      }
-      
-      // Item-level RestOS comments (smaller) - orange
-      const restosKomentari = items
-        .filter(i => i.restos_komentar && i.restos_komentar.trim())
-        .map(i => `<span class="item-name">${i.quantity}× ${i.name}:</span> <span class="item-comment">${i.restos_komentar}</span>`);
-      
-      let itemKomentarDisplay = '';
-      if (restosKomentari.length > 0) {
-        itemKomentarDisplay = `<div class="restos-item-komentari">${restosKomentari.join('<br>')}</div>`;
-      }
-
-      return `
-        <div class="new-card" data-order-id="${order.order_id}">
-          <div class="new-card-header">
-            <div class="new-order-info">
-              <span class="new-order-number">#${order.order_no}</span>
-              <span class="new-order-time">${time}</span>
-              <button class="edit-note-btn" onclick="event.stopPropagation(); openOrderModalById('${order.order_id}')" title="Izmeni komentare">✏️</button>
-            </div>
-            <span class="waiting-badge ${waitMin >= 5 ? 'urgent' : ''}" data-created="${order.created_at}">
-              ⏳ <span class="wt">${waitMin}</span>m
-            </span>
-          </div>
-          <div class="new-items">
-            ${items.map(i => renderNewItemWithModifiers(i)).join('')}
-          </div>
-          ${customerOrderNoteDisplay}
-          ${orderKomentarDisplay}
-          ${itemKomentarDisplay}
-          <div class="new-card-footer">
-            <span class="new-order-total">💰 ${Math.round(total).toLocaleString('sr-RS')} RSD</span>
-            <div class="time-buttons">
-              <button class="time-btn" onclick="acceptOrder(${order.order_id}, 5, '${order.company_id}', this)">5</button>
-              <button class="time-btn" onclick="acceptOrder(${order.order_id}, 10, '${order.company_id}', this)">10</button>
-              <button class="time-btn" onclick="acceptOrder(${order.order_id}, 15, '${order.company_id}', this)">15</button>
-              <button class="time-btn" onclick="acceptOrder(${order.order_id}, 20, '${order.company_id}', this)">20</button>
-              <button class="time-btn" onclick="acceptOrder(${order.order_id}, 25, '${order.company_id}', this)">25</button>
-              <button class="time-btn" onclick="acceptOrder(${order.order_id}, 30, '${order.company_id}', this)">30</button>
-            </div>
-          </div>
-        </div>
-      `;
-    }
-    
-    function renderNewItemWithModifiers(item) {
-      const cat = categorizeItem(item.name);
-      const modifiers = item.modifiers || [];
-      const note = item.note;
-      
-      let modifierText = '';
-      if (modifiers.length > 0) {
-        const modNames = modifiers.map(m => {
-          // Lookup by productReferenceID in wolt_products_map
-          const refId = String(m.productReferenceID);
-          const mapped = modifiersMap[refId];
-          if (mapped && mapped.name) {
-            return mapped.name;
-          }
-          // Fallback - show price
-          return `+${m.price}`;
-        });
-        modifierText = ` <span class="item-modifiers">(${modNames.join(', ')})</span>`;
-      }
-      
-      let noteText = '';
-      if (note && note.trim()) {
-        noteText = `<div class="item-note">📝 ${note}</div>`;
-      }
-      
-      return `
-        <div class="new-item-row">
-          <span class="new-item ${cat}"><span class="qty">${item.quantity}×</span> ${item.name}${modifierText}</span>
-          ${noteText}
-        </div>
-      `;
-    }
-
-    // ============================================
-    // Actions
-    // ============================================
-    async function acceptOrder(orderId, prepTime, companyId, btn) {
-      const card = btn.closest('.new-card');
-      card.classList.add('processing');
-      btn.classList.add('loading');
-
-      // FIRST: Save prep_time_given to database (before API call)
-      try {
-        const { data: existingLifecycle } = await supabaseClient
-          .from('emeni_order_lifecycle')
-          .select('*')
-          .eq('order_id', orderId)
-          .eq('status', 3)
-          .single();
+        // ============================================
+        // CLASSIFICATION
+        // ============================================
+        const BURGER_KEYWORDS = ['burger', 'smash', 'collina', 'chicken', 'wrap', 'big', 'double', 'baconator', 'vege', 'original', 'triple', 'nuggets', 'caesar'];
+        const PANCAKE_KEYWORDS = ['palačink', 'palacink', 'nutella', 'eurokrem', 'krem', 'američka', 'americka'];
         
-        if (existingLifecycle) {
-          await supabaseClient
-            .from('emeni_order_lifecycle')
-            .update({ prep_time_given: prepTime })
-            .eq('id', existingLifecycle.id);
-        } else {
-          await supabaseClient
-            .from('emeni_order_lifecycle')
-            .insert({
-              order_id: orderId,
-              status: 3,
-              event_type: 'dispatch.accepted',
-              timestamp: new Date().toISOString(),
-              prep_time_given: prepTime
+        // Drinks classification - from eBar product database
+        const DRINK_KEYWORDS = [
+            // Kafa / Topli napici
+            'kafa', 'kafe', 'coffee', 'espreso', 'espresso', 'dupli espreso',
+            'cappuccino', 'cappucino', 'capuccino', 'kapućino', 'kapucino',
+            'latte', 'caffe latte', 'macchiato', 'makijato', 'americano', 
+            'nes', 'nescafe', 'neskafe', 'ice kafa', 'ice moka',
+            'topla cokolada', 'cokoladno mleko',
+            // Čaj
+            'čaj', 'caj', 'tea', 'ice tea', 'fuze tea', 'nestea',
+            // Sokovi / Djus
+            'sok', 'juice', 'djus', 'gusto', 'ceđeni', 'cedjeni', 'cedjena',
+            'borovnica', 'breskva', 'jabuka', 'jagoda', 'pomorandza', 'grejp',
+            'citrus mix', 'vitaminska', 'fresh', 'smoothie',
+            // Limunade
+            'limunada', 'limunana', 'lubenada', 'breskvanada', 'cedevita',
+            // Voda
+            'voda', 'water', 'aqua', 'aqua viva', 'rosa', 'kisela',
+            'balans', 'mineralna', 'gazirana', 'negazirana',
+            // Gazirano
+            'cola', 'coca', 'pepsi', 'fanta', 'sprite', '7up', '7 up',
+            'mirinda', 'schweppes', 'tonic', 'bitter', 'evervess',
+            'guarana', 'ultra', 'energy', 'red bull',
+            // Pivo
+            'pivo', 'beer', 'lager', 'heineken', 'salto', 'zajecarsko', 'zaječar',
+            'stout', 'pale ale', 'ipa', 'wit',
+            // Vino
+            'vino', 'wine', 'belo vino', 'crveno vino', 'roze vino', 'proseco',
+            // Žestoko / Alkohol
+            'rakija', 'viski', 'whisky', 'whiskey', 'vodka', 'absolut',
+            'džin', 'dzin', 'gin', 'beefeater', 'rum', 'havana', 'tequila',
+            'jack daniels', 'jim beam', 'jameson', 'jegermeister', 'jager',
+            'vinjak', 'konjak', 'cognac', 'brandy', 'liker',
+            'martini', 'gorki list', 'four roses', 'zaric', 'hubert',
+            // Mlečno
+            'mleko', 'jogurt', 'kravica', 'kiselo mleko', 'plazma sejk',
+            // Kokteli
+            'koktel', 'cocktail', 'mojito', 'margarita', 'aperol', 'spritz', 'kuvani', 'kuvano'
+        ];
+
+        // Table ID to Name mapping (eBar Banovo Brdo)
+        const TABLE_NAMES = {
+            // Banovo Brdo stolovi
+            '480': 'B 1', '482': 'B 2', '483': 'B 3', '487': 'B 4', '488': 'B 5', '489': 'B 6',
+            '486': 'BP 1', '501': 'BP 2',
+            '518': 'GAL 1', '517': 'GAL 2',
+            '497': 'HB 1', '496': 'HB 2', '495': 'HB 3',
+            '522': 'HG 1', '521': 'HG 2',
+            '499': 'HP 1', '481': 'HP 1', '506': 'HP 2', '505': 'HP 3', '504': 'HP 4', '503': 'HP 5',
+            '525': 'HS 1', '524': 'HS 2', '520': 'HS 3', '523': 'HS 4',
+            '479': 'PR 1', '494': 'PR 2',
+            '512': 'S 10', '511': 'S 11', '516': 'S 6', '515': 'S 7', '514': 'S 8', '513': 'S 9',
+            '519': 'SP 1', '507': 'SP 2', '508': 'SP 3', '509': 'SP 4', '510': 'SP 5',
+            // Specijalni / Interni
+            '585': 'Hotel GOSTI', '586': 'Hotel ZAP', '587': 'EPS',
+            '588': 'T.O. Kuhinja', '589': 'T.O. Kuhinja',
+            '590': 'T.O. SANK', '591': 'T.O. SANK',
+            '592': 'NATASA', '593': 'ANA', '594': 'MARKO',
+            '596': 'T.O. Magacin', '597': 'T.O. Vozac',
+            '598': 'T.O. Kanc', '599': 'T.O. Kanc',
+            '602': 'TC 1', '605': 'Cervesija', '606': 'HSS'
+        };
+
+        // Helper: Get table display name
+        function getTableName(tableId) {
+            if (!tableId) return null;
+            const id = String(tableId);
+            return TABLE_NAMES[id] || tableId; // Return mapped name or original ID
+        }
+
+        function classifyItemType(itemName) {
+            const name = (itemName || '').toLowerCase();
+            
+            // FOOD keywords have priority - check first
+            // If it's a burger/pancake combo with drink, it's still food
+            for (const kw of BURGER_KEYWORDS) {
+                if (name.includes(kw)) return 'hrana';
+            }
+            for (const kw of PANCAKE_KEYWORDS) {
+                if (name.includes(kw)) return 'hrana';
+            }
+            
+            // Then check if it's a drink
+            for (const kw of DRINK_KEYWORDS) {
+                if (name.includes(kw)) return 'pice';
+            }
+            
+            return 'hrana';
+        }
+
+        // Helper: Get items from order
+        function getOrderItems(order) {
+            let items = order.raw_payload?.items || [];
+            if (items.length === 0 && order.raw_payload?.invalidOrderDetails?.items) {
+                items = order.raw_payload.invalidOrderDetails.items;
+            }
+            return items;
+        }
+
+        // Helper: Check if order has food items
+        function orderHasFood(order) {
+            const items = getOrderItems(order);
+            return items.some(item => classifyItemType(item.name) !== 'pice');
+        }
+
+        // Helper: Check if order has drink items
+        function orderHasDrinks(order) {
+            const items = getOrderItems(order);
+            return items.some(item => classifyItemType(item.name) === 'pice');
+        }
+
+        function classifyItem(itemName) {
+            const name = (itemName || '').toLowerCase();
+            for (const kw of BURGER_KEYWORDS) {
+                if (name.includes(kw)) return 'burger';
+            }
+            for (const kw of PANCAKE_KEYWORDS) {
+                if (name.includes(kw)) return 'pancake';
+            }
+            return 'other';
+        }
+
+        function classifyOrder(items) {
+            let hasBurger = false, hasPancake = false;
+            for (const item of items) {
+                const type = classifyItem(item.name);
+                if (type === 'burger') hasBurger = true;
+                if (type === 'pancake') hasPancake = true;
+            }
+            if (hasBurger && hasPancake) return 'mixed';
+            if (hasBurger) return 'burger';
+            if (hasPancake) return 'pancake';
+            return 'other';
+        }
+
+        function getWaitMinutes(createdAt) {
+            return Math.floor((new Date() - new Date(createdAt)) / 60000);
+        }
+
+        // ============================================
+        // TIME DISPLAY
+        // ============================================
+        function updateTime() {
+            document.getElementById('currentTime').textContent = 
+                new Date().toLocaleTimeString('sr-RS', { hour: '2-digit', minute: '2-digit' });
+            
+            // Update all timers
+            updateWaitingTimers();
+            
+            // Check for eBar auto-predato (every second is fine, actual update happens rarely)
+            checkEbarAutoPredato();
+        }
+        
+        function updateWaitingTimers() {
+            // Update waiting for payment timers
+            const paymentTimers = document.querySelectorAll('.waiting-timer');
+            paymentTimers.forEach(timer => {
+                const readyAt = timer.dataset.readyAt;
+                const createdAt = timer.dataset.createdAt;
+                const timestamp = readyAt || createdAt;
+                if (timestamp) {
+                    const time = new Date(timestamp);
+                    const waitingMinutes = Math.floor((Date.now() - time.getTime()) / 60000);
+                    timer.textContent = `${waitingMinutes}'`;
+                }
+            });
+            
+            // Update waiting for courier timers (since paid)
+            const courierTimers = document.querySelectorAll('.courier-timer');
+            courierTimers.forEach(timer => {
+                const paidAt = timer.dataset.paidAt;
+                const readyAt = timer.dataset.readyAt;
+                const timestamp = paidAt || readyAt;
+                if (timestamp) {
+                    const time = new Date(timestamp);
+                    const waitingMinutes = Math.floor((Date.now() - time.getTime()) / 60000);
+                    timer.textContent = `${waitingMinutes}'`;
+                }
             });
         }
-        console.log('✅ Saved prep_time_given to database:', prepTime);
-      } catch (dbError) {
-        console.error('❌ DB Error:', dbError);
-      }
-
-      // THEN: Try to call eMeni API
-      try {
-        const payload = {
-          orderID: orderId,
-          preparationTime: prepTime,
-          companyId: companyId
-        };
         
-        console.log('📤 Calling Edge Function with:', payload);
+        // Auto-predato for eBar orders after 5 minutes
+        let autoPredatoProcessing = new Set(); // Prevent duplicate processing
         
-        const response = await fetch(`${SUPABASE_URL}/functions/v1/accept-wolt-order`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-          },
-          body: JSON.stringify(payload)
-        });
-        
-        const result = await response.json();
-        console.log('📥 Edge Function response:', result);
-        
-        if (result.success) {
-          showToast(`#${orderId} → ${prepTime} min ✓`, 'success');
-        } else {
-          // API failed but we saved to DB - show warning
-          showToast(`#${orderId} → ${prepTime} min (API error)`, 'error');
-          console.warn('⚠️ API error but prep_time saved:', result.apiResponse);
+        async function checkEbarAutoPredato() {
+            const now = Date.now();
+            const fiveMinutes = 5 * 60 * 1000;
+            
+            for (const order of allOrders) {
+                // Skip if already processing or already handed
+                if (autoPredatoProcessing.has(order.order_id)) continue;
+                if (order.kds_handed_at) continue;
+                
+                // Only eBar orders
+                const isEbar = (order.provider || '').toLowerCase() === 'ebar';
+                if (!isEbar) continue;
+                
+                // Must have food ready (kds_ready_at set)
+                if (!order.kds_ready_at) continue;
+                
+                // Check if 5 minutes passed since ready
+                const readyTime = new Date(order.kds_ready_at).getTime();
+                if (now - readyTime >= fiveMinutes) {
+                    console.log(`⏰ Auto-predato eBar #${order.order_no} (5 min passed)`);
+                    autoPredatoProcessing.add(order.order_id);
+                    
+                    // Auto mark as handed
+                    const success = await updateKdsTimestamp(order.order_id, 'kds_handed_at');
+                    if (success) {
+                        await loadOrders();
+                        await loadPredatoOrders();
+                        renderAll();
+                    }
+                    
+                    autoPredatoProcessing.delete(order.order_id);
+                }
+            }
         }
         
-        card.style.transform = 'scale(0.9)';
-        card.style.opacity = '0';
-        setTimeout(() => loadOrders(), 300);
-      } catch (e) {
-        console.error('❌ Error:', e);
-        showToast(`#${orderId} → ${prepTime} min (offline)`, 'error');
-        card.style.transform = 'scale(0.9)';
-        card.style.opacity = '0';
-        setTimeout(() => loadOrders(), 300);
-      }
-    }
+        setInterval(updateTime, 1000);
+        updateTime();
 
-    function updateWaitingTimes() {
-      document.querySelectorAll('.waiting-badge[data-created]').forEach(badge => {
-        const mins = Math.floor((Date.now() - new Date(badge.dataset.created)) / 60000);
-        const span = badge.querySelector('.wt');
-        if (span) span.textContent = mins;
-        badge.classList.toggle('urgent', mins >= 5);
-      });
-      
-      document.querySelectorAll('.prep-timer[data-accepted]').forEach(timer => {
-        const mins = Math.floor((Date.now() - new Date(timer.dataset.accepted)) / 60000);
-        timer.innerHTML = `⏱️ ${mins}m`;
-      });
-    }
+        // ============================================
+        // LOAD LOCATIONS
+        // ============================================
+        async function loadLocations() {
+            try {
+                const url = `${SUPABASE_URL}/rest/v1/emeni_locations?select=company_id,location_name&order=location_name`;
+                const data = await supabaseFetch(url);
+                
+                const select = document.getElementById('locationSelect');
+                data.forEach(loc => {
+                    locations[loc.company_id] = loc.location_name;
+                    const option = document.createElement('option');
+                    option.value = loc.company_id;
+                    option.textContent = loc.location_name;
+                    select.appendChild(option);
+                });
+            } catch (err) {
+                console.error('Error loading locations:', err);
+            }
+        }
 
-    // ============================================
-    // Sound Notification
-    // ============================================
-    let previousNewOrderIds = new Set();
-    let notificationSound = null;
-    let soundEnabled = true;
+        // ============================================
+        // LOAD MODIFIERS MAP (wolt_products_map)
+        // ============================================
+        let modifiersMap = {}; // wolt_reference_id -> {name, price, isModifier}
+        
+        async function loadModifiersMap() {
+            try {
+                const url = `${SUPABASE_URL}/rest/v1/wolt_products_map?select=wolt_reference_id,name,price,is_modifier`;
+                const data = await supabaseFetch(url);
+                
+                if (data && Array.isArray(data)) {
+                    data.forEach(item => {
+                        modifiersMap[item.wolt_reference_id] = {
+                            name: item.name,
+                            price: item.price,
+                            isModifier: item.is_modifier
+                        };
+                    });
+                    console.log(`✅ Loaded ${data.length} items from wolt_products_map`);
+                }
+            } catch (err) {
+                console.error('Error loading modifiers map:', err);
+            }
+        }
 
-    function toggleSound() {
-      soundEnabled = !soundEnabled;
-      const btn = document.getElementById('soundToggleBtn');
-      if (soundEnabled) {
-        btn.textContent = '🔊';
-        btn.style.background = '#22c55e';
-      } else {
-        btn.textContent = '🔇';
-        btn.style.background = '#666';
-      }
-      console.log('🔔 Sound:', soundEnabled ? 'ON' : 'OFF');
-    }
-
-    function initSound() {
-      // Create audio context and oscillator for notification sound
-      notificationSound = {
-        play: function() {
-          try {
-            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        // ============================================
+        // LOAD DISPATCHER ITEM COMMENTS (restos_komentar)
+        // ============================================
+        let itemsCommentsMap = {}; // order_id -> [{item_name, quantity, restos_komentar}]
+        
+        async function loadItemsComments(orderIds) {
+            if (!orderIds || orderIds.length === 0) {
+                itemsCommentsMap = {};
+                return;
+            }
             
-            const createBuzz = (startTime, duration) => {
-              const oscillator = audioCtx.createOscillator();
-              const gainNode = audioCtx.createGain();
-              
-              oscillator.connect(gainNode);
-              gainNode.connect(audioCtx.destination);
-              
-              // Low frequency buzz
-              oscillator.frequency.value = 150;
-              oscillator.type = 'sawtooth';
-              
-              // Pulsing effect
-              gainNode.gain.setValueAtTime(0.6, startTime);
-              gainNode.gain.setValueAtTime(0.6, startTime + duration - 0.02);
-              gainNode.gain.linearRampToValueAtTime(0, startTime + duration);
-              
-              oscillator.start(startTime);
-              oscillator.stop(startTime + duration);
+            try {
+                const idsString = orderIds.join(',');
+                const url = `${SUPABASE_URL}/rest/v1/emeni_order_items?select=order_id,name,quantity,restos_komentar&order_id=in.(${idsString})&restos_komentar=not.is.null`;
+                
+                const data = await supabaseFetch(url);
+                
+                // Reset map
+                itemsCommentsMap = {};
+                
+                if (data && Array.isArray(data)) {
+                    data.forEach(item => {
+                        if (item.restos_komentar && item.restos_komentar.trim()) {
+                            const orderId = String(item.order_id);
+                            if (!itemsCommentsMap[orderId]) {
+                                itemsCommentsMap[orderId] = [];
+                            }
+                            itemsCommentsMap[orderId].push({
+                                name: item.name,
+                                quantity: item.quantity,
+                                comment: item.restos_komentar.trim()
+                            });
+                        }
+                    });
+                    console.log(`📝 Loaded dispatcher item comments for ${Object.keys(itemsCommentsMap).length} orders`);
+                }
+            } catch (err) {
+                console.error('Error loading items comments:', err);
+            }
+        }
+
+        // ============================================
+        // LOAD ORDERS
+        // ============================================
+        async function loadOrders() {
+            try {
+                await loadActiveFlags();
+
+                const twoHoursAgo = new Date();
+                twoHoursAgo.setHours(twoHoursAgo.getHours() - 2);
+
+                // Load orders with KDS columns - include those in production OR with kds_ready but not handed
+                const url = `${SUPABASE_URL}/rest/v1/emeni_orders?select=*&created_at=gte.${encodeURIComponent(twoHoursAgo.toISOString())}&or=(status.in.(3,4,5),and(kds_ready_at.not.is.null,kds_handed_at.is.null))&order=created_at.asc`;
+                
+                const data = await supabaseFetch(url);
+                if (data && Array.isArray(data)) {
+                    // Check for new orders (for sound notification)
+                    const ordersInPriprema = data.filter(o => !o.kds_ready_at);
+                    checkForNewOrders(ordersInPriprema);
+                    
+                    allOrders = data;
+                    
+                    // Load dispatcher item comments for these orders
+                    const orderIds = data.map(o => o.order_id);
+                    await loadItemsComments(orderIds);
+                    
+                    // Check paid status for orders in Front Desk (kds_ready_at but not handed)
+                    const frontDeskOrders = data.filter(o => o.kds_ready_at && !o.kds_handed_at);
+                    await loadPaidStatus(frontDeskOrders.map(o => o.order_id));
+                    
+                    renderAll();
+                }
+            } catch (err) {
+                console.error('Error loading orders:', err);
+            }
+        }
+
+        // Load handed orders (last 1 hour)
+        let predatoOrders = [];
+        
+        async function loadPredatoOrders() {
+            try {
+                // Get 1 hour ago
+                const oneHourAgo = new Date();
+                oneHourAgo.setHours(oneHourAgo.getHours() - 1);
+                
+                // Get orders with kds_handed_at in last hour
+                const url = `${SUPABASE_URL}/rest/v1/emeni_orders?select=*&kds_handed_at=gte.${encodeURIComponent(oneHourAgo.toISOString())}&order=kds_handed_at.desc`;
+                
+                const data = await supabaseFetch(url);
+                if (data && Array.isArray(data)) {
+                    predatoOrders = data;
+                }
+            } catch (err) {
+                console.error('Error loading predato orders:', err);
+            }
+        }
+
+        // Track which orders are paid/closed (from lifecycle) with timestamp
+        let paidOrderIds = new Set();
+        let paidOrderTimestamps = {}; // order_id -> paid_at timestamp
+        
+        async function loadPaidStatus(orderIds) {
+            // Clear and rebuild
+            paidOrderIds = new Set();
+            paidOrderTimestamps = {};
+            
+            if (!orderIds || orderIds.length === 0) return;
+            
+            try {
+                // Check lifecycle for closed status (status 5 or 7)
+                const idsString = orderIds.join(',');
+                const url = `${SUPABASE_URL}/rest/v1/emeni_order_lifecycle?select=order_id,status,event_type,timestamp&order_id=in.(${idsString})&status=in.(5,7)&order=timestamp.desc`;
+                
+                const data = await supabaseFetch(url);
+                
+                if (data && Array.isArray(data)) {
+                    data.forEach(event => {
+                        paidOrderIds.add(event.order_id);
+                        // Store the timestamp (first one wins - most recent)
+                        if (!paidOrderTimestamps[event.order_id]) {
+                            paidOrderTimestamps[event.order_id] = event.timestamp;
+                        }
+                    });
+                }
+                console.log(`💰 Closed orders (status 5/7): ${paidOrderIds.size} / ${orderIds.length}`);
+            } catch (err) {
+                console.error('Error loading paid status:', err);
+            }
+        }
+
+        // ============================================
+        // RENDER ORDER CARD
+        // ============================================
+        function renderOrderCard(order, columnType) {
+            let items = getOrderItems(order);
+            
+            const hasFood = orderHasFood(order);
+            const hasDrinks = orderHasDrinks(order);
+            const foodReady = !!order.kds_ready_at;
+            const isEbar = (order.provider || '').toLowerCase() === 'ebar';
+            
+            // Filter items based on column
+            if (columnType === 'priprema') {
+                // KUHINJA: only show FOOD items (never drinks)
+                items = items.filter(item => classifyItemType(item.name) !== 'pice');
+            }
+            // FRONT DESK: show ALL items (drinks + food)
+            // Button state changes based on whether food is ready
+
+            // If no items left after filtering, don't render the card
+            if (items.length === 0) {
+                return '';
+            }
+
+            const orderType = classifyOrder(items);
+            const waitMinutes = getWaitMinutes(order.created_at);
+            const isUrgent = waitMinutes >= 20;
+            const time = new Date(order.created_at).toLocaleTimeString('sr-RS', { hour: '2-digit', minute: '2-digit' });
+
+            const itemsHtml = items.map(item => {
+                const itemType = classifyItem(item.name || '');
+                const itemCategory = classifyItemType(item.name || '');
+                const icon = itemCategory === 'pice' ? '🥤' : (itemType === 'burger' ? '🍔' : itemType === 'pancake' ? '🥞' : '🍽️');
+                
+                // Get modifiers
+                let modifiersHtml = '';
+                if (item.modifiers && item.modifiers.length > 0) {
+                    const modTags = item.modifiers.map(m => {
+                        // Try to get modifier name from multiple sources
+                        let modName = null;
+                        
+                        // 1. Direct name from payload
+                        if (m.name && m.name.trim()) {
+                            modName = m.name;
+                        }
+                        // 2. Lookup in wolt_products_map by referenceID
+                        else {
+                            const refId = m.productReferenceID || m.referenceID || m.product_reference_id;
+                            if (refId && modifiersMap[refId]) {
+                                modName = modifiersMap[refId].name;
+                            }
+                        }
+                        // 3. Fallback - show price if available
+                        if (!modName && m.price) {
+                            modName = `${m.price} RSD`;
+                        }
+                        
+                        return modName;
+                    }).filter(Boolean);
+                    
+                    if (modTags.length > 0) {
+                        modifiersHtml = `
+                            <div class="item-modifiers">
+                                ${modTags.map(name => `<span class="modifier-tag">${name}</span>`).join('')}
+                            </div>
+                        `;
+                    }
+                }
+                
+                // Item-level note/comment
+                let itemNoteHtml = '';
+                if (item.note && item.note.trim()) {
+                    itemNoteHtml = `<div class="item-note">${item.note}</div>`;
+                }
+                if (item.comment && item.comment.trim()) {
+                    itemNoteHtml = `<div class="item-note">${item.comment}</div>`;
+                }
+                
+                return `
+                    <div class="card-item ${itemType}-item">
+                        <span class="item-icon">${icon}</span>
+                        <span class="item-qty">${item.quantity}×</span>
+                        <span class="item-name" title="${item.name || 'Item'}">${item.name || 'Item'}</span>
+                    </div>
+                    ${modifiersHtml}
+                    ${itemNoteHtml}
+                `;
+            }).join('');
+
+            // Order-level note/comment from platform (Wolt, Glovo, etc.)
+            let orderCommentHtml = '';
+            const orderNote = order.raw_payload?.note || order.raw_payload?.comment || order.raw_payload?.specialRequests;
+            if (orderNote && orderNote.trim()) {
+                orderCommentHtml = `<div class="order-comment">${orderNote}</div>`;
+            }
+            
+            // DISPATCHER order-level comment (restos_order_komentar) - MORE PROMINENT
+            let dispatcherOrderCommentHtml = '';
+            if (order.restos_order_komentar && order.restos_order_komentar.trim()) {
+                dispatcherOrderCommentHtml = `<div class="dispatcher-order-comment">${order.restos_order_komentar}</div>`;
+            }
+            
+            // DISPATCHER item-level comments (from itemsCommentsMap)
+            let dispatcherItemsCommentsHtml = '';
+            const orderId = String(order.order_id);
+            if (itemsCommentsMap[orderId] && itemsCommentsMap[orderId].length > 0) {
+                const itemComments = itemsCommentsMap[orderId].map(ic => 
+                    `<div class="dispatcher-item-comment"><strong>${ic.quantity}× ${ic.name}:</strong> ${ic.comment}</div>`
+                ).join('');
+                dispatcherItemsCommentsHtml = `
+                    <div class="dispatcher-items-comments">
+                        <div class="dispatcher-items-comments-header">Napomene za stavke:</div>
+                        ${itemComments}
+                    </div>
+                `;
+            }
+            
+            // Build footer labels for eBar orders (table + delivery type)
+            let footerLabelsHtml = '';
+            if (isEbar) {
+                const footerLabels = [];
+                
+                // Table ID label - use tableReferenceId and mapped name
+                const tableId = order.raw_payload?.tableReferenceId
+                    || order.raw_payload?.tableReferenceID
+                    || order.raw_payload?.table_reference_id
+                    || order.raw_payload?.tableId 
+                    || order.raw_payload?.table_id 
+                    || order.raw_payload?.TableID 
+                    || order.table_id;
+                if (tableId) {
+                    const tableName = getTableName(tableId);
+                    footerLabels.push(`<span class="table-label">🪑 ${tableName}</span>`);
+                }
+                
+                // Delivery type label
+                const deliveryType = order.raw_payload?.deliveryType || order.raw_payload?.delivery_type || order.raw_payload?.orderType || '';
+                if (deliveryType) {
+                    let typeClass = '';
+                    let typeText = deliveryType;
+                    
+                    const typeLower = deliveryType.toLowerCase();
+                    if (typeLower === 'inhouse' || typeLower === 'in_house' || typeLower === 'in-house' || typeLower.includes('dine')) {
+                        typeClass = 'in-house';
+                        typeText = 'IN-HOUSE';
+                    } else if (typeLower === 'pickup' || typeLower === 'pick_up' || typeLower === 'takeaway' || typeLower === 'take_away') {
+                        typeClass = 'pickup';
+                        typeText = 'PICKUP';
+                    } else if (typeLower === 'delivery' || typeLower.includes('dostava')) {
+                        typeClass = 'delivery';
+                        typeText = 'DELIVERY';
+                    }
+                    
+                    footerLabels.push(`<span class="delivery-type-label ${typeClass}">${typeText}</span>`);
+                }
+                
+                if (footerLabels.length > 0) {
+                    footerLabelsHtml = footerLabels.join('');
+                }
+            }
+
+            // Action button based on column, provider, and state
+            let actionBtn = '';
+            if (columnType === 'priprema') {
+                // KUHINJA: SPREMNO button
+                actionBtn = `<button class="card-action to-spremno" onclick="event.stopPropagation(); moveToSpremno('${order.order_id}')">✅ SPREMNO</button>`;
+            } else {
+                // FRONT DESK - complex logic based on food/drinks and provider
+                const waitingForFood = hasFood && !foodReady;
+                const isClosed = paidOrderIds.has(order.order_id); // status 5 or 7
+                
+                if (waitingForFood) {
+                    // Waiting for kitchen to prepare food
+                    const orderTime = new Date(order.created_at);
+                    const waitingMinutes = Math.floor((Date.now() - orderTime.getTime()) / 60000);
+                    actionBtn = `
+                        <div class="card-action waiting-food">
+                            <span class="waiting-text">⏳ Čeka hranu</span>
+                            <span class="waiting-timer" data-created-at="${order.created_at}">${waitingMinutes}'</span>
+                        </div>
+                    `;
+                } else if (isEbar) {
+                    // eBar: No payment check needed, no timer - can hand over immediately or auto after 5min
+                    actionBtn = `
+                        <div class="card-action waiting-courier" onclick="event.stopPropagation(); moveToPredato('${order.order_id}')">
+                            <span class="waiting-text">🚴 PREDATO</span>
+                        </div>
+                    `;
+                } else if (isClosed) {
+                    // Wolt/eMeni/Gloria: Payment confirmed (status 5/7) - can hand over
+                    const paidAt = paidOrderTimestamps[order.order_id];
+                    const paidTime = paidAt ? new Date(paidAt) : new Date();
+                    const waitingMinutes = Math.floor((Date.now() - paidTime.getTime()) / 60000);
+                    actionBtn = `
+                        <div class="card-action waiting-courier" onclick="event.stopPropagation(); moveToPredato('${order.order_id}')">
+                            <span class="waiting-text">🚴 PREDATO</span>
+                            <span class="courier-timer" data-paid-at="${paidAt || ''}">${waitingMinutes}'</span>
+                        </div>
+                    `;
+                } else {
+                    // Wolt/eMeni/Gloria: Waiting for payment
+                    const readyTime = order.kds_ready_at ? new Date(order.kds_ready_at) : new Date(order.created_at);
+                    const waitingMinutes = Math.floor((Date.now() - readyTime.getTime()) / 60000);
+                    actionBtn = `
+                        <div class="card-action waiting-payment">
+                            <span class="waiting-text">💳 ZATVORI RAČUN</span>
+                            <span class="waiting-timer" data-ready-at="${order.kds_ready_at || order.created_at}">${waitingMinutes}'</span>
+                        </div>
+                    `;
+                }
+            }
+
+            // Provider label with styling
+            const provider = (order.provider || '').toLowerCase();
+            let providerClass = 'other';
+            let providerIcon = '📋';
+            let providerName = order.provider || 'N/A';
+            
+            if (provider === 'ebar') {
+                providerClass = 'ebar';
+                providerIcon = '🏪';
+                providerName = 'eBar';
+            } else if (provider === 'wolt') {
+                providerClass = 'wolt';
+                providerIcon = '🔵';
+                providerName = 'Wolt';
+            } else if (provider === 'glovo') {
+                providerClass = 'glovo';
+                providerIcon = '🟡';
+                providerName = 'Glovo';
+            } else if (provider === 'gloriafood' || provider === 'gloria') {
+                providerClass = 'gloriafood';
+                providerIcon = '🍕';
+                providerName = 'Gloria';
+            } else if (provider === 'emeni' || provider === 'collina') {
+                providerClass = 'emeni';
+                providerIcon = '🌐';
+                providerName = 'eMeni';
+            }
+
+            return `
+                <div class="order-card ${orderType} ${isUrgent ? 'urgent' : ''} ${isEbar ? 'priority' : ''}" data-order-id="${order.order_id}">
+                    <div class="card-header">
+                        <div class="card-header-left">
+                            <span class="provider-label ${providerClass}">${providerIcon} ${providerName}</span>
+                            <span class="card-order-no">#${order.order_no}</span>
+                        </div>
+                        <div class="card-header-right">
+                            <span class="card-time">${time}</span>
+                            <span class="card-wait">${waitMinutes}'</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        ${dispatcherOrderCommentHtml}
+                        <div class="card-items">
+                            ${itemsHtml || '<div class="card-item other-item"><span class="item-name">Bez stavki</span></div>'}
+                        </div>
+                        ${dispatcherItemsCommentsHtml}
+                        ${orderCommentHtml}
+                    </div>
+                    ${footerLabelsHtml ? `<div class="card-footer">${footerLabelsHtml}</div>` : ''}
+                    ${actionBtn}
+                </div>
+            `;
+        }
+
+        // ============================================
+        // RENDER PREDATO CARD
+        // ============================================
+        function renderPredatoCard(order) {
+            let items = order.raw_payload?.items || [];
+            const orderTime = new Date(order.created_at).toLocaleTimeString('sr-RS', { hour: '2-digit', minute: '2-digit' });
+            const handedTime = order.kds_handed_at 
+                ? new Date(order.kds_handed_at).toLocaleTimeString('sr-RS', { hour: '2-digit', minute: '2-digit' })
+                : '-';
+            const itemsSummary = items.map(i => `${i.quantity}× ${i.name}`).join(', ') || 'Bez stavki';
+
+            // Provider badge for predato
+            const provider = (order.provider || '').toLowerCase();
+            let providerBadge = order.provider || '';
+            if (provider === 'ebar') providerBadge = '🏪 eBar';
+            else if (provider === 'wolt') providerBadge = '🔵 Wolt';
+            else if (provider === 'glovo') providerBadge = '🟡 Glovo';
+            else if (provider === 'gloriafood' || provider === 'gloria') providerBadge = '🍕 Gloria';
+            else if (provider === 'emeni') providerBadge = '🌐 eMeni';
+
+            return `
+                <div class="predato-card">
+                    <div class="predato-card-header">
+                        <span class="predato-card-provider">${providerBadge}</span>
+                        <span class="predato-card-no">#${order.order_no}</span>
+                    </div>
+                    <div class="predato-card-time">${orderTime} → 🚴 ${handedTime}</div>
+                    <div class="predato-card-items">${itemsSummary}</div>
+                </div>
+            `;
+        }
+
+        // ============================================
+        // RENDER ITEMS SUMMARY
+        // ============================================
+        function renderItemsSummary(orders) {
+            const itemsMap = {};
+
+            orders.forEach(order => {
+                let items = order.raw_payload?.items || [];
+                
+                // Only count food items (drinks go to FRONT DESK directly)
+                items = items.filter(item => classifyItemType(item.name) !== 'pice');
+                
+                items.forEach(item => {
+                    const name = item.name || 'Unknown';
+                    const type = classifyItem(name);
+                    const qty = parseFloat(item.quantity) || 1;
+                    
+                    if (!itemsMap[name]) {
+                        itemsMap[name] = { name, qty: 0, type };
+                    }
+                    itemsMap[name].qty += qty;
+                });
+            });
+
+            const list = document.getElementById('itemsSummaryList');
+            const itemsArray = Object.values(itemsMap).sort((a, b) => b.qty - a.qty);
+
+            if (itemsArray.length === 0) {
+                list.innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">✅</div>
+                        <div>Nema stavki</div>
+                    </div>
+                `;
+                return;
+            }
+
+            list.innerHTML = itemsArray.map(item => `
+                <div class="summary-item ${item.type}">
+                    <span class="summary-qty">${item.qty}×</span>
+                    <span class="summary-name" title="${item.name}">${item.name}</span>
+                </div>
+            `).join('');
+        }
+
+        // ============================================
+        // RENDER ALL
+        // ============================================
+        function renderAll() {
+            let filteredOrders = allOrders;
+
+            // Hide flagged orders
+            filteredOrders = filteredOrders.filter(o => !flaggedOrderIds.has(o.order_id));
+            
+            if (selectedLocation) {
+                filteredOrders = filteredOrders.filter(o => o.company_id == selectedLocation);
+            }
+
+            // Filter paid eBar/Gloriafood
+            filteredOrders = filteredOrders.filter(o => {
+                const provider = (o.provider || '').toLowerCase();
+                const isPaid = o.is_paid === true || o.is_paid === 'true';
+                if ((provider === 'ebar' || provider === 'gloriafood') && isPaid) return false;
+                return true;
+            });
+
+            // Column logic based on KDS timestamps:
+            // KUHINJA: kds_ready_at IS NULL (not marked ready yet)
+            // FRONT DESK: kds_ready_at IS NOT NULL AND kds_handed_at IS NULL
+            // PREDATO: kds_handed_at IS NOT NULL (loaded separately)
+            
+            // Sort function: eBar (priority) first, then by created_at
+            const sortByPriority = (a, b) => {
+                const aIsEbar = (a.provider || '').toLowerCase() === 'ebar';
+                const bIsEbar = (b.provider || '').toLowerCase() === 'ebar';
+                
+                // eBar first
+                if (aIsEbar && !bIsEbar) return -1;
+                if (!aIsEbar && bIsEbar) return 1;
+                
+                // Then by created_at (oldest first)
+                return new Date(a.created_at) - new Date(b.created_at);
             };
             
-            const now = audioCtx.currentTime;
+            // Time filter for FRONT DESK - only show orders less than 1:30h old
+            const ninetyMinutesAgo = new Date();
+            ninetyMinutesAgo.setMinutes(ninetyMinutesAgo.getMinutes() - 90);
             
-            // Buzz buzz buzz pattern (like phone vibration)
-            createBuzz(now, 0.2);
-            createBuzz(now + 0.3, 0.2);
-            createBuzz(now + 0.6, 0.2);
+            // NEW LOGIC:
+            // KUHINJA: Orders with FOOD items that haven't been marked ready
+            // - Shows only FOOD items (not drinks)
+            // - Orders with ONLY drinks skip kuhinja entirely
+            const pripremaOrders = filteredOrders.filter(o => {
+                if (o.kds_ready_at) return false; // Already marked ready
+                return orderHasFood(o); // Must have food items
+            }).sort(sortByPriority);
             
-            console.log('📳 Vibration sound played');
-          } catch (e) {
-            console.warn('Could not play sound:', e);
-          }
+            // FRONT DESK: 
+            // - Shows ALL orders immediately (with all items)
+            // - Button is purple "Čeka hranu" until kds_ready_at is set
+            // - Then changes to PREDATO (eBar) or ZATVORI RAČUN (others)
+            const pakovanjeOrders = filteredOrders.filter(o => {
+                if (o.kds_handed_at) return false; // Already handed
+                if (new Date(o.created_at) < ninetyMinutesAgo) return false; // Too old
+                return true; // Show all orders
+            }).sort(sortByPriority);
+
+            // Render columns
+            const pripremaEl = document.getElementById('pripremaContent');
+            const pakovanjeEl = document.getElementById('pakovanjeContent');
+
+            // Render priprema cards (only food items - empty cards filtered out)
+            const pripremaCards = pripremaOrders.map(o => renderOrderCard(o, 'priprema')).filter(html => html.trim() !== '');
+            pripremaEl.innerHTML = pripremaCards.length 
+                ? pripremaCards.join('')
+                : '<div class="empty-state"><div class="icon">✅</div><div>Sve spremljeno!</div></div>';
+
+            // Render FRONT DESK cards (may have drinks waiting, or complete orders)
+            const pakovanjeCards = pakovanjeOrders.map(o => renderOrderCard(o, 'pakovanje')).filter(html => html.trim() !== '');
+            pakovanjeEl.innerHTML = pakovanjeCards.length
+                ? pakovanjeCards.join('')
+                : '<div class="empty-state"><div class="icon">⏳</div><div>Čeka se iz kuhinje</div></div>';
+
+            // Update column counts
+            document.getElementById('pripremaCount').textContent = pripremaCards.length;
+            document.getElementById('pakovanjeCount').textContent = pakovanjeCards.length;
+
+            // Split FRONT DESK rendering (LOKAL | DOSTAVA)
+            if (currentView === 'pakovanje') {
+                // Sort by created_at (oldest first) for split view
+                const sortByTime = (a, b) => new Date(a.created_at) - new Date(b.created_at);
+                
+                // Filter eBar orders
+                const ebarOrders = pakovanjeOrders.filter(o => 
+                    (o.provider || '').toLowerCase() === 'ebar'
+                ).sort(sortByTime);
+                
+                // Filter delivery orders (Wolt, Glovo, GloriaFood, eMeni)
+                const dostavaOrders = pakovanjeOrders.filter(o => {
+                    const provider = (o.provider || '').toLowerCase();
+                    return provider !== 'ebar';
+                }).sort(sortByTime);
+                
+                // Render LOKAL column
+                const ebarEl = document.getElementById('ebarContent');
+                const ebarCards = ebarOrders.map(o => renderOrderCard(o, 'pakovanje')).filter(html => html.trim() !== '');
+                ebarEl.innerHTML = ebarCards.length
+                    ? ebarCards.join('')
+                    : '<div class="empty-state"><div class="icon">🏪</div><div>Nema lokalnih porudžbina</div></div>';
+                document.getElementById('ebarCount').textContent = ebarCards.length;
+                
+                // Render DOSTAVA column
+                const dostavaEl = document.getElementById('dostavaContent');
+                const dostavaCards = dostavaOrders.map(o => renderOrderCard(o, 'pakovanje')).filter(html => html.trim() !== '');
+                dostavaEl.innerHTML = dostavaCards.length
+                    ? dostavaCards.join('')
+                    : '<div class="empty-state"><div class="icon">🚚</div><div>Nema dostava porudžbina</div></div>';
+                document.getElementById('dostavaCount').textContent = dostavaCards.length;
+            }
+
+            // Render predato from database (kds_handed_at today)
+            const predatoContent = document.getElementById('predatoContent');
+            
+            // Filter predato by location if selected
+            let filteredPredato = predatoOrders;
+            if (selectedLocation) {
+                filteredPredato = predatoOrders.filter(o => o.company_id == selectedLocation);
+            }
+            
+            predatoContent.innerHTML = filteredPredato.length
+                ? filteredPredato.map(o => renderPredatoCard(o)).join('')
+                : '<div class="empty-state"><div class="icon">📦</div><div>Nema predatih porudžbina u poslednjih sat vremena</div></div>';
+
+            // Update count
+            document.getElementById('predatoCount').textContent = filteredPredato.length;
+
+            // Update stats (only priprema - what needs to be cooked)
+            updateStats(pripremaOrders);
+
+            // Render items summary (only priprema - what needs to be cooked)
+            renderItemsSummary(pripremaOrders);
         }
-      };
-    }
 
-    // Test sound function - accessible from button
-    function testSound() {
-      console.log('🔔 Testing sound...');
-      if (notificationSound) {
-        notificationSound.play();
-      } else {
-        initSound();
-        notificationSound.play();
-      }
-    }
+        // ============================================
+        // UPDATE STATS
+        // ============================================
+        function updateStats(orders) {
+            let burgerCount = 0, pancakeCount = 0, urgentCount = 0;
 
-    function checkForNewOrders(orders) {
-      const newWoltOrders = orders.filter(o => 
-        (o.status === STATUS_NEW || o.status === STATUS_NEW_PREORDER) && 
-        (o.provider || '').toLowerCase() === 'wolt'
-      );
-      
-      const currentNewOrderIds = new Set(newWoltOrders.map(o => o.order_id));
-      
-      // Check if there are any NEW orders that weren't there before
-      let hasNewOrder = false;
-      currentNewOrderIds.forEach(id => {
-        if (!previousNewOrderIds.has(id)) {
-          hasNewOrder = true;
-          console.log('🆕 New order detected:', id);
+            orders.forEach(order => {
+                const items = order.raw_payload?.items || [];
+                const waitMinutes = getWaitMinutes(order.created_at);
+                if (waitMinutes >= 20) urgentCount++;
+
+                items.forEach(item => {
+                    const type = classifyItem(item.name || '');
+                    const qty = parseFloat(item.quantity) || 1;
+                    if (type === 'burger') burgerCount += qty;
+                    if (type === 'pancake') pancakeCount += qty;
+                });
+            });
+
+            document.getElementById('burgerCount').textContent = burgerCount;
+            document.getElementById('pancakeCount').textContent = pancakeCount;
+            document.getElementById('urgentCount').textContent = urgentCount;
         }
-      });
-      
-      if (hasNewOrder && soundEnabled && notificationSound) {
-        notificationSound.play();
-        // Also show visual flash
-        document.body.style.backgroundColor = '#1a2a1a';
-        setTimeout(() => {
-          document.body.style.backgroundColor = '#0a0a0f';
-        }, 200);
-      }
-      
-      previousNewOrderIds = currentNewOrderIds;
-    }
 
-    // ============================================
-    // Init
-    // ============================================
-    async function loadOrders() {
-      allOrders = await fetchOrders();
-      checkForNewOrders(allOrders);
-      renderMain(allOrders);
-    }
+        // ============================================
+        // ACTIONS
+        // ============================================
+        
+        // Update KDS timestamp on emeni_orders
+        async function updateKdsTimestamp(orderId, column) {
+            try {
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/emeni_orders?order_id=eq.${orderId}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': `Bearer ${SUPABASE_KEY}`,
+                        'Content-Type': 'application/json',
+                        'Prefer': 'return=representation'
+                    },
+                    body: JSON.stringify({
+                        [column]: new Date().toISOString()
+                    })
+                });
+                
+                if (!response.ok) {
+                    const error = await response.text();
+                    console.error('KDS update failed:', error);
+                    return false;
+                }
+                
+                console.log(`✅ KDS: order ${orderId} → ${column} = NOW()`);
+                return true;
+            } catch (err) {
+                console.error('KDS update error:', err);
+                return false;
+            }
+        }
 
-    async function init() {
-      initSound();
-      await loadProductCategories();
-      await loadModifiers();
-      await loadOrders();
-      
-      supabaseClient
-        .channel('dispatch-v5')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'emeni_orders' }, () => loadOrders())
-        .subscribe();
-      
-      setInterval(loadOrders, 10000);
-      setInterval(updateWaitingTimes, 1000);
-    }
+        async function moveToSpremno(orderId) {
+            // Write kds_ready_at timestamp
+            const success = await updateKdsTimestamp(orderId, 'kds_ready_at');
+            
+            if (success) {
+                // Reload orders to get updated data
+                await loadOrders();
+            } else {
+                alert('Greška pri upisu! Pokušajte ponovo.');
+            }
+        }
 
-    init();
-  </script>
+        async function moveToPredato(orderId) {
+            // Write kds_handed_at timestamp
+            const success = await updateKdsTimestamp(orderId, 'kds_handed_at');
+            
+            if (success) {
+                // Reload orders to get updated data
+                await loadOrders();
+                await loadPredatoOrders();
+            } else {
+                alert('Greška pri upisu! Pokušajte ponovo.');
+            }
+        }
+
+        // ============================================
+        // VIEW TOGGLE
+        // ============================================
+        function setView(view) {
+            currentView = view;
+            
+            document.querySelectorAll('.toggle-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.view === view);
+            });
+
+            const priprema = document.getElementById('columnPriprema');
+            const pakovanje = document.getElementById('columnSpremno');
+            const splitFrontdesk = document.getElementById('splitFrontdesk');
+
+            // Reset all
+            priprema.classList.remove('hidden');
+            pakovanje.classList.remove('hidden');
+            splitFrontdesk.classList.add('hidden');
+
+            if (view === 'priprema') {
+                // KUHINJA only
+                pakovanje.classList.add('hidden');
+                splitFrontdesk.classList.add('hidden');
+            } else if (view === 'pakovanje') {
+                // FRONT DESK split view (LOKAL | DOSTAVA)
+                priprema.classList.add('hidden');
+                pakovanje.classList.add('hidden');
+                splitFrontdesk.classList.remove('hidden');
+            }
+            // 'oba' - both KUHINJA and regular FRONT DESK shown
+            
+            renderAll();
+        }
+
+        // ============================================
+        // SOUND NOTIFICATION
+        // ============================================
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            document.getElementById('soundToggle').classList.toggle('active', soundEnabled);
+            document.getElementById('soundToggle').textContent = soundEnabled ? '🔔' : '🔕';
+        }
+
+        // Create audio context for notification sound
+        let audioContext = null;
+        
+        function playNotificationSound() {
+            if (!soundEnabled) return;
+            
+            try {
+                if (!audioContext) {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                
+                // Play two short beeps
+                const playBeep = (startTime, frequency) => {
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+                    
+                    oscillator.frequency.value = frequency;
+                    oscillator.type = 'sine';
+                    
+                    gainNode.gain.setValueAtTime(0.3, startTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + 0.15);
+                    
+                    oscillator.start(startTime);
+                    oscillator.stop(startTime + 0.15);
+                };
+                
+                const now = audioContext.currentTime;
+                playBeep(now, 880);        // First beep (A5)
+                playBeep(now + 0.2, 1100);  // Second beep (higher)
+                
+                console.log('🔔 New order notification sound');
+            } catch (err) {
+                console.error('Sound error:', err);
+            }
+        }
+
+        function checkForNewOrders(orders) {
+            const currentIds = new Set(orders.map(o => o.order_id));
+            const currentReadyIds = new Set(orders.filter(o => o.kds_ready_at).map(o => o.order_id));
+            
+            // Find new orders or orders that became ready
+            let shouldPlaySound = false;
+            
+            for (const order of orders) {
+                // 1. Check location filter
+                if (selectedLocation && order.company_id != selectedLocation) {
+                    continue; // Skip - wrong location
+                }
+                
+                const hasFood = orderHasFood(order);
+                const hasDrinks = orderHasDrinks(order);
+                
+                // Check if this is a NEW order
+                const isNewOrder = !lastOrderIds.has(order.order_id);
+                
+                // Check if food just became ready (was not ready before, is ready now)
+                const justBecameReady = order.kds_ready_at && !lastReadyIds.has(order.order_id);
+                
+                // Determine what triggers sound for each view
+                if (currentView === 'priprema') {
+                    // KUHINJA: only new orders with food (not yet ready)
+                    if (isNewOrder && hasFood && !order.kds_ready_at) {
+                        shouldPlaySound = true;
+                        break;
+                    }
+                } else if (currentView === 'pakovanje') {
+                    // FRONT DESK: new drinks OR food just became ready
+                    if ((isNewOrder && hasDrinks) || (justBecameReady && hasFood)) {
+                        shouldPlaySound = true;
+                        break;
+                    }
+                } else {
+                    // OBA: all of the above
+                    if (isNewOrder && (hasFood || hasDrinks)) {
+                        shouldPlaySound = true;
+                        break;
+                    }
+                    if (justBecameReady && hasFood) {
+                        shouldPlaySound = true;
+                        break;
+                    }
+                }
+            }
+            
+            // Play sound if matching event occurred (and not first load)
+            if (shouldPlaySound && lastOrderIds.size > 0) {
+                playNotificationSound();
+            }
+            
+            // Update last known state
+            lastOrderIds = currentIds;
+            lastReadyIds = currentReadyIds;
+        }
+
+        // ============================================
+        // PREDATO PANEL
+        // ============================================
+        function togglePredatoPanel(open) {
+            document.getElementById('predatoPanel').classList.toggle('open', open);
+            document.getElementById('panelOverlay').classList.toggle('visible', open);
+        }
+
+        // ============================================
+        // EVENT LISTENERS
+        // ============================================
+        document.getElementById('locationSelect').addEventListener('change', (e) => {
+            selectedLocation = e.target.value;
+            renderAll();
+        });
+
+        document.querySelectorAll('.toggle-btn').forEach(btn => {
+            btn.addEventListener('click', () => setView(btn.dataset.view));
+        });
+
+        document.getElementById('predatoBtnSidebar').addEventListener('click', () => togglePredatoPanel(true));
+        document.getElementById('predatoClose').addEventListener('click', () => togglePredatoPanel(false));
+        document.getElementById('panelOverlay').addEventListener('click', () => togglePredatoPanel(false));
+
+        // ============================================
+        // REALTIME SUBSCRIPTIONS (replaces polling)
+        // ============================================
+        function setupRealtimeSubscriptions() {
+            console.log('🔌 Setting up Realtime subscriptions...');
+            
+            // Subscribe to emeni_orders changes
+            const ordersChannel = supabaseClient
+                .channel('kds-orders')
+                .on(
+                    'postgres_changes',
+                    {
+                        event: '*', // INSERT, UPDATE, DELETE
+                        schema: 'public',
+                        table: 'emeni_orders'
+                    },
+                    async (payload) => {
+                        console.log('📦 Order change:', payload.eventType, payload.new?.order_id || payload.old?.order_id);
+                        
+                        // Reload orders on any change
+                        await loadOrders();
+                        
+                        // If it's a handed order, also reload predato
+                        if (payload.new?.kds_handed_at) {
+                            await loadPredatoOrders();
+                        }
+                        
+                        renderAll();
+                    }
+                )
+                .subscribe((status, err) => {
+                    console.log('📡 Orders subscription status:', status);
+                    if (status === 'SUBSCRIBED') {
+                        realtimeConnected = true;
+                        updateConnectionStatus(true);
+                    } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+                        console.error('❌ Orders subscription error:', err);
+                        realtimeConnected = false;
+                        updateConnectionStatus(false);
+                    }
+                });
+
+            // Subscribe to emeni_order_lifecycle changes (for paid status)
+            const lifecycleChannel = supabaseClient
+                .channel('kds-lifecycle')
+                .on(
+                    'postgres_changes',
+                    {
+                        event: 'INSERT',
+                        schema: 'public',
+                        table: 'emeni_order_lifecycle'
+                    },
+                    async (payload) => {
+                        console.log('💳 Lifecycle event:', payload.new?.event_type, payload.new?.status);
+                        
+                        // Check if this is a closed/paid event (status 5 or 7)
+                        const isClosedEvent = payload.new?.status === 5 || payload.new?.status === 7;
+                        
+                        if (isClosedEvent && payload.new?.order_id) {
+                            console.log('💰 Order closed (status ' + payload.new?.status + '):', payload.new?.order_id);
+                            paidOrderIds.add(payload.new.order_id);
+                            paidOrderTimestamps[payload.new.order_id] = payload.new.timestamp || new Date().toISOString();
+                            renderAll();
+                        }
+                    }
+                )
+                .subscribe((status, err) => {
+                    console.log('📡 Lifecycle subscription status:', status);
+                    if (err) {
+                        console.error('❌ Lifecycle subscription error:', err);
+                    }
+                });
+
+            // Subscribe to emeni_order_items changes (for dispatcher comments)
+            const itemsChannel = supabaseClient
+                .channel('kds-items-comments')
+                .on(
+                    'postgres_changes',
+                    {
+                        event: 'UPDATE',
+                        schema: 'public',
+                        table: 'emeni_order_items'
+                    },
+                    async (payload) => {
+                        // Check if restos_komentar was updated
+                        if (payload.new?.restos_komentar !== payload.old?.restos_komentar) {
+                            console.log('📝 Item comment updated:', payload.new?.order_id, payload.new?.name);
+                            await loadOrders();
+                            renderAll();
+                        }
+                    }
+                )
+                .subscribe((status, err) => {
+                    console.log('📡 Items comments subscription status:', status);
+                    if (err) {
+                        console.error('❌ Items comments subscription error:', err);
+                    }
+                });
+
+            // Subscribe to order_flags changes (hide flagged orders)
+            const flagsChannel = supabaseClient
+                .channel('kds-flags')
+                .on(
+                    'postgres_changes',
+                    {
+                        event: '*',
+                        schema: 'public',
+                        table: 'order_flags'
+                    },
+                    async (payload) => {
+                        console.log('🚩 Flag change:', payload.eventType);
+                        await loadActiveFlags();
+                        renderAll();
+                    }
+                )
+                .subscribe((status, err) => {
+                    console.log('📡 Flags subscription status:', status);
+                    if (err) {
+                        console.error('❌ Flags subscription error:', err);
+                    }
+                });
+        }
+
+        function updateConnectionStatus(connected) {
+            const indicator = document.getElementById('realtimeIndicator');
+            if (indicator) {
+                indicator.className = connected ? 'realtime-indicator connected' : 'realtime-indicator disconnected';
+                indicator.title = connected ? 'Realtime povezan' : 'Realtime nije povezan';
+            }
+        }
+
+        // Fallback: minimal polling every 30 seconds as safety net
+        setInterval(async () => {
+            if (!realtimeConnected) {
+                console.log('⚠️ Realtime not connected, using fallback polling...');
+                await loadOrders();
+                await loadPredatoOrders();
+                renderAll();
+            }
+        }, 30000);
+
+        // ============================================
+        // INIT
+        // ============================================
+        async function init() {
+            console.log('🚀 Initializing KDS v2.1 with Dispatcher Comments...');
+            
+            // Initial data load
+            await loadLocations();
+            await loadModifiersMap();
+            await loadPredatoOrders();
+            await loadOrders();
+            
+            // Setup realtime subscriptions
+            setupRealtimeSubscriptions();
+            
+            console.log('✅ KDS Ready');
+        }
+
+        init();
+    </script>
 </body>
 </html>
