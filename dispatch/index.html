@@ -1363,6 +1363,7 @@
     let productCategoryMap = {};
     let modifiersMap = {}; // emeni_reference_id -> name
     let flaggedOrderIds = new Set(); // Orders with active flags - hidden from display
+    let dismissedPreorders = new Set(); // Preorders dismissed by dispatcher
 
     async function loadActiveFlags() {
       const { data, error } = await supabaseClient
@@ -1630,6 +1631,15 @@
       // Hide flagged orders
       if (flaggedOrderIds.has(order.order_id)) {
         return false;
+      }
+
+      // Hide dismissed preorders (only while still status 12)
+      if (dismissedPreorders.has(order.order_id)) {
+        if (order.status === STATUS_NEW_PREORDER) {
+          return false;
+        }
+        // Status changed (accepted) — remove from dismissed, show in Priprema
+        dismissedPreorders.delete(order.order_id);
       }
 
       const provider = (order.provider || '').toLowerCase();
@@ -2133,7 +2143,7 @@
             <span class="new-order-total">💰 ${Math.round(total).toLocaleString('sr-RS')} RSD</span>
             <div class="time-buttons">
               ${order.status === STATUS_NEW_PREORDER ? `
-                <span style="color: #f59e0b; font-size: 12px; font-weight: 600; padding: 6px 12px; background: #f59e0b20; border-radius: 6px; border: 1px solid #f59e0b50;">⏳ Odobri u aplikaciji</span>
+                <button onclick="event.stopPropagation(); dismissPreorder(${order.order_id}, this)" style="color: #f59e0b; font-size: 12px; font-weight: 600; padding: 6px 12px; background: #f59e0b20; border-radius: 6px; border: 1px solid #f59e0b50; cursor: pointer;">✅ Odobreno u aplikaciji</button>
               ` : `
                 <button class="time-btn" onclick="acceptOrder(${order.order_id}, 5, '${order.company_id}', this)">5</button>
                 <button class="time-btn" onclick="acceptOrder(${order.order_id}, 10, '${order.company_id}', this)">10</button>
@@ -2184,6 +2194,15 @@
     // ============================================
     // Actions
     // ============================================
+    function dismissPreorder(orderId, btn) {
+      dismissedPreorders.add(orderId);
+      const card = btn.closest('.new-card');
+      card.style.transition = 'opacity 0.3s, transform 0.3s';
+      card.style.opacity = '0';
+      card.style.transform = 'scale(0.95)';
+      setTimeout(() => card.remove(), 300);
+    }
+
     async function acceptOrder(orderId, prepTime, companyId, btn) {
       const card = btn.closest('.new-card');
       card.classList.add('processing');
