@@ -1362,6 +1362,19 @@
         let locations = {};
         let selectedLocation = '';
         let currentView = 'oba';
+        let flaggedOrderIds = new Set(); // Flagged orders - hidden from KDS
+
+        async function loadActiveFlags() {
+            try {
+                const url = `${SUPABASE_URL}/rest/v1/order_flags?select=order_id&is_active=eq.true`;
+                const data = await supabaseFetch(url);
+                if (data && Array.isArray(data)) {
+                    flaggedOrderIds = new Set(data.map(f => f.order_id));
+                }
+            } catch (err) {
+                console.error('Error loading flags:', err);
+            }
+        }
         
         // Sound state
         let soundEnabled = true;
@@ -1688,6 +1701,8 @@
         // ============================================
         async function loadOrders() {
             try {
+                await loadActiveFlags();
+
                 const twoHoursAgo = new Date();
                 twoHoursAgo.setHours(twoHoursAgo.getHours() - 2);
 
@@ -2119,6 +2134,9 @@
         // ============================================
         function renderAll() {
             let filteredOrders = allOrders;
+
+            // Hide flagged orders
+            filteredOrders = filteredOrders.filter(o => !flaggedOrderIds.has(o.order_id));
             
             if (selectedLocation) {
                 filteredOrders = filteredOrders.filter(o => o.company_id == selectedLocation);
@@ -2592,6 +2610,29 @@
                     console.log('📡 Items comments subscription status:', status);
                     if (err) {
                         console.error('❌ Items comments subscription error:', err);
+                    }
+                });
+
+            // Subscribe to order_flags changes (hide flagged orders)
+            const flagsChannel = supabaseClient
+                .channel('kds-flags')
+                .on(
+                    'postgres_changes',
+                    {
+                        event: '*',
+                        schema: 'public',
+                        table: 'order_flags'
+                    },
+                    async (payload) => {
+                        console.log('🚩 Flag change:', payload.eventType);
+                        await loadActiveFlags();
+                        renderAll();
+                    }
+                )
+                .subscribe((status, err) => {
+                    console.log('📡 Flags subscription status:', status);
+                    if (err) {
+                        console.error('❌ Flags subscription error:', err);
                     }
                 });
         }
