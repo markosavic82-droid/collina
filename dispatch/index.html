@@ -588,6 +588,11 @@
       transition: all 0.2s ease;
     }
 
+    .new-card.preorder {
+      background: #2a1f0a;
+      border: 1px solid #f59e0b60;
+    }
+
     .new-card.processing {
       opacity: 0.6;
       pointer-events: none;
@@ -2107,7 +2112,7 @@
       }
 
       return `
-        <div class="new-card" data-order-id="${order.order_id}">
+        <div class="new-card ${order.status === STATUS_NEW_PREORDER ? 'preorder' : ''}" data-order-id="${order.order_id}">
           <div class="new-card-header">
             <div class="new-order-info">
               <span class="new-order-number">#${order.order_no}</span>
@@ -2127,12 +2132,16 @@
           <div class="new-card-footer">
             <span class="new-order-total">💰 ${Math.round(total).toLocaleString('sr-RS')} RSD</span>
             <div class="time-buttons">
-              <button class="time-btn" onclick="acceptOrder(${order.order_id}, 5, '${order.company_id}', this)">5</button>
-              <button class="time-btn" onclick="acceptOrder(${order.order_id}, 10, '${order.company_id}', this)">10</button>
-              <button class="time-btn" onclick="acceptOrder(${order.order_id}, 15, '${order.company_id}', this)">15</button>
-              <button class="time-btn" onclick="acceptOrder(${order.order_id}, 20, '${order.company_id}', this)">20</button>
-              <button class="time-btn" onclick="acceptOrder(${order.order_id}, 25, '${order.company_id}', this)">25</button>
-              <button class="time-btn" onclick="acceptOrder(${order.order_id}, 30, '${order.company_id}', this)">30</button>
+              ${order.status === STATUS_NEW_PREORDER ? `
+                <span style="color: #f59e0b; font-size: 12px; font-weight: 600; padding: 6px 12px; background: #f59e0b20; border-radius: 6px; border: 1px solid #f59e0b50;">⏳ Odobri u aplikaciji</span>
+              ` : `
+                <button class="time-btn" onclick="acceptOrder(${order.order_id}, 5, '${order.company_id}', this)">5</button>
+                <button class="time-btn" onclick="acceptOrder(${order.order_id}, 10, '${order.company_id}', this)">10</button>
+                <button class="time-btn" onclick="acceptOrder(${order.order_id}, 15, '${order.company_id}', this)">15</button>
+                <button class="time-btn" onclick="acceptOrder(${order.order_id}, 20, '${order.company_id}', this)">20</button>
+                <button class="time-btn" onclick="acceptOrder(${order.order_id}, 25, '${order.company_id}', this)">25</button>
+                <button class="time-btn" onclick="acceptOrder(${order.order_id}, 30, '${order.company_id}', this)">30</button>
+              `}
             </div>
           </div>
         </div>
