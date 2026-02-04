@@ -1357,6 +1357,17 @@
     let ordersMap = {};  // Map order_id -> order object for modal access
     let productCategoryMap = {};
     let modifiersMap = {}; // emeni_reference_id -> name
+    let flaggedOrderIds = new Set(); // Orders with active flags - hidden from display
+
+    async function loadActiveFlags() {
+      const { data, error } = await supabaseClient
+        .from('order_flags')
+        .select('order_id')
+        .eq('is_active', true);
+      if (!error && data) {
+        flaggedOrderIds = new Set(data.map(f => f.order_id));
+      }
+    }
 
     // ============================================
     // Utilities
@@ -1611,6 +1622,11 @@
     // For eBar: hide drinks-only orders always, hide food orders when kds_ready_at is set
     // Wolt, Gloria, eMeniWaiter always visible
     function shouldShowOrder(order) {
+      // Hide flagged orders
+      if (flaggedOrderIds.has(order.order_id)) {
+        return false;
+      }
+
       const provider = (order.provider || '').toLowerCase();
       
       if (provider === 'ebar') {
@@ -2356,6 +2372,7 @@
     // Init
     // ============================================
     async function loadOrders() {
+      await loadActiveFlags();
       allOrders = await fetchOrders();
       checkForNewOrders(allOrders);
       renderMain(allOrders);
@@ -2370,6 +2387,7 @@
       supabaseClient
         .channel('dispatch-v5')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'emeni_orders' }, () => loadOrders())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'order_flags' }, () => loadOrders())
         .subscribe();
       
       setInterval(loadOrders, 10000);
