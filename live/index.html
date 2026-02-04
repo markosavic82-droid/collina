@@ -1086,6 +1086,193 @@
     }
 
     /* Modal Styles */
+    /* Flag System */
+    .flag-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      background: #ef444430;
+      color: #ef4444;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 4px;
+      cursor: default;
+    }
+
+    .flag-badge-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #ef4444;
+      animation: pulse 2s infinite;
+    }
+
+    .flag-section {
+      margin-bottom: 25px;
+    }
+
+    .flag-section h3 {
+      font-size: 14px;
+      color: #ef4444;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 15px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #333;
+    }
+
+    .flag-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 18px;
+      background: #ef444420;
+      border: 1px solid #ef4444;
+      border-radius: 8px;
+      color: #ef4444;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+
+    .flag-btn:hover {
+      background: #ef4444;
+      color: #fff;
+    }
+
+    .flag-btn.resolve {
+      background: #22c55e20;
+      border-color: #22c55e;
+      color: #22c55e;
+      padding: 6px 12px;
+      font-size: 12px;
+    }
+
+    .flag-btn.resolve:hover {
+      background: #22c55e;
+      color: #fff;
+    }
+
+    .flag-form {
+      margin-top: 12px;
+      background: #252525;
+      border-radius: 8px;
+      padding: 15px;
+      border: 1px solid #ef444450;
+    }
+
+    .flag-form textarea {
+      width: 100%;
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 6px;
+      color: #fff;
+      padding: 10px;
+      font-size: 13px;
+      font-family: inherit;
+      resize: vertical;
+      min-height: 60px;
+      margin-bottom: 10px;
+    }
+
+    .flag-form textarea:focus {
+      outline: none;
+      border-color: #8B5CF6;
+    }
+
+    .flag-form-actions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+
+    .flag-form-btn {
+      padding: 8px 16px;
+      border-radius: 6px;
+      border: 1px solid #333;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+
+    .flag-form-btn.cancel {
+      background: #333;
+      color: #888;
+    }
+
+    .flag-form-btn.submit {
+      background: #ef4444;
+      color: #fff;
+      border-color: #ef4444;
+    }
+
+    .flag-form-btn.submit-resolve {
+      background: #22c55e;
+      color: #fff;
+      border-color: #22c55e;
+    }
+
+    .flag-entry {
+      background: #252525;
+      border-radius: 8px;
+      padding: 12px 15px;
+      margin-bottom: 10px;
+      border-left: 3px solid #ef4444;
+    }
+
+    .flag-entry.resolved {
+      border-left-color: #22c55e;
+      opacity: 0.7;
+    }
+
+    .flag-entry-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .flag-entry-meta {
+      font-size: 11px;
+      color: #888;
+    }
+
+    .flag-entry-reason {
+      font-size: 13px;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+
+    .flag-entry-resolved {
+      font-size: 12px;
+      color: #22c55e;
+      background: #22c55e15;
+      padding: 6px 10px;
+      border-radius: 4px;
+      margin-top: 6px;
+    }
+
+    .flag-status-active {
+      font-size: 11px;
+      font-weight: 600;
+      color: #ef4444;
+      background: #ef444420;
+      padding: 2px 8px;
+      border-radius: 10px;
+    }
+
+    .flag-status-resolved {
+      font-size: 11px;
+      font-weight: 600;
+      color: #22c55e;
+      background: #22c55e20;
+      padding: 2px 8px;
+      border-radius: 10px;
+    }
+
     .modal-overlay {
       display: none;
       position: fixed;
@@ -1402,6 +1589,14 @@
         <label for="channel-pult">🚚 Food Truck</label>
       </div>
     </div>
+
+    <div class="filter-section">
+      <div class="filter-section-title">🚩 FLAGS</div>
+      <div class="filter-option">
+        <input type="checkbox" id="filter-flagged" onchange="toggleFlagFilter()">
+        <label for="filter-flagged">Samo flagovane</label>
+      </div>
+    </div>
   </div>
 
   <!-- Single Line Header -->
@@ -1681,6 +1876,8 @@
     let viewMode = 'table'; // 'cards' or 'table' - default to table
     let currentPage = 'live'; // 'live' or 'tables'
     let selectedTableFilter = 'all'; // Table filter for tables view
+    let flaggedOrderIds = new Set(); // Set of order_ids with active flags
+    let showOnlyFlagged = false; // Flag filter toggle
 
     // Table Reference ID to Name mapping
     // Add your table ID -> name mappings here
@@ -1877,6 +2074,8 @@
       
       selectedLocations = new Set();
       selectedChannels = new Set(['wolt', 'gloriafood', 'ebar', 'emeniwaiter', 'pult']);
+      showOnlyFlagged = false;
+      document.getElementById('filter-flagged').checked = false;
       updateActiveFiltersCount();
       applyFilters();
     }
@@ -1896,6 +2095,11 @@
       const checkedChannels = document.querySelectorAll('.filters-sidebar input[id^="channel-"]:checked').length;
       if (checkedChannels < totalChannels) {
         count += (totalChannels - checkedChannels);
+      }
+      
+      // Count flag filter
+      if (showOnlyFlagged) {
+        count++;
       }
       
       const badge = document.getElementById('activeFiltersCount');
@@ -2116,7 +2320,7 @@
 
     function applyFilters() {
       // First apply location and channel filters
-      const baseFiltered = allOrders.filter(order => {
+      let baseFiltered = allOrders.filter(order => {
         // Location filter
         const locationMatch = selectedLocations.size === 0 || 
                              selectedLocations.size === Object.keys(locations).length ||
@@ -2129,6 +2333,11 @@
         
         return locationMatch && channelMatch;
       });
+
+      // Apply flag filter
+      if (showOnlyFlagged) {
+        baseFiltered = baseFiltered.filter(order => flaggedOrderIds.has(order.order_id));
+      }
       
       // Update counts based on location/channel filtered orders
       updateStatusCounts(baseFiltered);
@@ -2336,16 +2545,233 @@
     }
 
     // ============================================
+    // Flag Functions
+    // ============================================
+    async function loadActiveFlags() {
+      const { data, error } = await supabaseClient
+        .from('order_flags')
+        .select('order_id')
+        .eq('is_active', true);
+      
+      if (error) {
+        console.error('Error loading flags:', error);
+        return;
+      }
+      flaggedOrderIds = new Set((data || []).map(f => f.order_id));
+    }
+
+    async function fetchOrderFlags(orderId) {
+      const { data, error } = await supabaseClient
+        .from('order_flags')
+        .select('*')
+        .eq('order_id', orderId)
+        .order('flagged_at', { ascending: false });
+      
+      if (error) {
+        console.error('Error fetching flags:', error);
+        return [];
+      }
+      return data || [];
+    }
+
+    async function submitFlag(orderId) {
+      const textarea = document.getElementById('flagReasonInput');
+      const nameInput = document.getElementById('flagUserName');
+      const reason = textarea?.value?.trim() || '';
+      const userName = nameInput?.value?.trim() || '';
+      
+      if (!userName) {
+        alert('Unesite vaše ime');
+        return;
+      }
+
+      const { data, error } = await supabaseClient
+        .from('order_flags')
+        .insert({
+          order_id: orderId,
+          flag_reason: reason,
+          flagged_by: userName,
+          is_active: true
+        })
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Error creating flag:', error);
+        alert('Greška pri kreiranju flaga');
+        return;
+      }
+
+      // Save username for next use
+      localStorage.setItem('flagUserName', userName);
+      
+      // Update global set
+      flaggedOrderIds.add(orderId);
+      
+      // Refresh modal content
+      const order = allOrders.find(o => o.order_id === orderId);
+      if (order) {
+        const lifecycle = await fetchOrderLifecycle(orderId);
+        document.getElementById('modalContent').innerHTML = renderOrderDetail(order, lifecycle);
+      }
+      
+      // Re-render orders list to show badge
+      applyFilters();
+    }
+
+    function showResolveForm(flagId, orderId) {
+      const container = document.getElementById(`resolve-form-${flagId}`);
+      if (container) {
+        const savedName = localStorage.getItem('flagUserName') || '';
+        container.innerHTML = `
+          <div class="flag-form" style="margin-top: 8px; border-color: #22c55e50;">
+            <input type="text" id="resolveUserName-${flagId}" placeholder="Vaše ime..." 
+                   value="${savedName}"
+                   style="width: 100%; background: #1a1a1a; border: 1px solid #333; border-radius: 6px; color: #fff; padding: 8px 10px; font-size: 13px; margin-bottom: 8px;">
+            <textarea id="resolveReason-${flagId}" placeholder="Komentar razrešenja (opciono)..." 
+                      style="min-height: 40px;"></textarea>
+            <div class="flag-form-actions">
+              <button class="flag-form-btn cancel" onclick="document.getElementById('resolve-form-${flagId}').innerHTML=''">Otkaži</button>
+              <button class="flag-form-btn submit-resolve" onclick="resolveFlag(${flagId}, ${orderId})">✓ Razreši</button>
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    async function resolveFlag(flagId, orderId) {
+      const nameInput = document.getElementById(`resolveUserName-${flagId}`);
+      const textarea = document.getElementById(`resolveReason-${flagId}`);
+      const resolvedBy = nameInput?.value?.trim() || '';
+      const resolvedReason = textarea?.value?.trim() || '';
+      
+      if (!resolvedBy) {
+        alert('Unesite vaše ime');
+        return;
+      }
+
+      const { error } = await supabaseClient
+        .from('order_flags')
+        .update({
+          is_active: false,
+          resolved_by: resolvedBy,
+          resolved_at: new Date().toISOString(),
+          resolved_reason: resolvedReason
+        })
+        .eq('id', flagId);
+      
+      if (error) {
+        console.error('Error resolving flag:', error);
+        alert('Greška pri razrešenju');
+        return;
+      }
+
+      localStorage.setItem('flagUserName', resolvedBy);
+      
+      // Reload flags to update global set
+      await loadActiveFlags();
+      
+      // Refresh modal
+      const order = allOrders.find(o => o.order_id === orderId);
+      if (order) {
+        const lifecycle = await fetchOrderLifecycle(orderId);
+        document.getElementById('modalContent').innerHTML = renderOrderDetail(order, lifecycle);
+      }
+      
+      applyFilters();
+    }
+
+    function toggleFlagForm(orderId) {
+      const form = document.getElementById('flagFormContainer');
+      if (form.style.display === 'none') {
+        form.style.display = 'block';
+        document.getElementById('flagReasonInput').focus();
+      } else {
+        form.style.display = 'none';
+      }
+    }
+
+    function toggleFlagFilter() {
+      showOnlyFlagged = document.getElementById('filter-flagged').checked;
+      updateActiveFiltersCount();
+      applyFilters();
+    }
+
+    function renderFlagSection(orderId, flags) {
+      const activeFlags = flags.filter(f => f.is_active);
+      const resolvedFlags = flags.filter(f => !f.is_active);
+      const savedName = localStorage.getItem('flagUserName') || '';
+      const formatDate = (d) => d ? new Date(d).toLocaleString('sr-RS') : '';
+
+      const activeFlagsHtml = activeFlags.map(f => `
+        <div class="flag-entry">
+          <div class="flag-entry-header">
+            <span class="flag-status-active">● Aktivan</span>
+            <span class="flag-entry-meta">${f.flagged_by} — ${formatDate(f.flagged_at)}</span>
+          </div>
+          ${f.flag_reason ? `<div class="flag-entry-reason">${f.flag_reason}</div>` : ''}
+          <button class="flag-btn resolve" onclick="showResolveForm(${f.id}, ${orderId})">✓ Razreši</button>
+          <div id="resolve-form-${f.id}"></div>
+        </div>
+      `).join('');
+
+      const resolvedFlagsHtml = resolvedFlags.length > 0 ? `
+        <details style="margin-top: 12px;">
+          <summary style="cursor: pointer; color: #888; font-size: 12px; margin-bottom: 8px;">
+            Razrešeni flagovi (${resolvedFlags.length})
+          </summary>
+          ${resolvedFlags.map(f => `
+            <div class="flag-entry resolved">
+              <div class="flag-entry-header">
+                <span class="flag-status-resolved">✓ Razrešen</span>
+                <span class="flag-entry-meta">${f.flagged_by} — ${formatDate(f.flagged_at)}</span>
+              </div>
+              ${f.flag_reason ? `<div class="flag-entry-reason" style="color: #aaa;">${f.flag_reason}</div>` : ''}
+              <div class="flag-entry-resolved">
+                Razrešio: ${f.resolved_by} — ${formatDate(f.resolved_at)}
+                ${f.resolved_reason ? `<br>${f.resolved_reason}` : ''}
+              </div>
+            </div>
+          `).join('')}
+        </details>
+      ` : '';
+
+      return `
+        <div class="flag-section">
+          <h3>🚩 Flagovi</h3>
+          ${activeFlagsHtml}
+          <button class="flag-btn" onclick="toggleFlagForm(${orderId})">🚩 Prijavi problem</button>
+          <div id="flagFormContainer" style="display: none;">
+            <div class="flag-form">
+              <input type="text" id="flagUserName" placeholder="Vaše ime..." 
+                     value="${savedName}"
+                     style="width: 100%; background: #1a1a1a; border: 1px solid #333; border-radius: 6px; color: #fff; padding: 8px 10px; font-size: 13px; margin-bottom: 8px;">
+              <textarea id="flagReasonInput" placeholder="Opišite problem (opciono)..."></textarea>
+              <div class="flag-form-actions">
+                <button class="flag-form-btn cancel" onclick="toggleFlagForm(${orderId})">Otkaži</button>
+                <button class="flag-form-btn submit" onclick="submitFlag(${orderId})">🚩 Flaguj</button>
+              </div>
+            </div>
+          </div>
+          ${resolvedFlagsHtml}
+        </div>
+      `;
+    }
+
+    // ============================================
     // Modal Functions
     // ============================================
     async function openOrderDetail(orderId) {
       const order = allOrders.find(o => o.order_id === orderId);
       if (!order) return;
 
-      const lifecycle = await fetchOrderLifecycle(orderId);
+      const [lifecycle, flags] = await Promise.all([
+        fetchOrderLifecycle(orderId),
+        fetchOrderFlags(orderId)
+      ]);
       
       document.getElementById('modalTitle').textContent = `Order #${order.order_no}`;
-      document.getElementById('modalContent').innerHTML = renderOrderDetail(order, lifecycle);
+      document.getElementById('modalContent').innerHTML = renderOrderDetail(order, lifecycle, flags);
       document.getElementById('modalOverlay').classList.add('active');
       document.body.style.overflow = 'hidden';
     }
@@ -2379,7 +2805,7 @@
     // ============================================
     // Render Order Detail
     // ============================================
-    function renderOrderDetail(order, lifecycle) {
+    function renderOrderDetail(order, lifecycle, flags) {
       // Get items from regular items, raw_payload.items, or invalidOrderDetails
       let items = order.items || [];
       let total = 0;
@@ -2469,6 +2895,9 @@
       `).join('') || '<p style="color: #666;">No lifecycle events</p>';
 
       return `
+        <!-- Flag Section -->
+        ${renderFlagSection(order.order_id, flags || [])}
+
         <!-- Order Info -->
         <div class="detail-section">
           <h3>Order Information</h3>
@@ -2491,7 +2920,7 @@
             </div>
             <div class="detail-item">
               <div class="detail-label">Status</div>
-              <div class="detail-value ${order.status === 5 ? 'success' : ''}">${STATUS_NAMES[order.status] || order.status} (${order.status})</div>
+              <div class="detail-value ${flaggedOrderIds.has(order.order_id) ? 'error' : (order.status === 5 ? 'success' : '')}">${flaggedOrderIds.has(order.order_id) ? '🚩 FLAG' : `${STATUS_NAMES[order.status] || order.status} (${order.status})`}</div>
             </div>
             <div class="detail-item">
               <div class="detail-label">Delivery Type</div>
@@ -2786,7 +3215,7 @@
       
       return `
         <tr onclick="openOrderDetail(${order.order_id})" class="${tableId && !isKnownTable ? 'unknown-table' : ''}">
-          <td><strong>#${order.order_no}</strong> ${hasNotes ? `<span title="${allNotes.replace(/"/g, '&quot;')}" style="cursor:help;">📝</span>` : ''}</td>
+          <td><strong>#${order.order_no}</strong> ${flaggedOrderIds.has(order.order_id) ? '<span class="flag-badge"><span class="flag-badge-dot"></span>🚩</span>' : ''} ${hasNotes ? `<span title="${allNotes.replace(/"/g, '&quot;')}" style="cursor:help;">📝</span>` : ''}</td>
           <td>${tableId ? `<span class="table-id-badge ${isKnownTable ? '' : 'unknown'}">${tableName}</span>` : '-'}</td>
           <td><span class="table-location">${locationName}</span></td>
           <td><span class="table-provider ${provider}">${provider}</span></td>
@@ -2918,6 +3347,7 @@
           <div class="order-location-tag">📍 ${locationName}</div>
           <div class="order-header">
             <span class="order-number">#${order.order_no}</span>
+            ${flaggedOrderIds.has(order.order_id) ? '<span class="flag-badge"><span class="flag-badge-dot"></span>🚩</span>' : ''}
             ${hasNotes ? `<span class="order-note-icon" title="${allNotes.replace(/"/g, '&quot;')}">📝</span>` : ''}
             <span class="order-provider ${(order.provider || 'pult').toLowerCase()}">${order.provider || 'pult'}</span>
           </div>
@@ -3098,9 +3528,11 @@
       initDateSelector();
       await fetchLocations();
       await fetchProductNames(); // Load product names for modifier display
+      await loadActiveFlags(); // Load flagged orders
       await loadOrders();
       setupRealtimeSubscription();
       setInterval(loadOrders, 30000);
+      setInterval(loadActiveFlags, 30000); // Refresh flags periodically
     }
 
     init();
