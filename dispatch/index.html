@@ -1293,7 +1293,22 @@
     
     // Fallback keywords
     const BURGER_KEYWORDS = ['burger', 'smash', 'baconator', 'cheese'];
-    const PANCAKE_KEYWORDS = ['palačink', 'palacink', 'palačnk', 'američka', 'americka'];
+    const PANCAKE_KEYWORDS = ['palačink', 'palacink', 'palačnk', 'američka', 'americka', 'nepohovana', 'vafl'];
+    
+    // Explicit product names that ARE palačinke but don't match keywords above
+    // (slane palačinke sold under their filling name, not "palačinka")
+    const PANCAKE_EXPLICIT_NAMES = [
+      'pohovana pršuta-kačkavalj',
+      'pohovana šunka-kačkavalj', 
+      'pohovana sunka-kackavalj',
+      'pohovana pečenica-kačkavalj',
+      'pohovana pecenica-kackavalj',
+      'slana collina',
+      'dubai palačinka',
+      'dubai palacinka',
+      'prazna palačinka',
+      'prazna palacinka',
+    ];
     
     // Drink category keywords (complete list from eBar categories)
     const DRINK_KEYWORDS = [
@@ -1568,6 +1583,7 @@
       
       if (BURGER_KEYWORDS.some(k => lowerName.includes(k))) return 'burger';
       if (PANCAKE_KEYWORDS.some(k => lowerName.includes(k))) return 'pancake';
+      if (PANCAKE_EXPLICIT_NAMES.some(n => lowerName.includes(n) || n.includes(lowerName))) return 'pancake';
       return 'other';
     }
 
@@ -1862,6 +1878,23 @@
           if (cat === 'burger') burgers += totalQty;
           else if (cat === 'pancake') pancakes += totalQty;
           else other += totalQty;
+          
+          // Also count modifiers that are pancakes/burgers
+          const modifiers = item.modifiers || [];
+          modifiers.forEach(mod => {
+            // Resolve modifier name from modifiersMap
+            const refId = String(mod.productReferenceID || '');
+            const mapped = modifiersMap[refId];
+            const modName = (mapped && mapped.name) ? mapped.name : (mod.name || '');
+            
+            if (modName) {
+              const modCat = categorizeItem(modName);
+              const modQty = parseInt(mod.quantity) || 1;
+              if (modCat === 'burger') burgers += modQty * itemQty;
+              else if (modCat === 'pancake') pancakes += modQty * itemQty;
+              // Don't add modifier 'other' to avoid inflating the count with toppings/sauces
+            }
+          });
         });
       });
       return { burgers, pancakes, other };
