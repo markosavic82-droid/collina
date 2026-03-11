@@ -160,22 +160,38 @@ document.querySelectorAll('.qr').forEach(l=>{l.addEventListener('click',e=>{e.pr
 document.querySelectorAll('.qi,.qta,.qn,.sec-notes textarea').forEach(el=>el.addEventListener('input',upd));
 function upd(){let a=0,t=0;document.querySelectorAll('.qi,.qta').forEach(el=>{t++;if(el.value.trim())a++});const rn=new Set();document.querySelectorAll('.qr-group').forEach(g=>{const rs=g.querySelectorAll('input[type="radio"]');if(rs.length){const n=rs[0].name;if(!rn.has(n)){rn.add(n);t++;if(g.querySelector('input:checked'))a++}}});document.querySelectorAll('.qc-group').forEach(g=>{t++;if(g.querySelector('input:checked'))a++});document.querySelectorAll('.qn,.sec-notes textarea').forEach(el=>{if(el.value.trim())a++});document.getElementById('pc').textContent=a;document.getElementById('tc').textContent=t}
 function collectAnswers(){
-  const d={};
-  document.querySelectorAll('[data-q]').forEach(el=>{
-    const k=el.dataset.q;
-    // Nađi tekst pitanja
-    const qg=el.closest('.qg')||el.closest('.sec-notes');
-    const labelEl=qg?qg.querySelector('.ql'):null;
-    const question=labelEl?labelEl.textContent.trim():'';
-    // Vrednost
-    let val='';
-    if(el.tagName==='INPUT'||el.tagName==='TEXTAREA') val=el.value;
-    else if(el.classList.contains('qc-group')) val=[...el.querySelectorAll('input:checked')].map(c=>c.value);
-    else if(el.classList.contains('qr-group')){const c=el.querySelector('input:checked');val=c?c.value:''}
-    d[k]={question,answer:val};
+  const sections=[];
+  document.querySelectorAll('.ask-section').forEach(sec=>{
+    const hdr=sec.querySelector('.ask-header h2');
+    const num=sec.querySelector('.ask-num');
+    const sectionObj={
+      section: (num?num.textContent.trim()+'. ':'')+(hdr?hdr.textContent.trim():'Kontakt'),
+      questions:[]
+    };
+    // Collect all questions in order
+    sec.querySelectorAll('[data-q]').forEach(el=>{
+      const k=el.dataset.q;
+      const qg=el.closest('.qg')||el.closest('.sec-notes');
+      const labelEl=qg?qg.querySelector('.ql,.sec-notes label'):null;
+      const question=labelEl?labelEl.textContent.trim().replace(' *',''):'';
+      let answer='';
+      if(el.tagName==='INPUT'||el.tagName==='TEXTAREA') answer=el.value.trim();
+      else if(el.classList.contains('qc-group')) answer=[...el.querySelectorAll('input:checked')].map(c=>c.value);
+      else if(el.classList.contains('qr-group')){const c=el.querySelector('input:checked');answer=c?c.value:''}
+      // Skip empty notes
+      if(k.endsWith('_note')&&!answer) return;
+      if(k.endsWith('_other')&&!answer) return;
+      if(k.startsWith('s')&&k.endsWith('_notes')&&!answer) return;
+      // Skip empty
+      if(!answer||(Array.isArray(answer)&&!answer.length)) return;
+      sectionObj.questions.push({id:k,question,answer});
+    });
+    if(sectionObj.questions.length) sections.push(sectionObj);
   });
-  d._meta={timestamp:new Date().toISOString(),source:'restos-digital-solutions'};
-  return d;
+  return {
+    _meta:{timestamp:new Date().toISOString(),source:'restos-digital-solutions'},
+    sections
+  };
 }
 
 // === SUPABASE ===
@@ -184,9 +200,12 @@ const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZ
 
 async function saveAnswers(){
   const d=collectAnswers();
-  // Validate kontakt
-  const name=d.contact_name?.answer?.trim();
-  const email=d.contact_email?.answer?.trim();
+  // Find contact data
+  const allQ=d.sections.flatMap(s=>s.questions);
+  const nameQ=allQ.find(q=>q.id==='contact_name');
+  const emailQ=allQ.find(q=>q.id==='contact_email');
+  const name=nameQ?nameQ.answer:'';
+  const email=emailQ?emailQ.answer:'';
   if(!name||!email){
     showToast('Molimo unesite vaše ime i email na dnu stranice.');
     document.getElementById('contact').scrollIntoView({behavior:'smooth'});
