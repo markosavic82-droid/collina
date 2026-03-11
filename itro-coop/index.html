@@ -130,7 +130,22 @@ footer{background:var(--g9);padding:1.5rem;text-align:center}footer span{color:r
 <div class="sec-notes"><label>Bilo šta drugo što želite da nam kažete:</label><textarea data-q="s7_notes" placeholder="Slobodno..."></textarea></div>
 </div></div></section>
 
-<section class="cta-sec" id="cta"><div class="cta-in"><h2>Hvala na vremenu</h2><p>Sačuvajte odgovore — mi ćemo ih analizirati i pripremiti prilagođen predlog rešenja.</p><button class="hero-cta" onclick="saveAnswers()" style="display:inline-flex">Sačuvaj i pošalji odgovore <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button></div></section>
+<!-- KONTAKT -->
+<section class="ask-section" id="contact">
+  <div class="ask-header fu">
+    <div class="ask-num" style="background:var(--g5)">✓</div>
+    <div><h2>Vaši podaci</h2><p>Da bismo vam poslali prilagođen predlog rešenja</p></div>
+  </div>
+  <div style="max-width:500px" class="fu d1">
+    <div class="q-card">
+      <div class="qg"><label class="ql">Ime i prezime *</label><input type="text" class="qi" data-q="contact_name" placeholder="Vaše ime"></div>
+      <div class="qg"><label class="ql">Email *</label><input type="email" class="qi" data-q="contact_email" placeholder="vas@email.com"></div>
+      <div class="qg"><label class="ql">Telefon</label><input type="tel" class="qi" data-q="contact_phone" placeholder="+381..."></div>
+    </div>
+  </div>
+</section>
+
+<section class="cta-sec" id="cta"><div class="cta-in"><h2>Hvala na vremenu</h2><p>Kliknite dugme ispod — mi ćemo analizirati vaše odgovore i pripremiti prilagođen predlog rešenja.</p><button class="hero-cta" onclick="saveAnswers()" style="display:inline-flex">Sačuvaj i pošalji odgovore <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button></div></section>
 
 <footer><span>© 2026 Restos · restos.one · Digital solutions</span></footer>
 <div class="save-bar" id="saveBar"><div class="pt">Popunjeno: <strong id="pc">0</strong> / <strong id="tc">0</strong></div><button class="save-btn" onclick="saveAnswers()">Sačuvaj odgovore</button></div>
@@ -144,7 +159,24 @@ document.querySelectorAll('.qc').forEach(l=>{l.addEventListener('click',e=>{e.pr
 document.querySelectorAll('.qr').forEach(l=>{l.addEventListener('click',e=>{e.preventDefault();const r=l.querySelector('input'),n=r.name;document.querySelectorAll('input[name="'+n+'"]').forEach(x=>{x.checked=false;x.closest('.qr').classList.remove('sel')});r.checked=true;l.classList.add('sel');upd()})});
 document.querySelectorAll('.qi,.qta,.qn,.sec-notes textarea').forEach(el=>el.addEventListener('input',upd));
 function upd(){let a=0,t=0;document.querySelectorAll('.qi,.qta').forEach(el=>{t++;if(el.value.trim())a++});const rn=new Set();document.querySelectorAll('.qr-group').forEach(g=>{const rs=g.querySelectorAll('input[type="radio"]');if(rs.length){const n=rs[0].name;if(!rn.has(n)){rn.add(n);t++;if(g.querySelector('input:checked'))a++}}});document.querySelectorAll('.qc-group').forEach(g=>{t++;if(g.querySelector('input:checked'))a++});document.querySelectorAll('.qn,.sec-notes textarea').forEach(el=>{if(el.value.trim())a++});document.getElementById('pc').textContent=a;document.getElementById('tc').textContent=t}
-function collectAnswers(){const d={};document.querySelectorAll('[data-q]').forEach(el=>{const k=el.dataset.q;if(el.tagName==='INPUT'||el.tagName==='TEXTAREA')d[k]=el.value;else if(el.classList.contains('qc-group'))d[k]=[...el.querySelectorAll('input:checked')].map(c=>c.value);else if(el.classList.contains('qr-group')){const c=el.querySelector('input:checked');d[k]=c?c.value:''}});d.client_timestamp=new Date().toISOString();d.source='restos-digital-solutions';return d}
+function collectAnswers(){
+  const d={};
+  document.querySelectorAll('[data-q]').forEach(el=>{
+    const k=el.dataset.q;
+    // Nađi tekst pitanja
+    const qg=el.closest('.qg')||el.closest('.sec-notes');
+    const labelEl=qg?qg.querySelector('.ql'):null;
+    const question=labelEl?labelEl.textContent.trim():'';
+    // Vrednost
+    let val='';
+    if(el.tagName==='INPUT'||el.tagName==='TEXTAREA') val=el.value;
+    else if(el.classList.contains('qc-group')) val=[...el.querySelectorAll('input:checked')].map(c=>c.value);
+    else if(el.classList.contains('qr-group')){const c=el.querySelector('input:checked');val=c?c.value:''}
+    d[k]={question,answer:val};
+  });
+  d._meta={timestamp:new Date().toISOString(),source:'restos-digital-solutions'};
+  return d;
+}
 
 // === SUPABASE ===
 const SB_URL='https://hlmprmebwpndfgrunjok.supabase.co';
@@ -152,16 +184,23 @@ const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZ
 
 async function saveAnswers(){
   const d=collectAnswers();
-  let f=Object.values(d).filter(v=>v&&(Array.isArray(v)?v.length:v.trim&&v.trim())).length;
-  if(f<5){showToast('Molimo popunite bar nekoliko pitanja.');return}
-  const row={...d,raw_data:d};
-  if(row.workstation_count)row.workstation_count=parseInt(row.workstation_count)||null;
+  // Validate kontakt
+  const name=d.contact_name?.answer?.trim();
+  const email=d.contact_email?.answer?.trim();
+  if(!name||!email){
+    showToast('Molimo unesite vaše ime i email na dnu stranice.');
+    document.getElementById('contact').scrollIntoView({behavior:'smooth'});
+    return;
+  }
+  const row={source:'restos-digital-solutions',data:d};
   document.querySelectorAll('.save-btn,.cta-sec .hero-cta').forEach(b=>{b.dataset.orig=b.innerHTML;b.innerHTML='Šaljem...'});
   try{
     const res=await fetch(SB_URL+'/rest/v1/questionnaire_responses',{method:'POST',headers:{'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Prefer':'return=minimal'},body:JSON.stringify(row)});
     if(res.ok){
       showToast('Odgovori su uspešno sačuvani! Hvala vam.');
       document.querySelectorAll('.save-btn,.cta-sec .hero-cta').forEach(b=>b.innerHTML='Sačuvano ✓');
+      // Push notifikacija
+      try{fetch('https://ntfy.sh/restos_upitnik_2026',{method:'POST',body:'Novi upitnik popunjen!\n'+name+' ('+email+')'})}catch(e){}
     }else{
       console.error('Supabase:',await res.text());
       fallback(d);showToast('Odgovori sačuvani lokalno — javićemo se.');
