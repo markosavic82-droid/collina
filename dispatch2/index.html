@@ -110,14 +110,26 @@
       color: #fff;
     }
 
+    .location-mode-row {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding: 8px 10px;
+      background: #0d0d12;
+      border-bottom: 1px solid #1f1f2e;
+    }
+
+    .location-mode-toggle button {
+      padding: 5px 10px;
+      font-size: 10px;
+    }
+
     .location-rhythm-bar {
       display: flex;
       align-items: center;
       flex-wrap: wrap;
       gap: 4px;
-      padding: 6px 10px;
-      background: #0a0a10;
-      border-bottom: 1px solid #1f1f2e;
+      padding-top: 2px;
     }
 
     .location-rhythm-label {
@@ -127,8 +139,8 @@
       margin-right: 2px;
     }
 
-    .location-small .location-rhythm-bar {
-      padding: 5px 8px;
+    .location-small .location-mode-row {
+      padding: 6px 8px;
     }
 
     .semi-auto-hint {
@@ -138,6 +150,16 @@
       padding: 4px 8px;
       background: rgba(34, 197, 94, 0.12);
       border-radius: 6px;
+    }
+
+    .vracar-manual-hint {
+      font-size: 9px;
+      color: #f59e0b;
+      font-weight: 600;
+      width: 100%;
+      text-align: center;
+      margin-top: 4px;
+      line-height: 1.2;
     }
 
     .status-indicator {
@@ -1249,10 +1271,7 @@
   <header class="header">
     <h1>🚀 Dispatch <span class="wolt-badge">WOLT</span></h1>
     <div class="dispatch-mode-bar" id="dispatchModeBar">
-      <div class="mode-toggle" id="modeToggle" title="Ručno: birate vreme po narudžbini. Poluautomatski: ritam po lokaciji (ispod naziva) automatski prihvata nove Wolt narudžbine.">
-        <button type="button" id="modeManualBtn" onclick="setDispatchMode('manual')">Ručno</button>
-        <button type="button" id="modeSemiBtn" onclick="setDispatchMode('semi')">Poluautomatski</button>
-      </div>
+      <span style="font-size: 10px; color: #666; max-width: 200px; line-height: 1.3;" title="Za svaku radnju posebno ispod naziva lokacije.">Režim po radnji ↓</span>
       <button id="soundToggleBtn" onclick="toggleSound()" style="
         background: #22c55e;
         color: #fff;
@@ -1350,6 +1369,165 @@
         m[String(loc.id)] = 15;
       });
       return m;
+    }
+
+    function getDefaultDispatchModeMap() {
+      const m = {};
+      [...BIG_LOCATIONS, ...SMALL_LOCATIONS].forEach(loc => {
+        m[String(loc.id)] = 'manual';
+      });
+      return m;
+    }
+
+    /** Collina Vračar — poluautomatski prihvat se ne primenjuje ako bilo koja stavka odgovara imenu ispod */
+    const VRACAR_COMPANY_ID = '2120';
+    const VRACAR_SEMI_AUTO_BLOCKLIST = [
+      'Aromatični krompir',
+      'Bečka Šnicla',
+      'Belolučane Paprike',
+      'Boranija',
+      'Pileća Čorba Kg',
+      'Ćufte 400g',
+      'Ćufte Kg',
+      'Cvekla Salata 200g',
+      'Đuveč Kg',
+      'Mini Princes Krofne',
+      'Girice 400g',
+      'Grašak Kg',
+      'Grašak 400g',
+      'Gulaš Kg',
+      'Gulaš 400g',
+      'Kiseli Kupus 300g',
+      'Krem Čorba Pečurke Kg',
+      'Krompir Paprikaš Kg',
+      'Krompir Paprikaš Porcija',
+      'Krompir Salata 200g',
+      'Kupus Salata 200g',
+      'Lazanja Kg',
+      'Lovačka Šnicla Kg',
+      'Mrsna Sarma 400g',
+      'Mućkalica Kg',
+      'Mućkalica 400g',
+      'Musaka tikvice porcija',
+      'Musaka Krompir Kg',
+      'Musaka Krompir 400g',
+      'Musaka Tikvice Kg',
+      'Musaka Tikvice 400g',
+      'Punjene Paprike Sa Mesom 400g',
+      'Paprike Sa Sirom 400g',
+      'Paprike Sa Sirom Kg',
+      'Pasulj Čorbast Kg',
+      'Pekarski Krompir Kg',
+      'Pilav kg',
+      'Pilav Sa Piletinom 400g',
+      'Pilav Sa Piletinom Kg',
+      'Pileća Čorba 400g',
+      'Pileća Krilca Kg',
+      'Pileći Batak Kg',
+      'Pire Krompir Kg',
+      'Pire Krompir 300g',
+      'Pirinač Kg',
+      'Pirinač Porcija',
+      'Podvarak Kg',
+      'Podvarak 400g',
+      'Pohovani Pileći File 400g',
+      'Pohovana Piletina Kg',
+      'Pohovane Tikvice',
+      'Posna punjena paprika porcija',
+      'Posna Punjena Paprika Kg',
+      'Posna Punjena Paprika 400g',
+      'Posna Sarma Kg',
+      'Posna Sarma 400g',
+      'Prebranac Kg',
+      'Prebranac 400g',
+      'Punjene Paprike Sa Mesom Kg',
+      'Punjene paprike1 kg',
+      'Rebra Svinjska Kg',
+      'Restovani Krompir Kg',
+      'Riblja Čorba Kg',
+      'Rižoto Sa Pečurkama Kg',
+      'Rižoto Sa Povrćem Kg',
+      'Sarmica Sa Zeljem Kg',
+      'Sarmica Sa Zeljem 400g',
+      'Mrsna Sarma Kg',
+      'Sataraš Kg',
+      'Sladak Kupus Kg',
+      'Sladak kupus 400g',
+      'Spanać Kg',
+      'Svadbarski Kupus Kg',
+      'Svadbarski Kupus 400g',
+      'Svinjska Plećka Kg',
+      'Testenina 400g',
+      'Zemička'
+    ];
+
+    /** Blago podudaranje: dijakritici, podstring, sve ključne reči iz bloka */
+    function foldSerbianLatin(str) {
+      return String(str || '')
+        .toLowerCase()
+        .replace(/dž/gi, 'dz')
+        .replace(/[čć]/g, 'c')
+        .replace(/đ/g, 'd')
+        .replace(/š/g, 's')
+        .replace(/ž/g, 'z');
+    }
+    function normalizeForVracarLooseMatch(raw) {
+      let s = String(raw || '').trim().replace(/^\d+\s*x\s+/i, '');
+      s = foldSerbianLatin(s);
+      s = s.replace(/\s+/g, ' ').trim();
+      return s;
+    }
+    function looseLineMatchesVracarBlock(blockEntryRaw, itemLineRaw) {
+      const blockNorm = normalizeForVracarLooseMatch(blockEntryRaw);
+      const itemNorm = normalizeForVracarLooseMatch(itemLineRaw);
+      if (!blockNorm || !itemNorm) return false;
+      if (itemNorm === blockNorm) return true;
+
+      const MIN_PHRASE = 4;
+      if (blockNorm.length >= MIN_PHRASE && itemNorm.includes(blockNorm)) return true;
+      if (itemNorm.length >= MIN_PHRASE && blockNorm.includes(itemNorm)) return true;
+
+      const parts = blockNorm.split(/\s+/).filter(w => w.length >= 2);
+      const significant = parts.filter(w => {
+        if (w.length >= 3) return true;
+        if (w.length === 2 && /^(kg|g|ml|l)$/i.test(w)) return true;
+        if (/\d/.test(w)) return true;
+        return false;
+      });
+      if (significant.length >= 2) {
+        return significant.every(p => itemNorm.includes(p));
+      }
+      if (significant.length === 1) {
+        const w = significant[0];
+        return w.length >= 4 && itemNorm.includes(w);
+      }
+      if (parts.length >= 2) {
+        return parts.every(p => itemNorm.includes(p));
+      }
+      if (parts.length === 1) {
+        const w = parts[0];
+        return w.length >= 4 && itemNorm.includes(w);
+      }
+      return false;
+    }
+    function itemMatchesVracarSemiBlocklist(item) {
+      const names = [item.name];
+      const modifiers = item.modifiers || [];
+      modifiers.forEach(m => {
+        const refId = String(m.productReferenceID || '');
+        const mapped = modifiersMap[refId];
+        if (mapped && mapped.name) names.push(mapped.name);
+      });
+      for (const rawName of names) {
+        for (let b = 0; b < VRACAR_SEMI_AUTO_BLOCKLIST.length; b++) {
+          if (looseLineMatchesVracarBlock(VRACAR_SEMI_AUTO_BLOCKLIST[b], rawName)) return true;
+        }
+      }
+      return false;
+    }
+    function orderHasVracarSemiBlocklistItem(order) {
+      if (String(order.company_id) !== VRACAR_COMPANY_ID) return false;
+      return (order.items || []).some(it => itemMatchesVracarSemiBlocklist(it));
     }
 
     // Table ID to Name mapping (eBar tables)
@@ -1481,10 +1659,11 @@
     let flaggedOrderIds = new Set(); // Orders with active flags - hidden from display
     let dismissedPreorders = new Set(); // Preorders dismissed by dispatcher
 
-    const DISPATCH_MODE_KEY = 'collina_dispatch_mode_v1';
+    const DISPATCH_MODE_KEY = 'collina_dispatch_mode_v1'; // legacy: jedan mod za sve
+    const DISPATCH_MODE_BY_LOC_KEY = 'collina_dispatch_mode_by_loc_v1';
     const SEMI_AUTO_TIME_KEY = 'collina_dispatch_semi_prep_v1'; // legacy, migracija
     const SEMI_AUTO_PREP_BY_LOC_KEY = 'collina_dispatch_semi_prep_by_loc_v1';
-    let dispatchMode = 'manual'; // 'manual' | 'semi'
+    let dispatchModeByCompany = getDefaultDispatchModeMap();
     let semiAutoPrepTimeByCompany = getDefaultSemiPrepMap();
     let checkForNewOrdersCallCount = 0;
     let newlyDetectedOrderIds = [];
@@ -1496,48 +1675,58 @@
       return 15;
     }
 
+    function getDispatchModeForCompany(companyId) {
+      const m = dispatchModeByCompany[String(companyId)];
+      return m === 'semi' ? 'semi' : 'manual';
+    }
+
     function loadDispatchPrefs() {
       try {
-        const m = localStorage.getItem(DISPATCH_MODE_KEY);
-        if (m === 'semi' || m === 'manual') dispatchMode = m;
+        const modeBase = getDefaultDispatchModeMap();
+        const rawByLoc = localStorage.getItem(DISPATCH_MODE_BY_LOC_KEY);
+        if (rawByLoc) {
+          const parsed = JSON.parse(rawByLoc);
+          if (parsed && typeof parsed === 'object') {
+            dispatchModeByCompany = { ...modeBase, ...parsed };
+          } else {
+            dispatchModeByCompany = modeBase;
+          }
+        } else {
+          const legacyGlobal = localStorage.getItem(DISPATCH_MODE_KEY);
+          if (legacyGlobal === 'semi' || legacyGlobal === 'manual') {
+            Object.keys(modeBase).forEach(k => { modeBase[k] = legacyGlobal; });
+          }
+          dispatchModeByCompany = modeBase;
+        }
 
         const raw = localStorage.getItem(SEMI_AUTO_PREP_BY_LOC_KEY);
-        const base = getDefaultSemiPrepMap();
+        const prepBase = getDefaultSemiPrepMap();
         if (raw) {
           const parsed = JSON.parse(raw);
           if (parsed && typeof parsed === 'object') {
-            semiAutoPrepTimeByCompany = { ...base, ...parsed };
+            semiAutoPrepTimeByCompany = { ...prepBase, ...parsed };
           } else {
-            semiAutoPrepTimeByCompany = base;
+            semiAutoPrepTimeByCompany = prepBase;
           }
         } else {
           const legacy = parseInt(localStorage.getItem(SEMI_AUTO_TIME_KEY), 10);
           if ([5, 10, 15, 20, 25, 30].includes(legacy)) {
-            Object.keys(base).forEach(k => { base[k] = legacy; });
+            Object.keys(prepBase).forEach(k => { prepBase[k] = legacy; });
           }
-          semiAutoPrepTimeByCompany = base;
+          semiAutoPrepTimeByCompany = prepBase;
         }
       } catch (e) {
+        dispatchModeByCompany = getDefaultDispatchModeMap();
         semiAutoPrepTimeByCompany = getDefaultSemiPrepMap();
       }
     }
 
-    function updateDispatchModeUI() {
-      const manualBtn = document.getElementById('modeManualBtn');
-      const semiBtn = document.getElementById('modeSemiBtn');
-      if (manualBtn && semiBtn) {
-        manualBtn.classList.toggle('active', dispatchMode === 'manual');
-        semiBtn.classList.toggle('active', dispatchMode === 'semi');
-      }
-    }
-
-    function setDispatchMode(mode) {
+    function setDispatchModeForLocation(companyId, mode) {
       if (mode !== 'manual' && mode !== 'semi') return;
-      dispatchMode = mode;
+      dispatchModeByCompany[String(companyId)] = mode;
       try {
-        localStorage.setItem(DISPATCH_MODE_KEY, mode);
+        localStorage.setItem(DISPATCH_MODE_BY_LOC_KEY, JSON.stringify(dispatchModeByCompany));
       } catch (e) { /* ignore */ }
-      updateDispatchModeUI();
       if (typeof allOrders !== 'undefined' && allOrders.length >= 0) {
         renderMain(allOrders);
       }
@@ -1549,22 +1738,30 @@
       try {
         localStorage.setItem(SEMI_AUTO_PREP_BY_LOC_KEY, JSON.stringify(semiAutoPrepTimeByCompany));
       } catch (e) { /* ignore */ }
-      if (dispatchMode === 'semi' && typeof allOrders !== 'undefined') {
+      if (typeof allOrders !== 'undefined') {
         renderMain(allOrders);
       }
     }
 
-    function renderLocationRhythmBar(locId) {
-      if (dispatchMode !== 'semi') return '';
+    function renderLocationModeAndRhythm(locId) {
+      const semi = getDispatchModeForCompany(locId) === 'semi';
       const cur = getSemiPrepForCompany(locId);
       const mins = [5, 10, 15, 20, 25, 30];
       return `
-        <div class="location-rhythm-bar">
-          <span class="location-rhythm-label">Ritam (min):</span>
-          ${mins.map(m => `
-            <button type="button" class="semi-time-btn ${m === cur ? 'selected' : ''}"
-              onclick="setSemiAutoPrepTimeForLocation('${locId}', ${m})">${m}</button>
-          `).join('')}
+        <div class="location-mode-row">
+          <div class="mode-toggle location-mode-toggle" title="Ručno: birate vreme po narudžbini. Poluautomatski: izabrani ritam automatski prihvata nove Wolt narudžbine za ovu radnju.">
+            <button type="button" class="${!semi ? 'active' : ''}" onclick="setDispatchModeForLocation('${locId}', 'manual')">Ručno</button>
+            <button type="button" class="${semi ? 'active' : ''}" onclick="setDispatchModeForLocation('${locId}', 'semi')">Poluautomatski</button>
+          </div>
+          ${semi ? `
+            <div class="location-rhythm-bar">
+              <span class="location-rhythm-label">Ritam (min):</span>
+              ${mins.map(m => `
+                <button type="button" class="semi-time-btn ${m === cur ? 'selected' : ''}"
+                  onclick="setSemiAutoPrepTimeForLocation('${locId}', ${m})">${m}</button>
+              `).join('')}
+            </div>
+          ` : ''}
         </div>
       `;
     }
@@ -2130,7 +2327,7 @@
                 <span class="stat-pill ${locNew.length > 0 ? 'new' : 'empty'}">${locNew.length} 🆕</span>
               </div>
             </div>
-            ${renderLocationRhythmBar(loc.id)}
+            ${renderLocationModeAndRhythm(loc.id)}
             <div class="kitchen-stats-bar">
               <div class="kitchen-stat burgers ${stats.burgers === 0 ? 'zero' : ''}">
                 <span class="icon">🍔</span>
@@ -2192,7 +2389,7 @@
                     <span class="stat-pill ${locNew.length > 0 ? 'new' : 'empty'}">${locNew.length}🆕</span>
                   </div>
                 </div>
-                ${renderLocationRhythmBar(loc.id)}
+                ${renderLocationModeAndRhythm(loc.id)}
                 <div class="kitchen-stats-bar">
                   <div class="kitchen-stat burgers ${stats.burgers === 0 ? 'zero' : ''}">🍔 ${stats.burgers}</div>
                   <div class="kitchen-stat pancakes ${stats.pancakes === 0 ? 'zero' : ''}">🥞 ${stats.pancakes}</div>
@@ -2366,7 +2563,7 @@
             <div class="time-buttons">
               ${order.status === STATUS_NEW_PREORDER ? `
                 <button onclick="event.stopPropagation(); dismissPreorder(${order.order_id}, this)" style="color: #f59e0b; font-size: 12px; font-weight: 600; padding: 6px 12px; background: #f59e0b20; border-radius: 6px; border: 1px solid #f59e0b50; cursor: pointer;">✅ Odobreno u aplikaciji</button>
-              ` : dispatchMode === 'semi' ? `
+              ` : getDispatchModeForCompany(order.company_id) === 'semi' && !orderHasVracarSemiBlocklistItem(order) ? `
                 <span class="semi-auto-hint">⚡ Auto ${getSemiPrepForCompany(order.company_id)} min</span>
               ` : `
                 <button class="time-btn" onclick="acceptOrder(${order.order_id}, 5, '${order.company_id}', this)">5</button>
@@ -2375,6 +2572,9 @@
                 <button class="time-btn" onclick="acceptOrder(${order.order_id}, 20, '${order.company_id}', this)">20</button>
                 <button class="time-btn" onclick="acceptOrder(${order.order_id}, 25, '${order.company_id}', this)">25</button>
                 <button class="time-btn" onclick="acceptOrder(${order.order_id}, 30, '${order.company_id}', this)">30</button>
+                ${getDispatchModeForCompany(order.company_id) === 'semi' && orderHasVracarSemiBlocklistItem(order) ? `
+                <div class="vracar-manual-hint">⚠️ Vračar: artikal za duže pripreme — biraj vreme ručno</div>
+                ` : ''}
               `}
             </div>
           </div>
@@ -2635,13 +2835,15 @@
 
     function runSemiAutoAccepts(orders) {
       if (checkForNewOrdersCallCount <= 1) return;
-      if (dispatchMode !== 'semi' || !newlyDetectedOrderIds.length) return;
+      if (!newlyDetectedOrderIds.length) return;
 
       newlyDetectedOrderIds.forEach((id, idx) => {
         const o = orders.find(x => String(x.order_id) === String(id));
         if (!o) return;
+        if (getDispatchModeForCompany(o.company_id) !== 'semi') return;
         if (o.status !== STATUS_NEW) return;
         if ((o.provider || '').toLowerCase() !== 'wolt') return;
+        if (orderHasVracarSemiBlocklistItem(o)) return;
         if (semiAutoInflight.has(id)) return;
 
         semiAutoInflight.add(id);
@@ -2668,7 +2870,6 @@
 
     async function init() {
       loadDispatchPrefs();
-      updateDispatchModeUI();
       initSound();
       await loadProductCategories();
       await loadModifiers();
