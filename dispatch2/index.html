@@ -1379,7 +1379,7 @@
       return m;
     }
 
-    /** Collina Vračar — poluautomatski prihvat se ne primenjuje ako bilo koja stavka odgovara imenu ispod */
+    /** Collina Vračar — poluautomatski prihvat se ne primenjuje ako bilo koja stavka/modifikator u narudžbini odgovara imenu ispod (blago podudaranje). */
     const VRACAR_COMPANY_ID = '2120';
     const VRACAR_SEMI_AUTO_BLOCKLIST = [
       'Aromatični krompir',
@@ -1470,7 +1470,28 @@
       'Ćufte u paradajz sosu',
       'Boranija sa pilećim mesom',
       'Cvekla',
-      'Pire krompir 200g'
+      'Pire krompir 200g',
+
+      /* Tačni sistemski nazivi (kako stižu u sistemu / Pantheon–eMenica linije) */
+      'Boranija porcija',
+      'Cufte porcija',
+      'Cvekla salata - D',
+      'Grasak porcija dos.',
+      'Gulas porcija',
+      'Kupus salata porcija',
+      'Mrsna sarma porcija',
+      'Muckalica porcija',
+      'Musaka krompir porcija',
+      'Paprika sa mesom porcija',
+      'Paprika sir porcija',
+      'Pilav piletina porcija',
+      'Pileca corba porcija',
+      'Pire krompir porcija',
+      'Posna punjena paprika porcija',
+      'Posna sarma porcija',
+      'Prebranac porcija',
+      'Svadbarski kupus porcija',
+      'Zemicka'
     ];
 
     /** Blago podudaranje: dijakritici, podstring, sve ključne reči iz bloka */
